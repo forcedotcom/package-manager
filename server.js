@@ -1,6 +1,9 @@
 var express = require('express'),
     bodyParser = require('body-parser'),
     compression = require('compression'),
+    orgs = require('./server/orgs'),
+    packages = require('./server/packages'),
+    licenses = require('./server/licenses'),
     properties = require('./server/properties'),
     contacts = require('./server/contacts'),
     activities = require('./server/activities'),
@@ -16,6 +19,15 @@ app.use(bodyParser.json());
 app.use(compression());
 
 app.use('/', express.static(__dirname + '/www'));
+
+app.get('/orgs', orgs.findAll);
+app.get('/orgs/:id', orgs.findById);
+
+app.get('/licenses', licenses.findAll);
+app.get('/licenses/:id', licenses.findById);
+
+app.get('/packages', packages.findAll);
+app.get('/packages/:id', packages.findById);
 
 app.get('/properties', properties.findAll);
 app.get('/properties/:id', properties.findById);

@@ -1,5 +1,5 @@
 module.exports = {
 
-    databaseURL: process.env.DATABASE_URL || "postgres://ccoenraets@localhost/realty"
+    databaseURL: process.env.STEELBRICK_URL || process.env.DATABASE_URL || "jdbc:postgresql://localhost:5432/postgres"
 
 };

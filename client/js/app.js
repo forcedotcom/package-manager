@@ -4,6 +4,19 @@ import {Router, Route, IndexRoute, Link, IndexLink} from 'react-router';
 
 import {Icon} from './components/Icons';
 
+
+import LicenseHome from './licenses/LicenseHome';
+import LicenseRecord from './licenses/LicenseRecord';
+import LicenseView from './licenses/LicenseView';
+
+import OrgHome from './orgs/OrgHome';
+import OrgRecord from './orgs/OrgRecord';
+import OrgView from './orgs/OrgView';
+
+import PackageHome from './packages/PackageHome';
+import PackageRecord from './packages/PackageRecord';
+import PackageView from './packages/PackageView';
+
 import PropertyHome from './properties/PropertyHome';
 import PropertyRecord from './properties/PropertyRecord';
 import PropertyForm from './properties/PropertyForm';
@@ -25,7 +38,10 @@ let App = React.createClass({
             <div>
                 <header className="menu">
                     <ul className="slds-list--horizontal">
-                        <li className="slds-list__item"><IndexLink to="/"><Icon name="account" theme={null}/>Properties</IndexLink></li>
+                        <li className="slds-list__item"><IndexLink to="/"><Icon name="account" theme={null}/>Orgs</IndexLink></li>
+                        <li className="slds-list__item"><Link to="/licenses"><Icon name="drafts" theme={null}/>Licenses</Link></li>
+                        <li className="slds-list__item"><Link to="/packages"><Icon name="thanks" theme={null}/>Packages</Link></li>
+                        <li className="slds-list__item"><Link to="/properties"><Icon name="account" theme={null}/>Properties</Link></li>
                         <li className="slds-list__item"><Link to="/contacts"><Icon name="lead" theme={null}/>Contacts</Link></li>
                         <li className="slds-list__item"><Link to="/brokers"><Icon name="people" theme={null}/>Brokers</Link></li>
                     </ul>
@@ -39,6 +55,19 @@ let App = React.createClass({
 render((
     <Router>
         <Route name="app" path="/" component={App}>
+            <Route path="licenses" component={LicenseHome}/>
+            <Route path="license" component={LicenseRecord}>
+                <Route path=":licenseId" component={LicenseView}/>
+            </Route>
+            <Route path="orgs" component={OrgHome}/>
+            <Route path="org" component={OrgRecord}>
+                <Route path=":orgId" component={OrgView}/>
+            </Route>
+            <Route path="packages" component={PackageHome}/>
+            <Route path="package" component={PackageRecord}>
+                <Route path=":packageId" component={PackageView}/>
+            </Route>
+
             <Route path="properties" component={PropertyHome}/>
             <Route path="property" component={PropertyRecord}>
                 <Route path=":propertyId" component={PropertyView}/>
@@ -54,7 +83,7 @@ render((
                 <Route path=":brokerId" component={BrokerView}/>
                 <Route path=":brokerId/edit" component={BrokerForm}/>
             </Route>
-            <IndexRoute component={PropertyHome}/>
+            <IndexRoute component={OrgHome}/>
         </Route>
     </Router>
 ), document.getElementById('app'));
