@@ -3,6 +3,7 @@ var express = require('express'),
     compression = require('compression'),
     orgs = require('./server/orgs'),
     packages = require('./server/packages'),
+    packageVersions = require('./server/packageVersions'),
     licenses = require('./server/licenses'),
     properties = require('./server/properties'),
     contacts = require('./server/contacts'),
@@ -28,6 +29,9 @@ app.get('/licenses/:id', licenses.findById);
 
 app.get('/packages', packages.findAll);
 app.get('/packages/:id', packages.findById);
+
+app.get('/packageversions', packageVersions.findAll);
+app.get('/packageversions/:id', packageVersions.findById);
 
 app.get('/properties', properties.findAll);
 app.get('/properties/:id', properties.findById);

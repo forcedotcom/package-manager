@@ -1,21 +1,27 @@
 const db = require('./pghelper');
 
-
-const SELECT_ALL = "SELECT id, sfid, name, sflma__developer_org_id__c as org_id, sflma__package_id__c as package_id" +
-    " FROM sflma__package__c";
+const SELECT_ALL = "SELECT id, sfid, name, sflma__version__c as version_number, sflma__package__c as package_id, " +
+    "sflma__release_date__c as release_date, status__c as status, sflma__version_id__c as version_id " +
+    "FROM sflma__package_version__c";
 
 async function findAll(req, res, next) {
-    let orgId = req.query.org_id,
+    let packageId = req.query.packageId,
+        status = req.query.status || "Verified",
         whereParts = [],
         values = [];
 
-    if (orgId) {
-        values.push(orgId);
-        whereParts.push("sflma__developer_org_id__c = $" + values.length);
+    if (status !== "All") {
+        values.push(status);
+        whereParts.push("status__c = $" + values.length);
+    }
+
+    if (packageId) {
+        values.push(packageId);
+        whereParts.push("sflma__package__c = $" + values.length);
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let sort = " ORDER BY " + (req.query.sort || "name");
+    let sort = " ORDER BY " + (req.query.sort || "release_date desc");
 
     try {
         let recs = await db.query(SELECT_ALL + where + sort, values);

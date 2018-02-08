@@ -41,9 +41,6 @@ let App = React.createClass({
                         <li className="slds-list__item"><IndexLink to="/"><Icon name="account" theme={null}/>Orgs</IndexLink></li>
                         <li className="slds-list__item"><Link to="/licenses"><Icon name="drafts" theme={null}/>Licenses</Link></li>
                         <li className="slds-list__item"><Link to="/packages"><Icon name="thanks" theme={null}/>Packages</Link></li>
-                        <li className="slds-list__item"><Link to="/properties"><Icon name="account" theme={null}/>Properties</Link></li>
-                        <li className="slds-list__item"><Link to="/contacts"><Icon name="lead" theme={null}/>Contacts</Link></li>
-                        <li className="slds-list__item"><Link to="/brokers"><Icon name="people" theme={null}/>Brokers</Link></li>
                     </ul>
                 </header>
                 {this.props.children}
