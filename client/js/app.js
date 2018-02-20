@@ -17,20 +17,10 @@ import PackageHome from './packages/PackageHome';
 import PackageRecord from './packages/PackageRecord';
 import PackageView from './packages/PackageView';
 
-import PropertyHome from './properties/PropertyHome';
-import PropertyRecord from './properties/PropertyRecord';
-import PropertyForm from './properties/PropertyForm';
-import PropertyView from './properties/PropertyView';
-
-import ContactHome from './contacts/ContactHome';
-import ContactRecord from './contacts/ContactRecord';
-import ContactForm from './contacts/ContactForm';
-import ContactView from './contacts/ContactView';
-
-import BrokerHome from './brokers/BrokerHome';
-import BrokerRecord from './brokers/BrokerRecord';
-import BrokerForm from './brokers/BrokerForm';
-import BrokerView from './brokers/BrokerView';
+import PackageOrgHome from './packageorgs/PackageOrgHome';
+import PackageOrgRecord from './packageorgs/PackageOrgRecord';
+import PackageOrgForm from './packageorgs/PackageOrgForm';
+import PackageOrgView from './packageorgs/PackageOrgView';
 
 let App = React.createClass({
     render: function () {
@@ -41,6 +31,7 @@ let App = React.createClass({
                         <li className="slds-list__item"><IndexLink to="/"><Icon name="account" theme={null}/>Orgs</IndexLink></li>
                         <li className="slds-list__item"><Link to="/licenses"><Icon name="drafts" theme={null}/>Licenses</Link></li>
                         <li className="slds-list__item"><Link to="/packages"><Icon name="thanks" theme={null}/>Packages</Link></li>
+                        <li className="slds-list__item"><Link to="/packageorgs"><Icon name="people" theme={null}/>Package Orgs</Link></li>
                     </ul>
                 </header>
                 {this.props.children}
@@ -64,21 +55,10 @@ render((
             <Route path="package" component={PackageRecord}>
                 <Route path=":packageId" component={PackageView}/>
             </Route>
-
-            <Route path="properties" component={PropertyHome}/>
-            <Route path="property" component={PropertyRecord}>
-                <Route path=":propertyId" component={PropertyView}/>
-                <Route path=":propertyId/edit" component={PropertyForm}/>
-            </Route>
-            <Route path="contacts" component={ContactHome}/>
-            <Route path="contact" component={ContactRecord}>
-                <Route path=":contactId" component={ContactView}/>
-                <Route path=":contactId/edit" component={ContactForm}/>
-            </Route>
-            <Route path="brokers" component={BrokerHome}/>
-            <Route path="broker" component={BrokerRecord}>
-                <Route path=":brokerId" component={BrokerView}/>
-                <Route path=":brokerId/edit" component={BrokerForm}/>
+            <Route path="packageorgs" component={PackageOrgHome}/>
+            <Route path="packageorg" component={PackageOrgRecord}>
+                <Route path=":orgId" component={PackageOrgView}/>
+                <Route path=":orgId/edit" component={PackageOrgForm}/>
             </Route>
             <IndexRoute component={OrgHome}/>
         </Route>

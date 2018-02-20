@@ -1,7 +1,5 @@
 import React from 'react';
 
-import * as packageVersionService from '../services/PackageVersionService';
-
 import DataGrid from "../components/DataGrid";
 import {Icon, ButtonIcon} from "../components/Icons";
 

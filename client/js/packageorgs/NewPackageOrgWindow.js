@@ -6,8 +6,8 @@ export default React.createClass({
     mixins: [LinkedStateMixin],
 
     getInitialState() {
-        let contact = this.props.contact;
-        return {...contact};
+        let packageorg = this.props.packageorg;
+        return {...packageorg};
     },
 
     onSave() {
@@ -20,7 +20,7 @@ export default React.createClass({
                 <div aria-hidden="false" role="dialog" className="slds-modal slds-fade-in-open">
                     <div className="slds-modal__container">
                         <div className="slds-modal__header">
-                            <h2 className="slds-text-heading--medium">New Contact</h2>
+                            <h2 className="slds-text-heading--medium">Add Package Org</h2>
                             <button className="slds-button slds-modal__close">
                                 <svg aria-hidden="true" className="slds-button__icon slds-button__icon--inverse slds-button__icon--large">
                                 </svg>
@@ -31,33 +31,33 @@ export default React.createClass({
 
                             <div className="slds-form--stacked">
                                 <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="sample1">First Name</label>
+                                    <label className="slds-form-element__label" htmlFor="name">Name</label>
                                     <div className="slds-form-element__control">
-                                        <input className="slds-input" type="text" valueLink={this.linkState('first_name')}/>
+                                        <input className="slds-input" type="text" valueLink={this.linkState('name')}/>
                                     </div>
                                 </div>
                                 <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="sample1">Last Name</label>
+                                    <label className="slds-form-element__label" htmlFor="username">Username</label>
                                     <div className="slds-form-element__control">
-                                        <input className="slds-input" type="text" valueLink={this.linkState('last_name')}/>
+                                        <input className="slds-input" type="text" valueLink={this.linkState('username')}/>
                                     </div>
                                 </div>
                                 <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="sample1">Cell Phone</label>
+                                    <label className="slds-form-element__label" htmlFor="org_id">Org ID</label>
                                     <div className="slds-form-element__control">
-                                        <input className="slds-input" type="text" valueLink={this.linkState('mobile_phone')}/>
+                                        <input className="slds-input" type="text" valueLink={this.linkState('org_id')}/>
                                     </div>
                                 </div>
                                 <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="sample1">Home Phone</label>
+                                    <label className="slds-form-element__label" htmlFor="namespace">Namespace</label>
                                     <div className="slds-form-element__control">
-                                        <input className="slds-input" type="text" valueLink={this.linkState('home_phone')}/>
+                                        <input className="slds-input" type="text" valueLink={this.linkState('namespace')}/>
                                     </div>
                                 </div>
                                 <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="sample1">Email</label>
+                                    <label className="slds-form-element__label" htmlFor="instance_url">Instance URL</label>
                                     <div className="slds-form-element__control">
-                                        <input className="slds-input" type="text" valueLink={this.linkState('email')}/>
+                                        <input className="slds-input" type="text" valueLink={this.linkState('instance_url')}/>
                                     </div>
                                 </div>
                             </div>
@@ -69,9 +69,8 @@ export default React.createClass({
                         </div>
                     </div>
                 </div>
-                <div className="slds-modal-backdrop slds-modal-backdrop--open"></div>
+                <div className="slds-modal-backdrop slds-modal-backdrop--open"/>
             </div>
         );
     }
-
 });
