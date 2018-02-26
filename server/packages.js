@@ -4,7 +4,7 @@ const db = require('./pghelper');
 const SELECT_ALL = "SELECT id, sfid, name, sflma__developer_org_id__c as org_id, sflma__package_id__c as package_id" +
     " FROM sflma__package__c";
 
-async function findAll(req, res, next) {
+async function requestAll(req, res, next) {
     let orgId = req.query.org_id,
         whereParts = [],
         values = [];
@@ -25,7 +25,7 @@ async function findAll(req, res, next) {
     }
 }
 
-async function findById(req, res, next) {
+async function requestById(req, res, next) {
     let id = req.params.id;
     let where = " WHERE " + ((typeof id === "string") ? "sfid = $1" : "id = $1");
 
@@ -37,5 +37,5 @@ async function findById(req, res, next) {
     }
 }
 
-exports.findAll = findAll;
-exports.findById = findById;
+exports.requestAll = requestAll;
+exports.requestById = requestById;

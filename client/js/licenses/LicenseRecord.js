@@ -12,7 +12,7 @@ export default React.createClass({
     },
 
     componentDidMount() {
-        licenseService.findById(this.props.params.licenseId).then(license => this.setState({license}));
+        licenseService.requestById(this.props.params.licenseId).then(license => this.setState({license}));
     },
 
     render() {
@@ -20,7 +20,8 @@ export default React.createClass({
             <div>
                 <RecordHeader type="License" icon="drafts" title={this.state.license.account_name}>
                     <HeaderField label="Name" value={this.state.license.name}/>
-                    <HeaderField label="Package Version" value={this.state.license.package_version_name} />
+                    <HeaderField label="Version Name" value={this.state.license.version_name} />
+                    <HeaderField label="Version Number" value={this.state.license.version_number} />
                     <HeaderField label="Status" value={this.state.license.status}/>
                     <HeaderField label="Date Installed" value={this.state.license.install_date}/>
                 </RecordHeader>

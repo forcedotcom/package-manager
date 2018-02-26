@@ -12,7 +12,7 @@ export default React.createClass({
     },
 
     componentDidMount() {
-        packageService.findById(this.props.params.packageId).then(pkg => this.setState({pkg}));
+        packageService.requestById(this.props.params.packageId).then(pkg => this.setState({pkg}));
     },
 
     render() {

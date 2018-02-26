@@ -33,7 +33,8 @@ export default React.createClass({
                 <div header="Name" field="name" sortable={true} onLink={this.linkHandler}/>
                 <div header="Account" field="account_name" sortable={true} onLink={this.accountLinkHandler}/>
                 <div header="Package" field="package_name" sortable={true} onLink={this.packageLinkHandler}/>
-                <div header="Package Version" field="package_version_name" sortable={true} onLink={this.packageVersionLinkHandler}/>
+                <div header="Version Name" field="version_name" sortable={true} onLink={this.packageVersionLinkHandler}/>
+                <div header="Version Number" field="version_number" sortable={true} onLink={this.packageVersionLinkHandler}/>
                 <div header="Status" field="status" textAlign="center" sortable={true}/>
                 <div header="Install Date" field="install_date" sortable={true} format="date"/>
             </DataGrid>

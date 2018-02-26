@@ -1,7 +1,7 @@
 'use strict';
 
 const jsforce = require('jsforce');
-const package_orgs = require('./package_orgs');
+const packageorgs = require('./packageorgs');
 
 const PORT = process.env.PORT || 5000;
 
@@ -30,20 +30,20 @@ function oauthOrgURL(req, res, next) {
 
 function buildURL(scope) {
     let conn = buildConnection();
-    return conn.oauth2.getAuthorizationUrl({scope: scope} + "&prompt=login");
+    let url = conn.oauth2.getAuthorizationUrl({scope: scope}) + "&prompt=login";
+    return url;
 }
 
-function oauthOrgCallback(req, res, next) {
+async function oauthOrgCallback(req, res, next) {
     let conn = buildConnection();
-    conn.authorize(req.query.code, function (err, userInfo) {
-        if (err) {
-            return next(err);
-        }
-
-        package_orgs.createPackageOrg(userInfo.organizationId, "", "", conn.instanceUrl, "", conn.refreshToken, conn.accessToken);
-        console.log(JSON.stringify(userInfo));
+    try {
+        let userInfo = await conn.authorize(req.query.code);
+        let org = await conn.sobject("Organization").retrieve(userInfo.organizationId);
+        await packageorgs.createPackageOrg(org.Id, org.Name, org.NamespacePrefix, org.InstanceName, conn.instanceUrl, conn.refreshToken, conn.accessToken);
         return res.send("<script>window.opener.location.reload(); window.close()</script>");
-    });
+    } catch (e) {
+        return next(e);
+    }
 }
 
 function isAuth(req, res) {

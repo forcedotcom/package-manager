@@ -2,6 +2,8 @@ import * as h from './h';
 
 let url = "/orgs";
 
-export let findAll = sort => h.get(url, {sort});
+export let requestAll = sort => h.get(url, {sort});
 
-export let findById = id => h.get(url + "/" + id);
+export let requestById = id => h.get(url + "/" + id);
+
+export let requestUpgrade = (id, licenses, scheduled_date) => h.post(url + "/" + id + "/upgrade", {licenses, scheduled_date});

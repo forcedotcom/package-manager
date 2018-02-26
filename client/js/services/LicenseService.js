@@ -2,10 +2,10 @@ import * as h from './h';
 
 let url = "/licenses";
 
-export let findAll = sort => h.get(url, {sort});
+export let requestAll = sort => h.get(url, {sort});
 
 export let findByAccount = account_id => h.get(url, {account_id});
 
-export let findByStatus = status => h.get(url, {status});
+export let findByOrgId = org_id => h.get(url, {org_id});
 
-export let findById = id => h.get(url + "/" + id);
+export let requestById = id => h.get(url + "/" + id);

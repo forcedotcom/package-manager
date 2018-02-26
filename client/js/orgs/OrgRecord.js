@@ -2,8 +2,10 @@ import React from 'react';
 import {Router} from 'react-router';
 
 import * as orgService from '../services/OrgService';
+import * as licenseService from "../services/LicenseService";
 
-import {RecordHeader, HeaderField} from '../components/PageHeader';
+import {HeaderField} from '../components/PageHeader';
+import OrgRecordHeader from './OrgRecordHeader';
 
 export default React.createClass({
 
@@ -11,18 +13,23 @@ export default React.createClass({
         return { org: {} };
     },
 
+    handleUpgrade() {
+        orgService.requestUpgrade(this.state.org.id, this.state.licenses.map(v => v.sfid));
+    },
+
     componentDidMount() {
-        orgService.findById(this.props.params.orgId).then(org => this.setState({org}));
+        orgService.requestById(this.props.params.orgId).then(org => this.setState({org}));
+        licenseService.findByOrgId(this.props.params.orgId).then(licenses => this.setState({licenses}));
     },
 
     render() {
         return (
             <div>
-                <RecordHeader type="Org" icon="account" title={this.state.org.account_name}>
+                <OrgRecordHeader type="Org" icon="account" title={this.state.org.account_name} onUpgrade={this.handleUpgrade}>
                     <HeaderField label="Org ID" value={this.state.org.id}/>
                     <HeaderField label="Instance" value={this.state.org.instance}/>
-                </RecordHeader>
-                {React.cloneElement(this.props.children, { org: this.state.org })}
+                </OrgRecordHeader>
+                {React.cloneElement(this.props.children, { org: this.state.org, licenses: this.state.licenses })}
             </div>
         );
     }

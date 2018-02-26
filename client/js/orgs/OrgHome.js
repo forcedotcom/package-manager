@@ -13,17 +13,13 @@ export default React.createClass({
     },
     
     componentDidMount() {
-        orgService.findAll(this.state.sortOrder).then(orgs => {this.setState({orgs})});
+        orgService.requestAll(this.state.sortOrder).then(orgs => {this.setState({orgs})});
     },
 
     sortHandler(sortOrder) {
-        orgService.findAll(sortOrder).then(orgs => {
+        orgService.requestAll(sortOrder).then(orgs => {
             this.setState({sortOrder, orgs})
         });
-    },
-
-    viewChangeHandler(value) {
-        this.setState({view: value});
     },
 
     cancelHandler() {
@@ -31,29 +27,16 @@ export default React.createClass({
     },
 
     render() {
-        let view;
-        if (this.state.view === "split") {
-            view = <div className="slds-grid slds-wrap">
-                <div className="slds-col slds-size--1-of-1 slds-large-size--2-of-3">
-                    <OrgList orgs={this.state.orgs} onSortChange={this.sortChangeHandler} onEdit={this.editHandler}/>
-                </div>
-                <div className="slds-col--padded slds-size--1-of-1 slds-large-size--1-of-3">
-                    <GoogleMaps data={this.state.orgs}/>
-                </div>
-            </div>;
-        } else {
-            view = <OrgList orgs={this.state.orgs} onSort={this.sortHandler} onEdit={this.editHandler}/>;
-        }
+        let view = <OrgList orgs={this.state.orgs} onSort={this.sortHandler}/>;
         return (
             <div>
                 <HomeHeader type="orgs"
                             title="Orgs"
                             actions={[]}
                             itemCount={this.state.orgs.length}
-                            viewOptions={[{value:"table", label:"Table", icon:"table"},{value:"split", label:"Split", icon:"layout"}]}
+                            viewOptions={[{value:"table", label:"Table", icon:"table"}]}
                             sortOptions={[{value:"account_name", label:"Account"}]}
-                            onSort={this.sortHandler}
-                            onViewChange={this.viewChangeHandler}/>
+                            onSort={this.sortHandler}/>
                 {view}
             </div>
         );

@@ -22,9 +22,12 @@
     "method-override": "^2.3.5",
     "moment": "^2.11.2",
     "node-rsa": "^0.4.2",
+    "node-soap": "^1.0.0",
     "path": "^0.12.7",
     "pg": "^4.4.4",
-    "q": "^1.4.1"
+    "q": "^1.4.1",
+    "soap": "^0.23.0",
+    "xml2js": "^0.4.19"
   },
   "devDependencies": {
     "babel-core": "^6.4.5",

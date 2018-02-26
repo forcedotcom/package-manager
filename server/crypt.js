@@ -28,14 +28,58 @@ const rsaDecrypt = async function (text, privateKey) {
     return key.decrypt(text, 'utf8');
 };
 
-const passwordEncrypt = async function (text, password) {
+
+const passwordEncrypt = async function (password, text) {
     const cipher = crypto.createCipher('aes-256-cbc', password);
     return await processStream(cipher, text, {from: 'utf8', to: 'hex'});
 };
 
-const passwordDecrypt = async function (text, password) {
-    const decipher = crypto.createDecipher('aes-256-cbc', password);
-    return await processStream(decipher, text, {from: 'hex', to: 'utf8'});
+const passwordEncryptObjects = async function (password, objects, fields) {
+    if (!objects || objects.length === 0) {
+        return;
+    }
+    if (!fields || fields.length === 0) {
+        fields = Object.keys(objects[0]);
+    }
+    try {
+        for (let i = 0; i < objects.length; i++) {
+            let obj = objects[i];
+            for (let j = 0; j < fields.length; j++) {
+                let field = fields[j];
+                if (obj[field]) {
+                    obj[field] = await processStream(crypto.createCipher('aes-256-cbc', password), obj[field], {from: 'utf8', to: 'hex'});
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+const passwordDecrypt = async function (password, text) {
+    return await processStream(crypto.createDecipher('aes-256-cbc', password), text, {from: 'hex', to: 'utf8'});
+};
+
+const passwordDecryptObjects = async function (password, objects, fields) {
+    if (!objects || objects.length === 0) {
+        return;
+    }
+    if (!fields || fields.length === 0) {
+        fields = Object.keys(objects[0]);
+    }
+    try {
+        for (let i = 0; i < objects.length; i++) {
+            let obj = objects[i];
+            for (let j = 0; j < fields.length; j++) {
+                let field = fields[j];
+                if (obj[field]) {
+                    obj[field] = await processStream(crypto.createDecipher('aes-256-cbc', password), obj[field], {from: 'hex', to: 'utf8'});
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
 };
 
 const processStream = function (cipher, text, options) {
@@ -67,10 +111,10 @@ const processStream = function (cipher, text, options) {
 
         try {
             cipher.write(text, options.from);
-            cipher.end();
         } catch (ex) {
             reject(ex);
         }
+        cipher.end();
     });
 };
 
@@ -79,7 +123,9 @@ const crypt = {
     rsaEncrypt,
     rsaDecrypt,
     passwordEncrypt,
-    passwordDecrypt
+    passwordDecrypt,
+    passwordEncryptObjects,
+    passwordDecryptObjects
 };
 
 module.exports = crypt;

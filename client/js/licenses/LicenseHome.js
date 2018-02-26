@@ -14,11 +14,11 @@ export default React.createClass({
     },
     
     componentDidMount() {
-        licenseService.findAll(this.state.sortOrder).then(licenses=> this.setState({licenses}));
+        licenseService.requestAll(this.state.sortOrder).then(licenses=> this.setState({licenses}));
     },
 
     sortHandler(sortOrder) {
-        licenseService.findAll(sortOrder).then(licenses => {
+        licenseService.requestAll(sortOrder).then(licenses => {
             this.setState({sortOrder, licenses})
         });
     },
@@ -33,7 +33,7 @@ export default React.createClass({
 
     saveHandler(license) {
         licenseService.createItem(license).then(() => {
-            licenseService.findAll(this.state.sort).then(licenses => this.setState({addingLicense: false, licenses}));
+            licenseService.requestAll(this.state.sort).then(licenses => this.setState({addingLicense: false, licenses}));
         });
     },
 

@@ -19,7 +19,6 @@ import PackageView from './packages/PackageView';
 
 import PackageOrgHome from './packageorgs/PackageOrgHome';
 import PackageOrgRecord from './packageorgs/PackageOrgRecord';
-import PackageOrgForm from './packageorgs/PackageOrgForm';
 import PackageOrgView from './packageorgs/PackageOrgView';
 
 let App = React.createClass({
@@ -57,8 +56,7 @@ render((
             </Route>
             <Route path="packageorgs" component={PackageOrgHome}/>
             <Route path="packageorg" component={PackageOrgRecord}>
-                <Route path=":orgId" component={PackageOrgView}/>
-                <Route path=":orgId/edit" component={PackageOrgForm}/>
+                <Route path=":packageorgId" component={PackageOrgView}/>
             </Route>
             <IndexRoute component={OrgHome}/>
         </Route>

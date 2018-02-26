@@ -47,4 +47,6 @@ export let post = (url, data) => request({method: "POST", contentType: "applicat
 
 export let put = (url, data) => request({method: "PUT", contentType: "application/json", url, data});
 
+export let patch = (url, data) => request({method: "PATCH", contentType: "application/json", url, data});
+
 export let del = (url) => request({method: "DELETE", url});

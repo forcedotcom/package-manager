@@ -11,8 +11,6 @@ export default React.createClass({
     actionHandler(data, value, label) {
         if (label === "Delete") {
             this.props.onDelete(data);
-        } else if (label === "Edit") {
-            this.props.onEdit(data);
         }
     },
 
@@ -22,9 +20,8 @@ export default React.createClass({
                 <div header="Name" field="name" sortable="true" onLink={this.linkHandler}/>
                 <div header="Namespace" field="namespace" sortable="true" onLink={this.linkHandler}/>
                 <div header="Org ID" field="org_id"/>
-                <div header="Username" field="username"/>
+                <div header="Instance Name" field="instance_name"/>
                 <div header="Instance URL" field="instance_url"/>
-                <div header="Status" field="status"/>
             </DataGrid>
         );
     }

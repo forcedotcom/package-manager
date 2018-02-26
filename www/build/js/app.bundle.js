@@ -76,35 +76,31 @@
 	
 	var _OrgRecord2 = _interopRequireDefault(_OrgRecord);
 	
-	var _OrgView = __webpack_require__(344);
+	var _OrgView = __webpack_require__(345);
 	
 	var _OrgView2 = _interopRequireDefault(_OrgView);
 	
-	var _PackageHome = __webpack_require__(345);
+	var _PackageHome = __webpack_require__(347);
 	
 	var _PackageHome2 = _interopRequireDefault(_PackageHome);
 	
-	var _PackageRecord = __webpack_require__(348);
+	var _PackageRecord = __webpack_require__(350);
 	
 	var _PackageRecord2 = _interopRequireDefault(_PackageRecord);
 	
-	var _PackageView = __webpack_require__(349);
+	var _PackageView = __webpack_require__(351);
 	
 	var _PackageView2 = _interopRequireDefault(_PackageView);
 	
-	var _PackageOrgHome = __webpack_require__(352);
+	var _PackageOrgHome = __webpack_require__(354);
 	
 	var _PackageOrgHome2 = _interopRequireDefault(_PackageOrgHome);
 	
-	var _PackageOrgRecord = __webpack_require__(357);
+	var _PackageOrgRecord = __webpack_require__(359);
 	
 	var _PackageOrgRecord2 = _interopRequireDefault(_PackageOrgRecord);
 	
-	var _PackageOrgForm = __webpack_require__(358);
-	
-	var _PackageOrgForm2 = _interopRequireDefault(_PackageOrgForm);
-	
-	var _PackageOrgView = __webpack_require__(363);
+	var _PackageOrgView = __webpack_require__(360);
 	
 	var _PackageOrgView2 = _interopRequireDefault(_PackageOrgView);
 	
@@ -198,8 +194,7 @@
 	        _react2.default.createElement(
 	            _reactRouter.Route,
 	            { path: 'packageorg', component: _PackageOrgRecord2.default },
-	            _react2.default.createElement(_reactRouter.Route, { path: ':orgId', component: _PackageOrgView2.default }),
-	            _react2.default.createElement(_reactRouter.Route, { path: ':orgId/edit', component: _PackageOrgForm2.default })
+	            _react2.default.createElement(_reactRouter.Route, { path: ':packageorgId', component: _PackageOrgView2.default })
 	        ),
 	        _react2.default.createElement(_reactRouter.IndexRoute, { component: _OrgHome2.default })
 	    )
@@ -24663,14 +24658,14 @@
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        licenseService.findAll(this.state.sortOrder).then(function (licenses) {
+	        licenseService.requestAll(this.state.sortOrder).then(function (licenses) {
 	            return _this.setState({ licenses: licenses });
 	        });
 	    },
 	    sortHandler: function sortHandler(sortOrder) {
 	        var _this2 = this;
 	
-	        licenseService.findAll(sortOrder).then(function (licenses) {
+	        licenseService.requestAll(sortOrder).then(function (licenses) {
 	            _this2.setState({ sortOrder: sortOrder, licenses: licenses });
 	        });
 	    },
@@ -24684,7 +24679,7 @@
 	        var _this3 = this;
 	
 	        licenseService.createItem(license).then(function () {
-	            licenseService.findAll(_this3.state.sort).then(function (licenses) {
+	            licenseService.requestAll(_this3.state.sort).then(function (licenses) {
 	                return _this3.setState({ addingLicense: false, licenses: licenses });
 	            });
 	        });
@@ -24740,7 +24735,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.findById = exports.findByStatus = exports.findByAccount = exports.findAll = undefined;
+	exports.requestById = exports.findByOrgId = exports.findByAccount = exports.requestAll = undefined;
 	
 	var _h = __webpack_require__(209);
 	
@@ -24750,7 +24745,7 @@
 	
 	var url = "/licenses";
 	
-	var findAll = exports.findAll = function findAll(sort) {
+	var requestAll = exports.requestAll = function requestAll(sort) {
 	  return h.get(url, { sort: sort });
 	};
 	
@@ -24758,11 +24753,11 @@
 	  return h.get(url, { account_id: account_id });
 	};
 	
-	var findByStatus = exports.findByStatus = function findByStatus(status) {
-	  return h.get(url, { status: status });
+	var findByOrgId = exports.findByOrgId = function findByOrgId(org_id) {
+	  return h.get(url, { org_id: org_id });
 	};
 	
-	var findById = exports.findById = function findById(id) {
+	var requestById = exports.requestById = function requestById(id) {
 	  return h.get(url + "/" + id);
 	};
 
@@ -24825,6 +24820,10 @@
 	
 	var put = exports.put = function put(url, data) {
 	    return request({ method: "PUT", contentType: "application/json", url: url, data: data });
+	};
+	
+	var patch = exports.patch = function patch(url, data) {
+	    return request({ method: "PATCH", contentType: "application/json", url: url, data: data });
 	};
 	
 	var del = exports.del = function del(url) {
@@ -25397,7 +25396,8 @@
 	            _react2.default.createElement('div', { header: 'Name', field: 'name', sortable: true, onLink: this.linkHandler }),
 	            _react2.default.createElement('div', { header: 'Account', field: 'account_name', sortable: true, onLink: this.accountLinkHandler }),
 	            _react2.default.createElement('div', { header: 'Package', field: 'package_name', sortable: true, onLink: this.packageLinkHandler }),
-	            _react2.default.createElement('div', { header: 'Package Version', field: 'package_version_name', sortable: true, onLink: this.packageVersionLinkHandler }),
+	            _react2.default.createElement('div', { header: 'Version Name', field: 'version_name', sortable: true, onLink: this.packageVersionLinkHandler }),
+	            _react2.default.createElement('div', { header: 'Version Number', field: 'version_number', sortable: true, onLink: this.packageVersionLinkHandler }),
 	            _react2.default.createElement('div', { header: 'Status', field: 'status', textAlign: 'center', sortable: true }),
 	            _react2.default.createElement('div', { header: 'Install Date', field: 'install_date', sortable: true, format: 'date' })
 	        );
@@ -41869,7 +41869,7 @@
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        licenseService.findById(this.props.params.licenseId).then(function (license) {
+	        licenseService.requestById(this.props.params.licenseId).then(function (license) {
 	            return _this.setState({ license: license });
 	        });
 	    },
@@ -41881,7 +41881,8 @@
 	                _PageHeader.RecordHeader,
 	                { type: 'License', icon: 'drafts', title: this.state.license.account_name },
 	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Name', value: this.state.license.name }),
-	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Package Version', value: this.state.license.package_version_name }),
+	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Version Name', value: this.state.license.version_name }),
+	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Version Number', value: this.state.license.version_number }),
 	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Status', value: this.state.license.status }),
 	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Date Installed', value: this.state.license.install_date })
 	            ),
@@ -42054,7 +42055,7 @@
 	                                _react2.default.createElement(
 	                                    'p',
 	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Name of the installed package version' },
-	                                    'Package Version'
+	                                    'Version Name'
 	                                )
 	                            ),
 	                            _react2.default.createElement(
@@ -42063,7 +42064,33 @@
 	                                _react2.default.createElement(
 	                                    'p',
 	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
-	                                    this.props.license.package_version_name
+	                                    this.props.license.version_name
+	                                )
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        _react2.default.createElement(
+	                            'dl',
+	                            { className: 'page-header--rec-home__detail-item' },
+	                            _react2.default.createElement(
+	                                'dt',
+	                                null,
+	                                _react2.default.createElement(
+	                                    'p',
+	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Name of the installed package version' },
+	                                    'Version Number'
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                'dd',
+	                                null,
+	                                _react2.default.createElement(
+	                                    'p',
+	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    this.props.license.version_number
 	                                )
 	                            )
 	                        )
@@ -42233,43 +42260,22 @@
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        orgService.findAll(this.state.sortOrder).then(function (orgs) {
+	        orgService.requestAll(this.state.sortOrder).then(function (orgs) {
 	            _this.setState({ orgs: orgs });
 	        });
 	    },
 	    sortHandler: function sortHandler(sortOrder) {
 	        var _this2 = this;
 	
-	        orgService.findAll(sortOrder).then(function (orgs) {
+	        orgService.requestAll(sortOrder).then(function (orgs) {
 	            _this2.setState({ sortOrder: sortOrder, orgs: orgs });
 	        });
-	    },
-	    viewChangeHandler: function viewChangeHandler(value) {
-	        this.setState({ view: value });
 	    },
 	    cancelHandler: function cancelHandler() {
 	        this.setState({});
 	    },
 	    render: function render() {
-	        var view = void 0;
-	        if (this.state.view === "split") {
-	            view = _react2.default.createElement(
-	                'div',
-	                { className: 'slds-grid slds-wrap' },
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'slds-col slds-size--1-of-1 slds-large-size--2-of-3' },
-	                    _react2.default.createElement(_OrgList2.default, { orgs: this.state.orgs, onSortChange: this.sortChangeHandler, onEdit: this.editHandler })
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'slds-col--padded slds-size--1-of-1 slds-large-size--1-of-3' },
-	                    _react2.default.createElement(GoogleMaps, { data: this.state.orgs })
-	                )
-	            );
-	        } else {
-	            view = _react2.default.createElement(_OrgList2.default, { orgs: this.state.orgs, onSort: this.sortHandler, onEdit: this.editHandler });
-	        }
+	        var view = _react2.default.createElement(_OrgList2.default, { orgs: this.state.orgs, onSort: this.sortHandler });
 	        return _react2.default.createElement(
 	            'div',
 	            null,
@@ -42277,10 +42283,9 @@
 	                title: 'Orgs',
 	                actions: [],
 	                itemCount: this.state.orgs.length,
-	                viewOptions: [{ value: "table", label: "Table", icon: "table" }, { value: "split", label: "Split", icon: "layout" }],
+	                viewOptions: [{ value: "table", label: "Table", icon: "table" }],
 	                sortOptions: [{ value: "account_name", label: "Account" }],
-	                onSort: this.sortHandler,
-	                onViewChange: this.viewChangeHandler }),
+	                onSort: this.sortHandler }),
 	            view
 	        );
 	    }
@@ -42295,7 +42300,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.findById = exports.findAll = undefined;
+	exports.requestUpgrade = exports.requestById = exports.requestAll = undefined;
 	
 	var _h = __webpack_require__(209);
 	
@@ -42305,12 +42310,16 @@
 	
 	var url = "/orgs";
 	
-	var findAll = exports.findAll = function findAll(sort) {
+	var requestAll = exports.requestAll = function requestAll(sort) {
 	  return h.get(url, { sort: sort });
 	};
 	
-	var findById = exports.findById = function findById(id) {
+	var requestById = exports.requestById = function requestById(id) {
 	  return h.get(url + "/" + id);
+	};
+	
+	var requestUpgrade = exports.requestUpgrade = function requestUpgrade(id, licenses, scheduled_date) {
+	  return h.post(url + "/" + id + "/upgrade", { licenses: licenses, scheduled_date: scheduled_date });
 	};
 
 /***/ }),
@@ -42373,7 +42382,15 @@
 	
 	var orgService = _interopRequireWildcard(_OrgService);
 	
+	var _LicenseService = __webpack_require__(208);
+	
+	var licenseService = _interopRequireWildcard(_LicenseService);
+	
 	var _PageHeader = __webpack_require__(211);
+	
+	var _OrgRecordHeader = __webpack_require__(344);
+	
+	var _OrgRecordHeader2 = _interopRequireDefault(_OrgRecordHeader);
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
@@ -42384,11 +42401,19 @@
 	    getInitialState: function getInitialState() {
 	        return { org: {} };
 	    },
+	    handleUpgrade: function handleUpgrade() {
+	        orgService.requestUpgrade(this.state.org.id, this.state.licenses.map(function (v) {
+	            return v.sfid;
+	        }));
+	    },
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        orgService.findById(this.props.params.orgId).then(function (org) {
+	        orgService.requestById(this.props.params.orgId).then(function (org) {
 	            return _this.setState({ org: org });
+	        });
+	        licenseService.findByOrgId(this.props.params.orgId).then(function (licenses) {
+	            return _this.setState({ licenses: licenses });
 	        });
 	    },
 	    render: function render() {
@@ -42396,12 +42421,12 @@
 	            'div',
 	            null,
 	            _react2.default.createElement(
-	                _PageHeader.RecordHeader,
-	                { type: 'Org', icon: 'account', title: this.state.org.account_name },
+	                _OrgRecordHeader2.default,
+	                { type: 'Org', icon: 'account', title: this.state.org.account_name, onUpgrade: this.handleUpgrade },
 	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Org ID', value: this.state.org.id }),
 	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Instance', value: this.state.org.instance })
 	            ),
-	            _react2.default.cloneElement(this.props.children, { org: this.state.org })
+	            _react2.default.cloneElement(this.props.children, { org: this.state.org, licenses: this.state.licenses })
 	        );
 	    }
 	});
@@ -42420,6 +42445,102 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
+	var _Icons = __webpack_require__(206);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = _react2.default.createClass({
+	    displayName: "OrgRecordHeader",
+	    getDefaultProps: function getDefaultProps() {
+	        return {
+	            icon: "account"
+	        };
+	    },
+	    render: function render() {
+	        return _react2.default.createElement(
+	            "div",
+	            { className: "slds-page-header" },
+	            _react2.default.createElement(
+	                "div",
+	                { className: "slds-grid" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "slds-col slds-has-flexi-truncate" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-media" },
+	                        _react2.default.createElement(
+	                            "div",
+	                            { className: "slds-media__figure" },
+	                            _react2.default.createElement(_Icons.Icon, { name: this.props.icon, size: "large" })
+	                        ),
+	                        _react2.default.createElement(
+	                            "div",
+	                            { className: "slds-media__body" },
+	                            _react2.default.createElement(
+	                                "p",
+	                                { className: "slds-text-heading--label" },
+	                                this.props.type
+	                            ),
+	                            _react2.default.createElement(
+	                                "div",
+	                                { className: "slds-grid" },
+	                                _react2.default.createElement(
+	                                    "h1",
+	                                    { className: "slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle", title: this.props.title },
+	                                    this.props.title
+	                                )
+	                            )
+	                        )
+	                    )
+	                ),
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "slds-col slds-no-flex slds-align-bottom" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-button-group", role: "group" },
+	                        _react2.default.createElement(
+	                            "button",
+	                            { className: "slds-button slds-button--neutral", onClick: this.props.onUpgrade },
+	                            "Upgrade"
+	                        )
+	                    )
+	                )
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "slds-grid slds-page-header__detail-row" },
+	                this.props.children
+	            )
+	        );
+	    }
+	});
+
+/***/ }),
+/* 345 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _react = __webpack_require__(1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _LicenseService = __webpack_require__(208);
+	
+	var licenseService = _interopRequireWildcard(_LicenseService);
+	
+	var _LicenseCard = __webpack_require__(346);
+	
+	var _LicenseCard2 = _interopRequireDefault(_LicenseCard);
+	
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	exports.default = _react2.default.createClass({
@@ -42435,14 +42556,115 @@
 	            _react2.default.createElement(
 	                "div",
 	                { className: "slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2" },
-	                _react2.default.createElement("div", { className: "slds-grid slds-wrap slds-m-top--large" })
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "slds-grid slds-wrap slds-m-top--large" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-1" },
+	                        _react2.default.createElement("br", null),
+	                        _react2.default.createElement(_LicenseCard2.default, { licenses: this.props.licenses })
+	                    )
+	                )
 	            )
 	        );
 	    }
 	});
 
 /***/ }),
-/* 345 */
+/* 346 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _react = __webpack_require__(1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _DataGrid = __webpack_require__(214);
+	
+	var _DataGrid2 = _interopRequireDefault(_DataGrid);
+	
+	var _Icons = __webpack_require__(206);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = _react2.default.createClass({
+	    displayName: "LicenseCard",
+	    getInitialState: function getInitialState() {
+	        return {};
+	    },
+	    actionHandler: function actionHandler(data, value, label) {
+	        alert("TBD");
+	    },
+	    render: function render() {
+	        return _react2.default.createElement(
+	            "div",
+	            { className: "slds-card" },
+	            _react2.default.createElement(
+	                "header",
+	                { className: "slds-card__header slds-grid" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "slds-media slds-media--center slds-has-flexi-truncate" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-media__figure" },
+	                        _react2.default.createElement(_Icons.Icon, { name: "groups", size: "small" })
+	                    ),
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-media__body" },
+	                        _react2.default.createElement(
+	                            "h3",
+	                            { className: "slds-text-heading--small slds-truncate" },
+	                            "Installed Package"
+	                        )
+	                    )
+	                ),
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "slds-no-flex" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-button-group" },
+	                        _react2.default.createElement(
+	                            "button",
+	                            { className: "slds-button slds-button--icon-border-filled" },
+	                            _react2.default.createElement(_Icons.ButtonIcon, { name: "down" }),
+	                            _react2.default.createElement(
+	                                "span",
+	                                { className: "slds-assistive-text" },
+	                                "Show More"
+	                            )
+	                        )
+	                    )
+	                )
+	            ),
+	            _react2.default.createElement(
+	                "section",
+	                { className: "slds-card__body" },
+	                _react2.default.createElement(
+	                    _DataGrid2.default,
+	                    { data: this.props.licenses, onSort: this.props.onSort, onAction: this.actionHandler },
+	                    _react2.default.createElement("div", { header: "Name", field: "name", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Package", field: "package_name", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Version Name", field: "version_name", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Version Number", field: "version_number", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Status", field: "status", textAlign: "center", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Install Date", field: "install_date", sortable: true, format: "date" })
+	                )
+	            )
+	        );
+	    }
+	});
+
+/***/ }),
+/* 347 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42455,13 +42677,13 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _PackageService = __webpack_require__(346);
+	var _PackageService = __webpack_require__(348);
 	
 	var packageService = _interopRequireWildcard(_PackageService);
 	
 	var _PageHeader = __webpack_require__(211);
 	
-	var _PackageList = __webpack_require__(347);
+	var _PackageList = __webpack_require__(349);
 	
 	var _PackageList2 = _interopRequireDefault(_PackageList);
 	
@@ -42472,24 +42694,21 @@
 	exports.default = _react2.default.createClass({
 	    displayName: 'PackageHome',
 	    getInitialState: function getInitialState() {
-	        return { view: "grid", sortOrder: "name", packages: [] };
+	        return { sortOrder: "name", packages: [] };
 	    },
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        packageService.findAll(this.state.sortOrder).then(function (packages) {
+	        packageService.requestAll(this.state.sortOrder).then(function (packages) {
 	            return _this.setState({ packages: packages });
 	        });
 	    },
 	    sortHandler: function sortHandler(sortOrder) {
 	        var _this2 = this;
 	
-	        packageService.findAll(sortOrder).then(function (packages) {
+	        packageService.requestAll(sortOrder).then(function (packages) {
 	            _this2.setState({ sortOrder: sortOrder, packages: packages });
 	        });
-	    },
-	    viewChangeHandler: function viewChangeHandler(value) {
-	        this.setState({ view: value });
 	    },
 	    render: function render() {
 	        return _react2.default.createElement(
@@ -42499,17 +42718,16 @@
 	                title: 'Packages',
 	                actions: [],
 	                itemCount: this.state.packages.length,
-	                viewOptions: [{ value: "table", label: "Table", icon: "table" }, { value: "tiles", label: "Tiles", icon: "location" }],
+	                viewOptions: [{ value: "table", label: "Table", icon: "table" }],
 	                sortOptions: [{ value: "name", label: "Name" }],
-	                onSort: this.sortHandler,
-	                onViewChange: this.viewChangeHandler }),
+	                onSort: this.sortHandler }),
 	            _react2.default.createElement(_PackageList2.default, { packages: this.state.packages, onSort: this.sortHandler })
 	        );
 	    }
 	});
 
 /***/ }),
-/* 346 */
+/* 348 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42517,7 +42735,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.findById = exports.findByLicense = exports.findAll = undefined;
+	exports.requestById = exports.findByLicense = exports.requestAll = undefined;
 	
 	var _h = __webpack_require__(209);
 	
@@ -42527,7 +42745,7 @@
 	
 	var url = "/packages";
 	
-	var findAll = exports.findAll = function findAll(sort) {
+	var requestAll = exports.requestAll = function requestAll(sort) {
 	  return h.get(url, { sort: sort });
 	};
 	
@@ -42535,12 +42753,12 @@
 	  return h.get(url, { license_id: license_id });
 	};
 	
-	var findById = exports.findById = function findById(id) {
+	var requestById = exports.requestById = function requestById(id) {
 	  return h.get(url + "/" + id);
 	};
 
 /***/ }),
-/* 347 */
+/* 349 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42578,7 +42796,7 @@
 	});
 
 /***/ }),
-/* 348 */
+/* 350 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42593,7 +42811,7 @@
 	
 	var _reactRouter = __webpack_require__(159);
 	
-	var _PackageService = __webpack_require__(346);
+	var _PackageService = __webpack_require__(348);
 	
 	var packageService = _interopRequireWildcard(_PackageService);
 	
@@ -42611,7 +42829,7 @@
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        packageService.findById(this.props.params.packageId).then(function (pkg) {
+	        packageService.requestById(this.props.params.packageId).then(function (pkg) {
 	            return _this.setState({ pkg: pkg });
 	        });
 	    },
@@ -42632,7 +42850,7 @@
 	});
 
 /***/ }),
-/* 349 */
+/* 351 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42645,11 +42863,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _PackageVersionCard = __webpack_require__(350);
+	var _PackageVersionCard = __webpack_require__(352);
 	
 	var _PackageVersionCard2 = _interopRequireDefault(_PackageVersionCard);
 	
-	var _PackageVersionService = __webpack_require__(351);
+	var _PackageVersionService = __webpack_require__(353);
 	
 	var packageVersionService = _interopRequireWildcard(_PackageVersionService);
 	
@@ -42695,7 +42913,7 @@
 	});
 
 /***/ }),
-/* 350 */
+/* 352 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42795,7 +43013,7 @@
 	});
 
 /***/ }),
-/* 351 */
+/* 353 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42803,7 +43021,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.findById = exports.findByPackage = exports.findAll = undefined;
+	exports.requestById = exports.findByDevOrgId = exports.findByPackage = exports.requestAll = undefined;
 	
 	var _h = __webpack_require__(209);
 	
@@ -42813,7 +43031,7 @@
 	
 	var url = "/packageversions";
 	
-	var findAll = exports.findAll = function findAll(sort) {
+	var requestAll = exports.requestAll = function requestAll(sort) {
 	  return h.get(url, { sort: sort });
 	};
 	
@@ -42821,12 +43039,16 @@
 	  return h.get(url, { packageId: packageId });
 	};
 	
-	var findById = exports.findById = function findById(id) {
+	var findByDevOrgId = exports.findByDevOrgId = function findByDevOrgId(orgId) {
+	  return h.get(url, { orgId: orgId });
+	};
+	
+	var requestById = exports.requestById = function requestById(id) {
 	  return h.get(url + "/" + id);
 	};
 
 /***/ }),
-/* 352 */
+/* 354 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42839,21 +43061,21 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _PackageOrgService = __webpack_require__(353);
+	var _PackageOrgService = __webpack_require__(355);
 	
 	var packageOrgService = _interopRequireWildcard(_PackageOrgService);
 	
 	var _PageHeader = __webpack_require__(211);
 	
-	var _PackageOrgList = __webpack_require__(354);
+	var _PackageOrgList = __webpack_require__(356);
 	
 	var _PackageOrgList2 = _interopRequireDefault(_PackageOrgList);
 	
-	var _AuthorizeWindow = __webpack_require__(355);
+	var _AuthorizeWindow = __webpack_require__(357);
 	
 	var _AuthorizeWindow2 = _interopRequireDefault(_AuthorizeWindow);
 	
-	var _AuthService = __webpack_require__(356);
+	var _AuthService = __webpack_require__(358);
 	
 	var authService = _interopRequireWildcard(_AuthService);
 	
@@ -42869,14 +43091,14 @@
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
 	
-	        packageOrgService.findAll().then(function (packageorgs) {
+	        packageOrgService.requestAll().then(function (packageorgs) {
 	            return _this.setState({ packageorgs: packageorgs });
 	        });
 	    },
 	    sortHandler: function sortHandler(sortOrder) {
 	        var _this2 = this;
 	
-	        packageOrgService.findAll(sortOrder).then(function (packageorgs) {
+	        packageOrgService.requestAll(sortOrder).then(function (packageorgs) {
 	            _this2.setState({ sortOrder: sortOrder, packageorgs: packageorgs });
 	        });
 	    },
@@ -42890,29 +43112,11 @@
 	    deleteHandler: function deleteHandler(data) {
 	        var _this4 = this;
 	
-	        packageOrgService.deleteItem(data.id).then(function () {
-	            packageOrgService.findAll(_this4.state.sort).then(function (packageorgs) {
+	        packageOrgService.requestDeleteById(data.id).then(function () {
+	            packageOrgService.requestAll(_this4.state.sort).then(function (packageorgs) {
 	                return _this4.setState({ packageorgs: packageorgs });
 	            });
 	        });
-	    },
-	    editHandler: function editHandler(data) {
-	        window.location.hash = "#packageorg/" + data.id + "/edit";
-	    },
-	    saveHandler: function saveHandler(packageorg) {
-	        var _this5 = this;
-	
-	        packageOrgService.createItem(packageorg).then(function () {
-	            packageOrgService.findAll().then(function (packageorgs) {
-	                return _this5.setState({ addingPackageOrg: false, packageorgs: packageorgs });
-	            });
-	        });
-	    },
-	    cancelHandler: function cancelHandler() {
-	        this.setState({ addingPackageOrg: false });
-	    },
-	    viewChangeHandler: function viewChangeHandler(value) {
-	        this.setState({ view: value });
 	    },
 	    render: function render() {
 	        return _react2.default.createElement(
@@ -42923,12 +43127,11 @@
 	                newLabel: 'Add Package Org',
 	                actions: [{ value: "new", label: "Add Package Org" }],
 	                itemCount: this.state.packageorgs.length,
-	                viewOptions: [{ value: "table", label: "Table", icon: "table" }, { value: "tiles", label: "Tiles", icon: "location" }],
+	                viewOptions: [{ value: "table", label: "Table", icon: "table" }],
 	                sortOptions: [{ value: "name", label: "Name" }, { value: "namespace", label: "Namespace" }],
 	                onNew: this.newHandler,
-	                onSort: this.sortHandler,
-	                onViewChange: this.viewChangeHandler }),
-	            _react2.default.createElement(_PackageOrgList2.default, { packageorgs: this.state.packageorgs, onSort: this.sortHandler, onDelete: this.deleteHandler, onEdit: this.editHandler }),
+	                onSort: this.sortHandler }),
+	            _react2.default.createElement(_PackageOrgList2.default, { packageorgs: this.state.packageorgs, onSort: this.sortHandler, onDelete: this.deleteHandler }),
 	            this.state.addingPackageOrg && _react2.default.createElement(
 	                _AuthorizeWindow2.default,
 	                { url: this.state.url },
@@ -42943,7 +43146,7 @@
 	});
 
 /***/ }),
-/* 353 */
+/* 355 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42951,7 +43154,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.deleteItem = exports.createItem = exports.updateItem = exports.findByNamespace = exports.findById = exports.findAll = undefined;
+	exports.requestDeleteById = exports.requestByNamespace = exports.requestById = exports.requestAll = undefined;
 	
 	var _h = __webpack_require__(209);
 	
@@ -42961,32 +43164,24 @@
 	
 	var url = "/packageorgs";
 	
-	var findAll = exports.findAll = function findAll(sort) {
+	var requestAll = exports.requestAll = function requestAll(sort) {
 	  return h.get(url, { sort: sort });
 	};
 	
-	var findById = exports.findById = function findById(id) {
+	var requestById = exports.requestById = function requestById(id) {
 	  return h.get(url + "/" + id);
 	};
 	
-	var findByNamespace = exports.findByNamespace = function findByNamespace(namespace) {
+	var requestByNamespace = exports.requestByNamespace = function requestByNamespace(namespace) {
 	  return h.get(url, { namespace: namespace });
 	};
 	
-	var updateItem = exports.updateItem = function updateItem(packageOrg) {
-	  return h.put(url, packageOrg);
-	};
-	
-	var createItem = exports.createItem = function createItem(packageOrg) {
-	  return h.post(url, packageOrg);
-	};
-	
-	var deleteItem = exports.deleteItem = function deleteItem(id) {
+	var requestDeleteById = exports.requestDeleteById = function requestDeleteById(id) {
 	  return h.del(url + "/" + id);
 	};
 
 /***/ }),
-/* 354 */
+/* 356 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43013,8 +43208,6 @@
 	    actionHandler: function actionHandler(data, value, label) {
 	        if (label === "Delete") {
 	            this.props.onDelete(data);
-	        } else if (label === "Edit") {
-	            this.props.onEdit(data);
 	        }
 	    },
 	    render: function render() {
@@ -43024,15 +43217,14 @@
 	            _react2.default.createElement('div', { header: 'Name', field: 'name', sortable: 'true', onLink: this.linkHandler }),
 	            _react2.default.createElement('div', { header: 'Namespace', field: 'namespace', sortable: 'true', onLink: this.linkHandler }),
 	            _react2.default.createElement('div', { header: 'Org ID', field: 'org_id' }),
-	            _react2.default.createElement('div', { header: 'Username', field: 'username' }),
-	            _react2.default.createElement('div', { header: 'Instance URL', field: 'instance_url' }),
-	            _react2.default.createElement('div', { header: 'Status', field: 'status' })
+	            _react2.default.createElement('div', { header: 'Instance Name', field: 'instance_name' }),
+	            _react2.default.createElement('div', { header: 'Instance URL', field: 'instance_url' })
 	        );
 	    }
 	});
 
 /***/ }),
-/* 355 */
+/* 357 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43098,7 +43290,7 @@
 	exports.default = PortalWindow;
 
 /***/ }),
-/* 356 */
+/* 358 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43133,7 +43325,7 @@
 	};
 
 /***/ }),
-/* 357 */
+/* 359 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43148,7 +43340,7 @@
 	
 	var _reactRouter = __webpack_require__(159);
 	
-	var _PackageOrgService = __webpack_require__(353);
+	var _PackageOrgService = __webpack_require__(355);
 	
 	var packageOrgService = _interopRequireWildcard(_PackageOrgService);
 	
@@ -43167,421 +43359,32 @@
 	        var _this = this;
 	
 	        var packageorgId = this.props.params.packageorgId;
-	        packageOrgService.findById(packageorgId).then(function (packageorg) {
+	        packageOrgService.requestById(packageorgId).then(function (packageorg) {
 	            return _this.setState({ packageorg: packageorg });
 	        });
 	    },
-	    saveHandler: function saveHandler(packageorg) {
-	        packageOrgService.updateItem(packageorg);
-	    },
-	    editHandler: function editHandler() {
-	        window.location.hash = '#packageorg/' + this.state.packageorg.id + '/edit';
-	    },
 	    deleteHandler: function deleteHandler() {
-	        packageOrgService.deleteItem(this.state.packageorg.id).then(function () {
+	        packageOrgService.requestDeleteById(this.state.packageorg.id).then(function () {
 	            window.location.hash = '#packageorgs';
 	        });
 	    },
-	    cloneHandler: function cloneHandler() {},
 	    render: function render() {
 	        return _react2.default.createElement(
 	            'div',
 	            null,
 	            _react2.default.createElement(
 	                _PageHeader.RecordHeader,
-	                { type: 'Package Org', icon: 'people', title: this.state.packageorg.name,
-	                    onEdit: this.editHandler,
-	                    onDelete: this.deleteHandler },
-	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Namespace', value: this.state.packageorg.namespace }),
-	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Status', value: this.state.packageorg.status })
+	                { type: 'Package Org', icon: 'people', title: this.state.packageorg.name, onDelete: this.deleteHandler },
+	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Org ID', value: this.state.packageorg.org_id }),
+	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Namespace', value: this.state.packageorg.namespace })
 	            ),
-	            _react2.default.cloneElement(this.props.children, { packageorg: this.state.packageorg, saveHandler: this.saveHandler })
+	            _react2.default.cloneElement(this.props.children, { packageorg: this.state.packageorg })
 	        );
 	    }
 	});
-
-/***/ }),
-/* 358 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-	
-	var _react = __webpack_require__(1);
-	
-	var _react2 = _interopRequireDefault(_react);
-	
-	var _reactAddonsLinkedStateMixin = __webpack_require__(359);
-	
-	var _reactAddonsLinkedStateMixin2 = _interopRequireDefault(_reactAddonsLinkedStateMixin);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	exports.default = _react2.default.createClass({
-	    displayName: 'PackageOrgForm',
-	
-	
-	    mixins: [_reactAddonsLinkedStateMixin2.default],
-	
-	    getInitialState: function getInitialState() {
-	        var packageorg = this.props.packageorg;
-	        return _extends({}, packageorg);
-	    },
-	    componentWillReceiveProps: function componentWillReceiveProps(props) {
-	        var packageorg = props.packageorg;
-	        this.setState(_extends({}, packageorg));
-	    },
-	    save: function save() {
-	        this.props.saveHandler(this.state);
-	    },
-	    render: function render() {
-	        return _react2.default.createElement(
-	            'div',
-	            { className: 'slds-form--stacked slds-grid slds-wrap slds-m-top--large' },
-	            _react2.default.createElement(
-	                'div',
-	                { className: 'slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2' },
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'slds-form-element' },
-	                    _react2.default.createElement(
-	                        'label',
-	                        { className: 'slds-form-element__label', htmlFor: 'name' },
-	                        'Name'
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-form-element__control' },
-	                        _react2.default.createElement('input', { className: 'slds-input', type: 'text', valueLink: this.linkState('name') })
-	                    )
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'slds-form--stacked' },
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-form-element' },
-	                        _react2.default.createElement(
-	                            'label',
-	                            { className: 'slds-form-element__label', htmlFor: 'name' },
-	                            'Name'
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { className: 'slds-form-element__control' },
-	                            _react2.default.createElement('input', { className: 'slds-input', type: 'text', valueLink: this.linkState('name') })
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-form-element' },
-	                        _react2.default.createElement(
-	                            'label',
-	                            { className: 'slds-form-element__label', htmlFor: 'username' },
-	                            'Username'
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { className: 'slds-form-element__control' },
-	                            _react2.default.createElement('input', { className: 'slds-input', type: 'text', valueLink: this.linkState('username') })
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-form-element' },
-	                        _react2.default.createElement(
-	                            'label',
-	                            { className: 'slds-form-element__label', htmlFor: 'org_id' },
-	                            'Org ID'
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { className: 'slds-form-element__control' },
-	                            _react2.default.createElement('input', { className: 'slds-input', type: 'text', valueLink: this.linkState('org_id') })
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-form-element' },
-	                        _react2.default.createElement(
-	                            'label',
-	                            { className: 'slds-form-element__label', htmlFor: 'namespace' },
-	                            'Namespace'
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { className: 'slds-form-element__control' },
-	                            _react2.default.createElement('input', { className: 'slds-input', type: 'text', valueLink: this.linkState('namespace') })
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-form-element' },
-	                        _react2.default.createElement(
-	                            'label',
-	                            { className: 'slds-form-element__label', htmlFor: 'instance_url' },
-	                            'Instance URL'
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { className: 'slds-form-element__control' },
-	                            _react2.default.createElement('input', { className: 'slds-input', type: 'text', valueLink: this.linkState('instance_url') })
-	                        )
-	                    )
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'slds-col--padded slds-m-top--medium slds-size--1-of-1' },
-	                    _react2.default.createElement(
-	                        'button',
-	                        { className: 'slds-button slds-button--brand', onClick: this.save },
-	                        'Save'
-	                    )
-	                )
-	            )
-	        );
-	    }
-	});
-
-/***/ }),
-/* 359 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	module.exports = __webpack_require__(360);
 
 /***/ }),
 /* 360 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	/**
-	 * Copyright 2013-2015, Facebook, Inc.
-	 * All rights reserved.
-	 *
-	 * This source code is licensed under the BSD-style license found in the
-	 * LICENSE file in the root directory of this source tree. An additional grant
-	 * of patent rights can be found in the PATENTS file in the same directory.
-	 *
-	 * @providesModule LinkedStateMixin
-	 * @typechecks static-only
-	 */
-	
-	'use strict';
-	
-	var ReactLink = __webpack_require__(361);
-	var ReactStateSetters = __webpack_require__(362);
-	
-	/**
-	 * A simple mixin around ReactLink.forState().
-	 */
-	var LinkedStateMixin = {
-	  /**
-	   * Create a ReactLink that's linked to part of this component's state. The
-	   * ReactLink will have the current value of this.state[key] and will call
-	   * setState() when a change is requested.
-	   *
-	   * @param {string} key state key to update. Note: you may want to use keyOf()
-	   * if you're using Google Closure Compiler advanced mode.
-	   * @return {ReactLink} ReactLink instance linking to the state.
-	   */
-	  linkState: function linkState(key) {
-	    return new ReactLink(this.state[key], ReactStateSetters.createStateKeySetter(this, key));
-	  }
-	};
-	
-	module.exports = LinkedStateMixin;
-
-/***/ }),
-/* 361 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	/**
-	 * Copyright 2013-2015, Facebook, Inc.
-	 * All rights reserved.
-	 *
-	 * This source code is licensed under the BSD-style license found in the
-	 * LICENSE file in the root directory of this source tree. An additional grant
-	 * of patent rights can be found in the PATENTS file in the same directory.
-	 *
-	 * @providesModule ReactLink
-	 * @typechecks static-only
-	 */
-	
-	'use strict';
-	
-	/**
-	 * ReactLink encapsulates a common pattern in which a component wants to modify
-	 * a prop received from its parent. ReactLink allows the parent to pass down a
-	 * value coupled with a callback that, when invoked, expresses an intent to
-	 * modify that value. For example:
-	 *
-	 * React.createClass({
-	 *   getInitialState: function() {
-	 *     return {value: ''};
-	 *   },
-	 *   render: function() {
-	 *     var valueLink = new ReactLink(this.state.value, this._handleValueChange);
-	 *     return <input valueLink={valueLink} />;
-	 *   },
-	 *   _handleValueChange: function(newValue) {
-	 *     this.setState({value: newValue});
-	 *   }
-	 * });
-	 *
-	 * We have provided some sugary mixins to make the creation and
-	 * consumption of ReactLink easier; see LinkedValueUtils and LinkedStateMixin.
-	 */
-	
-	var React = __webpack_require__(2);
-	
-	/**
-	 * @param {*} value current value of the link
-	 * @param {function} requestChange callback to request a change
-	 */
-	function ReactLink(value, requestChange) {
-	  this.value = value;
-	  this.requestChange = requestChange;
-	}
-	
-	/**
-	 * Creates a PropType that enforces the ReactLink API and optionally checks the
-	 * type of the value being passed inside the link. Example:
-	 *
-	 * MyComponent.propTypes = {
-	 *   tabIndexLink: ReactLink.PropTypes.link(React.PropTypes.number)
-	 * }
-	 */
-	function createLinkTypeChecker(linkType) {
-	  var shapes = {
-	    value: typeof linkType === 'undefined' ? React.PropTypes.any.isRequired : linkType.isRequired,
-	    requestChange: React.PropTypes.func.isRequired
-	  };
-	  return React.PropTypes.shape(shapes);
-	}
-	
-	ReactLink.PropTypes = {
-	  link: createLinkTypeChecker
-	};
-	
-	module.exports = ReactLink;
-
-/***/ }),
-/* 362 */
-/***/ (function(module, exports) {
-
-	/**
-	 * Copyright 2013-2015, Facebook, Inc.
-	 * All rights reserved.
-	 *
-	 * This source code is licensed under the BSD-style license found in the
-	 * LICENSE file in the root directory of this source tree. An additional grant
-	 * of patent rights can be found in the PATENTS file in the same directory.
-	 *
-	 * @providesModule ReactStateSetters
-	 */
-	
-	'use strict';
-	
-	var ReactStateSetters = {
-	  /**
-	   * Returns a function that calls the provided function, and uses the result
-	   * of that to set the component's state.
-	   *
-	   * @param {ReactCompositeComponent} component
-	   * @param {function} funcReturningState Returned callback uses this to
-	   *                                      determine how to update state.
-	   * @return {function} callback that when invoked uses funcReturningState to
-	   *                    determined the object literal to setState.
-	   */
-	  createStateSetter: function createStateSetter(component, funcReturningState) {
-	    return function (a, b, c, d, e, f) {
-	      var partialState = funcReturningState.call(component, a, b, c, d, e, f);
-	      if (partialState) {
-	        component.setState(partialState);
-	      }
-	    };
-	  },
-	
-	  /**
-	   * Returns a single-argument callback that can be used to update a single
-	   * key in the component's state.
-	   *
-	   * Note: this is memoized function, which makes it inexpensive to call.
-	   *
-	   * @param {ReactCompositeComponent} component
-	   * @param {string} key The key in the state that you should update.
-	   * @return {function} callback of 1 argument which calls setState() with
-	   *                    the provided keyName and callback argument.
-	   */
-	  createStateKeySetter: function createStateKeySetter(component, key) {
-	    // Memoize the setters.
-	    var cache = component.__keySetters || (component.__keySetters = {});
-	    return cache[key] || (cache[key] = _createStateKeySetter(component, key));
-	  }
-	};
-	
-	function _createStateKeySetter(component, key) {
-	  // Partial state is allocated outside of the function closure so it can be
-	  // reused with every call, avoiding memory allocation when this function
-	  // is called.
-	  var partialState = {};
-	  return function stateKeySetter(value) {
-	    partialState[key] = value;
-	    component.setState(partialState);
-	  };
-	}
-	
-	ReactStateSetters.Mixin = {
-	  /**
-	   * Returns a function that calls the provided function, and uses the result
-	   * of that to set the component's state.
-	   *
-	   * For example, these statements are equivalent:
-	   *
-	   *   this.setState({x: 1});
-	   *   this.createStateSetter(function(xValue) {
-	   *     return {x: xValue};
-	   *   })(1);
-	   *
-	   * @param {function} funcReturningState Returned callback uses this to
-	   *                                      determine how to update state.
-	   * @return {function} callback that when invoked uses funcReturningState to
-	   *                    determined the object literal to setState.
-	   */
-	  createStateSetter: function createStateSetter(funcReturningState) {
-	    return ReactStateSetters.createStateSetter(this, funcReturningState);
-	  },
-	
-	  /**
-	   * Returns a single-argument callback that can be used to update a single
-	   * key in the component's state.
-	   *
-	   * For example, these statements are equivalent:
-	   *
-	   *   this.setState({x: 1});
-	   *   this.createStateKeySetter('x')(1);
-	   *
-	   * Note: this is memoized function, which makes it inexpensive to call.
-	   *
-	   * @param {string} key The key in the state that you should update.
-	   * @return {function} callback of 1 argument which calls setState() with
-	   *                    the provided keyName and callback argument.
-	   */
-	  createStateKeySetter: function createStateKeySetter(key) {
-	    return ReactStateSetters.createStateKeySetter(this, key);
-	  }
-	};
-	
-	module.exports = ReactStateSetters;
-
-/***/ }),
-/* 363 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43598,7 +43401,7 @@
 	
 	var _moment2 = _interopRequireDefault(_moment);
 	
-	var _PackageVersionService = __webpack_require__(351);
+	var _PackageVersionService = __webpack_require__(353);
 	
 	var packageVersionService = _interopRequireWildcard(_PackageVersionService);
 	
@@ -43606,7 +43409,7 @@
 	
 	var _Tabs2 = _interopRequireDefault(_Tabs);
 	
-	var _PackageVersionCard = __webpack_require__(350);
+	var _PackageVersionCard = __webpack_require__(352);
 	
 	var _PackageVersionCard2 = _interopRequireDefault(_PackageVersionCard);
 	
@@ -43618,6 +43421,13 @@
 	    displayName: 'PackageOrgView',
 	    getInitialState: function getInitialState() {
 	        return { properties: [] };
+	    },
+	    handleAccessToken: function handleAccessToken(event) {
+	        if (event.target.value === this.props.packageorg.access_token) {
+	            event.target.value = 'Double-click to reveal';
+	        } else {
+	            event.target.value = this.props.packageorg.access_token;
+	        }
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(props) {
 	        var _this = this;
@@ -43639,33 +43449,7 @@
 	                    { className: 'slds-grid slds-wrap slds-m-top--large' },
 	                    _react2.default.createElement(
 	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-3 slds-m-top--medium' },
-	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
-	                            _react2.default.createElement(
-	                                'dt',
-	                                null,
-	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Org ID' },
-	                                    'Org ID'
-	                                )
-	                            ),
-	                            _react2.default.createElement(
-	                                'dd',
-	                                null,
-	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
-	                                    this.props.packageorg.org_id
-	                                )
-	                            )
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-3 slds-m-top--medium' },
+	                        { className: 'slds-col--padded slds-size--1-of-2 slds-m-top--medium' },
 	                        _react2.default.createElement(
 	                            'dl',
 	                            { className: 'page-header--rec-home__detail-item' },
@@ -43675,7 +43459,7 @@
 	                                _react2.default.createElement(
 	                                    'p',
 	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Username' },
-	                                    'Username'
+	                                    'Instance Name'
 	                                )
 	                            ),
 	                            _react2.default.createElement(
@@ -43684,14 +43468,14 @@
 	                                _react2.default.createElement(
 	                                    'p',
 	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
-	                                    this.props.packageorg.username
+	                                    this.props.packageorg.instance_name
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
 	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-3 slds-m-top--medium' },
+	                        { className: 'slds-col--padded slds-size--1-of-2 slds-m-top--medium' },
 	                        _react2.default.createElement(
 	                            'dl',
 	                            { className: 'page-header--rec-home__detail-item' },
@@ -43711,6 +43495,32 @@
 	                                    'p',
 	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
 	                                    this.props.packageorg.instance_url
+	                                )
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'slds-col--padded slds-size--1-of-1 slds-m-top--medium' },
+	                        _react2.default.createElement(
+	                            'dl',
+	                            { className: 'page-header--rec-home__detail-item' },
+	                            _react2.default.createElement(
+	                                'dt',
+	                                null,
+	                                _react2.default.createElement(
+	                                    'p',
+	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Username' },
+	                                    'Access Token'
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                'dd',
+	                                null,
+	                                _react2.default.createElement(
+	                                    'p',
+	                                    null,
+	                                    _react2.default.createElement('input', { className: 'slds-input', type: 'text', disabled: 'true', value: 'Double-click to reveal', onDoubleClick: this.handleAccessToken })
 	                                )
 	                            )
 	                        )

@@ -77,14 +77,23 @@ export default React.createClass({
                                 </dd>
                             </dl>
                         </div>
-
                         <div className="slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium">
                             <dl className="page-header--rec-home__detail-item">
                                 <dt>
-                                    <p className="slds-text-heading--label slds-truncate" title="Name of the installed package version">Package Version</p>
+                                    <p className="slds-text-heading--label slds-truncate" title="Name of the installed package version">Version Name</p>
                                 </dt>
                                 <dd>
-                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.license.package_version_name}</p>
+                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.license.version_name}</p>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div className="slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium">
+                            <dl className="page-header--rec-home__detail-item">
+                                <dt>
+                                    <p className="slds-text-heading--label slds-truncate" title="Name of the installed package version">Version Number</p>
+                                </dt>
+                                <dd>
+                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.license.version_number}</p>
                                 </dd>
                             </dl>
                         </div>

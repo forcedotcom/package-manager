@@ -5,7 +5,7 @@ const SELECT_ALL = "SELECT DISTINCT l.sflma__subscriber_org_id__c AS id" +
     " FROM sflma__license__c l" +
     " INNER JOIN account AS a ON l.sflma__account__c = a.sfid";
 
-async function findAll(req, res, next) {
+async function requestAll(req, res, next) {
     let whereParts = ["l.sflma__org_instance__c IS NOT NULL"],
         values = [];
 
@@ -21,7 +21,7 @@ async function findAll(req, res, next) {
     }
 }
 
-function findById(req, res, next) {
+function requestById(req, res, next) {
     let id = req.params.id;
 
     let where = " WHERE l.sflma__subscriber_org_id__c = $1";
@@ -33,5 +33,12 @@ function findById(req, res, next) {
         .catch(next);
 }
 
-exports.findAll = findAll;
-exports.findById = findById;
+function requestUpgrade(req, res, next) {
+    let orgId = req.params.id;
+    let licenses = req.body.licenses;
+    console.error('Ummmm....upgrade this org with the latest versions of these packages');
+}
+
+exports.requestAll = requestAll;
+exports.requestById = requestById;
+exports.requestUpgrade = requestUpgrade;
