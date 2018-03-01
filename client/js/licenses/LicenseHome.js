@@ -2,7 +2,6 @@ import React from 'react';
 
 import * as licenseService from '../services/LicenseService';
 
-import GoogleMaps from '../components/GoogleMaps';
 import {HomeHeader} from '../components/PageHeader';
 
 import LicenseList from './LicenseList';
@@ -42,21 +41,6 @@ export default React.createClass({
     },
 
     render() {
-        let view;
-        if (this.state.view === "map") {
-            view = <GoogleMaps data={this.state.licenses}/>;
-        } else if (this.state.view === "split") {
-            view = <div className="slds-grid slds-wrap">
-                <div className="slds-col slds-size--1-of-1 slds-large-size--2-of-3">
-                    <LicenseList licenses={this.state.licenses} onSortChange={this.sortChangeHandler} onEdit={this.editHandler}/>
-                </div>
-                <div className="slds-col--padded slds-size--1-of-1 slds-large-size--1-of-3">
-                    <GoogleMaps data={this.state.licenses}/>
-                </div>
-            </div>;
-        } else {
-            view = <LicenseList licenses={this.state.licenses} onSort={this.sortHandler} onEdit={this.editHandler}/>;
-        }
         return (
             <div>
                 <HomeHeader type="licenses"
@@ -68,7 +52,7 @@ export default React.createClass({
                             onNew={this.newHandler}
                             onSort={this.sortHandler}
                             onViewChange={this.viewChangeHandler}/>
-                {view}
+                <LicenseList licenses={this.state.licenses} onSort={this.sortHandler} onEdit={this.editHandler}/>
             </div>
         );
     }

@@ -37,10 +37,6 @@ export let RecordHeader = React.createClass({
         }
     },
 
-    followHandler() {
-        alert("Not implemented in this demo app");
-    },
-
     render() {
         return (
             <div className="slds-page-header">
@@ -54,22 +50,6 @@ export let RecordHeader = React.createClass({
                                 <p className="slds-text-heading--label">{this.props.type}</p>
                                 <div className="slds-grid">
                                     <h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle" title={this.props.title}>{this.props.title}</h1>
-                                    <div className="slds-col slds-shrink-none">
-                                        <button className="slds-button slds-button--neutral slds-not-selected" aria-live="assertive" onClick={this.followHandler}>
-                                                <span className="slds-text-not-selected">
-                                                    <ButtonIcon name="add" stateful={true} position="left"/>
-                                                    Follow
-                                                </span>
-                                                <span className="slds-text-selected">
-                                                    <ButtonIcon name="check" stateful={true} position="left"/>
-                                                    Following
-                                                </span>
-                                                <span className="slds-text-selected-focus">
-                                                    <ButtonIcon name="close" stateful={true} position="left"/>
-                                                    Unfollow
-                                                </span>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -106,8 +86,8 @@ export let HomeHeader = React.createClass({
     },
 
     render() {
-        let viewItems = this.props.viewOptions.map(item => <DropdownItem value={item.value} label={item.label} icon={item.icon}/>);
-        let sortItems = this.props.sortOptions.map(item => <DropdownItem value={item.value} label={item.label}/>);
+        let viewItems = this.props.viewOptions.map(item => <DropdownItem key={item.label} value={item.value} label={item.label} icon={item.icon}/>);
+        let sortItems = this.props.sortOptions.map(item => <DropdownItem key={item.label} value={item.value} label={item.label}/>);
         return (
             <div className="slds-page-header">
                 <div className="slds-grid">
@@ -143,7 +123,7 @@ export let HomeHeader = React.createClass({
                         </div>
                     </div>
                 </div>
-                <p className="slds-text-body--small slds-m-top--x-small">{this.props.itemCount} {this.props.type.toLowerCase()} • Sorted by Address</p>
+                <p className="slds-text-body--small slds-m-top--x-small">{this.props.itemCount} {this.props.type.toLowerCase()}</p>
             </div>
         );
     }

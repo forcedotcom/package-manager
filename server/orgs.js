@@ -5,6 +5,9 @@ const SELECT_ALL = "SELECT DISTINCT l.sflma__subscriber_org_id__c AS id" +
     " FROM sflma__license__c l" +
     " INNER JOIN account AS a ON l.sflma__account__c = a.sfid";
 
+const SELECT_MEMBERS = SELECT_ALL +
+    " INNER JOIN org_group_member AS m ON l.sflma__subscriber_org_id__c = m.org_id";
+
 async function requestAll(req, res, next) {
     let whereParts = ["l.sflma__org_instance__c IS NOT NULL"],
         values = [];
@@ -39,6 +42,18 @@ function requestUpgrade(req, res, next) {
     console.error('Ummmm....upgrade this org with the latest versions of these packages');
 }
 
+function findByGroup(orgGroupId) {
+
+    let where = " WHERE m.org_group_id = $1";
+
+    db.query(SELECT_MEMBERS + where, [orgGroupId])
+        .then(function (property) {
+            return res.json(property[0]);
+        })
+        .catch(next);
+}
+
 exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.requestUpgrade = requestUpgrade;
+exports.findByGroup = findByGroup;

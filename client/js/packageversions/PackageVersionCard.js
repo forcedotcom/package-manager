@@ -9,10 +9,6 @@ export default React.createClass({
         return {packageVersions: []};
     },
 
-    actionHandler(data, value, label) {
-        alert("TBD");
-    },
-
     render() {
         return (
             <div className="slds-card">
@@ -36,7 +32,7 @@ export default React.createClass({
                 </header>
 
                 <section className="slds-card__body">
-                    <DataGrid data={this.props.packageVersions} onSort={this.props.onSort} onAction={this.actionHandler}>
+                    <DataGrid data={this.props.packageVersions} onSort={this.props.onSort}>
                         <div header="Name" field="name" sortable="true"/>
                         <div header="Version ID" field="version_id"/>
                         <div header="Version Number" sortable="true" field="version_number"/>

@@ -5,15 +5,13 @@ const express = require('express'),
     cookieSession = require('cookie-session'),
     compression = require('compression'),
     orgs = require('./server/orgs'),
+    orggroups = require('./server/orggroups'),
     packages = require('./server/packages'),
     packageorgs = require('./server/packageorgs'),
     packageversions = require('./server/packageversions'),
     licenses = require('./server/licenses'),
     auth = require('./server/auth'),
-    // sqlinit = require('./server/sqlinit'),
     app = express();
-
-
 
 app.set('port', process.env.PORT || 5000);
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -31,6 +29,13 @@ app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/orgs', orgs.requestAll);
 app.get('/orgs/:id', orgs.requestById);
 app.post('/orgs/:id/upgrade', orgs.requestUpgrade);
+
+app.get('/orggroups', orggroups.requestAll);
+app.get('/orggroups/:id', orggroups.requestById);
+app.get('/orggroups/:id/members', orggroups.requestMembers);
+app.post('/orggroups', orggroups.requestCreate);
+app.put('/orggroups', orggroups.requestUpdate);
+app.delete('/orggroups/:id', orggroups.requestDelete);
 
 app.get('/licenses', licenses.requestAll);
 app.get('/licenses/:id', licenses.requestById);

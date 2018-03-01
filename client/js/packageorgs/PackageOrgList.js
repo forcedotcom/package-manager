@@ -16,7 +16,7 @@ export default React.createClass({
 
     render() {
         return (
-            <DataGrid data={this.props.packageorgs} onSort={this.props.onSort} onAction={this.actionHandler}>
+            <DataGrid data={this.props.packageorgs} onSort={this.props.onSort} actions={['Delete']} onAction={this.actionHandler}>
                 <div header="Name" field="name" sortable="true" onLink={this.linkHandler}/>
                 <div header="Namespace" field="namespace" sortable="true" onLink={this.linkHandler}/>
                 <div header="Org ID" field="org_id"/>

@@ -75,23 +75,23 @@ let Row = React.createClass({
         for (let i=0; i<this.props.columns.length; i++) {
             let column = this.props.columns[i];
             if (column.props && column.props.field) {
-                columns.push(<Column label={column.props.header} data={this.props.data} field={column.props.field}
+                columns.push(<Column key={column.props.field} label={column.props.header} data={this.props.data} field={column.props.field}
                                      textAlign={column.props.textAlign} format={column.props.format}
                                      onLink={column.props.onLink}/>);
             }
         }
-
-        columns.push(
-            <td style={{width:"50px"}}>
-                <ActionButton onChange={this.actionHandler}>
-                    <DropdownItem label="Edit"/>
-                    <DropdownItem label="Delete"/>
-                </ActionButton>
-            </td>
-        );
+        let actionColumn = [];
+        if (this.props.actions) {
+            let items = [];
+            for (let i = 0; i < this.props.actions.length; i++) {
+                items.push(<DropdownItem key={this.props.actions[i]} label={this.props.actions[i]}/>);
+            }
+            actionColumn = <ActionButton onChange={this.actionHandler}>{items}</ActionButton>;
+        }
+        columns.push(<td key="_actions" style={{width: "50px"}}>{actionColumn}</td>);
 
         return (
-            <tr className="slds-hint-parent">
+            <tr key={this.props.key} className="slds-hint-parent">
                 {columns}
             </tr>
         );
@@ -112,19 +112,19 @@ export default React.createClass({
         for (let i=0; i<this.props.children.length; i++) {
             let column = this.props.children[i];
             if (column.props && column.props.field) {
-                headers.push(<ColumnHeader field={column.props.field} label={column.props.header}
+                headers.push(<ColumnHeader key={column.props.field} field={column.props.field} label={column.props.header}
                                            sortable={column.props.sortable} textAlign={column.props.textAlign}
                                            onSort={this.sortHandler}/>);
             }
         }
         let rows;
         if (this.props.data) {
-            rows = this.props.data.map(item => <Row data={item} columns={this.props.children} onAction={this.props.onAction}/>);
+            rows = this.props.data.map((item, index) => <Row key={index} data={item} columns={this.props.children} actions={this.props.actions} onAction={this.props.onAction}/>);
         }
         return (
-            <table className="slds-table slds-table--bordered slds-max-medium-table--stacked-horizontal slds-no-row-hover">
+            <table className="slds-table slds-table--bordered slds-table_cell-buffer">
                 <thead>
-                <tr className="slds-text-heading--label">
+                <tr key="-1" className="slds-text-title_caps">
                     {headers}
                     <th></th>
                 </tr>

@@ -21,6 +21,11 @@ import PackageOrgHome from './packageorgs/PackageOrgHome';
 import PackageOrgRecord from './packageorgs/PackageOrgRecord';
 import PackageOrgView from './packageorgs/PackageOrgView';
 
+import OrgGroupRecord from "./orggroups/OrgGroupRecord";
+import OrgGroupHome from "./orggroups/OrgGroupHome";
+import OrgGroupView from "./orggroups/OrgGroupView";
+import OrgGroupForm from "./orggroups/OrgGroupForm";
+
 let App = React.createClass({
     render: function () {
         return (
@@ -28,6 +33,7 @@ let App = React.createClass({
                 <header className="menu">
                     <ul className="slds-list--horizontal">
                         <li className="slds-list__item"><IndexLink to="/"><Icon name="account" theme={null}/>Orgs</IndexLink></li>
+                        <li className="slds-list__item"><IndexLink to="/orggroups"><Icon name="groups" theme={null}/>Org Groups</IndexLink></li>
                         <li className="slds-list__item"><Link to="/licenses"><Icon name="drafts" theme={null}/>Licenses</Link></li>
                         <li className="slds-list__item"><Link to="/packages"><Icon name="thanks" theme={null}/>Packages</Link></li>
                         <li className="slds-list__item"><Link to="/packageorgs"><Icon name="people" theme={null}/>Package Orgs</Link></li>
@@ -49,6 +55,11 @@ render((
             <Route path="orgs" component={OrgHome}/>
             <Route path="org" component={OrgRecord}>
                 <Route path=":orgId" component={OrgView}/>
+            </Route>
+            <Route path="orggroups" component={OrgGroupHome}/>
+            <Route path="orggroup" component={OrgGroupRecord}>
+                <Route path=":orgGroupId" component={OrgGroupView}/>
+                <Route path=":orgGroupId/edit" component={OrgGroupForm}/>
             </Route>
             <Route path="packages" component={PackageHome}/>
             <Route path="package" component={PackageRecord}>

@@ -13,11 +13,13 @@
     "url": "git@git.soma.salesforce.com:Steelbrick/brick-manager.git"
   },
   "dependencies": {
+    "@salesforce-ux/design-system": "^2.5.2",
     "babel-plugin-transform-object-rest-spread": "^6.3.13",
     "body-parser": "^1.14.2",
     "compression": "^1.6.1",
     "cookie-session": "^2.0.0-beta.3",
     "express": "^4.13.4",
+    "immutable": "^4.0.0-rc.9",
     "jsforce": "^1.8.0",
     "method-override": "^2.3.5",
     "moment": "^2.11.2",
