@@ -40,8 +40,7 @@ async function requestAll(req, res, next) {
 
 async function requestById(req, res, next) {
     let id = req.params.id;
-    let where = " WHERE " + ((typeof id === "string") ? "pv.sfid = $1" : "pv.id = $1");
-
+    let where = " WHERE  pv.sfid = $1";
     try {
         let recs = await db.query(SELECT_ALL + where, [id])
         return res.json(recs[0]);

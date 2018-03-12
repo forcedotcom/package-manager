@@ -16,7 +16,7 @@ exports.query = function (sql, values, singleItem, dontLog) {
         console.log(sql, values);
     }
 
-    var deferred = Q.defer();
+    let deferred = Q.defer();
 
     pg.connect(databaseURL, function (err, conn, done) {
         if (err) return deferred.reject(err);

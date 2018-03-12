@@ -1,9 +1,5 @@
 import React from 'react';
 
-// import * as activityService from '../services/ActivityService';
-
-import Tabs from '../components/Tabs';
-
 export default React.createClass({
 
     getInitialState() {
@@ -11,11 +7,10 @@ export default React.createClass({
     },
 
     componentWillReceiveProps(props) {
-        // this.loadActivities(props.license.id);
     },
 
-    loadActivities(licenseId) {
-        // activityService.findByLicense(licenseId).then(activities => this.setState({activities}));
+    versionLinkHandler() {
+        window.location.hash = "#packageVersion/" + this.props.license.package_version_id;
     },
 
     render() {
@@ -29,9 +24,7 @@ export default React.createClass({
         return (
 
             <div className="slds-form--stacked slds-grid slds-wrap slds-m-top">
-
-                <div className="slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2">
-
+                <div className="slds-col--padded slds-size--1-of-1">
                     <div className="slds-grid slds-wrap slds-m-top--large">
 
                         <div className="slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium">
@@ -83,7 +76,7 @@ export default React.createClass({
                                     <p className="slds-text-heading--label slds-truncate" title="Name of the installed package version">Version Name</p>
                                 </dt>
                                 <dd>
-                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.license.version_name}</p>
+                                    <a className="slds-text-body--regular slds-truncate" href="#" onClick={this.versionLinkHandler} title="">{this.props.license.version_name}</a>
                                 </dd>
                             </dl>
                         </div>
@@ -93,7 +86,7 @@ export default React.createClass({
                                     <p className="slds-text-heading--label slds-truncate" title="Name of the installed package version">Version Number</p>
                                 </dt>
                                 <dd>
-                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.license.version_number}</p>
+                                    <a className="slds-text-body--regular slds-truncate" href="#" onClick={this.versionLinkHandler} title="">{this.props.license.version_number}</a>
                                 </dd>
                             </dl>
                         </div>
@@ -110,22 +103,6 @@ export default React.createClass({
                         </div>
 
                     </div>
-                </div>
-
-                <div className="slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2">
-                    <Tabs>
-                        <div label="Activities">
-                            {/*<ActivityTimeline propertyId={this.props.property.property_id} activities={this.state.activities} showContact={true} showProperty={false}/>*/}
-                        </div>
-                        <div label="Hmmm...">
-                        </div>
-                    </Tabs>
-                </div>
-
-                <div className="slds-col--padded slds-size--1-of-1">
-                    <br/>
-                    {/*<ActivityCard licenseId={this.props.license.id} activities={this.state.activities} showAccount={true} showLicense={false}/>*/}
-                    {/*<AccountCard licenseId={this.props.license.id}/>*/}
                 </div>
             </div>
         );

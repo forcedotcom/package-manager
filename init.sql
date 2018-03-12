@@ -1,47 +1,66 @@
-ALTER DATABASE postgres SET search_path TO public,steelbrick;
+alter database postgres set search_path to public,steelbrick;
 
-DROP TABLE IF EXISTS package_org;
-DROP TABLE IF EXISTS org_group;
-DROP TABLE IF EXISTS org_group_member;
-DROP TABLE IF EXISTS org_group_criteria;
+drop table if exists package_org;
+drop table if exists org;
+drop table if exists org_group;
+drop table if exists org_group_member;
+drop table if exists org_group_criteria;
 
-CREATE TABLE IF NOT EXISTS package_org (
-  id     SERIAL PRIMARY KEY,
-  org_id VARCHAR(18),
-  name VARCHAR(100),
-  namespace VARCHAR(16),
-  instance_name VARCHAR(8),
-  instance_url VARCHAR(100),
-  refresh_token VARCHAR(256),
-  access_token VARCHAR(256)
+create table package_org
+(
+  id serial not null,
+  org_id varchar(18) not null
+    constraint package_org_org_id_pk
+    primary key,
+  name varchar(100),
+  namespace varchar(16),
+  instance_name varchar(8),
+  instance_url varchar(100),
+  refresh_token varchar(256),
+  access_token varchar(256)
 );
 
-CREATE TABLE IF NOT EXISTS org_group (
-  id     SERIAL PRIMARY KEY,
-  name VARCHAR(100),
-  description TEXT
+create table org
+(
+  id serial not null,
+  org_id varchar(18) not null
+    constraint org_org_id_pk
+    primary key,
+  instance varchar(6),
+  type varchar(40),
+  status varchar(20),
+  account_name varchar(256),
+  account_id varchar(18),
+  aov_band varchar(40)
 );
 
-CREATE TABLE IF NOT EXISTS org_group_member (
-  id     SERIAL PRIMARY KEY,
+
+create table if not exists org_group (
+  id     serial primary key,
+  name varchar(100),
+  description text
+);
+
+create table if not exists org_group_member (
+  id     serial primary key,
   org_group_id integer,
-  org_id VARCHAR(18)
+  org_id varchar(18)
 );
 
-CREATE TABLE IF NOT EXISTS org_group_criteria (
-  id     SERIAL PRIMARY KEY,
+create table if not exists org_group_criteria (
+  id     serial primary key,
   org_group_id integer,
-  license_field_name VARCHAR(40),
-  license_field_operator VARCHAR(10),
-  license_field_value TEXT
+  license_field_name varchar(40),
+  license_field_operator varchar(10),
+  license_field_value text
 );
 
-INSERT INTO org_group (id, name, description) VALUES
+insert into org_group (id, name, description) values
   (1, 'Early Access', 'Preferential customers and orgs approved for early delivery of new package versions.'),
   (2, 'Bulk', 'Normal customers.'),
   (3, 'Sensitive', 'Preferential customers and orgs approved for late delivery of new package versions.');
 
-INSERT INTO org_group_member (org_group_id, org_id) VALUES
+insert into org_group_member (org_group_id, org_id) values
   (1, '00D7F000002DFUR'),
   (1, '00D0v0000000gE7'),
   (1, '00D3B000000Dc3g'),

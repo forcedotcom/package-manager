@@ -4,11 +4,11 @@ import DataGrid from '../components/DataGrid';
 export default React.createClass({
 
     linkHandler(license) {
-        window.location.hash = "#license/" + license.id;
+        window.location.hash = "#license/" + license.sfid;
     },
 
     accountLinkHandler(license) {
-        window.location.hash = "#account/" + license.account_id;
+        window.location.hash = "#org/" + license.org_id;
     },
 
     packageLinkHandler(license) {

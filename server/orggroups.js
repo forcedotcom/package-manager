@@ -12,7 +12,7 @@ async function requestAll(req, res, next) {
 
     try {
         let recs = await db.query(SELECT_ALL + where + sort, values);
-        return res.send(JSON.stringify(recs));
+        return res.json(recs);
     } catch (err) {
         next(err);
     }
@@ -30,16 +30,13 @@ async function requestById(req, res, next) {
 }
 
 async function requestMembers(req, res, next) {
-    let where = " WHERE id = $1";
-
     try {
-        let recs = await db.query(SELECT_ALL + where, [req.params.id])
-        return res.json(recs[0]);
+        let recs = await orgs.findByGroup(req.params.id);
+        return res.json(recs);
     } catch (err) {
         next(err);
     }
 }
-
 
 function requestCreate(req, res, next) {
     let og = req.body;

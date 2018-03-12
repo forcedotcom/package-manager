@@ -68,55 +68,55 @@
 	
 	var _LicenseView2 = _interopRequireDefault(_LicenseView);
 	
-	var _OrgHome = __webpack_require__(339);
+	var _OrgHome = __webpack_require__(338);
 	
 	var _OrgHome2 = _interopRequireDefault(_OrgHome);
 	
-	var _OrgRecord = __webpack_require__(342);
+	var _OrgRecord = __webpack_require__(341);
 	
 	var _OrgRecord2 = _interopRequireDefault(_OrgRecord);
 	
-	var _OrgView = __webpack_require__(344);
+	var _OrgView = __webpack_require__(343);
 	
 	var _OrgView2 = _interopRequireDefault(_OrgView);
 	
-	var _PackageHome = __webpack_require__(346);
+	var _PackageHome = __webpack_require__(345);
 	
 	var _PackageHome2 = _interopRequireDefault(_PackageHome);
 	
-	var _PackageRecord = __webpack_require__(349);
+	var _PackageRecord = __webpack_require__(348);
 	
 	var _PackageRecord2 = _interopRequireDefault(_PackageRecord);
 	
-	var _PackageView = __webpack_require__(350);
+	var _PackageView = __webpack_require__(349);
 	
 	var _PackageView2 = _interopRequireDefault(_PackageView);
 	
-	var _PackageOrgHome = __webpack_require__(353);
+	var _PackageOrgHome = __webpack_require__(354);
 	
 	var _PackageOrgHome2 = _interopRequireDefault(_PackageOrgHome);
 	
-	var _PackageOrgRecord = __webpack_require__(358);
+	var _PackageOrgRecord = __webpack_require__(359);
 	
 	var _PackageOrgRecord2 = _interopRequireDefault(_PackageOrgRecord);
 	
-	var _PackageOrgView = __webpack_require__(359);
+	var _PackageOrgView = __webpack_require__(360);
 	
 	var _PackageOrgView2 = _interopRequireDefault(_PackageOrgView);
 	
-	var _OrgGroupRecord = __webpack_require__(360);
+	var _OrgGroupRecord = __webpack_require__(361);
 	
 	var _OrgGroupRecord2 = _interopRequireDefault(_OrgGroupRecord);
 	
-	var _OrgGroupHome = __webpack_require__(362);
+	var _OrgGroupHome = __webpack_require__(363);
 	
 	var _OrgGroupHome2 = _interopRequireDefault(_OrgGroupHome);
 	
-	var _OrgGroupView = __webpack_require__(365);
+	var _OrgGroupView = __webpack_require__(366);
 	
 	var _OrgGroupView2 = _interopRequireDefault(_OrgGroupView);
 	
-	var _OrgGroupForm = __webpack_require__(366);
+	var _OrgGroupForm = __webpack_require__(367);
 	
 	var _OrgGroupForm2 = _interopRequireDefault(_OrgGroupForm);
 	
@@ -222,6 +222,11 @@
 	            _reactRouter.Route,
 	            { path: 'package', component: _PackageRecord2.default },
 	            _react2.default.createElement(_reactRouter.Route, { path: ':packageId', component: _PackageView2.default })
+	        ),
+	        _react2.default.createElement(
+	            _reactRouter.Route,
+	            { path: 'packageVersion', component: _PackageRecord2.default },
+	            _react2.default.createElement(_reactRouter.Route, { path: ':packageVersionId', component: _PackageView2.default })
 	        ),
 	        _react2.default.createElement(_reactRouter.Route, { path: 'packageorgs', component: _PackageOrgHome2.default }),
 	        _react2.default.createElement(
@@ -25283,10 +25288,10 @@
 	exports.default = _react2.default.createClass({
 	    displayName: 'LicenseList',
 	    linkHandler: function linkHandler(license) {
-	        window.location.hash = "#license/" + license.id;
+	        window.location.hash = "#license/" + license.sfid;
 	    },
 	    accountLinkHandler: function accountLinkHandler(license) {
-	        window.location.hash = "#account/" + license.account_id;
+	        window.location.hash = "#org/" + license.org_id;
 	    },
 	    packageLinkHandler: function packageLinkHandler(license) {
 	        window.location.hash = "#package/" + license.package_id;
@@ -41806,7 +41811,7 @@
 /* 337 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
@@ -41816,22 +41821,16 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _Tabs = __webpack_require__(338);
-	
-	var _Tabs2 = _interopRequireDefault(_Tabs);
-	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	exports.default = _react2.default.createClass({
-	    displayName: 'LicenseView',
+	    displayName: "LicenseView",
 	    getInitialState: function getInitialState() {
 	        return { activities: [] };
 	    },
-	    componentWillReceiveProps: function componentWillReceiveProps(props) {
-	        // this.loadActivities(props.license.id);
-	    },
-	    loadActivities: function loadActivities(licenseId) {
-	        // activityService.findByLicense(licenseId).then(activities => this.setState({activities}));
+	    componentWillReceiveProps: function componentWillReceiveProps(props) {},
+	    versionLinkHandler: function versionLinkHandler() {
+	        window.location.hash = "#packageVersion/" + this.props.license.package_version_id;
 	    },
 	    render: function render() {
 	
@@ -41842,218 +41841,201 @@
 	        };
 	
 	        return _react2.default.createElement(
-	            'div',
-	            { className: 'slds-form--stacked slds-grid slds-wrap slds-m-top' },
+	            "div",
+	            { className: "slds-form--stacked slds-grid slds-wrap slds-m-top" },
 	            _react2.default.createElement(
-	                'div',
-	                { className: 'slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2' },
+	                "div",
+	                { className: "slds-col--padded slds-size--1-of-1" },
 	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'slds-grid slds-wrap slds-m-top--large' },
+	                    "div",
+	                    { className: "slds-grid slds-wrap slds-m-top--large" },
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Name of account on license' },
-	                                    'Account'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Name of account on license" },
+	                                    "Account"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
 	                                    this.props.license.account_name
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Number of licenses currently in use' },
-	                                    'Used Licenses'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Number of licenses currently in use" },
+	                                    "Used Licenses"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
 	                                    this.props.license.used_license_count
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'ID of Salesforce Org' },
-	                                    'Org ID'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "ID of Salesforce Org" },
+	                                    "Org ID"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
 	                                    this.props.license.org_id
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Name of Salesforce instance' },
-	                                    'Instance'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Name of Salesforce instance" },
+	                                    "Instance"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
 	                                    this.props.license.instance
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Name of the installed package version' },
-	                                    'Version Name'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Name of the installed package version" },
+	                                    "Version Name"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "a",
+	                                    { className: "slds-text-body--regular slds-truncate", href: "#", onClick: this.versionLinkHandler, title: "" },
 	                                    this.props.license.version_name
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Name of the installed package version' },
-	                                    'Version Number'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Name of the installed package version" },
+	                                    "Version Number"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "a",
+	                                    { className: "slds-text-body--regular slds-truncate", href: "#", onClick: this.versionLinkHandler, title: "" },
 	                                    this.props.license.version_number
 	                                )
 	                            )
 	                        )
 	                    ),
 	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium' },
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
 	                        _react2.default.createElement(
-	                            'dl',
-	                            { className: 'page-header--rec-home__detail-item' },
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
 	                            _react2.default.createElement(
-	                                'dt',
+	                                "dt",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-heading--label slds-truncate', title: 'Expiration date of the license' },
-	                                    'Expiration'
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Expiration date of the license" },
+	                                    "Expiration"
 	                                )
 	                            ),
 	                            _react2.default.createElement(
-	                                'dd',
+	                                "dd",
 	                                null,
 	                                _react2.default.createElement(
-	                                    'p',
-	                                    { className: 'slds-text-body--regular slds-truncate', title: '' },
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
 	                                    this.props.license.expiration
 	                                )
 	                            )
 	                        )
 	                    )
 	                )
-	            ),
-	            _react2.default.createElement(
-	                'div',
-	                { className: 'slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2' },
-	                _react2.default.createElement(
-	                    _Tabs2.default,
-	                    null,
-	                    _react2.default.createElement('div', { label: 'Activities' }),
-	                    _react2.default.createElement('div', { label: 'Hmmm...' })
-	                )
-	            ),
-	            _react2.default.createElement(
-	                'div',
-	                { className: 'slds-col--padded slds-size--1-of-1' },
-	                _react2.default.createElement('br', null)
 	            )
 	        );
 	    }
 	});
-	
-	// import * as activityService from '../services/ActivityService';
 
 /***/ }),
 /* 338 */
@@ -42069,93 +42051,13 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var TabHeader = _react2.default.createClass({
-	    displayName: 'TabHeader',
-	    clickHandler: function clickHandler(event) {
-	        this.props.onClick(this.props.index);
-	        event.preventDefault();
-	    },
-	    render: function render() {
-	        return _react2.default.createElement(
-	            'li',
-	            { className: 'slds-tabs__item slds-text-heading--label ' + (this.props.active ? 'slds-active' : ''), title: 'Item One', role: 'presentation' },
-	            _react2.default.createElement(
-	                'a',
-	                { href: '#', role: 'tab', tabIndex: '0', 'aria-selected': 'true', onClick: this.clickHandler },
-	                this.props.label
-	            )
-	        );
-	    }
-	});
-	
-	var Tab = _react2.default.createClass({
-	    displayName: 'Tab',
-	    render: function render() {
-	        return _react2.default.createElement(
-	            'div',
-	            { className: 'slds-tabs__content' + (this.props.active ? ' slds-show' : ' slds-hide'), role: 'tabpanel' },
-	            this.props.children
-	        );
-	    }
-	});
-	
-	exports.default = _react2.default.createClass({
-	    displayName: 'Tabs',
-	    getInitialState: function getInitialState() {
-	        return { activeTabIndex: 0 };
-	    },
-	    clickHandler: function clickHandler(index) {
-	        this.setState({ activeTabIndex: index });
-	    },
-	    render: function render() {
-	        var tabHeaders = [];
-	        var tabs = [];
-	        for (var i = 0; i < this.props.children.length; i++) {
-	            var tab = this.props.children[i];
-	            tabHeaders.push(_react2.default.createElement(TabHeader, { label: tab.props.label, index: i, active: i === this.state.activeTabIndex, onClick: this.clickHandler }));
-	            tabs.push(_react2.default.createElement(
-	                Tab,
-	                { active: i === this.state.activeTabIndex },
-	                tab.props.children
-	            ));
-	        };
-	
-	        return _react2.default.createElement(
-	            'div',
-	            { className: 'slds-tabs--default', role: 'tablist' },
-	            _react2.default.createElement(
-	                'ul',
-	                { className: 'slds-tabs--default__nav', role: 'presentation' },
-	                tabHeaders
-	            ),
-	            tabs
-	        );
-	    }
-	});
-
-/***/ }),
-/* 339 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _react = __webpack_require__(1);
-	
-	var _react2 = _interopRequireDefault(_react);
-	
-	var _OrgService = __webpack_require__(340);
+	var _OrgService = __webpack_require__(339);
 	
 	var orgService = _interopRequireWildcard(_OrgService);
 	
 	var _PageHeader = __webpack_require__(210);
 	
-	var _OrgList = __webpack_require__(341);
+	var _OrgList = __webpack_require__(340);
 	
 	var _OrgList2 = _interopRequireDefault(_OrgList);
 	
@@ -42166,7 +42068,7 @@
 	exports.default = _react2.default.createClass({
 	    displayName: 'OrgHome',
 	    getInitialState: function getInitialState() {
-	        return { view: "grid", sortOrder: "account_name", orgs: [] };
+	        return { view: "grid", sortOrder: "id", orgs: [] };
 	    },
 	    componentDidMount: function componentDidMount() {
 	        var _this = this;
@@ -42195,7 +42097,7 @@
 	                actions: [],
 	                itemCount: this.state.orgs.length,
 	                viewOptions: [{ value: "table", label: "Table", icon: "table" }],
-	                sortOptions: [{ value: "account_name", label: "Account" }],
+	                sortOptions: [{ value: "id", label: "Org ID" }, { value: "account_name", label: "Account" }, { value: "instance", label: "Instance" }],
 	                onSort: this.sortHandler }),
 	            view
 	        );
@@ -42203,7 +42105,7 @@
 	});
 
 /***/ }),
-/* 340 */
+/* 339 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42211,7 +42113,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.requestUpgrade = exports.requestById = exports.requestAll = undefined;
+	exports.requestUpgrade = exports.requestById = exports.requestByPackageVersion = exports.requestByPackage = exports.requestAll = undefined;
 	
 	var _h = __webpack_require__(209);
 	
@@ -42225,6 +42127,14 @@
 	  return h.get(url, { sort: sort });
 	};
 	
+	var requestByPackage = exports.requestByPackage = function requestByPackage(packageId, sort) {
+	  return h.get(url, { packageId: packageId, sort: sort });
+	};
+	
+	var requestByPackageVersion = exports.requestByPackageVersion = function requestByPackageVersion(packageVersionId, sort) {
+	  return h.get(url, { packageVersionId: packageVersionId, sort: sort });
+	};
+	
 	var requestById = exports.requestById = function requestById(id) {
 	  return h.get(url + "/" + id);
 	};
@@ -42234,7 +42144,7 @@
 	};
 
 /***/ }),
-/* 341 */
+/* 340 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42256,24 +42166,24 @@
 	exports.default = _react2.default.createClass({
 	    displayName: 'OrgList',
 	    linkHandler: function linkHandler(org) {
-	        window.location.hash = "#org/" + org.id;
-	    },
-	    accountLinkHandler: function accountLinkHandler(org) {
-	        window.location.hash = "#account/" + org.account_id;
+	        window.location.hash = "#org/" + org.org_id;
 	    },
 	    render: function render() {
 	        return _react2.default.createElement(
 	            _DataGrid2.default,
 	            { data: this.props.orgs, keyField: 'id', onSort: this.props.onSort },
-	            _react2.default.createElement('div', { header: 'ID', field: 'id', onLink: this.linkHandler }),
-	            _react2.default.createElement('div', { header: 'Account', field: 'account_name', sortable: true, onLink: this.accountLinkHandler }),
-	            _react2.default.createElement('div', { header: 'Instance', field: 'instance', sortable: true })
+	            _react2.default.createElement('div', { header: 'Account', field: 'account_name', sortable: true, onLink: this.linkHandler }),
+	            _react2.default.createElement('div', { header: 'Org ID', field: 'org_id', sortable: true }),
+	            _react2.default.createElement('div', { header: 'Instance', field: 'instance', sortable: true }),
+	            _react2.default.createElement('div', { header: 'Type', field: 'type', sortable: true }),
+	            _react2.default.createElement('div', { header: 'Status', field: 'status', sortable: true }),
+	            _react2.default.createElement('div', { header: 'AOV Band', field: 'aov_band', sortable: true })
 	        );
 	    }
 	});
 
 /***/ }),
-/* 342 */
+/* 341 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42286,9 +42196,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactRouter = __webpack_require__(159);
-	
-	var _OrgService = __webpack_require__(340);
+	var _OrgService = __webpack_require__(339);
 	
 	var orgService = _interopRequireWildcard(_OrgService);
 	
@@ -42298,7 +42206,7 @@
 	
 	var _PageHeader = __webpack_require__(210);
 	
-	var _OrgRecordHeader = __webpack_require__(343);
+	var _OrgRecordHeader = __webpack_require__(342);
 	
 	var _OrgRecordHeader2 = _interopRequireDefault(_OrgRecordHeader);
 	
@@ -42333,7 +42241,7 @@
 	            _react2.default.createElement(
 	                _OrgRecordHeader2.default,
 	                { type: 'Org', icon: 'account', title: this.state.org.account_name, onUpgrade: this.handleUpgrade },
-	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Org ID', value: this.state.org.id }),
+	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Org ID', value: this.state.org.org_id }),
 	                _react2.default.createElement(_PageHeader.HeaderField, { label: 'Instance', value: this.state.org.instance })
 	            ),
 	            _react2.default.cloneElement(this.props.children, { org: this.state.org, licenses: this.state.licenses })
@@ -42342,7 +42250,7 @@
 	});
 
 /***/ }),
-/* 343 */
+/* 342 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42428,7 +42336,7 @@
 	});
 
 /***/ }),
-/* 344 */
+/* 343 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42445,7 +42353,7 @@
 	
 	var licenseService = _interopRequireWildcard(_LicenseService);
 	
-	var _LicenseCard = __webpack_require__(345);
+	var _LicenseCard = __webpack_require__(344);
 	
 	var _LicenseCard2 = _interopRequireDefault(_LicenseCard);
 	
@@ -42471,18 +42379,96 @@
 	                    { className: "slds-grid slds-wrap slds-m-top--large" },
 	                    _react2.default.createElement(
 	                        "div",
-	                        { className: "slds-col--padded slds-size--1-of-1" },
-	                        _react2.default.createElement("br", null),
-	                        _react2.default.createElement(_LicenseCard2.default, { licenses: this.props.licenses })
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
+	                        _react2.default.createElement(
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
+	                            _react2.default.createElement(
+	                                "dt",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Type of org" },
+	                                    "Type"
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                "dd",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
+	                                    this.props.org.type
+	                                )
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
+	                        _react2.default.createElement(
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
+	                            _react2.default.createElement(
+	                                "dt",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "Status of org" },
+	                                    "Status"
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                "dd",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
+	                                    this.props.org.status
+	                                )
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium" },
+	                        _react2.default.createElement(
+	                            "dl",
+	                            { className: "page-header--rec-home__detail-item" },
+	                            _react2.default.createElement(
+	                                "dt",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "p",
+	                                    { className: "slds-text-heading--label slds-truncate", title: "AOV range of account" },
+	                                    "AOV Band"
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                "dd",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "p",
+	                                    { className: "slds-text-body--regular slds-truncate", title: "" },
+	                                    this.props.org.aov_band
+	                                )
+	                            )
+	                        )
 	                    )
 	                )
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "slds-col--padded slds-size--1-of-1" },
+	                _react2.default.createElement("br", null),
+	                _react2.default.createElement(_LicenseCard2.default, { licenses: this.props.licenses })
 	            )
 	        );
 	    }
 	});
 
 /***/ }),
-/* 345 */
+/* 344 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42499,14 +42485,15 @@
 	
 	var _DataGrid2 = _interopRequireDefault(_DataGrid);
 	
-	var _Icons = __webpack_require__(206);
-	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	exports.default = _react2.default.createClass({
 	    displayName: "LicenseCard",
 	    getInitialState: function getInitialState() {
 	        return {};
+	    },
+	    linkHandler: function linkHandler(l) {
+	        window.location.hash = "#license/" + l.sfid;
 	    },
 	    render: function render() {
 	        return _react2.default.createElement(
@@ -42557,7 +42544,7 @@
 	                _react2.default.createElement(
 	                    _DataGrid2.default,
 	                    { data: this.props.licenses, onSort: this.props.onSort },
-	                    _react2.default.createElement("div", { header: "Name", field: "name", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Name", field: "name", sortable: true, onLink: this.linkHandler }),
 	                    _react2.default.createElement("div", { header: "Package", field: "package_name", sortable: true }),
 	                    _react2.default.createElement("div", { header: "Version Name", field: "version_name", sortable: true }),
 	                    _react2.default.createElement("div", { header: "Version Number", field: "version_number", sortable: true }),
@@ -42571,7 +42558,7 @@
 	});
 
 /***/ }),
-/* 346 */
+/* 345 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42584,13 +42571,13 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _PackageService = __webpack_require__(347);
+	var _PackageService = __webpack_require__(346);
 	
 	var packageService = _interopRequireWildcard(_PackageService);
 	
 	var _PageHeader = __webpack_require__(210);
 	
-	var _PackageList = __webpack_require__(348);
+	var _PackageList = __webpack_require__(347);
 	
 	var _PackageList2 = _interopRequireDefault(_PackageList);
 	
@@ -42634,7 +42621,7 @@
 	});
 
 /***/ }),
-/* 347 */
+/* 346 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42665,7 +42652,7 @@
 	};
 
 /***/ }),
-/* 348 */
+/* 347 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42702,7 +42689,7 @@
 	});
 
 /***/ }),
-/* 349 */
+/* 348 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42717,7 +42704,7 @@
 	
 	var _reactRouter = __webpack_require__(159);
 	
-	var _PackageService = __webpack_require__(347);
+	var _PackageService = __webpack_require__(346);
 	
 	var packageService = _interopRequireWildcard(_PackageService);
 	
@@ -42756,7 +42743,7 @@
 	});
 
 /***/ }),
-/* 350 */
+/* 349 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -42769,13 +42756,25 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _PackageVersionCard = __webpack_require__(351);
+	var _PackageVersionCard = __webpack_require__(350);
 	
 	var _PackageVersionCard2 = _interopRequireDefault(_PackageVersionCard);
 	
-	var _PackageVersionService = __webpack_require__(352);
+	var _PackageVersionService = __webpack_require__(351);
 	
 	var packageVersionService = _interopRequireWildcard(_PackageVersionService);
+	
+	var _OrgService = __webpack_require__(339);
+	
+	var orgService = _interopRequireWildcard(_OrgService);
+	
+	var _OrgCard = __webpack_require__(352);
+	
+	var _OrgCard2 = _interopRequireDefault(_OrgCard);
+	
+	var _Tabs = __webpack_require__(353);
+	
+	var _Tabs2 = _interopRequireDefault(_Tabs);
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
@@ -42787,13 +42786,16 @@
 	        return {};
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(props) {
-	        this.loadPackageVersions(props.pkg.sfid);
+	        this.loadCards(props.pkg.sfid);
 	    },
-	    loadPackageVersions: function loadPackageVersions(packageId) {
+	    loadCards: function loadCards(packageId) {
 	        var _this = this;
 	
 	        packageVersionService.findByPackage(packageId).then(function (packageVersions) {
 	            return _this.setState({ packageVersions: packageVersions });
+	        });
+	        orgService.requestByPackage(packageId).then(function (orgs) {
+	            return _this.setState({ orgs: orgs });
 	        });
 	    },
 	    render: function render() {
@@ -42801,17 +42803,17 @@
 	            'div',
 	            { className: 'slds-form--stacked slds-grid slds-wrap slds-m-top' },
 	            _react2.default.createElement(
-	                'div',
-	                { className: 'slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2' },
+	                _Tabs2.default,
+	                null,
 	                _react2.default.createElement(
 	                    'div',
-	                    { className: 'slds-grid slds-wrap slds-m-top--large' },
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'slds-col--padded slds-size--1-of-1' },
-	                        _react2.default.createElement('br', null),
-	                        _react2.default.createElement(_PackageVersionCard2.default, { packageVersions: this.state.packageVersions })
-	                    )
+	                    { label: 'Versions' },
+	                    _react2.default.createElement(_PackageVersionCard2.default, { packageVersions: this.state.packageVersions })
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { label: 'Customers' },
+	                    _react2.default.createElement(_OrgCard2.default, { title: 'Customers', orgs: this.state.orgs })
 	                )
 	            )
 	        );
@@ -42819,7 +42821,7 @@
 	});
 
 /***/ }),
-/* 351 */
+/* 350 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42844,6 +42846,9 @@
 	    displayName: "PackageVersionCard",
 	    getInitialState: function getInitialState() {
 	        return { packageVersions: [] };
+	    },
+	    linkHandler: function linkHandler(packageVersion) {
+	        window.location.hash = "#packageVersion/" + packageVersion.sfid;
 	    },
 	    render: function render() {
 	        return _react2.default.createElement(
@@ -42895,8 +42900,8 @@
 	                _react2.default.createElement(
 	                    _DataGrid2.default,
 	                    { data: this.props.packageVersions, onSort: this.props.onSort },
-	                    _react2.default.createElement("div", { header: "Name", field: "name", sortable: "true" }),
-	                    _react2.default.createElement("div", { header: "Version ID", field: "version_id" }),
+	                    _react2.default.createElement("div", { header: "Version ID", field: "version_id", onLink: this.linkHandler }),
+	                    _react2.default.createElement("div", { header: "Package", field: "pcakage_name", sortable: "true" }),
 	                    _react2.default.createElement("div", { header: "Version Number", sortable: "true", field: "version_number" }),
 	                    _react2.default.createElement("div", { header: "Release Date", sortable: "true", field: "release_date" }),
 	                    _react2.default.createElement("div", { header: "Status", sortable: "true", field: "status" })
@@ -42916,7 +42921,7 @@
 	});
 
 /***/ }),
-/* 352 */
+/* 351 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -42951,6 +42956,96 @@
 	};
 
 /***/ }),
+/* 352 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _react = __webpack_require__(1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _DataGrid = __webpack_require__(213);
+	
+	var _DataGrid2 = _interopRequireDefault(_DataGrid);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = _react2.default.createClass({
+	    displayName: "OrgCard",
+	    getInitialState: function getInitialState() {
+	        return { title: this.props.title || "Orgs" };
+	    },
+	    linkHandler: function linkHandler(org) {
+	        window.location.hash = "#org/" + org.org_id;
+	    },
+	    render: function render() {
+	        return _react2.default.createElement(
+	            "article",
+	            { className: "slds-card" },
+	            _react2.default.createElement(
+	                "div",
+	                { className: "slds-card__header slds-grid" },
+	                _react2.default.createElement(
+	                    "header",
+	                    { className: "slds-media slds-media_center slds-has-flexi-truncate" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-media__figure" },
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "slds-icon_container slds-icon-standard-account", title: "Orgs" },
+	                            _react2.default.createElement(
+	                                "svg",
+	                                { className: "slds-icon slds-icon_small", "aria-hidden": "true" },
+	                                _react2.default.createElement("use", { xmlnsXlink: "http://www.w3.org/1999/xlink", xlinkHref: "/assets/icons/standard-sprite/svg/symbols.svg#account" })
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "slds-media__body" },
+	                        _react2.default.createElement(
+	                            "h2",
+	                            null,
+	                            _react2.default.createElement(
+	                                "a",
+	                                { href: "javascript:void(0);", className: "slds-card__header-link slds-truncate",
+	                                    title: "" },
+	                                _react2.default.createElement(
+	                                    "span",
+	                                    { className: "slds-text-heading_small" },
+	                                    this.state.title
+	                                )
+	                            )
+	                        )
+	                    )
+	                )
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "slds-card__body" },
+	                _react2.default.createElement(
+	                    _DataGrid2.default,
+	                    { data: this.props.orgs, onSort: this.props.onSort },
+	                    _react2.default.createElement("div", { header: "Account", field: "account_name", sortable: true, onLink: this.linkHandler }),
+	                    _react2.default.createElement("div", { header: "Org ID", field: "org_id", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Instance", field: "instance", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Type", field: "type", sortable: true }),
+	                    _react2.default.createElement("div", { header: "Status", field: "status", sortable: true }),
+	                    _react2.default.createElement("div", { header: "AOV Band", field: "aov_band", sortable: true })
+	                )
+	            ),
+	            _react2.default.createElement("footer", { className: "slds-card__footer" })
+	        );
+	    }
+	});
+
+/***/ }),
 /* 353 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -42964,21 +43059,101 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _PackageOrgService = __webpack_require__(354);
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var TabHeader = _react2.default.createClass({
+	    displayName: 'TabHeader',
+	    clickHandler: function clickHandler(event) {
+	        this.props.onClick(this.props.index);
+	        event.preventDefault();
+	    },
+	    render: function render() {
+	        return _react2.default.createElement(
+	            'li',
+	            { className: 'slds-tabs__item slds-text-heading--label ' + (this.props.active ? 'slds-active' : ''), title: 'Item One', role: 'presentation' },
+	            _react2.default.createElement(
+	                'a',
+	                { href: '#', role: 'tab', tabIndex: '0', 'aria-selected': 'true', onClick: this.clickHandler },
+	                this.props.label
+	            )
+	        );
+	    }
+	});
+	
+	var Tab = _react2.default.createClass({
+	    displayName: 'Tab',
+	    render: function render() {
+	        return _react2.default.createElement(
+	            'div',
+	            { className: 'slds-tabs__content' + (this.props.active ? ' slds-show' : ' slds-hide'), role: 'tabpanel' },
+	            this.props.children
+	        );
+	    }
+	});
+	
+	exports.default = _react2.default.createClass({
+	    displayName: 'Tabs',
+	    getInitialState: function getInitialState() {
+	        return { activeTabIndex: 0 };
+	    },
+	    clickHandler: function clickHandler(index) {
+	        this.setState({ activeTabIndex: index });
+	    },
+	    render: function render() {
+	        var tabHeaders = [];
+	        var tabs = [];
+	        for (var i = 0; i < this.props.children.length; i++) {
+	            var tab = this.props.children[i];
+	            tabHeaders.push(_react2.default.createElement(TabHeader, { label: tab.props.label, index: i, key: i, active: i === this.state.activeTabIndex, onClick: this.clickHandler }));
+	            tabs.push(_react2.default.createElement(
+	                Tab,
+	                { key: tab.props.label, active: i === this.state.activeTabIndex },
+	                tab.props.children
+	            ));
+	        };
+	
+	        return _react2.default.createElement(
+	            'div',
+	            { className: 'slds-tabs--default', role: 'tablist' },
+	            _react2.default.createElement(
+	                'ul',
+	                { className: 'slds-tabs--default__nav', role: 'presentation' },
+	                tabHeaders
+	            ),
+	            tabs
+	        );
+	    }
+	});
+
+/***/ }),
+/* 354 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _react = __webpack_require__(1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _PackageOrgService = __webpack_require__(355);
 	
 	var packageOrgService = _interopRequireWildcard(_PackageOrgService);
 	
 	var _PageHeader = __webpack_require__(210);
 	
-	var _PackageOrgList = __webpack_require__(355);
+	var _PackageOrgList = __webpack_require__(356);
 	
 	var _PackageOrgList2 = _interopRequireDefault(_PackageOrgList);
 	
-	var _AuthorizeWindow = __webpack_require__(356);
+	var _AuthorizeWindow = __webpack_require__(357);
 	
 	var _AuthorizeWindow2 = _interopRequireDefault(_AuthorizeWindow);
 	
-	var _AuthService = __webpack_require__(357);
+	var _AuthService = __webpack_require__(358);
 	
 	var authService = _interopRequireWildcard(_AuthService);
 	
@@ -43006,18 +43181,16 @@
 	        });
 	    },
 	    newHandler: function newHandler() {
-	        var _this3 = this;
-	
 	        authService.oauthOrgURL().then(function (url) {
-	            return _this3.setState({ addingOrgGroup: true, url: url });
+	            window.location.href = url;
 	        });
 	    },
 	    deleteHandler: function deleteHandler(data) {
-	        var _this4 = this;
+	        var _this3 = this;
 	
 	        packageOrgService.requestDeleteById(data.id).then(function () {
-	            packageOrgService.requestAll(_this4.state.sort).then(function (packageorgs) {
-	                return _this4.setState({ packageorgs: packageorgs });
+	            packageOrgService.requestAll(_this3.state.sort).then(function (packageorgs) {
+	                return _this3.setState({ packageorgs: packageorgs });
 	            });
 	        });
 	    },
@@ -43034,22 +43207,13 @@
 	                sortOptions: [{ value: "name", label: "Name" }, { value: "namespace", label: "Namespace" }],
 	                onNew: this.newHandler,
 	                onSort: this.sortHandler }),
-	            _react2.default.createElement(_PackageOrgList2.default, { packageorgs: this.state.packageorgs, onSort: this.sortHandler, onDelete: this.deleteHandler }),
-	            this.state.addingOrgGroup && _react2.default.createElement(
-	                _AuthorizeWindow2.default,
-	                { url: this.state.url },
-	                _react2.default.createElement(
-	                    'div',
-	                    null,
-	                    'Authorizing'
-	                )
-	            )
+	            _react2.default.createElement(_PackageOrgList2.default, { packageorgs: this.state.packageorgs, onSort: this.sortHandler, onDelete: this.deleteHandler })
 	        );
 	    }
 	});
 
 /***/ }),
-/* 354 */
+/* 355 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43084,7 +43248,7 @@
 	};
 
 /***/ }),
-/* 355 */
+/* 356 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43127,7 +43291,7 @@
 	});
 
 /***/ }),
-/* 356 */
+/* 357 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43150,21 +43314,16 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var PortalWindow = function (_React$Component) {
-	    _inherits(PortalWindow, _React$Component);
+	var AuthorizeWindow = function (_React$Component) {
+	    _inherits(AuthorizeWindow, _React$Component);
 	
-	    function PortalWindow(props) {
-	        _classCallCheck(this, PortalWindow);
+	    function AuthorizeWindow(props) {
+	        _classCallCheck(this, AuthorizeWindow);
 	
-	        // STEP 1: create a container <div>
-	        var _this = _possibleConstructorReturn(this, (PortalWindow.__proto__ || Object.getPrototypeOf(PortalWindow)).call(this, props));
-	
-	        _this.containerEl = document.createElement('div');
-	        _this.externalWindow = null;
-	        return _this;
+	        return _possibleConstructorReturn(this, (AuthorizeWindow.__proto__ || Object.getPrototypeOf(AuthorizeWindow)).call(this, props));
 	    }
 	
-	    _createClass(PortalWindow, [{
+	    _createClass(AuthorizeWindow, [{
 	        key: 'render',
 	        value: function render() {
 	            return _react2.default.createElement('div', null);
@@ -43174,26 +43333,21 @@
 	        value: function componentDidMount() {
 	            // STEP 3: open a new browser window and store a reference to it
 	            this.externalWindow = window.open(this.props.url, '', 'width=700,height=700,left=200,top=200');
-	
-	            // STEP 4: append the container <div> (that has props.children appended to it) to the body of the new window
-	            // this.externalWindow.document.body.appendChild(this.containerEl);
 	        }
 	    }, {
 	        key: 'componentWillUnmount',
 	        value: function componentWillUnmount() {
-	            // STEP 5: This will fire when this.state.showWindowPortal in the parent component becomes false
-	            // So we tidy up by closing the window
 	            this.externalWindow.close();
 	        }
 	    }]);
 	
-	    return PortalWindow;
+	    return AuthorizeWindow;
 	}(_react2.default.Component);
 	
-	exports.default = PortalWindow;
+	exports.default = AuthorizeWindow;
 
 /***/ }),
-/* 357 */
+/* 358 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43228,7 +43382,7 @@
 	};
 
 /***/ }),
-/* 358 */
+/* 359 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43243,7 +43397,7 @@
 	
 	var _reactRouter = __webpack_require__(159);
 	
-	var _PackageOrgService = __webpack_require__(354);
+	var _PackageOrgService = __webpack_require__(355);
 	
 	var packageOrgService = _interopRequireWildcard(_PackageOrgService);
 	
@@ -43287,7 +43441,7 @@
 	});
 
 /***/ }),
-/* 359 */
+/* 360 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43304,15 +43458,15 @@
 	
 	var _moment2 = _interopRequireDefault(_moment);
 	
-	var _PackageVersionService = __webpack_require__(352);
+	var _PackageVersionService = __webpack_require__(351);
 	
 	var packageVersionService = _interopRequireWildcard(_PackageVersionService);
 	
-	var _Tabs = __webpack_require__(338);
+	var _Tabs = __webpack_require__(353);
 	
 	var _Tabs2 = _interopRequireDefault(_Tabs);
 	
-	var _PackageVersionCard = __webpack_require__(351);
+	var _PackageVersionCard = __webpack_require__(350);
 	
 	var _PackageVersionCard2 = _interopRequireDefault(_PackageVersionCard);
 	
@@ -43325,11 +43479,12 @@
 	    getInitialState: function getInitialState() {
 	        return { properties: [] };
 	    },
-	    handleAccessToken: function handleAccessToken(event) {
+	    revealAccessToken: function revealAccessToken(event) {
 	        if (event.target.value === this.props.packageorg.access_token) {
 	            event.target.value = 'Double-click to reveal';
 	        } else {
 	            event.target.value = this.props.packageorg.access_token;
+	            event.target.select();
 	        }
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(props) {
@@ -43423,7 +43578,7 @@
 	                                _react2.default.createElement(
 	                                    'p',
 	                                    null,
-	                                    _react2.default.createElement('input', { className: 'slds-input', type: 'text', disabled: 'true', value: 'Double-click to reveal', onDoubleClick: this.handleAccessToken })
+	                                    _react2.default.createElement('input', { className: 'slds-input', type: 'text', readonly: 'true', value: 'Double-click to reveal', onDoubleClick: this.revealAccessToken })
 	                                )
 	                            )
 	                        )
@@ -43441,7 +43596,7 @@
 	});
 
 /***/ }),
-/* 360 */
+/* 361 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43456,7 +43611,7 @@
 	
 	var _reactRouter = __webpack_require__(159);
 	
-	var _OrgGroupService = __webpack_require__(361);
+	var _OrgGroupService = __webpack_require__(362);
 	
 	var orgGroupService = _interopRequireWildcard(_OrgGroupService);
 	
@@ -43506,7 +43661,7 @@
 	});
 
 /***/ }),
-/* 361 */
+/* 362 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43549,7 +43704,7 @@
 	};
 
 /***/ }),
-/* 362 */
+/* 363 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43564,15 +43719,15 @@
 	
 	var _PageHeader = __webpack_require__(210);
 	
-	var _OrgGroupList = __webpack_require__(363);
+	var _OrgGroupList = __webpack_require__(364);
 	
 	var _OrgGroupList2 = _interopRequireDefault(_OrgGroupList);
 	
-	var _OrgGroupService = __webpack_require__(361);
+	var _OrgGroupService = __webpack_require__(362);
 	
 	var orgGroupService = _interopRequireWildcard(_OrgGroupService);
 	
-	var _NewOrgGroupWindow = __webpack_require__(364);
+	var _NewOrgGroupWindow = __webpack_require__(365);
 	
 	var _NewOrgGroupWindow2 = _interopRequireDefault(_NewOrgGroupWindow);
 	
@@ -43645,7 +43800,7 @@
 	});
 
 /***/ }),
-/* 363 */
+/* 364 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -43687,7 +43842,7 @@
 	});
 
 /***/ }),
-/* 364 */
+/* 365 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43806,7 +43961,7 @@
 	});
 
 /***/ }),
-/* 365 */
+/* 366 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -43819,9 +43974,13 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _OrgGroupService = __webpack_require__(361);
+	var _OrgGroupService = __webpack_require__(362);
 	
 	var orgGroupService = _interopRequireWildcard(_OrgGroupService);
+	
+	var _OrgCard = __webpack_require__(352);
+	
+	var _OrgCard2 = _interopRequireDefault(_OrgCard);
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
@@ -43849,14 +44008,15 @@
 	            { className: "slds-form--stacked slds-grid slds-wrap slds-m-top" },
 	            _react2.default.createElement(
 	                "div",
-	                { className: "slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2" },
+	                { className: "slds-col--padded slds-size--1-of-1" },
 	                _react2.default.createElement(
 	                    "div",
 	                    { className: "slds-grid slds-wrap slds-m-top--large" },
 	                    _react2.default.createElement(
 	                        "div",
 	                        { className: "slds-col--padded slds-size--1-of-1" },
-	                        _react2.default.createElement("br", null)
+	                        _react2.default.createElement("br", null),
+	                        _react2.default.createElement(_OrgCard2.default, { title: "Members", orgs: this.state.members })
 	                    )
 	                )
 	            )
@@ -43865,7 +44025,7 @@
 	});
 
 /***/ }),
-/* 366 */
+/* 367 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";

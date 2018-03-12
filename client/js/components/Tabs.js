@@ -44,8 +44,8 @@ export default React.createClass({
         let tabs = [];
         for (let i=0; i<this.props.children.length; i++)  {
             let tab = this.props.children[i];
-            tabHeaders.push(<TabHeader label={tab.props.label} index={i} active={i===this.state.activeTabIndex} onClick={this.clickHandler}/>);
-            tabs.push(<Tab active={i===this.state.activeTabIndex}>{tab.props.children}</Tab>);
+            tabHeaders.push(<TabHeader label={tab.props.label} index={i} key={i} active={i===this.state.activeTabIndex} onClick={this.clickHandler}/>);
+            tabs.push(<Tab key={tab.props.label} active={i===this.state.activeTabIndex}>{tab.props.children}</Tab>);
         };
 
         return (

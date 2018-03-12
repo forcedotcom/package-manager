@@ -18,6 +18,7 @@
     "body-parser": "^1.14.2",
     "compression": "^1.6.1",
     "cookie-session": "^2.0.0-beta.3",
+    "dotenv": "^5.0.1",
     "express": "^4.13.4",
     "immutable": "^4.0.0-rc.9",
     "jsforce": "^1.8.0",

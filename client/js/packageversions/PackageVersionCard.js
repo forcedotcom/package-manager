@@ -9,6 +9,10 @@ export default React.createClass({
         return {packageVersions: []};
     },
 
+    linkHandler(packageVersion) {
+        window.location.hash = "#packageVersion/" + packageVersion.sfid;
+    },
+
     render() {
         return (
             <div className="slds-card">
@@ -21,20 +25,12 @@ export default React.createClass({
                             <h3 className="slds-text-heading--small slds-truncate">Package Versions</h3>
                         </div>
                     </div>
-                    <div className="slds-no-flex">
-                        <div className="slds-button-group">
-                            <button className="slds-button slds-button--icon-border-filled">
-                                <ButtonIcon name="down"/>
-                                <span className="slds-assistive-text">Show More</span>
-                            </button>
-                        </div>
-                    </div>
                 </header>
 
                 <section className="slds-card__body">
                     <DataGrid data={this.props.packageVersions} onSort={this.props.onSort}>
-                        <div header="Name" field="name" sortable="true"/>
-                        <div header="Version ID" field="version_id"/>
+                        <div header="Version ID" field="version_id" onLink={this.linkHandler}/>
+                        <div header="Package" field="pcakage_name" sortable="true" />
                         <div header="Version Number" sortable="true" field="version_number"/>
                         <div header="Release Date" sortable="true" field="release_date"/>
                         <div header="Status" sortable="true" field="status"/>

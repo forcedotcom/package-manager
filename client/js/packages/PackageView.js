@@ -1,6 +1,9 @@
 import React from 'react';
 import PackageVersionCard from './../packageversions/PackageVersionCard';
 import * as packageVersionService from "../services/PackageVersionService";
+import * as orgService from "../services/OrgService";
+import OrgCard from "../orgs/OrgCard";
+import Tabs from '../components/Tabs';
 
 export default React.createClass({
 
@@ -9,24 +12,25 @@ export default React.createClass({
     },
 
     componentWillReceiveProps(props) {
-        this.loadPackageVersions(props.pkg.sfid);
+        this.loadCards(props.pkg.sfid);
     },
 
-    loadPackageVersions(packageId) {
+    loadCards(packageId) {
         packageVersionService.findByPackage(packageId).then(packageVersions => this.setState({packageVersions}));
+        orgService.requestByPackage(packageId).then(orgs=> this.setState({orgs}));
     },
 
     render() {
         return (
             <div className="slds-form--stacked slds-grid slds-wrap slds-m-top">
-                <div className="slds-col--padded slds-size--1-of-1 slds-medium-size--1-of-2">
-                    <div className="slds-grid slds-wrap slds-m-top--large">
-                        <div className="slds-col--padded slds-size--1-of-1">
-                            <br/>
-                            <PackageVersionCard packageVersions={this.state.packageVersions}/>
-                        </div>
+                <Tabs>
+                    <div label="Versions">
+                        <PackageVersionCard packageVersions={this.state.packageVersions}/>
                     </div>
-                </div>
+                    <div label="Customers">
+                        <OrgCard title="Customers" orgs={this.state.orgs}/>
+                    </div>
+                </Tabs>
             </div>
         );
     }

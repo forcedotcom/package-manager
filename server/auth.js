@@ -40,7 +40,7 @@ async function oauthOrgCallback(req, res, next) {
         let userInfo = await conn.authorize(req.query.code);
         let org = await conn.sobject("Organization").retrieve(userInfo.organizationId);
         await packageorgs.createPackageOrg(org.Id, org.Name, org.NamespacePrefix, org.InstanceName, conn.instanceUrl, conn.refreshToken, conn.accessToken);
-        return res.send("<script>window.opener.location.reload(); window.close()</script>");
+        return res.redirect("/#/packageorgs");
     } catch (e) {
         return next(e);
     }

@@ -58,12 +58,6 @@ export let RecordHeader = React.createClass({
                         <div className="slds-button-group" role="group">
                             <button className="slds-button slds-button--neutral" onClick={this.props.onEdit}>Edit</button>
                             <button className="slds-button slds-button--neutral" onClick={this.props.onDelete}>Delete</button>
-                            <div className="slds-button--last">
-                                <button className="slds-button slds-button--icon-border-filled">
-                                    <ButtonIcon name="down"/>
-                                    <span className="slds-assistive-text">More</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -113,12 +107,6 @@ export let HomeHeader = React.createClass({
                             </div>
                             <div className="slds-button-group slds-button-space-left" role="group">
                                 <button className="slds-button slds-button--neutral" onClick={this.props.onNew}>{this.props.newLabel}</button>
-                                <div className="slds-button--last">
-                                    <button className="slds-button slds-button--icon-border-filled">
-                                        <ButtonIcon name="down"/>
-                                        <span className="slds-assistive-text">More Actions</span>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>

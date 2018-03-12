@@ -1,6 +1,5 @@
 import React from 'react';
-
-import * as orgGroupService from "../services/OrgGroupService";
+import * as orgService from "../services/OrgService";
 import OrgCard from "../orgs/OrgCard";
 
 export default React.createClass({
@@ -10,12 +9,11 @@ export default React.createClass({
     },
 
     componentWillReceiveProps(props) {
-        let orggroup = props.orggroup;
-        this.loadGroupMembers(orggroup.id);
+        this.loadCards(props.packageVersion.sfid);
     },
 
-    loadGroupMembers(orgGroupId) {
-        orgGroupService.requestMembers(orgGroupId).then(members=> this.setState({members}));
+    loadCards(packageVersionId) {
+        orgService.requestByPackageVersion(packageVersionId).then(orgs => this.setState({orgs}));
     },
 
     render() {
@@ -25,7 +23,7 @@ export default React.createClass({
                     <div className="slds-grid slds-wrap slds-m-top--large">
                         <div className="slds-col--padded slds-size--1-of-1">
                             <br/>
-                            <OrgCard title="Members" orgs={this.state.members}/>
+                            <OrgCard title="Customers" orgs={this.state.orgs}/>
                         </div>
                     </div>
                 </div>

@@ -24,7 +24,9 @@ export default React.createClass({
     },
 
     newHandler() {
-        authService.oauthOrgURL().then(url => this.setState({addingOrgGroup: true, url}));
+        authService.oauthOrgURL().then(url => {
+            window.location.href = url;
+        });
     },
 
     deleteHandler(data) {
@@ -46,7 +48,6 @@ export default React.createClass({
                             onNew={this.newHandler}
                             onSort={this.sortHandler}/>
                 <PackageOrgList packageorgs={this.state.packageorgs} onSort={this.sortHandler} onDelete={this.deleteHandler}/>
-                {this.state.addingOrgGroup && (<AuthorizeWindow url={this.state.url}><div>Authorizing</div></AuthorizeWindow>)}
             </div>
         );
     }

@@ -65,6 +65,9 @@ render((
             <Route path="package" component={PackageRecord}>
                 <Route path=":packageId" component={PackageView}/>
             </Route>
+            <Route path="packageVersion" component={PackageRecord}>
+                <Route path=":packageVersionId" component={PackageView}/>
+            </Route>
             <Route path="packageorgs" component={PackageOrgHome}/>
             <Route path="packageorg" component={PackageOrgRecord}>
                 <Route path=":packageorgId" component={PackageOrgView}/>

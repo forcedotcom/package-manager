@@ -9,7 +9,7 @@ import OrgList from './OrgList';
 export default React.createClass({
 
     getInitialState() {
-        return {view: "grid", sortOrder: "account_name", orgs: []};
+        return {view: "grid", sortOrder: "id", orgs: []};
     },
     
     componentDidMount() {
@@ -35,7 +35,7 @@ export default React.createClass({
                             actions={[]}
                             itemCount={this.state.orgs.length}
                             viewOptions={[{value:"table", label:"Table", icon:"table"}]}
-                            sortOptions={[{value:"account_name", label:"Account"}]}
+                            sortOptions={[{value:"id", label:"Org ID"},{value:"account_name", label:"Account"},{value:"instance", label:"Instance"}]}
                             onSort={this.sortHandler}/>
                 {view}
             </div>

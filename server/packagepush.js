@@ -1,38 +1,11 @@
 'use strict';
 
 const jsforce = require('jsforce');
+const sfdc = require('./sfdcconn');
 const soap = require('./soap');
 const parseXML = require('xml2js').parseString;
 
 const packageorgs = require('./packageorgs');
-
-const PORT = process.env.PORT || 5000;
-
-const LOGIN_URL = process.env.LOGIN_URL || 'https://steelbrick.my.salesforce.com';
-const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/oauth2/callback';
-
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-
-
-function buildConnection(accessToken, refreshToken) {
-    return new jsforce.Connection({
-            oauth2: {
-                clientId: CLIENT_ID,
-                clientSecret: CLIENT_SECRET,
-                redirectUri: CALLBACK_URL
-            },
-            instanceUrl: LOGIN_URL,
-            accessToken: accessToken,
-            refreshToken: refreshToken
-        }
-    );
-}
-
-async function buildOrgConnection(packageOrgId) {
-    let packageOrg = await packageorgs.retrieveById(packageOrgId);
-    return buildConnection(packageOrg.access_token, packageOrg.refresh_token);
-}
 
 async function createPushRequest(conn, packageVersionId) {
     let body = {PackageVersionId: packageVersionId}; // ScheduledStartTime
@@ -63,7 +36,7 @@ async function clearRequests(conn) {
 
 async function queryPackageVersions(packageOrgId) {
     try {
-        let conn = await buildOrgConnection(packageOrgId);
+        let conn = await sfdc.buildOrgConnection(packageOrgId);
         let res = await conn.query("Select Id, Name, MetadataPackageId, ReleaseState, MajorVersion, MinorVersion, PatchVersion, BuildNumber " +
             " from MetadataPackageVersion" +
             " where MajorVersion = 208");
@@ -76,7 +49,7 @@ async function queryPackageVersions(packageOrgId) {
 
 async function querySubscribers(packageOrgId, shortIds) {
     try {
-        let conn = await buildOrgConnection(packageOrgId);
+        let conn = await sfdc.buildOrgConnection(packageOrgId);
         let idsIn = shortIds.map((v) => {return "'" + v + "'"}).join(",");
         let soql = "SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber WHERE OrgKey IN (" + idsIn + ")";
         let res = await soap.invoke(conn, "query", {queryString: soql});

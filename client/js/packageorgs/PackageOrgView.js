@@ -13,11 +13,12 @@ export default React.createClass({
         return {properties: []};
     },
 
-    handleAccessToken(event) {
+    revealAccessToken(event) {
         if (event.target.value === this.props.packageorg.access_token) {
             event.target.value = 'Double-click to reveal';
         } else {
             event.target.value = this.props.packageorg.access_token;
+            event.target.select();
         }
     },
 
@@ -58,7 +59,7 @@ export default React.createClass({
                                     <p className="slds-text-heading--label slds-truncate" title="Username">Access Token</p>
                                 </dt>
                                 <dd>
-                                    <p><input className="slds-input" type="text" disabled="true" value="Double-click to reveal" onDoubleClick={this.handleAccessToken}/></p>
+                                    <p><input className="slds-input" type="text" readonly="true" value="Double-click to reveal" onDoubleClick={this.revealAccessToken}/></p>
                                 </dd>
                             </dl>
                         </div>

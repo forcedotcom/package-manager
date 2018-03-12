@@ -35,6 +35,13 @@ async function retrieve(id) {
     return recs[0];
 }
 
+async function retrieveByOrgId(org_id) {
+    let where = " WHERE org_id = $1";
+    let recs = await db.query(SELECT_ALL + where, [org_id]);
+    await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ['access_token', 'refresh_token']);
+    return recs[0];
+}
+
 async function create(org_id, name, namespace, instance_name, instance_url, refresh_token, access_token) {
     let encrypto = {access_token:access_token, refresh_token:refresh_token};
     await crypt.passwordEncryptObjects(CRYPT_KEY, [encrypto]);
@@ -64,6 +71,7 @@ async function requestDelete(req, res, next) {
 exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.retrieveById = retrieve;
+exports.retrieveByOrgId = retrieveByOrgId;
 exports.requestDeleteById = requestDelete;
 exports.updatePackageOrg = update;
 exports.createPackageOrg = create;

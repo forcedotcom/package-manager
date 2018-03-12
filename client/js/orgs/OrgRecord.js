@@ -1,5 +1,4 @@
 import React from 'react';
-import {Router} from 'react-router';
 
 import * as orgService from '../services/OrgService';
 import * as licenseService from "../services/LicenseService";
@@ -26,7 +25,7 @@ export default React.createClass({
         return (
             <div>
                 <OrgRecordHeader type="Org" icon="account" title={this.state.org.account_name} onUpgrade={this.handleUpgrade}>
-                    <HeaderField label="Org ID" value={this.state.org.id}/>
+                    <HeaderField label="Org ID" value={this.state.org.org_id}/>
                     <HeaderField label="Instance" value={this.state.org.instance}/>
                 </OrgRecordHeader>
                 {React.cloneElement(this.props.children, { org: this.state.org, licenses: this.state.licenses })}
