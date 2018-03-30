@@ -14,16 +14,20 @@ const SELECT_ALL =
     FROM package_version pv 
     INNER JOIN package p on p.sfid = pv.package_id`;
 
-const SELECT_ALL_WITH_LATEST =
+const SELECT_ALL_WITH_LICENSE =
     `SELECT
         pv.id, pv.sfid, pv.name, pv.version_number, pv.package_id, pv.release_date, pv.status, pv.version_id,
         p.package_org_id, p.name as package_name, 
         pvl.version_number latest_version_number, pvl.version_id latest_version_id,
-        l.status license_status
+        l.org_id, l.status license_status
     FROM package_version pv
     INNER JOIN package p on p.sfid = pv.package_id
     INNER JOIN package_version_latest pvl ON pvl.package_id = pv.package_id
     INNER JOIN license l ON l.package_version_id = pv.sfid`;
+
+const SELECT_ALL_WITH_LICENSE_IN_GROUP =
+    SELECT_ALL_WITH_LICENSE +
+    ` INNER JOIN org_group_member gm ON gm.org_id = l.org_id`;
 
 async function requestAll(req, res, next) {
     try {
@@ -58,13 +62,13 @@ async function findAll(sort, status, packageId, packageOrgId, licensedOrgId) {
     }
 
     if (licensedOrgId) {
-        select = SELECT_ALL_WITH_LATEST;
+        select = SELECT_ALL_WITH_LICENSE;
         values.push(licensedOrgId);
         whereParts.push("l.org_id = $" + values.length);
-        values.push('Uninstalled');
-        whereParts.push("l.status != $" + values.length);
-        values.push('Suspended');
-        whereParts.push("l.status != $" + values.length);
+        // values.push('Uninstalled');
+        // whereParts.push("l.status != $" + values.length);
+        // values.push('Suspended');
+        // whereParts.push("l.status != $" + values.length);
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
@@ -81,20 +85,76 @@ async function requestById(req, res, next) {
     }
 }
 
-async function findByIds(versionIds, licensedOrgId) {
+async function findByIds(versionIds) {
     let whereParts = [], values = [], select = SELECT_ALL;
 
-    let params = [];
-    for(let i = 1; i <= versionIds.length; i++) {
-        params.push('$' + i);
+    if (versionIds) {
+        let params = [];
+        for(let i = 1; i <= versionIds.length; i++) {
+            params.push('$' + i);
+        }
+        whereParts.push(`pv.version_id IN (${params.join(",")})`);
+        values = values.concat(versionIds);
     }
 
-    whereParts.push(`pv.version_id IN (${params.join(",")})`);
-    values = values.concat(versionIds);
-    if (licensedOrgId) {
-        select = SELECT_ALL_WITH_LATEST;
-        values.push(licensedOrgId);
-        whereParts.push("l.org_id = $" + values.length);
+    let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
+    return db.query(select + where, values);
+}
+
+async function findLatestByOrgIds(versionIds, orgIds) {
+    let whereParts = [], values = [], select = SELECT_ALL_WITH_LICENSE;
+
+    if (versionIds) {
+        let params = [];
+        for(let i = 1; i <= versionIds.length; i++) {
+            params.push('$' + i);
+        }
+        whereParts.push(`pvl.version_id IN (${params.join(",")})`);
+        values = values.concat(versionIds);
+    }
+
+    if (orgIds) {
+        let params = [];
+        for(let i = 1; i <= orgIds.length; i++) {
+            params.push('$' + (values.length + i));
+        }
+
+        whereParts.push(`l.org_id IN (${params.join(",")})`);
+        values = values.concat(orgIds);
+
+        // Filter out orgs already on the latest version
+        whereParts.push(`l.package_version_id != pvl.sfid`);
+    }
+
+    let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
+    return db.query(select + where, values);
+}
+
+async function findLatestByGroupIds(versionIds, orgGroupIds) {
+    let whereParts = [], values = [], select = SELECT_ALL;
+
+    if (versionIds) {
+        let params = [];
+        for(let i = 1; i <= versionIds.length; i++) {
+            params.push('$' + (values.length + i));
+        }
+        whereParts.push(`pvl.version_id IN (${params.join(",")})`);
+        values = values.concat(versionIds);
+    }
+
+
+    if (orgGroupIds) {
+        select = SELECT_ALL_WITH_LICENSE_IN_GROUP;
+        let params = [];
+        for(let i = 1; i <= orgGroupIds.length; i++) {
+            params.push('$' + (values.length + i));
+        }
+
+        whereParts.push(`gm.org_group_id IN (${params.join(",")})`);
+        values = values.concat(orgGroupIds);
+
+        // Filter out orgs already on the latest version
+        whereParts.push(`l.package_version_id != pvl.sfid`);
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
@@ -102,6 +162,7 @@ async function findByIds(versionIds, licensedOrgId) {
 }
 
 exports.findAll = findAll;
-exports.findByIds = findByIds;
+exports.findLatestByOrgIds = findLatestByOrgIds;
+exports.findLatestByGroupIds = findLatestByGroupIds;
 exports.requestAll = requestAll;
 exports.requestById = requestById;

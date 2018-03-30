@@ -34,10 +34,15 @@ async function load(result, conn) {
 }
 
 async function upsert(recs, batchSize) {
-    if (recs.length <= batchSize) {
+    let count = recs.length;
+    if (count === 0) {
+        console.log("No packages found in SB62");
+        return; // nothing to see here
+    }
+    console.log(`${count} packages found in SB62`);
+    if (count <= batchSize) {
         return await upsertBatch(recs);
     }
-    let count = recs.length;
     for (let start = 0; start < count;) {
         console.log(`Batching ${start} of ${count}`);
         await upsertBatch(recs.slice(start, start += batchSize));
@@ -57,7 +62,7 @@ async function upsertBatch(recs) {
     }
     sql += ` on conflict (sfid) do update set
         name = excluded.name, package_org_id = excluded.package_org_id, package_id = excluded.package_id`;
-    await db.query(sql, values, false, true);
+    await db.insert(sql, values);
 }
 
 exports.fetch = fetch;

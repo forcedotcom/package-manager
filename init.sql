@@ -34,17 +34,33 @@ create table org
     constraint org_org_id_pk
     primary key,
   instance varchar(6),
+  modified_date TIMESTAMP,
   type varchar(40),
   status varchar(20),
   account_name varchar(256),
   account_id varchar(18)
 );
 
-
 create table if not exists org_group (
   id     serial primary key,
+  master_id     INTEGER,
   name varchar(100),
-  description text
+  description text,
+  created_date TIMESTAMP
+);
+
+create table if not exists org_group_member (
+  id     serial primary key,
+  org_group_id integer,
+  org_id varchar(18)
+);x
+
+create table if not exists org_group_criteria (
+  id     serial primary key,
+  org_group_id integer,
+  license_field_name varchar(40),
+  license_field_operator varchar(10),
+  license_field_value text
 );
 
 create table if not exists upgrade (
@@ -59,20 +75,6 @@ create table if not exists upgrade_item (
   package_org_id varchar(18),
   package_version_id varchar(18),
   start_time TIMESTAMP
-);
-
-create table if not exists org_group_member (
-  id     serial primary key,
-  org_group_id integer,
-  org_id varchar(18)
-);
-
-create table if not exists org_group_criteria (
-  id     serial primary key,
-  org_group_id integer,
-  license_field_name varchar(40),
-  license_field_operator varchar(10),
-  license_field_value text
 );
 
 insert into org_group (id, name, description) values
@@ -126,6 +128,7 @@ create table package_version
   real_version_number varchar(12),
   package_id varchar(18),
   release_date TIMESTAMP,
+  modified_date TIMESTAMP,
   status varchar(20),
   version_id varchar(18)
 );
@@ -155,6 +158,7 @@ create table license
   type varchar(255),
   status varchar(255),
   install_date TIMESTAMP,
+  modified_date TIMESTAMP,
   expiration TIMESTAMP,
   used_license_count integer,
   package_id varchar(18),

@@ -6,13 +6,39 @@ const pool = new Pool({
 });
 
 /**
- * Utility function to execute a SQL query against a Postgres database
+ * Utility function to execute a SQL select query against a Postgres database
  */
-exports.query = async function (sql, values, singleItem) {
+exports.query = async (sql, values) => {
     if (VERBOSE_SQL) {
         console.log(sql, values);
     }
 
     let result = await pool.query(sql, values);
-    return (singleItem ? result.rows[0] : result.rows);
+    return result.rows;
 };
+
+/**
+ * Utility function to execute a SQL select query to retrieve a single record from a Postgres database
+ */
+exports.retrieve = async (sql, values) => {
+    let rows = await exports.query(sql, values);
+    return rows[0];
+};
+
+/**
+ * Utility function to execute a SQL insert query against a Postgres database
+ */
+exports.insert = async (sql, values) => {
+    sql += ` RETURNING *`;
+    return await exports.query(sql, values);
+};
+
+/**
+ * Utility function to execute a SQL update query against a Postgres database
+ */
+exports.update = exports.query;
+
+/**
+ * Utility function to execute a SQL delete query against a Postgres database
+ */
+exports.delete = exports.query;

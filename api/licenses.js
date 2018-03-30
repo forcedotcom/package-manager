@@ -2,7 +2,7 @@ const db = require('../util/pghelper');
 
 const SELECT_ALL_HEROKU_CONNECT = `SELECT 
     l.id, l.sfid, l.name, l.sflma__subscriber_org_id__c as org_id, l.sflma__status__c as status,
-    l.sflma__install_date__c as install_date, l.sflma__expiration__c as expiration,
+    l.sflma__install_date__c as install_date, l.LastModifiedDate as modified_date, l.sflma__expiration__c as expiration,
     l.sflma__used_licenses__c as used_license_count, l.sflma__package_version__c as package_version_id, 
     o.instance as instance, o.type as type, o.account_id as account_id, o.account_name as account_name, 
     pv.sflma__package__c as package_id, pv.name as version_name, pv.sflma__version_number__c as version_number, pv.sflma__version_id__c as version_id,

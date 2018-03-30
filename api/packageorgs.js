@@ -52,14 +52,14 @@ async function create(org_id, name, division, namespace, instance_name, instance
                on conflict (org_id) do update set
                 name = excluded.name, division = excluded.division, namespace = excluded.namespace, instance_name = excluded.instance_name, 
                 instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token`;
-    await db.query(sql,
-        [org_id, name, division, namespace, instance_name, instance_url, encrypto.refresh_token, encrypto.access_token], true);
+    await db.insert(sql,
+        [org_id, name, division, namespace, instance_name, instance_url, encrypto.refresh_token, encrypto.access_token]);
 }
 
 async function requestDelete(req, res, next) {
     let id = req.params.id;
     try {
-        await db.query('DELETE FROM package_org WHERE id=$1', [id], true);
+        await db.delete('DELETE FROM package_org WHERE id=$1', [id]);
         return res.send({result: 'ok'});
     } catch (err) {
         return next(err);

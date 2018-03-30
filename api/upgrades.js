@@ -7,15 +7,15 @@ const SELECT_ALL_ITEMS = `SELECT id, upgrade_id, push_request_id, package_org_id
 
 async function createUpgrade(scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    return db.query('INSERT INTO upgrade (start_time) VALUES ($1)', [isoTime], true);
+    return db.insert('INSERT INTO upgrade (start_time) VALUES ($1)', [isoTime])[0];
 }
 
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    return db.query('INSERT INTO upgrade_item' +
+    return db.insert('INSERT INTO upgrade_item' +
         ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time)' +
         ' VALUES ($1,$2,$3,$4,$5)',
-        [upgradeId, requestId, packageOrgId, versionId, isoTime], true);
+        [upgradeId, requestId, packageOrgId, versionId, isoTime])[0];
 }
 
 async function requestAll(req, res, next) {
@@ -34,7 +34,7 @@ async function findAll() {
 
 async function requestAllItems(req, res, next) {
     try {
-        let upgradeItems = await findAllItems(req.params.upgradeId, req.params.sort);
+        let upgradeItems = await findAllItems(req.query.upgradeId, req.query.sort);
         return res.send(JSON.stringify(upgradeItems));
     } catch (err) {
         next(err);
