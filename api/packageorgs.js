@@ -56,6 +56,12 @@ async function create(org_id, name, division, namespace, instance_name, instance
         [org_id, name, division, namespace, instance_name, instance_url, encrypto.refresh_token, encrypto.access_token]);
 }
 
+async function updateAccessToken(org_id, access_token) {
+    let encrypto = {access_token: access_token};
+    await crypt.passwordEncryptObjects(CRYPT_KEY, [encrypto]);
+    await db.update(`UPDATE package_org set access_token = $1 WHERE org_id = $2`, [encrypto.access_token, org_id]);
+}
+
 async function requestDelete(req, res, next) {
     let id = req.params.id;
     try {
@@ -72,3 +78,4 @@ exports.retrieveById = retrieve;
 exports.retrieveByOrgId = retrieveByOrgId;
 exports.requestDeleteById = requestDelete;
 exports.createPackageOrg = create;
+exports.updateAccessToken = updateAccessToken;

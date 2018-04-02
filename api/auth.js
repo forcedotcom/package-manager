@@ -15,6 +15,8 @@ const CLIENT_URL = `${LOCAL_URL}:${CLIENT_PORT}`;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
+const OAUTH_LOGIN_URL = process.env.OAUTH_LOGIN_URL || 'https://login.salesforce.com';
+
 const AUTH_URL = process.env.LOGIN_URL || 'https://steelbrick.my.salesforce.com';
 
 function oauthLoginURL(req, res, next) {
@@ -42,8 +44,13 @@ async function oauthOrgCallback(req, res, next) {
     let conn = buildConnection();
     try {
         let userInfo = await conn.authorize(req.query.code);
-        let org = await conn.sobject("Organization").retrieve(userInfo.organizationId);
-        await packageorgs.createPackageOrg(org.Id, org.Name, org.Division, org.NamespacePrefix, org.InstanceName, conn.instanceUrl, conn.refreshToken, conn.accessToken);
+        try {
+            let org = await conn.sobject("Organization").retrieve(userInfo.organizationId);
+            await packageorgs.createPackageOrg(org.Id, org.Name, org.Division, org.NamespacePrefix, org.InstanceName, conn.instanceUrl, conn.refreshToken, conn.accessToken);
+        } catch (e) {
+            // No access to the Organization object?  No worries...
+            await packageorgs.createPackageOrg(userInfo.organizationId, conn.instanceUrl, null, null, null, conn.instanceUrl, conn.refreshToken, conn.accessToken);
+        }
         res.redirect(`${CLIENT_URL}/authresponse`);
     } catch (e) {
         console.log(e);
@@ -58,6 +65,7 @@ function isAuth(req) {
 function buildConnection(accessToken, refreshToken) {
     return new jsforce.Connection({
             oauth2: {
+                loginUrl: OAUTH_LOGIN_URL,
                 clientId: CLIENT_ID,
                 clientSecret: CLIENT_SECRET,
                 redirectUri: CALLBACK_URL

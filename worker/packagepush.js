@@ -138,6 +138,12 @@ async function findJobsByRequestIds(packageOrgId, requestIds) {
     return res.records;
 }
 
+async function countActiveRequests(conn) {
+    let soql = `SELECT Id FROM PackagePushRequest WHERE Status IN ('In Progress', 'Pending')`;
+    let res = await conn.query(soql);
+    return res.records.length;
+}
+
 exports.findRequestsByIds = findRequestsByIds;
 exports.findJobsByRequestIds = findJobsByRequestIds;
 exports.createPushRequest = createPushRequest;
@@ -168,8 +174,14 @@ async function queryPackageVersions(packageOrgId) {
 const parseXML = require('xml2js').parseString;
 const soap = require('../util/soap');
 
-async function querySubscribers(conn, shortIds) {
+async function querySubscribers(packageOrgId, shortIds) {
     try {
+        let conn = await sfdc.buildOrgConnection(packageOrgId);
+
+        // Just pinging the connection here to ensure the oauth access token is fresh (because our soap call below won't do it for us).
+        let count = await countActiveRequests(conn);
+        console.log(`Active requests? ${count}`)
+
         let idsIn = shortIds.map((v) => {
             return "'" + v + "'"
         }).join(",");
@@ -185,3 +197,4 @@ async function querySubscribers(conn, shortIds) {
 }
 
 exports.queryPackageVersions = queryPackageVersions;
+exports.querySubscribers = querySubscribers;

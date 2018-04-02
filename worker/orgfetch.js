@@ -3,9 +3,8 @@ const sfdc = require('../api/sfdcconn'),
 
 const BASE_PACKAGE_ID = "033A0000000PgEfIAK"; // CPQ package id
 
-const SELECT_ALL = `SELECT LastModifiedDate, Subscriber_Organization_ID__c,Subscriber_Organization__r.Instance__c, 
-    Subscriber_Organization__r.RecordType.Name, Subscriber_Organization__r.Type,
-    Subscriber_Organization__r.OrgStatus,Subscriber_Organization__c, Subscriber_Organization__r.Name
+const SELECT_ALL = `SELECT LastModifiedDate, Subscriber_Organization_ID__c,
+    Subscriber_Organization__r.Instance__c,Subscriber_Organization__c, Subscriber_Organization__r.Name
     FROM AppInstall__c WHERE Package_ID__c='${BASE_PACKAGE_ID}' AND Subscriber_Organization__r.Instance__c != null`;
 
 async function fetchAll() {
@@ -53,9 +52,7 @@ async function load(result, conn) {
             account_id: v.Subscriber_Organization__c,
             modified_date: new Date(v.LastModifiedDate).toISOString(),
             account_name: v.Subscriber_Organization__c ? v.Subscriber_Organization__r.Name : null,
-            instance: v.Subscriber_Organization__c ? v.Subscriber_Organization__r.Instance__c : null,
-            type: v.Subscriber_Organization__c ? v.Subscriber_Organization__r.Type : null,
-            status: v.Subscriber_Organization__c ? v.Subscriber_Organization__r.OrgStatus : null
+            instance: v.Subscriber_Organization__c ? v.Subscriber_Organization__r.Instance__c : null
         };
         if (!done[v.Subscriber_Organization_ID__c]) {
             done[v.Subscriber_Organization_ID__c] = rec;
@@ -111,3 +108,4 @@ async function upsertBatch(recs) {
 }
 
 exports.fetch = fetch;
+exports.fetchAll = fetchAll;

@@ -3,8 +3,8 @@
 const jsforce = require('jsforce');
 const packageorgs = require('./packageorgs');
 
-const ORG62_ID = "00D000000000062EAA";
-const SB62_ID = "00D300000008V7fEAE";
+const ORG62_ID = process.env.ORG62_ID || "00D000000000062EAA";
+const SB62_ID = process.env.SB62_ID || "00D300000008V7fEAE";
 const PORT = process.env.PORT || 5000;
 
 const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/oauth2/callback';
@@ -29,7 +29,12 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 
 async function buildOrgConnection(packageOrgId) {
     let packageOrg = await packageorgs.retrieveByOrgId(packageOrgId);
-    return buildConnection(packageOrg.access_token, packageOrg.refresh_token, packageOrg.instance_url);
+    let conn = buildConnection(packageOrg.access_token, packageOrg.refresh_token, packageOrg.instance_url);
+    conn.on("refresh", async (accessToken, res) => {
+        packageOrg.accessToken = accessToken;
+        await packageorgs.updateAccessToken(packageOrgId, accessToken);
+    });
+    return conn;
 }
 
 exports.buildOrgConnection = buildOrgConnection;
