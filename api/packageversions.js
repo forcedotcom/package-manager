@@ -32,8 +32,9 @@ const SELECT_ALL_WITH_LICENSE_IN_GROUP =
 async function requestAll(req, res, next) {
     try {
         let recs = await findAll(
-            req.query.sort || "release_date desc",
-            req.query.status || "Verified",
+            req.query.sort_field,
+            req.query.sort_dir,
+            req.query.status,
             req.query.packageId,
             req.query.packageOrgId,
             req.query.licensedOrgId);
@@ -43,10 +44,9 @@ async function requestAll(req, res, next) {
     }
 }
 
-async function findAll(sort, status, packageId, packageOrgId, licensedOrgId) {
+async function findAll(sortField, sortDir, status, packageId, packageOrgId, licensedOrgId) {
     let whereParts = [], values = [], select = SELECT_ALL;
-
-    if (status !== "All") {
+    if (status && status !== "All") {
         values.push(status);
         whereParts.push("pv.status = $" + values.length);
     }
@@ -72,7 +72,7 @@ async function findAll(sort, status, packageId, packageOrgId, licensedOrgId) {
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let orderBy = " ORDER BY " + sort;
+    let orderBy = ` ORDER BY ${sortField || "release_date"} ${sortDir || "desc"}`;
     return db.query(select + where + orderBy, values);
 }
 
@@ -161,7 +161,6 @@ async function findLatestByGroupIds(versionIds, orgGroupIds) {
     return db.query(select + where, values);
 }
 
-exports.findAll = findAll;
 exports.findLatestByOrgIds = findLatestByOrgIds;
 exports.findLatestByGroupIds = findLatestByGroupIds;
 exports.requestAll = requestAll;

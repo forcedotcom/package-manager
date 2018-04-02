@@ -1,19 +1,17 @@
 const sfdc = require('../api/sfdcconn'),
     db = require('../util/pghelper');
 
-const SELECT_ALL = `SELECT Id, Name, sflma__Developer_Org_ID__c, sfLma__Package_ID__c FROM sflma__Package__c`;
+const SELECT_ALL = `SELECT Id, Name, sflma__Developer_Org_ID__c, sfLma__Package_ID__c FROM sflma__Package__c
+                    WHERE Status__c = 'Active'`;
 
-async function fetch(limit) {
-    let recs = await query(limit);
+async function fetch() {
+    let recs = await query();
     return upsert(recs, 2000);
 }
 
-async function query(limit) {
+async function query() {
     let conn = await sfdc.buildOrgConnection(sfdc.SB62_ID);
     let soql = SELECT_ALL;
-    if (limit) {
-        soql += ` limit ${parseInt(limit)}`;
-    }
     let res = await conn.query(soql);
     return await load(res, conn);
 }
@@ -36,7 +34,7 @@ async function load(result, conn) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No packages found in SB62");
+        console.log("No new packages found in SB62");
         return; // nothing to see here
     }
     console.log(`${count} packages found in SB62`);

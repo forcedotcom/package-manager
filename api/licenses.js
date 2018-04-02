@@ -14,7 +14,7 @@ const SELECT_ALL_HEROKU_CONNECT = `SELECT
 
 const SELECT_ALL = `SELECT 
     l.id, l.sfid, l.name, l.org_id, l.status, 
-    l.install_date, l.expiration, 
+    l.install_date, l.modified_date, l.expiration, 
     l.used_license_count, l.package_version_id, 
     o.instance, o.type, o.account_id, o.account_name,
     pv.package_id, pv.name as version_name, pv.version_number, pv.version_id,
@@ -27,12 +27,12 @@ const SELECT_ALL = `SELECT
 function requestAll(req, res, next) {
     let orgId = req.query.org_id;
 
-    findAll(orgId, req.query.sort)
+    findAll(orgId, req.query.sort_field, req.query.sort_dir)
         .then((recs) => {return res.send(JSON.stringify(recs))})
         .catch(next);
 }
 
-async function findAll(orgId, orderBy) {
+async function findAll(orgId, orderByField, orderByDir) {
     let whereParts = ["o.instance IS NOT NULL"],
         values = [];
 
@@ -42,8 +42,8 @@ async function findAll(orgId, orderBy) {
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let sort = " ORDER BY " + (orderBy || "name");
-    let limit = " LIMIT 20";
+    let sort = ` ORDER BY ${orderByField || "name"} ${orderByDir || "asc"}`;
+    let limit = " LIMIT 40";
 
     return db.query(SELECT_ALL + where + sort + limit, values);
 }
@@ -59,5 +59,4 @@ function requestById(req, res, next) {
 }
 
 exports.requestAll = requestAll;
-exports.findAll = findAll;
 exports.requestById = requestById;

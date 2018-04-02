@@ -9,7 +9,7 @@ async function requestAll(req, res, next) {
         values = [];
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let sort = " ORDER BY " + (req.query.sort || "name");
+    let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;
 
     try {
         let recs = await db.query(SELECT_ALL + where + sort, values);

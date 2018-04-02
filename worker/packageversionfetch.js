@@ -4,8 +4,6 @@ const sfdc = require('../api/sfdcconn'),
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
                     sfLma__Version_ID__c, RealVersionNumber__c, LastModifiedDate FROM sfLma__Package_Version__c`;
 
-const VERSION_STATUS = {Verified: 'Verified'};
-
 async function fetchAll() {
     return fetchFrom(null);
 }
@@ -101,9 +99,7 @@ async function fetchLatest() {
 }
 
 async function queryLatest(packageIds) {
-    let whereParts = [], values = [];
-    values.push(VERSION_STATUS.Verified);
-    whereParts.push("status = $" + values.length);
+    let whereParts = ["real_version_number != '-1'"], values = [];
 
     if (packageIds) {
         let params = [];
@@ -113,7 +109,7 @@ async function queryLatest(packageIds) {
         whereParts.push(`package_id IN (${params.join(",")})`);
     }
 
-    let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
+    let where = whereParts.length > 0 ? ` WHERE ${whereParts.join(" AND ")}` : "";
 
     let sql = `SELECT v.package_id, v.sfid, v.version_id, v.name, v.version_number FROM
         (SELECT package_id, MAX(real_version_number) real_version_number FROM package_version
@@ -142,4 +138,5 @@ async function upsertLatest(recs) {
 }
 
 exports.fetch = fetch;
+exports.fetchAll = fetchAll;
 exports.fetchLatest = fetchLatest;

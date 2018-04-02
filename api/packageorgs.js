@@ -21,7 +21,7 @@ async function requestAll(req, res, next) {
 async function requestById(req, res, next) {
     let id = req.params.id;
     try {
-        let rec = await retrieve(id);
+        let rec = await retrieveByOrgId(id);
         return res.json(rec);
     } catch (err) {
         next(err);

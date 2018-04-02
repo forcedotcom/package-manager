@@ -13,14 +13,14 @@ async function requestAll(req, res, next) {
     let limit = " LIMIT 300";
 
     try {
-        let orgs = await findAll(req.query.packageId, req.query.packageVersionId, limit, req.query.sort);
+        let orgs = await findAll(req.query.packageId, req.query.packageVersionId, limit, req.query.sort_field, req.query.sort_dir);
         return res.send(JSON.stringify(orgs));
     } catch (err) {
         next(err);
     }
 }
 
-async function findAll(packageId, packageVersionId, limit, orderBy) {
+async function findAll(packageId, packageVersionId, limit, orderByField, orderByDir) {
     let select = SELECT_ALL;
     let whereParts = ["o.instance IS NOT NULL"];
     let values = [];
@@ -38,7 +38,7 @@ async function findAll(packageId, packageVersionId, limit, orderBy) {
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let sort = " ORDER BY " + (orderBy || "account_name");
+    let sort = ` ORDER BY ${orderByField || "account_name"} ${orderByDir || "asc"}`;
     return await db.query(select + where + sort + (limit || ""), values)
 }
 
