@@ -1,7 +1,7 @@
 const db = require('../util/pghelper');
 
 // const SELECT_ALL = `SELECT DISTINCT sflma__subscriber_org_id__c AS org_id, sflma__org_instance__c AS instance FROM sflma__license__c`;
-const SELECT_ALL = `SELECT DISTINCT org_id, instance, modified_date, status FROM license 
+const SELECT_ALL = `SELECT DISTINCT org_id, instance FROM license 
                     WHERE status in ('Trial','Active') 
                     AND instance IS NOT NULL
                     AND (expiration IS NULL OR expiration > DATE 'tomorrow')`;
@@ -12,7 +12,7 @@ async function fetchAll() {
 
 async function fetch() {
     let fromDate = null;
-    let latest = await db.query(`select max(modified_date) from org`);
+    let latest = await db.query(`select max(modified_date) from license`);
     if (latest.length > 0) {
         fromDate = latest[0].max;
     }
@@ -27,8 +27,8 @@ async function fetchFrom(fromDate) {
 async function query(fromDate) {
     let select = SELECT_ALL, values = [];
     if (fromDate) {
-        select += ` AND modified_date > $1`;
         values.push(fromDate);
+        select += ` AND modified_date > $${values.length}`;
     }
     return await db.query(select, values);
 }
@@ -51,16 +51,16 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = "INSERT INTO org (org_id, instance, modified_date, status) VALUES";
+    let sql = "INSERT INTO org (org_id, instance) VALUES";
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++},$${n++})`;
-        values.push(rec.org_id, rec.instance, rec.modified_date, rec.status.toUpperCase());
+        sql += `($${n++},$${n++})`;
+        values.push(rec.org_id, rec.instance);
     }
-    sql += ` on conflict do nothing`;
+    sql += ` on conflict (org_id) do nothing`;
     await db.insert(sql, values);
 }
 

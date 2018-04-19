@@ -44,13 +44,7 @@ async function oauthOrgCallback(req, res, next) {
     let conn = buildConnection();
     try {
         let userInfo = await conn.authorize(req.query.code);
-        try {
-            let org = await conn.sobject("Organization").retrieve(userInfo.organizationId);
-            await packageorgs.createPackageOrg(org.Id, org.Name, org.Division, org.NamespacePrefix, org.InstanceName, conn.instanceUrl, conn.refreshToken, conn.accessToken);
-        } catch (e) {
-            // No access to the Organization object?  No worries...
-            await packageorgs.createPackageOrg(userInfo.organizationId, conn.instanceUrl, null, null, null, conn.instanceUrl, conn.refreshToken, conn.accessToken);
-        }
+        await packageorgs.initOrg(conn, userInfo.organizationId);
         res.redirect(`${CLIENT_URL}/authresponse`);
     } catch (e) {
         console.log(e);

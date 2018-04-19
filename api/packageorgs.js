@@ -1,5 +1,6 @@
 const db = require('../util/pghelper');
 const crypt = require('../util/crypt');
+const sfdc = require('./sfdcconn');
 
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 
@@ -42,8 +43,9 @@ async function retrieveByOrgId(org_id) {
     return recs[0];
 }
 
-async function create(org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token) {
-    let encrypto = {access_token: access_token, refresh_token: refresh_token};
+async function initOrg(conn, org_id) {
+    let org = await refresh(conn, org_id);
+    let encrypto = {access_token: conn.accessToken, refresh_token: conn.refreshToken};
     await crypt.passwordEncryptObjects(CRYPT_KEY, [encrypto]);
     let sql = `INSERT INTO package_org 
                 (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token)
@@ -52,8 +54,17 @@ async function create(org_id, name, division, namespace, instance_name, instance
                on conflict (org_id) do update set
                 name = excluded.name, division = excluded.division, namespace = excluded.namespace, instance_name = excluded.instance_name, 
                 instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token`;
-    await db.insert(sql,
-        [org_id, name, division, namespace, instance_name, instance_url, encrypto.refresh_token, encrypto.access_token]);
+    return await db.insert(sql,
+        [org_id, org.Name, org.Division, org.NamespacePrefix, org.InstanceName, conn.instanceUrl, encrypto.refresh_token, encrypto.access_token]);
+}
+
+async function refresh(conn, org_id) {
+    try {
+        return await conn.sobject("Organization").retrieve(org_id);
+    } catch (e) {
+        // No access to the Organization object?  No worries.  Our token was still refreshed.
+        return {Id: org_Id, Name: conn.instanceUrl, Division: null, NamespacePrefix: null, InstanceName: null};
+    }
 }
 
 async function updateAccessToken(org_id, access_token) {
@@ -72,10 +83,23 @@ async function requestDelete(req, res, next) {
     }
 }
 
+async function requestRefresh(req, res, next) {
+    let id = req.params.id;
+    try {
+        let conn = await sfdc.buildOrgConnection(id);
+        let recs = await initOrg(conn, id);
+        await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ['access_token', 'refresh_token']);
+        return res.json(recs[0]);
+    } catch (err) {
+        return next(err);
+    }
+}
+
 exports.requestAll = requestAll;
 exports.requestById = requestById;
+exports.requestRefresh = requestRefresh;
+exports.requestDeleteById = requestDelete;
 exports.retrieveById = retrieve;
 exports.retrieveByOrgId = retrieveByOrgId;
-exports.requestDeleteById = requestDelete;
-exports.createPackageOrg = create;
+exports.initOrg = initOrg;
 exports.updateAccessToken = updateAccessToken;

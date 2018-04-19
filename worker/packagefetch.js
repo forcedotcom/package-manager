@@ -34,10 +34,10 @@ async function load(result, conn) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new packages found in SB62");
+        console.log("No new packages found");
         return; // nothing to see here
     }
-    console.log(`${count} packages found in SB62`);
+    console.log(`${count} packages found`);
     if (count <= batchSize) {
         return await upsertBatch(recs);
     }
@@ -64,3 +64,4 @@ async function upsertBatch(recs) {
 }
 
 exports.fetch = fetch;
+exports.upsert = upsert;

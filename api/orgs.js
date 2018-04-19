@@ -2,7 +2,7 @@ const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 
 
-const SELECT_ALL = `select o.id, o.org_id, o.instance, o.type, o.status, o.account_name, o.account_id from org o`;
+const SELECT_ALL = `select o.id, o.org_id, o.instance, o.account_name, o.account_id from org o`;
 const SELECT_MEMBERS = SELECT_ALL +
     " INNER JOIN org_group_member AS m ON o.org_id = m.org_id";
 

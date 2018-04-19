@@ -33,6 +33,7 @@ app.use(cookieSession({
 app.get('/oauth2/callback', auth.oauthOrgCallback);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 
+
 app.get('/api/orgs', orgs.requestAll);
 app.get('/api/orgs/:id', orgs.requestById);
 app.post('/api/orgs/:id/upgrade', orgs.requestUpgrade);
@@ -41,6 +42,7 @@ app.get('/api/orggroups', orggroups.requestAll);
 app.get('/api/orggroups/:id', orggroups.requestById);
 app.get('/api/orggroups/:id/members', orggroups.requestMembers);
 app.post('/api/orggroups', orggroups.requestCreate);
+app.post('/api/orggroups/:id/upgrade', orggroups.requestUpgrade);
 app.put('/api/orggroups', orggroups.requestUpdate);
 app.delete('/api/orggroups/:id', orggroups.requestDelete);
 
@@ -55,6 +57,7 @@ app.get('/api/packageversions/:id', packageversions.requestById);
 
 app.get('/api/packageorgs', packageorgs.requestAll);
 app.get('/api/packageorgs/:id', packageorgs.requestById);
+app.post('/api/packageorgs/:id', packageorgs.requestRefresh);
 app.delete('/api/packageorgs/:id', packageorgs.requestDeleteById);
 
 // The "catchall" handler: for any request that doesn't

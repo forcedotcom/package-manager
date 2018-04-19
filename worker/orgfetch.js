@@ -92,18 +92,17 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = "INSERT INTO org (org_id, instance, modified_date, type, status, account_id, account_name) VALUES";
+    let sql = "INSERT INTO org (org_id, instance, modified_date, account_id, account_name) VALUES";
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
-        values.push(rec.org_id, rec.instance, rec.modified_date, rec.type, rec.status, rec.account_id, rec.account_name);
+        sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
+        values.push(rec.org_id, rec.instance, rec.modified_date, rec.account_id, rec.account_name);
     }
-    sql += ` on conflict (org_id) do update set
-        instance = excluded.instance, modified_date = excluded.modified_date, type = excluded.type, status = excluded.status,
-        account_id = excluded.account_id, account_name = excluded.account_name`;
+    sql += ` on conflict (org_id) do update set instance = excluded.instance, modified_date = excluded.modified_date, 
+            account_id = excluded.account_id, account_name = excluded.account_name`;
     await db.insert(sql, values);
 }
 

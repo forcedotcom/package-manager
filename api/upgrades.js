@@ -7,15 +7,33 @@ const SELECT_ALL_ITEMS = `SELECT id, upgrade_id, push_request_id, package_org_id
 
 async function createUpgrade(scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    return db.insert('INSERT INTO upgrade (start_time) VALUES ($1)', [isoTime])[0];
+    let recs = await db.insert('INSERT INTO upgrade (start_time) VALUES ($1)', [isoTime]);
+    return recs[0];
 }
+
 
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    return db.insert('INSERT INTO upgrade_item' +
+    let recs = await db.insert('INSERT INTO upgrade_item' +
         ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time)' +
         ' VALUES ($1,$2,$3,$4,$5)',
-        [upgradeId, requestId, packageOrgId, versionId, isoTime])[0];
+        [upgradeId, requestId, packageOrgId, versionId, isoTime]);
+    return recs[0];
+}
+
+async function createUpgradeJob(upgradeId, requestId, jobId, orgIds, status) {
+    let sql = `INSERT INTO upgrade_job (upgrade_id, push_request_id, job_id, org_id, status) VALUES`;
+    let values = [];
+    for (let i = 0, n = 1; i < orgIds.length; i++) {
+        let orgId = orgIds[i];
+        if (i > 0) {
+            sql += ','
+        }
+        sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
+        values.push(upgradeId, requestId, jobId, orgId, status);
+    }
+
+    await db.insert(sql, values);
 }
 
 async function requestAll(req, res, next) {
@@ -61,3 +79,4 @@ exports.requestAll = requestAll;
 exports.requestAllItems = requestAllItems;
 exports.createUpgrade = createUpgrade;
 exports.createUpgradeItem = createUpgradeItem;
+exports.createUpgradeJob = createUpgradeJob;

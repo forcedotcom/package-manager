@@ -475,9 +475,9 @@ jsbn@~0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/jsbn/-/jsbn-0.1.1.tgz#a5e654c2e5a2deb5f201d96cefbca80c0ef2f513"
 
-jsforce@^1.8.0:
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/jsforce/-/jsforce-1.8.1.tgz#bbcbe8f01f14f6ed8d1c9c3a7b379cbedf261ecb"
+jsforce@^1.8.4:
+  version "1.8.4"
+  resolved "https://registry.yarnpkg.com/jsforce/-/jsforce-1.8.4.tgz#7c1a32cd799205e77706fa99229e4dd207030fc6"
   dependencies:
     co-prompt "^1.0.0"
     coffeescript "^1.10.0"
@@ -561,9 +561,9 @@ mime@1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/mime/-/mime-1.4.1.tgz#121f9ebc49e3766f311a76e1fa1c8003c4b03aa6"
 
-moment@^2.21.0:
-  version "2.21.0"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.21.0.tgz#2a114b51d2a6ec9e6d83cf803f838a878d8a023a"
+moment@^2.22.0:
+  version "2.22.0"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.22.0.tgz#7921ade01017dd45186e7fee5f424f0b8663a730"
 
 ms@2.0.0:
   version "2.0.0"

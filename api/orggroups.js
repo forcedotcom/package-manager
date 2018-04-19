@@ -69,9 +69,9 @@ async function requestDelete(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    push.upgradeOrgGroup(req.params.id, req.body.scheduled_date)
+    push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date)
         .then((jobs) => {return res.json(jobs)})
-        .catch((e) => {console.error(e); next(e)});
+        .catch((e) => {console.error(e); next(e)})
 }
 
 exports.requestAll = requestAll;

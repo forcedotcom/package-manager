@@ -12,7 +12,7 @@ async function fetchAll() {
 
 async function fetch(limit) {
     let fromDate = null;
-    let latest = await db.query(`select max(modified_date) from license`);
+    let latest = await db.query(`select max(modified_date) max from license`);
     if (latest.length > 0) {
         fromDate = latest[0].max;
     }
@@ -105,4 +105,5 @@ async function upsertBatch(recs) {
     await db.insert(sql, values);
 }
 
+exports.fetchAll = fetchAll;
 exports.fetch = fetch;

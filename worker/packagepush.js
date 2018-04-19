@@ -1,27 +1,36 @@
 'use strict';
 
-const ALLOWED_ORGS = ['00D37000000KnsY', '00D37000000Knsn', '00D1I000001dehP', '00Dj0000000JprU'];
+const ALLOWED_ORGS = ['00D0q000000CxI3','00D37000000KnsY', '00D37000000Knsn', '00D1I000001dehP', '00Dj0000000JprU'];
 
 const sfdc = require('../api/sfdcconn');
 const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
 
-async function createPushRequest(conn, packageVersionId, scheduledDate) {
+const parseXML = require('xml2js').parseString;
+const soap = require('../util/soap');
+
+async function createPushRequest(upgradeId, conn, packageOrgId, packageVersionId, scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
-    return conn.sobject("PackagePushRequest").create(body);
+    let pushReq = await conn.sobject("PackagePushRequest").create(body);
+    await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate);
+    return pushReq;
 }
 
-async function createPushJob(conn, packagePushRequestId, orgIds) {
+async function createPushJob(upgradeId, conn, pushReqId, orgIds) {
     let body = [];
     for (let i = 0; i < orgIds.length; i++) {
-        body.push({PackagePushRequestId: packagePushRequestId, SubscriberOrganizationKey: orgIds[i]});
+        body.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
     }
-    return conn.sobject("PackagePushJob").create(body);
+
+    let pushJob = await conn.sobject("PackagePushJob").create(body);
+    await upgrades.createUpgradeJob(upgradeId, pushReqId, pushJob.id, orgIds, pushJob.Status);
+    return pushJob;
 }
 
 async function activateRequest(conn, packagePushRequestId) {
-    return updatePushRequest(conn, packagePushRequestId, "Pending");
+    // NOT YET!!!?%!
+    // return updatePushRequest(conn, packagePushRequestId, "Pending");
 }
 
 async function cancelRequests(conn) {
@@ -47,27 +56,26 @@ async function updatePushRequest(conn, packagePushRequestId, status) {
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate) {
     for (let i = 0; i < orgIds.length; i++) {
-        if (!ALLOWED_ORGS.indexOf(orgIds[i])) {
+        if (ALLOWED_ORGS.indexOf(orgIds[i]) === -1) {
             console.error(`${orgIds[i]} is not in ALLOWED_ORGS.  Aborting operation.  Shame on you.`);
             return [];
         }
     }
+
+    let upgrade = await upgrades.createUpgrade(scheduledDate);
 
     let requests = [];
     let versions = await packageversions.findLatestByOrgIds(versionIds, orgIds);
     for (let i = 0; i < versions.length; i++) {
         let version = versions[i];
         let conn = await sfdc.buildOrgConnection(version.package_org_id);
-        let pushReq = await createPushRequest(conn, version.latest_version_id, scheduledDate);
-        await createPushJob(conn, pushReq.id, orgIds);
+        let pushReq = await createPushRequest(upgrade.id, conn, version.package_org_id, version.latest_version_id, scheduledDate);
+        await createPushJob(upgrade.id, conn, pushReq.id, orgIds);
 
         // Activate right away, for now.  Later, this should be a done as a follow up manual step from the upgrade event screen.
         await activateRequest(conn, pushReq.id);
 
         requests.push(pushReq);
-    }
-    if (requests.length > 0) {
-        await upgrades.createUpgrade(scheduledDate);
     }
     return requests;
 }
@@ -75,17 +83,17 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate) {
 async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate) {
     let conns = {}, pushReqs = {};
 
-    await upgrades.createUpgrade(scheduledDate);
+    let upgrade = await upgrades.createUpgrade(scheduledDate);
 
     let versions = await packageversions.findLatestByGroupIds(versionIds, orgGroupIds);
     for (let i = 0; i < versions.length; i++) {
         let version = versions[i];
-        let orgKey = version.package_org_id, reqKey = version.package_org_id + version.version_id;
+        let orgKey = version.package_org_id, reqKey = version.package_org_id + version.latest_version_id;
 
         let conn = conns[orgKey] = conns[orgKey] || await sfdc.buildOrgConnection(version.package_org_id);
 
         let pushReq = pushReqs[reqKey] = pushReqs[reqKey] || // Initialized if not found
-            {id: await createPushRequest(conn, version.version_id, scheduledDate).id, conn: conn, orgIds: []};
+            {id: await createPushRequest(upgrade.id, conn, version.package_org_id, version.latest_version_id, scheduledDate).id, conn: conn, orgIds: []};
 
         // Add this particular org id to the batch
         pushReq.orgIds.push(version.org_id);
@@ -93,20 +101,25 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate) {
 
     // Now, create the jobs and activate the requests.
     Object.entries(pushReqs).forEach(async ([key, pushReq]) => {
-        await createPushJob(pushReq.conn, pushReq.id, pushReq.orgIds);
+        await createPushJob(upgrade.id, pushReq.conn, pushReq.id, pushReq.orgIds);
 
-        // Activate right away.  In future, this may be a done as a follow up manual step from the upgrade event screen.
+        // Activate right away.  TODO In future, this may be a done as a follow up manual step from the upgrade event screen.
         await activateRequest(pushReq.conn, pushReq.id);
     });
 
-    return pushReqs;
+    return upgrade;
 }
 
 async function upgradeVersion(versionId, orgIds, scheduledDate) {
+
+
     let version = await packageversions.findLatestByOrgIds([versionId], orgIds)[0];
     let conn = await sfdc.buildOrgConnection(version.package_org_id);
-    let pushreq = await createPushRequest(conn, version.version_id, scheduledDate);
-    await createPushJob(conn, pushreq.id, orgIds);
+
+    let upgrade = await upgrades.createUpgrade(scheduledDate);
+
+    let pushreq = await createPushRequest(upgrade.id, conn, version.package_org_id, version.latest_version_id, scheduledDate);
+    await createPushJob(upgrade.id, conn, pushreq.id, orgIds);
 
     // Activate right away, for now.  Later, this should be a done as a follow up manual step from the upgrade event screen.
     await activateRequest(conn, pushreq.id);
@@ -138,41 +151,23 @@ async function findJobsByRequestIds(packageOrgId, requestIds) {
     return res.records;
 }
 
+// Dev extras, shouldn't be needed in prod
 async function countActiveRequests(conn) {
     let soql = `SELECT Id FROM PackagePushRequest WHERE Status IN ('In Progress', 'Pending')`;
     let res = await conn.query(soql);
     return res.records.length;
 }
 
-exports.findRequestsByIds = findRequestsByIds;
-exports.findJobsByRequestIds = findJobsByRequestIds;
-exports.createPushRequest = createPushRequest;
-exports.createPushJob = createPushJob;
-exports.activateRequest = activateRequest;
-exports.clearRequests = clearRequests;
-exports.upgradeOrgs = upgradeOrgs;
-exports.upgradeOrgGroups = upgradeOrgGroups;
-exports.upgradeVersion = upgradeVersion;
-
-
-// APPENDIX
 async function queryPackageVersions(packageOrgId) {
     try {
         let conn = await sfdc.buildOrgConnection(packageOrgId);
-        let res = await conn.query("Select Id, Name, MetadataPackageId, ReleaseState, MajorVersion, MinorVersion, PatchVersion, BuildNumber " +
-            " from MetadataPackageVersion" +
-            " where MajorVersion = 208");
-        let versions = res.records.map(function (v) {
-            return v.Name + ': ' + v.MajorVersion + '.' + v.MinorVersion + '.' + v.PatchVersion + ' - ' + v.Id;
-        }).join('\n');
-        console.log(versions);
+        let res = await conn.query(`Select Id, Name, MetadataPackageId, ReleaseState, MajorVersion, 
+                                    MinorVersion, PatchVersion, BuildNumber from MetadataPackageVersion`);
+        return res.records;
     } catch (e) {
         return console.error(e);
     }
 }
-
-const parseXML = require('xml2js').parseString;
-const soap = require('../util/soap');
 
 async function querySubscribers(packageOrgId, shortIds) {
     try {
@@ -180,12 +175,15 @@ async function querySubscribers(packageOrgId, shortIds) {
 
         // Just pinging the connection here to ensure the oauth access token is fresh (because our soap call below won't do it for us).
         let count = await countActiveRequests(conn);
-        console.log(`Active requests? ${count}`)
+        console.log(`Active requests? ${count}`);
 
-        let idsIn = shortIds.map((v) => {
-            return "'" + v + "'"
-        }).join(",");
-        let soql = "SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber WHERE OrgKey IN (" + idsIn + ")";
+        let soql = "SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber";
+        if (shortIds) {
+            let idsIn = shortIds.map((v) => {
+                return "'" + v + "'"
+            }).join(",");
+            soql += `WHERE OrgKey IN (${idsIn})`;
+        }
         let res = await soap.invoke(conn, "query", {queryString: soql});
         console.log(JSON.stringify(soap.getResponseBody(res).result.records));
     } catch (e) {
@@ -195,6 +193,14 @@ async function querySubscribers(packageOrgId, shortIds) {
         });
     }
 }
+
+exports.findRequestsByIds = findRequestsByIds;
+exports.findJobsByRequestIds = findJobsByRequestIds;
+exports.activateRequest = activateRequest;
+exports.clearRequests = clearRequests;
+exports.upgradeOrgs = upgradeOrgs;
+exports.upgradeOrgGroups = upgradeOrgGroups;
+exports.upgradeVersion = upgradeVersion;
 
 exports.queryPackageVersions = queryPackageVersions;
 exports.querySubscribers = querySubscribers;

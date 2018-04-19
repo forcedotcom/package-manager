@@ -12,7 +12,7 @@ drop table if exists license;
 drop table if exists upgrade;
 drop table if exists upgrade_item;
 
-create table package_org
+create table if not exists package_org
 (
   id serial not null,
   org_id varchar(18) not null
@@ -27,16 +27,14 @@ create table package_org
   access_token varchar(256)
 );
 
-create table org
+create table if not exists org
 (
   id serial not null,
   org_id varchar(18) not null
     constraint org_org_id_pk
     primary key,
   instance varchar(6),
-  modified_date TIMESTAMP,
-  type varchar(40),
-  status varchar(20),
+  modified_date TIMESTAMP WITH TIME ZONE,
   account_name varchar(256),
   account_id varchar(18)
 );
@@ -46,7 +44,7 @@ create table if not exists org_group (
   master_id     INTEGER,
   name varchar(100),
   description text,
-  created_date TIMESTAMP
+  created_date TIMESTAMP WITH TIME ZONE
 );
 
 create table if not exists org_group_member (
@@ -65,7 +63,7 @@ create table if not exists org_group_criteria (
 
 create table if not exists upgrade (
   id     serial primary key,
-  start_time TIMESTAMP
+  start_time TIMESTAMP WITH TIME ZONE
 );
 
 create table if not exists upgrade_item (
@@ -74,39 +72,29 @@ create table if not exists upgrade_item (
   push_request_id varchar(18),
   package_org_id varchar(18),
   package_version_id varchar(18),
-  start_time TIMESTAMP
+  start_time TIMESTAMP WITH TIME ZONE
 );
 
-insert into org_group (id, name, description) values
-  (1, 'Early Access', 'Preferential customers and orgs approved for early delivery of new package versions.'),
-  (2, 'Bulk', 'Normal customers.'),
-  (3, 'Sensitive', 'Preferential customers and orgs approved for late delivery of new package versions.');
-
-insert into org_group_member (org_group_id, org_id) values
-  (1, '00D7F000002DFUR'),
-  (1, '00D0v0000000gE7'),
-  (1, '00D3B000000Dc3g'),
-  (1, '00D1F0000008eiD'),
-  (2, '00D3E0000000b5S'),
-  (2, '00D1F0000008eiD'),
-  (2, '00D1I000001WmO3'),
-  (2, '00D0R0000000OOn'),
-  (2, '00D1I000001Wmhw'),
-  (2, '00D1I000001Xbb7'),
-  (3, '00D1I000001WmhX'),
-  (3, '00D1I000001Wmo5');
+create table if not exists upgrade_job (
+  id     serial primary key,
+  upgrade_id INTEGER,
+  push_request_id varchar(18),
+  job_id varchar(18),
+  org_id varchar(18),
+  status varchar(40)
+);
 
 -- SB62 Data
-create table fetch_history
+create table if not exists fetch_history
 (
   id serial not null,
   object VARCHAR(40),
-  fetch_date TIMESTAMP,
-  max_record_date TIMESTAMP,
+  fetch_date TIMESTAMP WITH TIME ZONE,
+  max_record_date TIMESTAMP WITH TIME ZONE,
   count INTEGER
 );
 
-create table package
+create table if not exists package
 (
   id serial not null,
   sfid varchar(18) not null
@@ -117,7 +105,7 @@ create table package
   package_org_id varchar(18)
 );
 
-create table package_version
+create table if not exists package_version
 (
   id serial not null,
   sfid varchar(18) not null
@@ -127,13 +115,13 @@ create table package_version
   version_number varchar(20),
   real_version_number varchar(12),
   package_id varchar(18),
-  release_date TIMESTAMP,
-  modified_date TIMESTAMP,
+  release_date TIMESTAMP WITH TIME ZONE,
+  modified_date TIMESTAMP WITH TIME ZONE,
   status varchar(20),
   version_id varchar(18)
 );
 
-create table package_version_latest
+create table if not exists package_version_latest
 (
   id serial not null,
   package_id varchar(18) not null
@@ -145,7 +133,7 @@ create table package_version_latest
   version_id varchar(18)
 );
 
-create table license
+create table if not exists license
 (
   id serial not null,
   sfid varchar(18) not null
@@ -157,10 +145,27 @@ create table license
   is_sandbox boolean,
   type varchar(255),
   status varchar(255),
-  install_date TIMESTAMP,
-  modified_date TIMESTAMP,
-  expiration TIMESTAMP,
+  install_date TIMESTAMP WITH TIME ZONE,
+  modified_date TIMESTAMP WITH TIME ZONE,
+  expiration TIMESTAMP WITH TIME ZONE,
   used_license_count integer,
   package_id varchar(18),
   package_version_id varchar(18)
 );
+
+-- Test Data
+delete from org_group;
+delete from org_group_member;
+insert into org_group (id, name, description) values
+  (1, 'Alpha', 'Preferential customers, signed up for early delivery of new package versions.'),
+  (2, 'Theta', 'Normal customers.'),
+  (3, 'Omega', 'Deferred customers, approved for late delivery of new package versions.');
+
+insert into org_group_member (org_group_id, org_id) values
+  (1, '00D0m0000008dxK'),
+  (1, '00D63000000CwEq'),
+  (1, '00D3F000000CtxN');
+
+insert into org_group_member (org_group_id, org_id) values
+  (2, '00D0q000000CxI3'),
+  (2, '00D9A0000000UbB')
