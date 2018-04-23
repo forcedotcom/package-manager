@@ -14,6 +14,7 @@ const express = require('express'),
     packages = require('./api/packages'),
     packageorgs = require('./api/packageorgs'),
     packageversions = require('./api/packageversions'),
+    upgrades = require('./api/upgrades'),
     licenses = require('./api/licenses'),
     auth = require('./api/auth'),
     app = express();
@@ -59,6 +60,18 @@ app.get('/api/packageorgs', packageorgs.requestAll);
 app.get('/api/packageorgs/:id', packageorgs.requestById);
 app.post('/api/packageorgs/:id', packageorgs.requestRefresh);
 app.delete('/api/packageorgs/:id', packageorgs.requestDeleteById);
+
+app.get('/api/upgrades', upgrades.requestAll);
+app.get('/api/upgrades/:id', upgrades.requestById);
+
+app.get('/api/upgradeitems', upgrades.requestAllItems);
+app.get('/api/upgradeitems/:id', upgrades.requestItemById);
+app.post('/api/upgradeitems/:id/activate', upgrades.requestActivateUpgradeItem);
+app.post('/api/upgradeitems/:id/cancel', upgrades.requestCancelUpgradeItem);
+
+app.get('/api/upgradejobs', upgrades.requestAllJobs);
+app.get('/api/upgradejobs/:id', upgrades.requestJobById);
+app.get('/api/upgradejobs/:id/status', upgrades.requestJobStatusByItemId);
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.

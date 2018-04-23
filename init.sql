@@ -11,6 +11,7 @@ drop table if exists package_version_latest;
 drop table if exists license;
 drop table if exists upgrade;
 drop table if exists upgrade_item;
+drop table if exists upgrade_job;
 
 create table if not exists package_org
 (
@@ -72,12 +73,14 @@ create table if not exists upgrade_item (
   push_request_id varchar(18),
   package_org_id varchar(18),
   package_version_id varchar(18),
+  status varchar(40),
   start_time TIMESTAMP WITH TIME ZONE
 );
 
 create table if not exists upgrade_job (
   id     serial primary key,
   upgrade_id INTEGER,
+  item_id INTEGER,
   push_request_id varchar(18),
   job_id varchar(18),
   org_id varchar(18),

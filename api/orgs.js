@@ -54,7 +54,7 @@ function requestById(req, res, next) {
 
 function requestUpgrade(req, res, next) {
     push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date)
-        .then((jobs) => {return res.json(jobs)})
+        .then((upgrade) => {return res.json(upgrade)})
         .catch((e) => {console.error(e); next(e)});
 }
 
