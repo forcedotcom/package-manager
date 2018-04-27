@@ -1,6 +1,6 @@
 'use strict';
 
-const ALLOWED_ORGS = ['00D0q000000CxI3','00D37000000KnsY', '00D37000000Knsn', '00D1I000001dehP', '00Dj0000000JprU'];
+const ALLOWED_ORGS = ['00D0q000000CxI3','00D37000000KnsY', '00D37000000Knsn', '00D1I000001dehP', '00Dj0000000JprU', '00D0m0000008dxK'];
 
 const sfdc = require('../api/sfdcconn');
 const packageversions = require('../api/packageversions');
@@ -13,7 +13,7 @@ async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
     let pushReq = await conn.sobject("PackagePushRequest").create(body);
-    return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.Status);
+    return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? "Created" : pushReq.errors);
 }
 
 async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
@@ -22,16 +22,21 @@ async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
         body.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
     }
 
-    let pushJob = await conn.sobject("PackagePushJob").create(body);
-    await upgrades.createUpgradeJob(upgradeId, itemId, pushReqId, pushJob.id, orgIds, pushJob.Status);
-    return pushJob;
+    let results = await conn.sobject("PackagePushJob").create(body);
+    
+    let jobs = [];
+    for (let i = 0; i < results.length; i++) {
+        jobs.push({org_id: orgIds[i], job_id: results[i].id, status: results[i].success ? "Created" : results[i].errors});
+    }
+
+    await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
 }
 
 async function cancelRequests(conn) {
     let res = await conn.query("SELECT Id,PackageVersionId,Status,ScheduledStartTime FROM PackagePushRequest WHERE Status = 'Created'");
     console.log(`Canceling: ${res.records.length} requests`);
     let canceled = res.records.map((v) => {
-        return _updatePushRequest(conn, v.Id, "Canceled");
+        return conn.sobject('PackagePushRequest').update({Id: v.Id, Status: "Canceled"});
     });
     res = await Promise.all(canceled);
     console.log(`Canceled: ${res.records.length} requests`);
@@ -44,19 +49,29 @@ async function clearRequests(packageOrgIds) {
     }
 }
 
-function updatePushRequest(packageOrgId, packagePushRequestId, status) {
-    return _updatePushRequest(sfdc.buildOrgConnection(packageOrgId), packagePushRequestId, status);
-}
+async function updatePushRequests(upgradeItemIds, status) {
+    let conns = {}, batches = {};
 
-function _updatePushRequest(conn, packagePushRequestId, status) {
-    return conn.sobject('PackagePushRequest').update({Id: packagePushRequestId, Status: status});
+    let items = await upgrades.findItemsByIds(upgradeItemIds);
+    for (let i = 0; i < items.length; i++) {
+        let item = items[i];
+        let conn = conns[item.package_org_id] = conns[item.package_org_id] || await sfdc.buildOrgConnection(item.package_org_id);
+        let batch = batches[item.push_request_id] = (batches[item.push_request_id] || {conn: conn, requests: []});
+        batch.requests.push({Id: item.push_request_id, Status: status});
+    }
+
+    // Now, just update requests.
+    let promises = [];
+    Object.entries(batches).forEach(async ([key, batch]) => {
+        promises.push(batch.conn.sobject('PackagePushRequest').update(batch.requests));
+    });
+    return await Promise.all(promises);
 }
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate) {
     for (let i = 0; i < orgIds.length; i++) {
         if (ALLOWED_ORGS.indexOf(orgIds[i]) === -1) {
-            console.error(`${orgIds[i]} is not in ALLOWED_ORGS.  Aborting operation.  Shame on you.`);
-            return [];
+            throw new Error(`${orgIds[i]} is not in ALLOWED_ORGS.  Aborting operation.  Shame on you.`);
         }
     }
 
@@ -108,9 +123,6 @@ async function upgradeVersion(versionId, orgIds, scheduledDate) {
     let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate);
     await createPushJob(conn, upgrade.id, item.id, item.push_request_id, orgIds);
 
-    // Activate right away, for now.  Later, this should be a done as a follow up manual step from the upgrade event screen.
-    await activateRequest(conn, item.push_request_id);
-
     return upgrade;
 }
 
@@ -138,9 +150,21 @@ async function findJobsByRequestIds(packageOrgId, requestIds) {
     return res.records;
 }
 
+async function findErrorsByJobIds(packageOrgId, jobIds) {
+    let conn = await sfdc.buildOrgConnection(packageOrgId);
+
+    let params = jobIds.map(v => `'${v}'`);
+    let soql = `SELECT Id,ErrorDetails,ErrorMessage,ErrorSeverity,ErrorTitle,ErrorType,PackagePushJobId 
+        FROM PackagePushError
+        WHERE PackagePushJobId IN (${params.join(",")})`;
+
+    let res = await conn.query(soql);
+    return res.records;
+}
+
 // Dev extras, shouldn't be needed in prod
 async function countActiveRequests(conn) {
-    let soql = `SELECT Id FROM PackagePushRequest WHERE Status IN ('In Progress', 'Pending')`;
+    let soql = `SELECT Id FROM PackagePushRequest WHERE Status IN ('InProgress', 'Pending')`;
     let res = await conn.query(soql);
     return res.records.length;
 }
@@ -183,11 +207,9 @@ async function querySubscribers(packageOrgId, shortIds) {
 
 exports.findRequestsByIds = findRequestsByIds;
 exports.findJobsByRequestIds = findJobsByRequestIds;
-exports.updatePushRequest = updatePushRequest;
+exports.findErrorsByJobIds = findErrorsByJobIds;
+exports.updatePushRequests = updatePushRequests;
 exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroups = upgradeOrgGroups;
 exports.upgradeVersion = upgradeVersion;
-
-exports.queryPackageVersions = queryPackageVersions;
-exports.querySubscribers = querySubscribers;

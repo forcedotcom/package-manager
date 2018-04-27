@@ -53,6 +53,10 @@ async function requestUpdate(req, res, next) {
     try {
         let og = req.body;
         await db.update('UPDATE org_group SET name=$1, description=$2 WHERE id=$3', [og.name, og.description, og.id]);
+        
+        if (og.orgIds) {
+            await insertOrgMembers(og.id, og.orgIds);
+        }
         return res.send({result: 'ok'});
     } catch (err) {
         return next(err);
@@ -71,7 +75,16 @@ async function requestDelete(req, res, next) {
 function requestUpgrade(req, res, next) {
     push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date)
         .then((upgrade) => {return res.json(upgrade)})
-        .catch((e) => {console.error(e); next(e)})
+        .catch((e) => {console.error(e); next(e)});
+}
+
+async function insertOrgMembers(groupId, orgIds) {
+    let n = 2;
+    let params = orgIds.map(v => `($1,$${n++})`);
+    let values = [groupId].concat(orgIds); 
+    let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
+               on conflict do nothing`;
+    await db.insert(sql, values);
 }
 
 exports.requestAll = requestAll;

@@ -1,7 +1,7 @@
 const db = require('../util/pghelper');
 
 // const SELECT_ALL = `SELECT DISTINCT sflma__subscriber_org_id__c AS org_id, sflma__org_instance__c AS instance FROM sflma__license__c`;
-const SELECT_ALL = `SELECT DISTINCT org_id, instance FROM license 
+const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox FROM license 
                     WHERE status in ('Trial','Active') 
                     AND instance IS NOT NULL
                     AND (expiration IS NULL OR expiration > DATE 'tomorrow')`;
@@ -51,14 +51,14 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = "INSERT INTO org (org_id, instance) VALUES";
+    let sql = "INSERT INTO org (org_id, instance, is_sandbox) VALUES";
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++})`;
-        values.push(rec.org_id, rec.instance);
+        sql += `($${n++},$${n++},$${n++})`;
+        values.push(rec.org_id, rec.instance, rec.is_sandbox);
     }
     sql += ` on conflict (org_id) do nothing`;
     await db.insert(sql, values);

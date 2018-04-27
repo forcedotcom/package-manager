@@ -44,6 +44,7 @@ async function load(result, conn) {
             name: v.Name,
             version_number: v.sfLma__Version_Number__c,
             real_version_number: v.RealVersionNumber__c,
+            major_version: v.sfLma__Version_Number__c ? v.sfLma__Version_Number__c.split(".")[0] : null,
             package_id: v.sfLma__Package__c,
             release_date: new Date(v.sfLma__Release_Date__c).toISOString(),
             modified_date: new Date(v.LastModifiedDate).toISOString(),
@@ -75,19 +76,19 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = `INSERT INTO package_version (sfid, name, version_number, real_version_number, package_id,
+    let sql = `INSERT INTO package_version (sfid, name, version_number, real_version_number, major_version, package_id,
                release_date, modified_date, status, version_id) VALUES `;
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
-        values.push(rec.sfid, rec.name, rec.version_number, rec.real_version_number, rec.package_id,
+        sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
+        values.push(rec.sfid, rec.name, rec.version_number, rec.real_version_number, rec.major_version, rec.package_id,
             rec.release_date, rec.modified_date, rec.status, rec.version_id);
     }
     sql += ` on conflict (sfid) do update set
-        name = excluded.name, version_number = excluded.version_number, real_version_number = excluded.real_version_number,
+        name = excluded.name, version_number = excluded.version_number, real_version_number = excluded.real_version_number, major_version = excluded.major_version,
         package_id = excluded.package_id, release_date = excluded.release_date, modified_date = excluded.modified_date, 
         status = excluded.status, version_id = excluded.version_id`;
     await db.insert(sql, values);

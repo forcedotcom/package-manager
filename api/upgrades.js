@@ -1,6 +1,6 @@
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
-const sfdc = require('../api/sfdcconn');
+const licensefetch = require('../worker/licensefetch');
 
 
 const SELECT_ALL = `select u.id, u.start_time, count(i.*) item_count
@@ -14,21 +14,25 @@ const SELECT_ONE = `select u.id, u.start_time, count(i.*) item_count
                     where u.id = $1
                     group by u.id, u.start_time`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, 
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         pv.version_number, pv.version_id,
-        p.name package_name,
+        p.name package_name, p.sfid package_id,
         count(j.*) job_count
         FROM upgrade_item i
         inner join package_version pv on pv.version_id = i.package_version_id
         inner join package p on p.sfid = pv.package_id
-        inner join upgrade_job j on j.item_id = i.id
-        where i.upgrade_id = $1
-        group by i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, 
+        inner join upgrade_job j on j.item_id = i.id`;
+
+const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         pv.version_number, pv.version_id,
-        p.name`;
+        p.name, p.sfid`;
 
+const SELECT_ALL_ITEMS_BY_UPGRADE = 
+        `${SELECT_ALL_ITEMS}
+        where i.upgrade_id = $1
+        ${GROUP_BY_ALL_ITEMS}`;
 
-const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, 
+const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         pv.version_number, pv.version_id,
         p.name package_name
         FROM upgrade_item i
@@ -38,7 +42,7 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status,
         i.start_time,
         pv.version_number, pv.version_id,
-        p.name package_name,
+        p.name package_name, p.sfid package_id,
         o.account_name
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
@@ -52,26 +56,28 @@ async function createUpgrade(scheduledDate) {
     return recs[0];
 }
 
-
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let recs = await db.insert('INSERT INTO upgrade_item' +
         ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status)' +
-        ' VALUES ($1,$2,$3,$4,$5)',
+        ' VALUES ($1,$2,$3,$4,$5,$6)',
         [upgradeId, requestId, packageOrgId, versionId, isoTime, status]);
     return recs[0];
 }
 
-async function createUpgradeJob(upgradeId, itemId, requestId, jobId, orgIds, status) {
+async function updateUpgradeItemStatus(id, status) {
+    await db.update('UPDATE upgrade_item SET status = $1 WHERE id = $2', [status, id]);
+}
+
+async function createUpgradeJobs(upgradeId, itemId, requestId, jobs) {
     let sql = `INSERT INTO upgrade_job (upgrade_id, item_id, push_request_id, job_id, org_id, status) VALUES`;
-    let values = [];
-    for (let i = 0, n = 1; i < orgIds.length; i++) {
-        let orgId = orgIds[i];
+    let values = []; 
+    for (let i = 0, n = 1; i < jobs.length; i++) {
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
-        values.push(upgradeId, itemId, requestId, jobId, orgId, status);
+        sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
+        values.push(upgradeId, itemId, requestId, jobs[i].job_id, jobs[i].org_id, jobs[i].status);
     }
 
     await db.insert(sql, values);
@@ -80,7 +86,7 @@ async function createUpgradeJob(upgradeId, itemId, requestId, jobId, orgIds, sta
 async function requestAll(req, res, next) {
     try {
         let upgrades = await findAll(req.query.sort_field, req.query.sort_dir);
-        return res.send(JSON.stringify(upgrades));
+        return res.json(upgrades);
     } catch (err) {
         next(err);
     }
@@ -91,30 +97,69 @@ async function findAll(sortField, sortDir) {
     return await db.query(SELECT_ALL + orderBy, [])
 }
 
-async function requestAllItems(req, res, next) {
+async function requestItemsByUpgrade(req, res, next) {
     try {
-        let upgradeItems = await findAllItems(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
-        return res.send(JSON.stringify(upgradeItems));
+        let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
+        if (req.query.fetchStatus === "true") {
+            let completed = false;
+            for (let i = 0; i < items.length; i++) {
+                let item = items[i];
+                let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
+                if (item.status !== pushReqs[0].Status) {
+                    item.status = pushReqs[0].Status;
+                    await updateUpgradeItemStatus(item.id, item.status);
+                    console.log(`Status changed for item ${item.id} to ${item.status}`);
+                    if (item.status === "Complete") {
+                        completed = true;
+                    }
+                }
+            }
+            if (completed) {
+                refreshLicenses().then(() => console.log("Done.")).catch((e) => console.error(e));
+            }
+        }
+
+        return res.json(items);
     } catch (err) {
         next(err);
     }
 }
 
-async function findAllItems(upgradeId, sortField, sortDir) {
+async function refreshLicenses() {
+    licensefetch.fetch();
+}
+
+async function findItemsByIds(itemIds) {
+    let whereParts = [];
+    let values = [];
+    if (itemIds) {
+        let params = [];
+        for(let i = 1; i <= itemIds.length; i++) {
+            params.push('$' + i);
+        }
+        whereParts.push(`i.id IN (${params.join(",")})`);
+        values = values.concat(itemIds);
+    }
+    
+    let where = ` WHERE ${whereParts.join(" AND" )}`;
+    return await db.query(SELECT_ALL_ITEMS + where + GROUP_BY_ALL_ITEMS, values)
+}
+
+async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
     let orderBy = ` ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
-    return await db.query(SELECT_ALL_ITEMS + orderBy, [upgradeId])
+    return await db.query(SELECT_ALL_ITEMS_BY_UPGRADE + orderBy, [upgradeId])
 }
 
-async function requestAllJobs(req, res, next) {
+async function requestJobsByUpgradeItem(req, res, next) {
     try {
-        let jobs = await findAllJobs(req.query.itemId, req.query.sort_field, req.query.sort_dir);
-        return res.send(JSON.stringify(jobs));
+        let jobs = await findJobsByUpgradeItem(req.query.itemId, req.query.sort_field, req.query.sort_dir);
+        return res.json(jobs);
     } catch (err) {
         next(err);
     }
 }
 
-async function findAllJobs(itemId, sortField, sortDir) {
+async function findJobsByUpgradeItem(itemId, sortField, sortDir) {
     let where = " WHERE j.item_id = $1";
     let orderBy = ` ORDER BY  ${sortField || "item_id"} ${sortDir || "asc"}`;
     return await db.query(SELECT_ALL_JOBS + where + orderBy, [itemId])
@@ -122,11 +167,13 @@ async function findAllJobs(itemId, sortField, sortDir) {
 
 function requestById(req, res, next) {
     let id = req.params.id;
-    db.query(SELECT_ONE, [id])
-        .then(function (recs) {
-            return res.json(recs[0]);
-        })
+    retrieveById(id).then(rec => res.json(rec))
         .catch(next);
+}
+
+async function retrieveById(id) {
+    let recs = await db.query(SELECT_ONE, [id]);
+    return recs[0];
 }
 
 function requestItemById(req, res, next) {
@@ -151,35 +198,73 @@ function requestJobById(req, res, next) {
         .catch(next);
 }
 
-async function requestJobStatusByItemId(req, res, next) {
+async function requestJobStatusByItem(req, res, next) {
     let id = req.params.id;
     try {
         let item = await retrieveItemById(id);
+        let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
+        if (item.status !== pushReqs[0].Status) {
+            item.status = pushReqs[0].Status;
+            updateUpgradeItemStatus(item.id, item.status).then(() => console.log(`Status changed for item ${item.id} to ${item.status}`)).catch(err => console.error(err));
+        }
         let pushJobs = await push.findJobsByRequestIds(item.package_org_id, [item.push_request_id]);
         let statusMap = {};
+        let errorIds = [];
         for (let i = 0; i < pushJobs.length; i++) {
             let job = pushJobs[i];
-            statusMap[job.id] = job.Status;
+            let shortId = job.Id.substring(0,15);
+            statusMap[shortId] = job.Status;
+            if (job.Status === 'Failed') {
+                errorIds.push(shortId);
+            }
         }
-        return res.send(JSON.stringify(statusMap));
+
+        let errorMap = {};
+        let pushErrors = errorIds.length > 0 ? await push.findErrorsByJobIds(item.package_org_id, errorIds) : [];
+        for (let i = 0; i < pushErrors.length; i++) {
+            let err = pushErrors[i];
+            let shortId = err.PackagePushJobId.substring(0,15);
+            errorMap[shortId] = {
+                title: err.ErrorTitle, severity: err.ErrorSeverity, type: err.ErrorType,
+                message: err.ErrorMessage, details: err.ErrorDetails, job_id: shortId};
+        }
+        return res.json({item: item, status: statusMap, errors: errorMap});
     } catch (err) {
         next(err);
     }
 }
 
+
 async function requestActivateUpgradeItem(req, res, next) {
     return requestStatusUpdate(req, res, next, "Pending");
+}
+
+async function requestActivateUpgradeItems(req, res, next) {
+    return requestUpdateItemStatus(req, res, next, "Pending");
 }
 
 async function requestCancelUpgradeItem(req, res, next) {
     return requestStatusUpdate(req, res, next, "Canceled");
 }
 
+async function requestCancelUpgradeItems(req, res, next) {
+    return requestUpdateItemStatus(req, res, next, "Canceled");
+}
+
 async function requestStatusUpdate(req, res, next, status) {
     let id = req.params.id;
     try {
-        let item = await retrieveItemById(id);
-        return await push.updatePushRequest(item.package_org_id, item.push_request_id, status);
+        return await push.updatePushRequests([id], status);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function requestUpdateItemStatus(req, res, next, status) {
+    const ids = req.body.items;
+    try {
+        let result = await push.updatePushRequests(ids, status);
+        res.json(result);
     } catch (err) {
         next(err);
     }
@@ -189,11 +274,14 @@ exports.requestById = requestById;
 exports.requestItemById = requestItemById;
 exports.requestJobById = requestJobById;
 exports.requestAll = requestAll;
-exports.requestAllItems = requestAllItems;
-exports.requestAllJobs = requestAllJobs;
-exports.requestJobStatusByItemId = requestJobStatusByItemId;
+exports.requestItemsByUpgrade = requestItemsByUpgrade;
+exports.requestJobsByUpgradeItem = requestJobsByUpgradeItem;
+exports.requestJobStatusByItem = requestJobStatusByItem;
 exports.createUpgrade = createUpgrade;
 exports.createUpgradeItem = createUpgradeItem;
-exports.createUpgradeJob = createUpgradeJob;
+exports.createUpgradeJobs = createUpgradeJobs;
 exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
+exports.requestActivateUpgradeItems = requestActivateUpgradeItems;
 exports.requestCancelUpgradeItem = requestCancelUpgradeItem;
+exports.requestCancelUpgradeItems = requestCancelUpgradeItems;
+exports.findItemsByIds = findItemsByIds;

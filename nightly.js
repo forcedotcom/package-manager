@@ -7,7 +7,7 @@ const lics = require('./worker/licensefetch');
 const licorgs = require('./worker/licenseorgfetch');
 
 async function fetchAll() {
-    await orgs.fetch();
+    // await orgs.fetch();
     await ps.fetch();
     await pvs.fetch();
     await pvs.fetchLatest();

@@ -1,56 +1,89 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
-const parseXML = require('xml2js').parseString;
-const soap = require('../util/soap');
 
 async function fetchAll(packageOrgId, limit) {
-    return fetchFrom(packageOrgId, limit);
-}
-
-async function fetch(packageOrgId, limit) {
-    let fromDate = null;
-    let latest = await db.query(`select max(modified_date) from org`);
-    if (latest.length > 0) {
-        fromDate = latest[0].max;
+    if (!packageOrgId) {
+        return fetchFromAllOrgs();
     }
-    return fetchFrom(packageOrgId, fromDate, limit);
+    return fetch(packageOrgId, null, null, limit);
 }
 
-async function fetchFrom(packageOrgId, fromDate, limit) {
-    let recs = await query(packageOrgId, fromDate, limit);
+async function fetchFromAllOrgs() {
+    let conns = {};
+    let recs = [];
+    let porgVersions = await db.query(`SELECT distinct o.org_id, p.name package_name, v.major_version 
+                                FROM package_org o 
+                                INNER JOIN package p ON p.package_org_id = o.org_id
+                                INNER JOIN package_version v ON v.package_id = p.sfid
+                                ORDER BY package_name, major_version asc`);
+    for (let i = 0; i < porgVersions.length; i++) {
+        let porgVersion = porgVersions[i];
+        let conn = conns[porgVersion.org_id] = conns[porgVersion.org_id] || await sfdc.buildOrgConnection(porgVersion.org_id);
+        process.stdout.write(`Fetching major version ${porgVersion.major_version} of ${porgVersion.package_name}... `);
+        let sandboxes = await query(conn, porgVersion.org_id, porgVersion.major_version, "Sandbox");
+        process.stdout.write(`${sandboxes.length} sandbox, `);
+        recs = recs.concat(sandboxes);
+        const prods = await query(conn, porgVersion.org_id, porgVersion.major_version, "Production");
+        process.stdout.write(`${prods.length} prod\n`);
+        recs = recs.concat(prods);
+    }
     return upsert(recs, 2000);
 }
 
-async function query(packageOrgId, fromDate, limit) {
+async function fetch(packageOrgId, majorVersions, type, limit) {
+    let recs = await queryVersions(packageOrgId, majorVersions, limit);
+    return upsert(recs, 2000);
+}
+
+async function queryVersions(packageOrgId, majorVersions, limit) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
-    // Just pinging the connection here to ensure the oauth access token is fresh (because our soap call below won't do it for us).
-    let count = await countActiveRequests(conn);
-    console.log(`Active requests? ${count}`);
-
-    let soql = "SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber";
-    if (fromDate) {
-        soql += ` AND LastModifiedDate > ${fromDate.toISOString()}`;
+    let recs = [];
+    if (majorVersions) {
+        for (let i = 0; i < majorVersions.length; i++) {
+            recs = recs.concat(await query(conn, packageOrgId, majorVersions[i], type, limit));
+        }
+    } else {
+        recs = await query(conn, packageOrgId, null, type, limit);
     }
+    return recs;    
+}
+
+async function query(conn, packageOrgId, majorVersion, orgType, limit) {
+    let whereParts = [];
+    let values = [];
+
+    values.push(packageOrgId);
+    whereParts.push(`p.package_org_id = $${values.length}`);
+    
+    if (majorVersion) {
+        values.push(`${majorVersion}.%`);
+        whereParts.push(`v.version_number like $${values.length}`);
+    }
+    let where = ` WHERE ${whereParts.join(" AND ")}`;
+    let versions = await db.query(`SELECT v.version_id FROM package_version v
+        INNER JOIN package p on p.sfid = v.package_id ${where}`, values);
+
+    whereParts = ["OrgStatus IN ('Active', 'Demo')", "InstalledStatus = 'i'"];
+    if (orgType && ["Production", "Sandbox"].indexOf(orgType) !== -1) {
+        whereParts.push(`OrgType = '${orgType}'`);
+    }
+    
+    let soql = "SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber";
+    if (versions.length > 0) {
+        let params = [];
+        for (let i = 0; i < versions.length; i++) {
+            params.push(`'${versions[i].version_id}'`);
+        }
+        whereParts.push(`MetadataPackageVersionId IN (${params.join(",")})`);
+    }
+    
+    soql += ` WHERE ${whereParts.join(" AND ")}`;
     if (limit) {
         soql += `LIMIT ${limit}`;
     }
-    try {
-        let res = await soap.invoke(conn, "query", {queryString: soql});
-        let result = soap.getResponseBody(res).result;
-        return load(result, conn);
-    } catch (e) {
-        parseXML(e.message, function (err, result) {
-            let error = soap.parseError(result);
-            console.error(error.message);
-        });
-    }
-}
-
-async function countActiveRequests(conn) {
-    let soql = `SELECT Id FROM PackagePushRequest WHERE Status IN ('In Progress', 'Pending')`;
     let res = await conn.query(soql);
-    return res.records.length;
+    return load(res, conn);
 }
 
 async function fetchMore(nextRecordsUrl, conn, recs) {
@@ -61,12 +94,12 @@ async function fetchMore(nextRecordsUrl, conn, recs) {
 async function load(result, conn) {
     let recs = result.records.map(v => {
         let rec = {
-            org_id: v["sf:OrgKey"],
-            org_name: v["sf:OrgName"],
-            org_type: v["sf:OrgType"],
-            org_status: v["sf:OrgStatus"],
-            instance: v["sf:InstanceName"],
-            version_id: v["sf:MetadataPackageVersionId"]
+            org_id: v.OrgKey,
+            org_name: v.OrgName,
+            org_type: v.OrgType,
+            org_status: v.OrgStatus,
+            instance: v.InstanceName,
+            version_id: v.MetadataPackageVersionId
         };
         return rec;
     });
@@ -108,5 +141,4 @@ async function upsertBatch(recs) {
     await db.insert(sql, values);
 }
 
-exports.fetch = fetch;
 exports.fetchAll = fetchAll;

@@ -64,14 +64,16 @@ app.delete('/api/packageorgs/:id', packageorgs.requestDeleteById);
 app.get('/api/upgrades', upgrades.requestAll);
 app.get('/api/upgrades/:id', upgrades.requestById);
 
-app.get('/api/upgradeitems', upgrades.requestAllItems);
+app.get('/api/upgradeitems', upgrades.requestItemsByUpgrade);
 app.get('/api/upgradeitems/:id', upgrades.requestItemById);
 app.post('/api/upgradeitems/:id/activate', upgrades.requestActivateUpgradeItem);
 app.post('/api/upgradeitems/:id/cancel', upgrades.requestCancelUpgradeItem);
+app.post('/api/upgradeitems/activate', upgrades.requestActivateUpgradeItems);
+app.post('/api/upgradeitems/cancel', upgrades.requestCancelUpgradeItems);
 
-app.get('/api/upgradejobs', upgrades.requestAllJobs);
+app.get('/api/upgradejobs', upgrades.requestJobsByUpgradeItem);
 app.get('/api/upgradejobs/:id', upgrades.requestJobById);
-app.get('/api/upgradejobs/:id/status', upgrades.requestJobStatusByItemId);
+app.get('/api/upgradejobs/:id/status', upgrades.requestJobStatusByItem);
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.

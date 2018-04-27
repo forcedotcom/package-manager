@@ -37,8 +37,10 @@ create table if not exists org
   instance varchar(6),
   modified_date TIMESTAMP WITH TIME ZONE,
   account_name varchar(256),
-  account_id varchar(18)
+  account_id varchar(18),
+  is_sandbox boolean
 );
+
 
 create table if not exists org_group (
   id     serial primary key,
@@ -117,6 +119,7 @@ create table if not exists package_version
   name varchar(255),
   version_number varchar(20),
   real_version_number varchar(12),
+  major_version int,
   package_id varchar(18),
   release_date TIMESTAMP WITH TIME ZONE,
   modified_date TIMESTAMP WITH TIME ZONE,
@@ -155,6 +158,15 @@ create table if not exists license
   package_id varchar(18),
   package_version_id varchar(18)
 );
+
+create index if not exists license_org_version_index
+  on license (org_id,package_version_id)
+;
+
+create index if not exists license_package_org_version_index
+  on license (org_id,package_id,package_version_id)
+;
+
 
 -- Test Data
 delete from org_group;

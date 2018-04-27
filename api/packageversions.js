@@ -73,11 +73,6 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
         }
         whereParts.push(`l.org_id IN (${params.join(",")})`);
         values = values.concat(licensedOrgIds);
-
-        // values.push('Uninstalled');
-        // whereParts.push("l.status != $" + values.length);
-        // values.push('Suspended');
-        // whereParts.push("l.status != $" + values.length);
     }
 
     if (orgGroupIds) {
