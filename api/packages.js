@@ -7,8 +7,18 @@ const SELECT_ALL = "SELECT id, sfid, name, package_org_id, package_id" +
     " FROM package";
 
 async function requestAll(req, res, next) {
-    let orgId = req.query.org_id,
-        whereParts = [],
+    let orgId = req.query.org_id;
+
+    try {
+        let recs = await findAll(orgId, req.query.sort_field, req.query.sort_dir);
+        return res.send(JSON.stringify(recs));
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function findAll(orgId, sortField, sortDir) {
+    let whereParts = [],
         values = [];
 
     if (orgId) {
@@ -17,14 +27,9 @@ async function requestAll(req, res, next) {
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir}`;
+    let sort = ` ORDER BY ${sortField || "name"} ${sortDir || "desc"}`;
 
-    try {
-        let recs = await db.query(SELECT_ALL + where + sort, values);
-        return res.send(JSON.stringify(recs));
-    } catch (err) {
-        next(err);
-    }
+    return await db.query(SELECT_ALL + where + sort, values);
 }
 
 async function requestById(req, res, next) {
@@ -40,4 +45,5 @@ async function requestById(req, res, next) {
 }
 
 exports.requestAll = requestAll;
+exports.findAll = findAll;
 exports.requestById = requestById;

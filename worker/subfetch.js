@@ -1,6 +1,15 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 
+async function fetchByIds(packageOrgId, orgIds) {
+    let conn = await sfdc.buildOrgConnection(packageOrgId);
+    let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
+    OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber
+    WHERE OrgKey IN ('${orgIds.join("','")}')`;
+    let res = await conn.query(soql);
+    return load(res, conn);
+}
+
 async function fetchAll(packageOrgId, limit) {
     if (!packageOrgId) {
         return fetchFromAllOrgs();
@@ -142,3 +151,4 @@ async function upsertBatch(recs) {
 }
 
 exports.fetchAll = fetchAll;
+exports.fetchByIds = fetchByIds;

@@ -2,7 +2,11 @@ const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 
 
-const SELECT_ALL = `select o.id, o.org_id, o.instance, o.is_sandbox, o.account_name, o.account_id from org o`;
+const SELECT_ALL = `SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
+                    a.account_name
+                    FROM org o
+                    INNER JOIN account a on a.account_id = o.account_id`;
+
 const SELECT_MEMBERS = SELECT_ALL +
     " INNER JOIN org_group_member AS m ON o.org_id = m.org_id";
 
@@ -10,20 +14,17 @@ const SELECT_WITH_LICENCE = SELECT_ALL +
     " INNER JOIN license lc ON o.org_id = lc.org_id";
 
 async function requestAll(req, res, next) {
-    // let limit = " LIMIT 300";
-    let limit = "";
-
     try {
-        let orgs = await findAll(req.query.packageId, req.query.packageVersionId, limit, req.query.sort_field, req.query.sort_dir);
+        let orgs = await findAll(req.query.packageId, req.query.packageVersionId, req.query.sort_field, req.query.sort_dir);
         return res.send(JSON.stringify(orgs));
     } catch (err) {
         next(err);
     }
 }
 
-async function findAll(packageId, packageVersionId, limit, orderByField, orderByDir) {
+async function findAll(packageId, packageVersionId, orderByField, orderByDir) {
     let select = SELECT_ALL;
-    let whereParts = ["o.instance IS NOT NULL"];
+    let whereParts = ["o.status is null"];
     let values = [];
 
     if (packageId) {
@@ -40,7 +41,7 @@ async function findAll(packageId, packageVersionId, limit, orderByField, orderBy
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
     let sort = ` ORDER BY ${orderByField || "account_name"} ${orderByDir || "asc"}`;
-    return await db.query(select + where + sort + (limit || ""), values)
+    return await db.query(select + where + sort, values)
 }
 
 function requestById(req, res, next) {
@@ -54,7 +55,7 @@ function requestById(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date)
+    push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.body.description)
         .then((upgrade) => {
             return res.json(upgrade)
         })

@@ -28,17 +28,34 @@ create table if not exists package_org
   access_token varchar(256)
 );
 
+create table if not exists account
+(
+  id serial not null,
+  org_id varchar(18),
+  account_id varchar(18)  not null
+    constraint account_account_id_pk
+    primary key,
+  account_name varchar(256),
+  status varchar(40),
+  modified_date TIMESTAMP WITH TIME ZONE
+);
+
+insert into account (account_name, account_id) values ('Internal', '000000000000000');
+
 create table if not exists org
 (
   id serial not null,
   org_id varchar(18) not null
     constraint org_org_id_pk
     primary key,
+  name varchar(255),
   instance varchar(6),
   modified_date TIMESTAMP WITH TIME ZONE,
   account_name varchar(256),
   account_id varchar(18),
-  is_sandbox boolean
+  is_sandbox boolean,
+  status varchar(20),
+  type varchar(100)
 );
 
 
@@ -56,6 +73,8 @@ create table if not exists org_group_member (
   org_id varchar(18)
 );x
 
+CREATE UNIQUE INDEX org_group_member_org_id_org_group_id_uindex ON public.org_group_member (org_id, org_group_id);
+
 create table if not exists org_group_criteria (
   id     serial primary key,
   org_group_id integer,
@@ -66,7 +85,8 @@ create table if not exists org_group_criteria (
 
 create table if not exists upgrade (
   id     serial primary key,
-  start_time TIMESTAMP WITH TIME ZONE
+  start_time TIMESTAMP WITH TIME ZONE,
+  description text
 );
 
 create table if not exists upgrade_item (

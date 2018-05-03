@@ -9,7 +9,7 @@ const SELECT_ALL =
     + "FROM public.package_org";
 
 async function requestAll(req, res, next) {
-    let sort = " ORDER BY " + (req.query.sort || "name");
+    let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;
     try {
         let recs = await db.query(SELECT_ALL + sort, []);
         await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ['access_token', 'refresh_token']);
@@ -63,7 +63,7 @@ async function refresh(conn, org_id) {
         return await conn.sobject("Organization").retrieve(org_id);
     } catch (e) {
         // No access to the Organization object?  No worries.  Our token was still refreshed.
-        return {Id: org_Id, Name: conn.instanceUrl, Division: null, NamespacePrefix: null, InstanceName: null};
+        return {Id: org_id, Name: conn.instanceUrl, Division: null, NamespacePrefix: null, InstanceName: null};
     }
 }
 
@@ -74,9 +74,11 @@ async function updateAccessToken(org_id, access_token) {
 }
 
 async function requestDelete(req, res, next) {
-    let id = req.params.id;
     try {
-        await db.delete('DELETE FROM package_org WHERE id=$1', [id]);
+        let orgIds = req.body.orgIds;
+        let n = 1;
+        let params = orgIds.map(v => `$${n++}`);
+        await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, ids);
         return res.send({result: 'ok'});
     } catch (err) {
         return next(err);
@@ -84,12 +86,17 @@ async function requestDelete(req, res, next) {
 }
 
 async function requestRefresh(req, res, next) {
-    let id = req.params.id;
     try {
-        let conn = await sfdc.buildOrgConnection(id);
-        let recs = await initOrg(conn, id);
-        await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ['access_token', 'refresh_token']);
-        return res.json(recs[0]);
+        let orgs = [];
+        let orgIds = req.body.orgIds;
+        for (let i = 0; i < orgIds.length; i++) {
+            let orgId = orgIds[i];
+            let conn = await sfdc.buildOrgConnection(orgId);
+            let recs = await initOrg(conn, orgId);
+            orgs.push(recs[0]);
+        }
+        await crypt.passwordDecryptObjects(CRYPT_KEY, orgs, ['access_token', 'refresh_token']);
+        return res.json(orgs);
     } catch (err) {
         return next(err);
     }
@@ -98,7 +105,7 @@ async function requestRefresh(req, res, next) {
 exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.requestRefresh = requestRefresh;
-exports.requestDeleteById = requestDelete;
+exports.requestDelete = requestDelete;
 exports.retrieveById = retrieve;
 exports.retrieveByOrgId = retrieveByOrgId;
 exports.initOrg = initOrg;

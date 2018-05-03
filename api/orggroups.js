@@ -6,13 +6,21 @@ const SELECT_ALL = "SELECT id, name, description FROM org_group";
 
 async function requestAll(req, res, next) {
     let whereParts = [],
-        values = [];
+        values = [],
+        limit = "";
 
+    let text = req.query.text;
+    if (text) {
+        values.push(`%${text}%`);
+        whereParts.push(`(name LIKE $${values.length} OR description LIKE $${values.length})`);
+        limit = " LIMIT 7"
+    }
+    
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
     let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;
 
     try {
-        let recs = await db.query(SELECT_ALL + where + sort, values);
+        let recs = await db.query(SELECT_ALL + where + sort + limit, values);
         return res.json(recs);
     } catch (err) {
         next(err);
@@ -39,10 +47,28 @@ async function requestMembers(req, res, next) {
     }
 }
 
+async function requestAddMembers(req, res, next) {
+    try {
+        let results = await insertOrgMembers(req.params.id, req.body.orgIds);
+        return res.json(results);
+    } catch (err) {
+        return next(err);
+    }
+}
+
+async function requestRemoveMembers(req, res, next) {
+    try {
+        await deleteOrgMembers(req.params.id, req.body.orgIds);
+        return requestMembers(req, res, next);
+    } catch (err) {
+        return next(err);
+    }
+}
+
 async function requestCreate(req, res, next) {
     try {
         let og = req.body;
-        let rows = await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [og.name, og.description]);
+        let rows = await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [og.name, og.description || '']);
         return res.json(rows);
     } catch (err) {
         return next(err);
@@ -65,7 +91,11 @@ async function requestUpdate(req, res, next) {
 
 async function requestDelete(req, res, next) {
     try {
-        await db.delete('DELETE FROM org_group WHERE id=$1', [req.params.id]);
+        let ids = req.body.orggroupIds;
+        let n = 1;
+        let params = ids.map(v => `$${n++}`);
+        await db.delete(`DELETE FROM org_group_member WHERE org_group_id IN (${params.join(",")})`, ids);
+        await db.delete(`DELETE FROM org_group WHERE id IN (${params.join(",")})`, ids);
         return res.send({result: 'ok'});
     } catch (err) {
         return next(err);
@@ -73,7 +103,7 @@ async function requestDelete(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date)
+    push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.body.description)
         .then((upgrade) => {return res.json(upgrade)})
         .catch((e) => {console.error(e); next(e)});
 }
@@ -81,15 +111,25 @@ function requestUpgrade(req, res, next) {
 async function insertOrgMembers(groupId, orgIds) {
     let n = 2;
     let params = orgIds.map(v => `($1,$${n++})`);
-    let values = [groupId].concat(orgIds); 
+    let values = [groupId].concat(orgIds);
     let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
-    await db.insert(sql, values);
+    return await db.insert(sql, values);
+}
+
+async function deleteOrgMembers(groupId, orgIds) {
+    let n = 2;
+    let params = orgIds.map(v => `$${n++}`);
+    let values = [groupId].concat(orgIds);
+    let sql = `DELETE FROM org_group_member WHERE org_group_id = $1 AND org_id IN (${params.join(",")})`;
+    return await db.delete(sql, values);
 }
 
 exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.requestMembers = requestMembers;
+exports.requestAddMembers = requestAddMembers;
+exports.requestRemoveMembers = requestRemoveMembers;
 exports.requestCreate = requestCreate;
 exports.requestUpdate = requestUpdate;
 exports.requestDelete = requestDelete;

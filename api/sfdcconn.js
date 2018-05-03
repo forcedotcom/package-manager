@@ -3,6 +3,9 @@
 const jsforce = require('jsforce');
 const packageorgs = require('./packageorgs');
 
+const BT_ID = process.env.BT_ID || "00DU0000000KAFDMA4";
+const BTSB_ID = process.env.BTSB_ID || "00Df0000001PStYEAW";
+
 const ORG62_ID = process.env.ORG62_ID || "00D000000000062EAA";
 const SB62_ID = process.env.SB62_ID || "00D300000008V7fEAE";
 const PORT = process.env.PORT || 5000;
@@ -12,6 +15,8 @@ const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/o
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
+const INTERNAL_ID = '000000000000000';
+const INVALID_ID = '000000000000001';
 
 function buildConnection(accessToken, refreshToken, instanceUrl) {
     return new jsforce.Connection({
@@ -39,4 +44,8 @@ async function buildOrgConnection(packageOrgId) {
 
 exports.buildOrgConnection = buildOrgConnection;
 exports.ORG62_ID = ORG62_ID;
+exports.BT_ID = BT_ID;
+exports.BTSB_ID = BTSB_ID;
 exports.SB62_ID = SB62_ID;
+exports.INTERNAL_ID = INTERNAL_ID;
+exports.INVALID_ID = INVALID_ID;

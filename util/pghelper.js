@@ -36,7 +36,10 @@ exports.insert = async (sql, values) => {
 /**
  * Utility function to execute a SQL update query against a Postgres database
  */
-exports.update = exports.query;
+exports.update = async (sql, values) => {
+    sql += ` RETURNING *`;
+    return await exports.query(sql, values);
+};
 
 /**
  * Utility function to execute a SQL delete query against a Postgres database

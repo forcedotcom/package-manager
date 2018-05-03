@@ -4,20 +4,15 @@ const sfdc = require('../api/sfdcconn'),
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
                     sfLma__Version_ID__c, RealVersionNumber__c, LastModifiedDate FROM sfLma__Package_Version__c`;
 
-async function fetchAll() {
-    return fetchFrom(null);
-}
-
-async function fetch() {
+async function fetch(fetchAll) {
     let fromDate = null;
-    let latest = await db.query(`select max(modified_date) from package_version`);
-    if (latest.length > 0) {
-        fromDate = latest[0].max;
+    if (!fetchAll) {
+        let latest = await db.query(`select max(modified_date) from package_version`);
+        if (latest.length > 0) {
+            fromDate = latest[0].max;
+        }
     }
-    return fetchFrom(fromDate);
-}
 
-async function fetchFrom(fromDate) {
     let recs = await query(fromDate);
     return upsert(recs, 2000);
 }
@@ -139,6 +134,5 @@ async function upsertLatest(recs) {
 }
 
 exports.fetch = fetch;
-exports.fetchAll = fetchAll;
 exports.fetchLatest = fetchLatest;
 exports.upsert = upsert;

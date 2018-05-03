@@ -29,19 +29,20 @@ function oauthLoginURL(req, res, next) {
 
 function oauthOrgURL(req, res, next) {
     try {
-        res.json(buildURL('api id web refresh_token'));
+        res.json(buildURL('api id web refresh_token', req.query.isSandbox ? 'https://test.salesforce.com' : 'https://login.salesforce.com'));
     } catch (e) {
         next(e);
     }
 }
 
-function buildURL(scope) {
-    let conn = buildConnection();
-    return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login'});
+function buildURL(scope, loginUrl) {
+    let conn = buildConnection(undefined, undefined, loginUrl);
+    return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: loginUrl});
 }
 
 async function oauthOrgCallback(req, res, next) {
-    let conn = buildConnection();
+    let loginUrl = req.query.state;
+    let conn = buildConnection(null, null, loginUrl);
     try {
         let userInfo = await conn.authorize(req.query.code);
         await packageorgs.initOrg(conn, userInfo.organizationId);
@@ -56,10 +57,10 @@ function isAuth(req) {
     return req.session.accessToken != null;
 }
 
-function buildConnection(accessToken, refreshToken) {
+function buildConnection(accessToken, refreshToken, loginUrl = OAUTH_LOGIN_URL) {
     return new jsforce.Connection({
             oauth2: {
-                loginUrl: OAUTH_LOGIN_URL,
+                loginUrl: loginUrl,
                 clientId: CLIENT_ID,
                 clientSecret: CLIENT_SECRET,
                 redirectUri: CALLBACK_URL

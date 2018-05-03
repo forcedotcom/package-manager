@@ -17,13 +17,14 @@ const express = require('express'),
     upgrades = require('./api/upgrades'),
     licenses = require('./api/licenses'),
     auth = require('./api/auth'),
+    admin = require('./api/admin'),
     app = express();
 
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 app.set('port', process.env.PORT || 5000);
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
+app.use(bodyParser.json({limit: '50mb'}));
 app.use(compression());
 app.use('/', express.static(__dirname + '/www'));
 
@@ -34,6 +35,7 @@ app.use(cookieSession({
 app.get('/oauth2/callback', auth.oauthOrgCallback);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 
+app.get('/api/admin/fetch', admin.requestFetch);
 
 app.get('/api/orgs', orgs.requestAll);
 app.get('/api/orgs/:id', orgs.requestById);
@@ -42,10 +44,12 @@ app.post('/api/orgs/:id/upgrade', orgs.requestUpgrade);
 app.get('/api/orggroups', orggroups.requestAll);
 app.get('/api/orggroups/:id', orggroups.requestById);
 app.get('/api/orggroups/:id/members', orggroups.requestMembers);
+app.post('/api/orggroups/:id/members', orggroups.requestAddMembers);
+app.post('/api/orggroups/:id/members/remove', orggroups.requestRemoveMembers);
 app.post('/api/orggroups', orggroups.requestCreate);
 app.post('/api/orggroups/:id/upgrade', orggroups.requestUpgrade);
 app.put('/api/orggroups', orggroups.requestUpdate);
-app.delete('/api/orggroups/:id', orggroups.requestDelete);
+app.post('/api/orggroups/delete', orggroups.requestDelete);
 
 app.get('/api/licenses', licenses.requestAll);
 app.get('/api/licenses/:id', licenses.requestById);
@@ -58,8 +62,8 @@ app.get('/api/packageversions/:id', packageversions.requestById);
 
 app.get('/api/packageorgs', packageorgs.requestAll);
 app.get('/api/packageorgs/:id', packageorgs.requestById);
-app.post('/api/packageorgs/:id', packageorgs.requestRefresh);
-app.delete('/api/packageorgs/:id', packageorgs.requestDeleteById);
+app.post('/api/packageorgs/refresh', packageorgs.requestRefresh);
+app.post('/api/packageorgs/delete', packageorgs.requestDelete);
 
 app.get('/api/upgrades', upgrades.requestAll);
 app.get('/api/upgrades/:id', upgrades.requestById);

@@ -6,9 +6,6 @@ const sfdc = require('../api/sfdcconn');
 const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
 
-const parseXML = require('xml2js').parseString;
-const soap = require('../util/soap');
-
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
@@ -68,14 +65,14 @@ async function updatePushRequests(upgradeItemIds, status) {
     return await Promise.all(promises);
 }
 
-async function upgradeOrgs(orgIds, versionIds, scheduledDate) {
+async function upgradeOrgs(orgIds, versionIds, scheduledDate, description) {
     for (let i = 0; i < orgIds.length; i++) {
         if (ALLOWED_ORGS.indexOf(orgIds[i]) === -1) {
             throw new Error(`${orgIds[i]} is not in ALLOWED_ORGS.  Aborting operation.  Shame on you.`);
         }
     }
 
-    let upgrade = await upgrades.createUpgrade(scheduledDate);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, description);
 
     let versions = await packageversions.findLatestByOrgIds(versionIds, orgIds);
     for (let i = 0; i < versions.length; i++) {
@@ -87,10 +84,10 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate) {
     return upgrade;
 }
 
-async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate) {
+async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, description) {
     let conns = {}, pushReqs = {};
 
-    let upgrade = await upgrades.createUpgrade(scheduledDate);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, description);
 
     let versions = await packageversions.findLatestByGroupIds(versionIds, orgGroupIds);
     for (let i = 0; i < versions.length; i++) {
@@ -114,11 +111,11 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate) {
     return upgrade;
 }
 
-async function upgradeVersion(versionId, orgIds, scheduledDate) {
+async function upgradeVersion(versionId, orgIds, scheduledDate, description) {
     let version = await packageversions.findLatestByOrgIds([versionId], orgIds)[0];
     let conn = await sfdc.buildOrgConnection(version.package_org_id);
 
-    let upgrade = await upgrades.createUpgrade(scheduledDate);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, description);
 
     let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate);
     await createPushJob(conn, upgrade.id, item.id, item.push_request_id, orgIds);
@@ -160,49 +157,6 @@ async function findErrorsByJobIds(packageOrgId, jobIds) {
 
     let res = await conn.query(soql);
     return res.records;
-}
-
-// Dev extras, shouldn't be needed in prod
-async function countActiveRequests(conn) {
-    let soql = `SELECT Id FROM PackagePushRequest WHERE Status IN ('InProgress', 'Pending')`;
-    let res = await conn.query(soql);
-    return res.records.length;
-}
-
-async function queryPackageVersions(packageOrgId) {
-    try {
-        let conn = await sfdc.buildOrgConnection(packageOrgId);
-        let res = await conn.query(`Select Id, Name, MetadataPackageId, ReleaseState, MajorVersion, 
-                                    MinorVersion, PatchVersion, BuildNumber from MetadataPackageVersion`);
-        return res.records;
-    } catch (e) {
-        return console.error(e);
-    }
-}
-
-async function querySubscribers(packageOrgId, shortIds) {
-    try {
-        let conn = await sfdc.buildOrgConnection(packageOrgId);
-
-        // Just pinging the connection here to ensure the oauth access token is fresh (because our soap call below won't do it for us).
-        let count = await countActiveRequests(conn);
-        console.log(`Active requests? ${count}`);
-
-        let soql = "SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber";
-        if (shortIds) {
-            let idsIn = shortIds.map((v) => {
-                return "'" + v + "'"
-            }).join(",");
-            soql += `WHERE OrgKey IN (${idsIn})`;
-        }
-        let res = await soap.invoke(conn, "query", {queryString: soql});
-        console.log(JSON.stringify(soap.getResponseBody(res).result.records));
-    } catch (e) {
-        parseXML(e.message, function (err, result) {
-            let error = soap.parseError(result);
-            console.error(error.message);
-        });
-    }
 }
 
 exports.findRequestsByIds = findRequestsByIds;

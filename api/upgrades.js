@@ -50,9 +50,9 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN package p on p.sfid = pv.package_id
         INNER JOIN org o on o.org_id = j.org_id`;
 
-async function createUpgrade(scheduledDate) {
+async function createUpgrade(scheduledDate, description) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    let recs = await db.insert('INSERT INTO upgrade (start_time) VALUES ($1)', [isoTime]);
+    let recs = await db.insert('INSERT INTO upgrade (start_time,description) VALUES ($1,$2)', [isoTime,description]);
     return recs[0];
 }
 
