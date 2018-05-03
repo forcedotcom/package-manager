@@ -3,16 +3,16 @@ const push = require('../worker/packagepush');
 const licensefetch = require('../worker/licensefetch');
 
 
-const SELECT_ALL = `select u.id, u.start_time, count(i.*) item_count
+const SELECT_ALL = `select u.id, u.start_time, u.description, count(i.*) item_count
                     from upgrade u
                     inner join upgrade_item i on i.upgrade_id = u.id
-                    group by u.id, u.start_time`;
+                    group by u.id, u.start_time, u.description`;
 
-const SELECT_ONE = `select u.id, u.start_time, count(i.*) item_count
+const SELECT_ONE = `select u.id, u.start_time, u.description, count(i.*) item_count
                     from upgrade u
                     inner join upgrade_item i on i.upgrade_id = u.id
                     where u.id = $1
-                    group by u.id, u.start_time`;
+                    group by u.id, u.start_time, u.description`;
 
 const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         pv.version_number, pv.version_id,

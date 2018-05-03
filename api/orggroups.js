@@ -80,7 +80,7 @@ async function requestUpdate(req, res, next) {
         let og = req.body;
         await db.update('UPDATE org_group SET name=$1, description=$2 WHERE id=$3', [og.name, og.description, og.id]);
         
-        if (og.orgIds) {
+        if (og.orgIds && og.orgIds.length > 0) {
             await insertOrgMembers(og.id, og.orgIds);
         }
         return res.send({result: 'ok'});

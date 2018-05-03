@@ -78,7 +78,7 @@ async function requestDelete(req, res, next) {
         let orgIds = req.body.orgIds;
         let n = 1;
         let params = orgIds.map(v => `$${n++}`);
-        await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, ids);
+        await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
         return res.send({result: 'ok'});
     } catch (err) {
         return next(err);

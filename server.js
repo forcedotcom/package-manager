@@ -21,19 +21,38 @@ const express = require('express'),
     app = express();
 
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const SESSION_TIMEOUT_HOURS = process.env.SESSION_TIMEOUT_HOURS || 2;
 
 app.set('port', process.env.PORT || 5000);
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(compression());
-app.use('/', express.static(__dirname + '/www'));
-
 app.use(cookieSession({
     name: 'session',
-    maxAge: 60 * 60 * 1000 * 2, // 2 hours
+    maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS, 
     keys: [CLIENT_SECRET]}));
-app.get('/oauth2/callback', auth.oauthOrgCallback);
+
+
+// Update a value in the cookie so that the set-cookie will be sent.
+// Only changes every minute so that it's not sent with every request.
+app.get('/login', auth.requestLogout);
+
+app.use(function (req, res, next) {
+    if (req.path.startsWith('/oauth')) {
+        next();
+    } else if (!req.session.access_token) {
+        res.status(401).send();
+    } else {
+        req.session.nowInMinutes = Math.floor(Date.now() / 60e3);
+        next();
+    }
+});
+
+app.use('/', express.static(__dirname + '/www'));
+app.get('/oauth2/logout', auth.requestLogout);
+app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
+app.get('/oauth2/callback', auth.oauthCallback);
 
 app.get('/api/admin/fetch', admin.requestFetch);
 
