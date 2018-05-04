@@ -3,7 +3,6 @@
 const jsforce = require('jsforce');
 const qs = require('query-string');
 const packageorgs = require('./packageorgs');
-const sfdc = require('./sfdcconn');
 
 const PORT = process.env.PORT || 5000;
 const LOCAL_URL = process.env.LOCAL_URL || 'http://localhost';
