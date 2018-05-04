@@ -51,7 +51,9 @@ app.use(function (req, res, next) {
     }
 });
 
-app.use('/', express.static(__dirname + '/www'));
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'client/build')));
+
 app.get('/oauth2/logout', auth.requestLogout);
 app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
