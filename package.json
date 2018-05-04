@@ -1,5 +1,5 @@
 {
-  "name": "brick-manager",
+  "name": "steelbrick-package-manager",
   "version": "1.0.0",
   "description": "SteelBrick Package Manager",
   "main": "server.js",
