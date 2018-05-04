@@ -4,6 +4,9 @@ if (fs.existsSync(__dirname + '/.env')) {
     console.log(`Achtung. Running with local .env file.  Use for development purposes only.`);
 }
 
+// Ensure our database is alive and initialized
+require('./util/sqlinit');
+
 const express = require('express'),
     path = require('path'),
     bodyParser = require('body-parser'),

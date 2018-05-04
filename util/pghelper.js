@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 
 const VERBOSE_SQL = process.env.VERBOSE && process.env.VERBOSE.indexOf('SQL') !== -1;
+
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres"
 });
@@ -10,7 +11,7 @@ const pool = new Pool({
  */
 exports.query = async (sql, values) => {
     if (VERBOSE_SQL) {
-        console.log(sql, values);
+        console.log(sql, values || '');
     }
 
     let result = await pool.query(sql, values);

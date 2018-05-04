@@ -1,17 +1,4 @@
-alter database postgres set search_path to public,steelbrick;
-
-drop table if exists package_org;
-drop table if exists org;
-drop table if exists org_group;
-drop table if exists org_group_member;
-drop table if exists org_group_criteria;
-drop table if exists package;
-drop table if exists package_version;
-drop table if exists package_version_latest;
-drop table if exists license;
-drop table if exists upgrade;
-drop table if exists upgrade_item;
-drop table if exists upgrade_job;
+-- alter database postgres set search_path to public,steelbrick;
 
 create table if not exists package_org
 (
@@ -39,8 +26,6 @@ create table if not exists account
   status varchar(40),
   modified_date TIMESTAMP WITH TIME ZONE
 );
-
-insert into account (account_name, account_id) values ('Internal', '000000000000000');
 
 create table if not exists org
 (
@@ -71,17 +56,17 @@ create table if not exists org_group_member (
   id     serial primary key,
   org_group_id integer,
   org_id varchar(18)
-);x
+);
 
 CREATE UNIQUE INDEX org_group_member_org_id_org_group_id_uindex ON public.org_group_member (org_id, org_group_id);
 
-create table if not exists org_group_criteria (
-  id     serial primary key,
-  org_group_id integer,
-  license_field_name varchar(40),
-  license_field_operator varchar(10),
-  license_field_value text
-);
+-- create table if not exists org_group_criteria (
+--   id     serial primary key,
+--   org_group_id integer,
+--   license_field_name varchar(40),
+--   license_field_operator varchar(10),
+--   license_field_value text
+-- );
 
 create table if not exists upgrade (
   id     serial primary key,
@@ -110,15 +95,6 @@ create table if not exists upgrade_job (
 );
 
 -- SB62 Data
-create table if not exists fetch_history
-(
-  id serial not null,
-  object VARCHAR(40),
-  fetch_date TIMESTAMP WITH TIME ZONE,
-  max_record_date TIMESTAMP WITH TIME ZONE,
-  count INTEGER
-);
-
 create table if not exists package
 (
   id serial not null,
@@ -186,21 +162,3 @@ create index if not exists license_org_version_index
 create index if not exists license_package_org_version_index
   on license (org_id,package_id,package_version_id)
 ;
-
-
--- Test Data
-delete from org_group;
-delete from org_group_member;
-insert into org_group (id, name, description) values
-  (1, 'Alpha', 'Preferential customers, signed up for early delivery of new package versions.'),
-  (2, 'Theta', 'Normal customers.'),
-  (3, 'Omega', 'Deferred customers, approved for late delivery of new package versions.');
-
-insert into org_group_member (org_group_id, org_id) values
-  (1, '00D0m0000008dxK'),
-  (1, '00D63000000CwEq'),
-  (1, '00D3F000000CtxN');
-
-insert into org_group_member (org_group_id, org_id) values
-  (2, '00D0q000000CxI3'),
-  (2, '00D9A0000000UbB')
