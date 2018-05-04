@@ -11,8 +11,8 @@ export default class extends React.Component {
             this.setState({...params})
         } else {
             if (window.opener) {
-                if (params.redirect) {
-                    window.opener.location = params.redirect;
+                if (params.redirectTo) {
+                    window.opener.location = params.redirectTo;
                 } else {
                     window.opener.location.reload();
                 }

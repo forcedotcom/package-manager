@@ -4,10 +4,6 @@ import * as authService from "../services/AuthService";
 export default class extends React.Component {
     state = {};
 
-    componentDidMount() {
-        console.log("Hi!");
-    }
-
     loginHandler = () => {
         authService.oauthLoginURL("/orgs").then(url => {
             window.open(url, '', 'width=700,height=700,left=200,top=200');

@@ -10,8 +10,8 @@ const LOCAL_URL = process.env.LOCAL_URL || 'http://localhost';
 
 const CALLBACK_URL = `${LOCAL_URL}:${PORT}/oauth2/callback`;
 
-const CLIENT_PORT = process.env.CLIENT_PORT || 3000;
-const CLIENT_URL = `${LOCAL_URL}:${CLIENT_PORT}`;
+// const CLIENT_PORT = process.env.CLIENT_PORT || 3000;
+const CLIENT_URL = "";//`${LOCAL_URL}:${CLIENT_PORT}`;
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -64,7 +64,7 @@ async function oauthCallback(req, res, next) {
                 break;
             default:
                 req.session.access_token = conn.accessToken;
-                res.redirect(`${CLIENT_URL}/authresponse?redirect=${state.redirectTo}`);
+                res.redirect(`${CLIENT_URL}/authresponse?redirectTo=${state.redirectTo}`);
         }
     } catch (e) {
         console.error(e);

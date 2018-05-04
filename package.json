@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "debug": "VERBOSE=SQL node --inspect server.js",
-    "heroku-postbuild": "cd client && yarn --production=false && yarn run build"
+    "heroku-postbuild": "cd client && yarn --production=false && yarn build"
   },
   "repository": "git@git.soma.salesforce.com:Steelbrick/brick-manager.git",
   "dependencies": {

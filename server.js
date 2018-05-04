@@ -35,24 +35,19 @@ app.use(cookieSession({
     maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS, 
     keys: [CLIENT_SECRET]}));
 
-
-// Update a value in the cookie so that the set-cookie will be sent.
-// Only changes every minute so that it's not sent with every request.
-app.get('/login', auth.requestLogout);
-
-app.use(function (req, res, next) {
-    if (req.path.startsWith('/oauth')) {
-        next();
-    } else if (!req.session.access_token) {
-        res.status(401).send();
-    } else {
-        req.session.nowInMinutes = Math.floor(Date.now() / 60e3);
-        next();
-    }
-});
-
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
+
+app.use(function (req, res, next) {
+    if (req.path.startsWith('/api') && !req.session.access_token) {
+        res.status(401).send();
+        return;
+    } 
+    // Update a value in the cookie so that the set-cookie will be sent.
+    // Only changes every minute so that it's not sent with every request.
+    req.session.nowInMinutes = Math.floor(Date.now() / 60e3);
+    next();
+});
 
 app.get('/oauth2/logout', auth.requestLogout);
 app.get('/oauth2/loginurl', auth.oauthLoginURL);
@@ -105,8 +100,8 @@ app.get('/api/upgradejobs/:id/status', upgrades.requestJobStatusByItem);
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname+'/client/build/index.html'));
+app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
 app.listen(app.get('port'), function () {

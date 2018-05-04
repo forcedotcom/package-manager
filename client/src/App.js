@@ -26,6 +26,10 @@ import AuthResponse from "./auth/AuthResponse";
 import PackageVersionRecord from "./packageversions/PackageVersionRecord";
 import AdminHome from "./admin/AdminHome";
 import UpgradeItemRecord from "./upgrades/UpgradeItemRecord";
+
+import Login from "./auth/Login";
+import Logout from "./auth/Logout";
+
 import {
     ADMIN_ICON,
     AUTH_ICON,
@@ -35,8 +39,6 @@ import {
     PACKAGE_ORG_ICON,
     UPGRADE_ICON
 } from "./Constants";
-import Login from "./auth/Login";
-import Logout from "./auth/Logout";
 
 class App extends Component {
     render() {
