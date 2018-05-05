@@ -27,8 +27,17 @@ export default class extends React.Component {
     };
 
     refreshHandler = () => {
+        let packageorgs = this.state.packageorgs;
+        for(let i = 0; i < packageorgs.length; i++) {
+            let porg = packageorgs[i];
+            if( this.state.selected.indexOf(porg.org_id) !== -1) {
+                porg.status = null;
+            }
+        }
+        this.setState({isRefreshing: true, packageorgs});
+        
         packageOrgService.requestRefresh(this.state.selected).then(() => {
-            packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs}));
+            packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs, isRefreshing: false}));
         });
     };
 
@@ -43,7 +52,7 @@ export default class extends React.Component {
     render() {
         const actions = [
             {label: "Add Package Org", group: "add", detail: "Shift-click to add sandbox org", handler: this.newHandler},
-            {label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.length === 0, detail: "Refresh the access token of the selected org"},
+            {label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.length === 0 || this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
             {label: "Delete", handler: this.deleteHandler, disabled: this.state.selected.length === 0, detail: "Remove the selected org"}
         ];
         

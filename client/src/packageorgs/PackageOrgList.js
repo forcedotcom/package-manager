@@ -10,11 +10,13 @@ export default class extends React.Component {
     render() {
         const columns = [
             {Header: "Name", accessor: "name", minWidth: 200, sortable: true, clickable: true},
-            {Header: "Division", accessor: "division"},
+            {Header: "Description", accessor: "description", minWidth: 300},
             {Header: "Namespace", accessor: "namespace"},
-            {Header: "Org ID", accessor: "org_id", minWidth: 150},
+            {Header: "Org ID", accessor: "org_id", minWidth: 120},
             {Header: "Instance Name", accessor: "instance_name"},
             {Header: "Instance URL", minWidth: 270, accessor: "instance_url"},
+            {Header: "Status", minWidth: 100, accessor: "status", style: {fontWeight: "bold", textTransform: "uppercase"},
+                Cell: row => (<b className={row.value === "Connected" ? "slds-text-color_success" : "slds-text-color_error"}>{row.value}</b>)}
         ];
 
         return (

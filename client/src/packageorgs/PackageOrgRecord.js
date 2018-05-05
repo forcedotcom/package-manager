@@ -2,9 +2,10 @@ import React from 'react';
 
 import * as packageOrgService from '../services/PackageOrgService';
 
-import {RecordHeader, HeaderField} from '../components/PageHeader';
+import {HeaderField, RecordHeader} from '../components/PageHeader';
 import PackageOrgView from "./PackageOrgView";
 import {PACKAGE_ORG_ICON} from "../Constants";
+import EditPackageOrgWindow from "./EditPackageOrgWindow";
 
 export default class extends React.Component {
     state = { packageorg: {} };
@@ -29,16 +30,36 @@ export default class extends React.Component {
         });
     };
 
+    editHandler = () => {
+        this.setState({isEditing: true});    
+    };
+    
+    cancelHandler = () => {
+        this.setState({isEditing: false});    
+    };
+    
+    saveHandler = (packageorg) => {
+        packageOrgService.requestUpdate(packageorg).then((packageorg) => {
+            this.setState({packageorg, isEditing: false});
+        });
+    };
+    
     render() {
-        let actions = [{label:"Refresh", handler:this.refreshHandler},{label:"Delete", handler:this.deleteHandler}];
+
+        let actions = [
+            {label: "Refresh", handler: this.refreshHandler},
+            {label: "Edit", handler: this.editHandler},
+            {label: "Delete", handler: this.deleteHandler}
+        ];
+
         return (
             <div>
-                <RecordHeader type="Package Org" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name} onDelete={this.deleteHandler} actions={actions}>
-                    <HeaderField label="Division" value={this.state.packageorg.division}/>
+                <RecordHeader type="Package Org" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name} actions={actions}>
+                    <HeaderField label="Description" value={this.state.packageorg.description}/>
                     <HeaderField label="Org ID" value={this.state.packageorg.org_id}/>
-                    <HeaderField label="Namespace" value={this.state.packageorg.namespace}/>
                 </RecordHeader>
-                <PackageOrgView packageorg={this.state.packageorg}/>
+                <PackageOrgView packageorg={this.state.packageorg}/>;
+                {this.state.isEditing ? <EditPackageOrgWindow packageorg={this.state.packageorg} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
             </div>
         );
     }

@@ -17,7 +17,6 @@ import PackageOrgRecord from './packageorgs/PackageOrgRecord';
 
 import OrgGroupRecord from "./orggroups/OrgGroupRecord";
 import OrgGroupHome from "./orggroups/OrgGroupHome";
-import OrgGroupForm from "./orggroups/OrgGroupForm";
 
 import UpgradeHome from './upgrades/UpgradeHome';
 import UpgradeRecord from './upgrades/UpgradeRecord';
@@ -83,7 +82,6 @@ class App extends Component {
 
                     <Route path="/orggroups" component={OrgGroupHome}/>
                     <Route exact path="/orggroup/:orgGroupId" component={OrgGroupRecord}/>
-                    <Route exact path="/orggroup/:orgGroupId/edit" component={OrgGroupForm}/>
 
                     <Route path="/packages" component={PackageHome}/>
                     <Route path="/package/:packageId" component={PackageRecord}/>

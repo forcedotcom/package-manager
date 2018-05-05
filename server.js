@@ -5,7 +5,7 @@ if (fs.existsSync(__dirname + '/.env')) {
 }
 
 // Ensure our database is alive and initialized
-require('./util/sqlinit');
+require('./init/sqlinit');
 
 const express = require('express'),
     path = require('path'),
@@ -81,6 +81,7 @@ app.get('/api/packageversions/:id', packageversions.requestById);
 
 app.get('/api/packageorgs', packageorgs.requestAll);
 app.get('/api/packageorgs/:id', packageorgs.requestById);
+app.post('/api/packageorgs', packageorgs.requestUpdate);
 app.post('/api/packageorgs/refresh', packageorgs.requestRefresh);
 app.post('/api/packageorgs/delete', packageorgs.requestDelete);
 

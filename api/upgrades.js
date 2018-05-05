@@ -43,12 +43,13 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         i.start_time,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id,
-        o.account_name
+        a.account_name
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
         INNER JOIN package_version pv on pv.version_id = i.package_version_id
         INNER JOIN package p on p.sfid = pv.package_id
-        INNER JOIN org o on o.org_id = j.org_id`;
+        INNER JOIN org o on o.org_id = j.org_id
+        INNER JOIN account a ON a.account_id = o.account_id`;
 
 async function createUpgrade(scheduledDate, description) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;

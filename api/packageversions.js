@@ -20,12 +20,14 @@ const SELECT_ALL_WITH_LICENSE =
         p.package_org_id, p.name as package_name, 
         pvl.version_number latest_version_number, pvl.version_id latest_version_id,
         l.org_id, l.status license_status,
-        o.account_name, o.instance
+        o.instance,
+        a.account_name
     FROM package_version pv
     INNER JOIN package p on p.sfid = pv.package_id
     INNER JOIN package_version_latest pvl ON pvl.package_id = pv.package_id
     INNER JOIN license l ON l.package_version_id = pv.sfid
-    INNER JOIN org o ON o.org_id = l.org_id`;
+    INNER JOIN org o ON o.org_id = l.org_id
+    INNER JOIN account a ON a.account_id = o.account_id`;
 
 const SELECT_ALL_WITH_LICENSE_IN_GROUP =
     SELECT_ALL_WITH_LICENSE +

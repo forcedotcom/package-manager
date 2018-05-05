@@ -4,20 +4,21 @@ const jsforce = require('jsforce');
 const qs = require('query-string');
 const packageorgs = require('./packageorgs');
 
-const PORT = process.env.PORT || 5000;
-const LOCAL_URL = process.env.LOCAL_URL || 'http://localhost';
-
-const CALLBACK_URL = `${LOCAL_URL}:${PORT}/oauth2/callback`;
-
-// const CLIENT_PORT = process.env.CLIENT_PORT || 3000;
-const CLIENT_URL = "";//`${LOCAL_URL}:${CLIENT_PORT}`;
-
+// Configurable parameters
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
-const OAUTH_LOGIN_URL = process.env.OAUTH_LOGIN_URL || 'https://login.salesforce.com';
+const LOCAL_URL = process.env.LOCAL_URL || 'http://localhost';
+const PORT = process.env.PORT || 5000;
+const CLIENT_PORT = process.env.CLIENT_PORT || PORT;
+const API_URL = process.env.API_URL || `${LOCAL_URL}:${PORT}`;
+const AUTH_URL = process.env.AUTH_URL || 'https://steelbrick.my.salesforce.com';
 
-const AUTH_URL = process.env.LOGIN_URL || 'https://steelbrick.my.salesforce.com';
+// Constants
+const CLIENT_URL = `${LOCAL_URL}:${CLIENT_PORT}`;
+const CALLBACK_URL = `${API_URL}/oauth2/callback`;
+const PROD_LOGIN = "https://login.salesforce.com";
+const TEST_LOGIN = "https://test.salesforce.com";
 
 function requestLogout(req, res, next) {
     try {
@@ -30,7 +31,7 @@ function requestLogout(req, res, next) {
 
 function oauthLoginURL(req, res, next) {
     try {
-        const url = buildURL('api id web', {operation: "login", loginUrl: "https://steelbrick.my.salesforce.com", redirectTo: req.query.redirectTo});
+        const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL, redirectTo: req.query.redirectTo});
         res.json(url);
     } catch (e) {
         next(e);
@@ -39,7 +40,7 @@ function oauthLoginURL(req, res, next) {
 
 function oauthOrgURL(req, res, next) {
     try {
-        const url = buildURL("api id web refresh_token", {operation: "org", loginUrl: req.query.isSandbox ? "https://test.salesforce.com" : "https://login.salesforce.com"});
+        const url = buildURL("api id web refresh_token", {operation: "org", loginUrl: req.query.isSandbox ? TEST_LOGIN : PROD_LOGIN});
         res.json(url);
     } catch (e) {
         next(e);
@@ -77,7 +78,7 @@ async function oauthCallback(req, res, next) {
     }
 }
 
-function buildConnection(accessToken, refreshToken, loginUrl = OAUTH_LOGIN_URL) {
+function buildConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
     return new jsforce.Connection({
             oauth2: {
                 loginUrl: loginUrl,

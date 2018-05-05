@@ -33,10 +33,30 @@ export default class extends React.Component {
                         <div className="slds-col--padded slds-size--1-of-2 slds-m-top--medium">
                             <dl className="page-header--rec-home__detail-item">
                                 <dt>
+                                    <p className="slds-text-heading--label slds-truncate" title="Instance URL">Status</p>
+                                </dt>
+                                <dd>
+                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.packageorg.status}</p>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div className="slds-col--padded slds-size--1-of-2 slds-m-top--medium">
+                            <dl className="page-header--rec-home__detail-item">
+                                <dt>
                                     <p className="slds-text-heading--label slds-truncate" title="Username">Instance Name</p>
                                 </dt>
                                 <dd>
                                     <p className="slds-text-body--regular slds-truncate" title="">{this.props.packageorg.instance_name}</p>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div className="slds-col--padded slds-size--1-of-2 slds-m-top--medium">
+                            <dl className="page-header--rec-home__detail-item">
+                                <dt>
+                                    <p className="slds-text-heading--label slds-truncate" title="Instance URL">Namespace</p>
+                                </dt>
+                                <dd>
+                                    <p className="slds-text-body--regular slds-truncate" title="">{this.props.packageorg.namespace}</p>
                                 </dd>
                             </dl>
                         </div>
@@ -50,6 +70,7 @@ export default class extends React.Component {
                                 </dd>
                             </dl>
                         </div>
+                        
 
                         <div className="slds-col--padded slds-size--1-of-1 slds-m-top--medium">
                             <dl className="page-header--rec-home__detail-item">
@@ -57,7 +78,7 @@ export default class extends React.Component {
                                     <p className="slds-text-heading--label slds-truncate" title="Username">Access Token</p>
                                 </dt>
                                 <dd>
-                                    <p><input className="slds-input" type="text" readonly="true" value="Double-click to reveal" onDoubleClick={this.revealAccessToken}/></p>
+                                    <p><input className="slds-input" type="text" readOnly="true" value="Double-click to reveal" onDoubleClick={this.revealAccessToken}/></p>
                                 </dd>
                             </dl>
                         </div>

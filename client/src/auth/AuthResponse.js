@@ -24,6 +24,7 @@ export default class extends React.Component {
     render() {
         return (
             <div>
+                {this.state.message ? 
                 <section role="alertdialog" aria-labelledby="prompt-heading-id"
                          aria-describedby="prompt-message-wrapper"
                          className="slds-modal slds-fade-in-open slds-modal_prompt" aria-modal="true">
@@ -52,7 +53,7 @@ export default class extends React.Component {
                             {window.opener ? <button className="slds-button slds-button_neutral" onClick={window.close}>Okay</button> : ""}
                         </footer>
                     </div>
-                </section>
+                </section> : "" }
                 <div className="slds-backdrop slds-backdrop_open"/>
             </div>
         );

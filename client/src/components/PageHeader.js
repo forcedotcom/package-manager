@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactTooltip from 'react-tooltip';
 
-import {HeaderIcon, Icon} from "./Icons";
+import {HeaderIcon} from "./Icons";
 import {ButtonDropdown, DropdownItem} from "./Dropdown";
 import moment from "moment/moment";
 
@@ -9,7 +9,6 @@ export class HeaderField extends React.Component {
     render() {
 
         let value = this.props.value;
-
         if (this.props.format === "currency") {
             value = parseFloat(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
         } else if (this.props.format === "date") {
@@ -18,15 +17,15 @@ export class HeaderField extends React.Component {
             value = moment(value).format("lll");
         }
 
-
+        let style = this.props.style || {};
         return (
             <div className="slds-col--padded">
                 <dl>
                     <dt>
-                        <p className="slds-text-heading--label slds-truncate" title="{this.props.label}">{this.props.label}</p>
+                        <p className="slds-text-heading--label slds-truncate" style={style} title="{this.props.label}">{this.props.label}</p>
                     </dt>
                     <dd>
-                        <p className="slds-text-body--regular slds-truncate" title={value}>{value}</p>
+                        <p className="slds-text-body--regular slds-truncate" style={style} title={value}>{value}</p>
                     </dd>
                 </dl>
             </div>
@@ -139,17 +138,17 @@ export class CardHeader extends React.Component {
 
 export class FormHeader extends React.Component {
     static defaultProps = {
-        icon: "account"
+        icon: {name: "account", category: "standard"}
     };
 
     render() {
         return (
-            <div className="slds-page-header">
+            <div style={{borderLeft: 0, borderRight: 0, borderRadius: "0.25rem 0.25rem 0 0", zIndex: 2}} className="slds-page-header">
                 <div className="slds-grid">
                     <div className="slds-col slds-has-flexi-truncate">
                         <div className="slds-media">
                             <div className="slds-media__figure">
-                                <Icon name={this.props.icon} size="large"/>
+                                <HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
                             </div>
                             <div className="slds-media__body">
                                 <p className="slds-text-heading--label">{this.props.type}</p>
@@ -166,6 +165,7 @@ export class FormHeader extends React.Component {
                         </div>
                     </div>
                 </div>
+                {this.props.children ?  <div className="slds-grid slds-page-header__detail-row">{this.props.children}</div> : "" }
             </div>
         );
     }

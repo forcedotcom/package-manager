@@ -4,7 +4,7 @@ import * as orgGroupService from '../services/OrgGroupService';
 
 import {RecordHeader, HeaderField} from '../components/PageHeader';
 import OrgGroupView from "./OrgGroupView";
-import OrgGroupForm from "./OrgGroupForm";
+import EditGroupWindow from "./EditGroupWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
 import * as packageVersionService from "../services/PackageVersionService";
 import * as sortage from "../services/sortage";
@@ -14,6 +14,7 @@ export default class extends React.Component {
     SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
 
     state = {
+        isEditing: false,
         orggroup: {},
         sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc")
     };
@@ -59,12 +60,25 @@ export default class extends React.Component {
 
     saveHandler = (orggroup) => {
         orgGroupService.requestUpdate(orggroup).then(() => {
-            window.location = '/orggroups';
+            this.setState({orggroup, isEditing: false});
+            if (orggroup.orgIds.length !== 0) {
+                // Reload our kids because our membership may have changed
+                orgGroupService.requestMembers(orggroup.id).then(members => this.setState({members}));
+                packageVersionService.findByOrgGroupId(orggroup.id, this.state.sortOrderVersions).then(versions => {
+                    let validVersions = this.stripVersions(versions);
+                    this.setState({versions, validVersions});
+                });
+
+            }
         }).catch(e => console.error(e));
     };
-
+    
     editHandler = () => {
-        window.location = '/orggroup/' + this.state.orggroup.id + '/edit';
+        this.setState({isEditing: true});
+    };
+
+    cancelHandler = () => {
+        this.setState({isEditing: false});
     };
 
     deleteHandler = () => {
@@ -85,21 +99,19 @@ export default class extends React.Component {
     };
 
     render() {
-        let isEditing = this.props.match.url.indexOf('/edit') !== -1;
-        let view = isEditing ?
-            <OrgGroupForm orggroup={this.state.orggroup} saveHandler={this.saveHandler}/> :
-            <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} onRemoveMember={this.removeMemberHandler}/>;
         let actions = [
             {handler:this.schedulingWindowHandler, label:"Upgrade Packages", group:"upgrade", disabled: !this.state.validVersions}, 
             {handler:this.editHandler, label:"Edit"}, 
             {handler:this.deleteHandler, label:"Delete"}];
+        
         return (
             <div>
                 <RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
                     <HeaderField label="" value={this.state.orggroup.description}/>
                 </RecordHeader>
-                {view}
-                {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow org={this.state.org} versions={this.state.validVersions} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
+                <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} onRemoveMember={this.removeMemberHandler}/>;
+                {this.state.isEditing ?  <EditGroupWindow orggroup={this.state.orggroup} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+                {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow versions={this.state.validVersions} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
             </div>
         );
     }

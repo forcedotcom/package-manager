@@ -20,19 +20,19 @@ async function fetchAll(packageOrgId, limit) {
 async function fetchFromAllOrgs() {
     let conns = {};
     let recs = [];
-    let porgVersions = await db.query(`SELECT distinct o.org_id, p.name package_name, v.major_version 
+    let orgVersions = await db.query(`SELECT distinct o.org_id, p.name package_name, v.major_version 
                                 FROM package_org o 
                                 INNER JOIN package p ON p.package_org_id = o.org_id
                                 INNER JOIN package_version v ON v.package_id = p.sfid
                                 ORDER BY package_name, major_version asc`);
-    for (let i = 0; i < porgVersions.length; i++) {
-        let porgVersion = porgVersions[i];
-        let conn = conns[porgVersion.org_id] = conns[porgVersion.org_id] || await sfdc.buildOrgConnection(porgVersion.org_id);
-        process.stdout.write(`Fetching major version ${porgVersion.major_version} of ${porgVersion.package_name}... `);
-        let sandboxes = await query(conn, porgVersion.org_id, porgVersion.major_version, "Sandbox");
+    for (let i = 0; i < orgVersions.length; i++) {
+        let orgVersion = orgVersions[i];
+        let conn = conns[orgVersion.org_id] = conns[orgVersion.org_id] || await sfdc.buildOrgConnection(orgVersion.org_id);
+        process.stdout.write(`Fetching major version ${orgVersion.major_version} of ${orgVersion.package_name}... `);
+        let sandboxes = await query(conn, orgVersion.org_id, orgVersion.major_version, "Sandbox");
         process.stdout.write(`${sandboxes.length} sandbox, `);
         recs = recs.concat(sandboxes);
-        const prods = await query(conn, porgVersion.org_id, porgVersion.major_version, "Production");
+        const prods = await query(conn, orgVersion.org_id, orgVersion.major_version, "Production");
         process.stdout.write(`${prods.length} prod\n`);
         recs = recs.concat(prods);
     }
@@ -137,7 +137,7 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = "INSERT INTO org (org_id, instance, account_name) VALUES";
+    let sql = "INSERT INTO org (org_id, instance, name) VALUES";
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
