@@ -11,10 +11,6 @@ export default class extends React.Component {
         }
     };
 
-    connectHandler = (event) => {
-        console.log(event.target);    
-    };
-    
     render() {
         const columns = [
             {Header: "Name", accessor: "name", minWidth: 160, sortable: true, clickable: true},
