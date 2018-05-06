@@ -4,6 +4,6 @@ let url = "/oauth2";
 
 export let oauthLoginURL = redirectTo => h.get(url + "/loginurl", {redirectTo});
 
-export let oauthOrgURL = isSandbox => h.get(url + "/orgurl", {isSandbox});
+export let oauthOrgURL = (instanceUrl) => h.get(url + "/orgurl", {instanceUrl});
 
 export let requestLogout = () => h.get(url + "/logout");

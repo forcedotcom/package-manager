@@ -10,14 +10,20 @@ import * as sortage from "../services/sortage";
 export default class extends React.Component {
     SORTAGE_KEY = "PackageOrgList";
 
+    
     state = {packageorgs: [], sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"), selected: []};
 
     componentDidMount() {
         packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs}));
     }
 
+
     newHandler = (event) => {
-        authService.oauthOrgURL(event.shiftKey).then(url => {
+        this.connectHandler(event.shiftKey ? "https://test.salesforce.com" : "https://login.salesforce.com");
+    };
+    
+    connectHandler = (instanceUrl) => {
+        authService.oauthOrgURL(instanceUrl).then(url => {
             window.open(url, '', 'width=700,height=700,left=200,top=200');
         });
     };
@@ -65,7 +71,7 @@ export default class extends React.Component {
                             itemCount={this.state.packageorgs.length}>
                     <Note>Remember that packaging orgs must have the <b>Packaging Push</b> permissions as well as <b>Apex Certified</b> Partner</Note>
                 </HomeHeader>
-                <PackageOrgList packageorgs={this.state.packageorgs} onSelect={this.selectionHandler} onDelete={this.deleteHandler}/>
+                <PackageOrgList packageorgs={this.state.packageorgs} onConnect={this.connectHandler} onSelect={this.selectionHandler} onDelete={this.deleteHandler}/>
             </div>
         );
     }
@@ -74,13 +80,12 @@ export default class extends React.Component {
 class Note extends React.Component {
     render() {
         return (
-            <div className="slds-scoped-notification slds-media slds-media_center" role="status">
+            <div className="slds-scoped-notification slds-media slds-media_center">
                 <div className="slds-media__figure">
-                    <span className="slds-icon_container slds-icon-utility-info" title="information">
-                      <svg className="slds-icon slds-icon_small slds-icon-text-default" aria-hidden="true">
-                        <use xmlnsXlink="http://www.w3.org/1999/xlink" xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#info" />
+                    <span className={`slds-icon_container slds-icon-utility-${this.props.type || "info"}`} title="information">
+                      <svg className="slds-icon slds-icon_small slds-icon-text-default">
+                        <use xmlnsXlink="http://www.w3.org/1999/xlink" xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${this.props.type || "info"}`} />
                       </svg>
-                      <span className="slds-assistive-text">information</span>
                     </span>
                 </div>
                 <div className="slds-media__body">

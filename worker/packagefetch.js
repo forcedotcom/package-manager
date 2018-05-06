@@ -10,7 +10,7 @@ async function fetch() {
 }
 
 async function query() {
-    let conn = await sfdc.buildOrgConnection(sfdc.SB62_ID);
+    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.sb62.orgId);
     let soql = SELECT_ALL;
     let res = await conn.query(soql);
     return await load(res, conn);

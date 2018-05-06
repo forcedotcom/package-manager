@@ -3,11 +3,13 @@
 const jsforce = require('jsforce');
 const packageorgs = require('./packageorgs');
 
-const BT_ID = process.env.BT_ID || "00DU0000000KAFDMA4";
-const BTSB_ID = process.env.BTSB_ID || "00Df0000001PStYEAW";
+const NamedOrgs = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {
+    bt: {orgId: "00DA0000000gYotMAE", name: "BT2 Black Tab", instanceUrl: "https://bt2.my.salesforce.com"},
+    sbt: {orgId: "00DJ00000001ECoMAM", name: "SBT2 Black Tab", instanceUrl: "https://sbt2.cs10.my.salesforce.com"},
+    org62: {orgId: "00D000000000062EAA", name: "Org 62", instanceUrl: "https://org62.my.salesforce.com"},
+    sb62: {orgId: "00D300000008V7fEAE", name: "SB 62", instanceUrl: "https://steelbrick.my.salesforce.com"}
+};
 
-const ORG62_ID = process.env.ORG62_ID || "00D000000000062EAA";
-const SB62_ID = process.env.SB62_ID || "00D300000008V7fEAE";
 const PORT = process.env.PORT || 5000;
 
 const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/oauth2/callback';
@@ -34,6 +36,12 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 
 async function buildOrgConnection(packageOrgId) {
     let packageOrg = await packageorgs.retrieveByOrgId(packageOrgId);
+    if (!packageOrg) {
+        throw new Error(`No such package org with id ${packageOrgId}`);
+    }
+    if (!packageOrg.refresh_token) {
+        throw new Error(`Package Org ${packageOrgId} cannot be refreshed without a prior connection.`);
+    }
     let conn = buildConnection(packageOrg.access_token, packageOrg.refresh_token, packageOrg.instance_url);
     conn.on("refresh", async (accessToken, res) => {
         packageOrg.accessToken = accessToken;
@@ -43,9 +51,6 @@ async function buildOrgConnection(packageOrgId) {
 }
 
 exports.buildOrgConnection = buildOrgConnection;
-exports.ORG62_ID = ORG62_ID;
-exports.BT_ID = BT_ID;
-exports.BTSB_ID = BTSB_ID;
-exports.SB62_ID = SB62_ID;
 exports.INTERNAL_ID = INTERNAL_ID;
 exports.INVALID_ID = INVALID_ID;
+exports.NamedOrgs = NamedOrgs;

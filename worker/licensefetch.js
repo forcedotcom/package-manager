@@ -19,7 +19,7 @@ async function fetch(fetchAll) {
 }
 
 async function query(fromDate) {
-    let conn = await sfdc.buildOrgConnection(sfdc.SB62_ID);
+    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.sb62.orgId);
     let soql = SELECT_ALL;
     if (fromDate) {
         soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;

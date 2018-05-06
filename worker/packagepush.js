@@ -59,7 +59,7 @@ async function updatePushRequests(upgradeItemIds, status) {
 
     // Now, just update requests.
     let promises = [];
-    Object.entries(batches).forEach(async ([key, batch]) => {
+    Object.entries(batches).forEach(([key, batch]) => {
         promises.push(batch.conn.sobject('PackagePushRequest').update(batch.requests));
     });
     return await Promise.all(promises);

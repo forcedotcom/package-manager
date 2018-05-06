@@ -2,7 +2,7 @@ const db = require('../util/pghelper');
 const crypt = require('../util/crypt');
 const sfdc = require('./sfdcconn');
 
-const Status = {Connected: "Connected", Invalid: "Invalid"};
+const Status = {Connected: "Connected", Invalid: "Invalid", Missing: "Missing"};
 
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 
@@ -15,6 +15,14 @@ async function requestAll(req, res, next) {
     try {
         let recs = await db.query(SELECT_ALL + sort, []);
         await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ['access_token', 'refresh_token']);
+
+        let ids = recs.map(o => o.org_id);
+        Object.entries(sfdc.NamedOrgs).forEach(([key, val]) => {
+            if (ids.indexOf(val.orgId) === -1) {
+                recs.push({org_id: val.orgId, status: Status.Missing, name: val.name, instance_url: val.instanceUrl})
+            }
+        });
+
         return res.send(JSON.stringify(recs));
     } catch (err) {
         next(err);
@@ -46,24 +54,25 @@ async function retrieveByOrgId(org_id) {
 }
 
 async function initOrg(conn, org_id) {
-    let org = await refreshOrg(conn, org_id);
+    let org = await refreshOrgConnection(conn, org_id);
     if (org.status === Status.Invalid) {
         return await db.update(`UPDATE package_org SET status = $1, access_token = null WHERE org_id = $2`, [org.status, org_id]);
     } 
  
     await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
     let sql = `INSERT INTO package_org 
-            (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token)
+            (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status)
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            on conflict (org_id) do update set
             name = excluded.name, division = excluded.division, namespace = excluded.namespace, instance_name = excluded.instance_name, 
-            instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token`;
+            instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token,
+            status = excluded.status`;
     return await db.insert(sql,
-        [org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token]);
+        [org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status]);
 }
 
-async function refreshOrg(conn, org_id) {
+async function refreshOrgConnection(conn, org_id) {
     try {
         let org = await conn.sobject("Organization").retrieve(org_id);
         return {org_id, status: Status.Connected, instance_url: conn.instanceUrl, refresh_token: conn.refreshToken, access_token: conn.accessToken,

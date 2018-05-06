@@ -39,7 +39,7 @@ export default class extends React.Component {
             }
         }
         const validVersions = [];
-        Object.entries(validSet).forEach(async ([key, val]) => {validVersions.push(val)});
+        Object.entries(validSet).forEach(([key, val]) => {validVersions.push(val)});
         return validVersions.length > 0 ? validVersions : null;
     };
 

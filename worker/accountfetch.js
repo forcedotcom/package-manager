@@ -26,7 +26,7 @@ async function queryAndStore(fetchAll, batchSize, useBulkAPI) {
         fromDate = accounts[0].modified_date;
     }
 
-    let conn = await sfdc.buildOrgConnection(sfdc.ORG62_ID);
+    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.org62.orgId);
     for (let start = 0; start < count;) {
         console.log(`Querying ${start} of ${count}`);
         await fetchBatch(conn, accounts.slice(start, start += batchSize), fromDate, useBulkAPI);

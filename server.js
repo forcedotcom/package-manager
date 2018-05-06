@@ -108,3 +108,8 @@ app.get('/*', (req, res) => {
 app.listen(app.get('port'), function () {
     console.log('Express listening on port ' + app.get('port'));
 });
+
+if (process.env.FETCH_INTERVAL_MINUTES != null) {
+    const fetch = require('./worker/fetch');
+    setInterval(() => {fetch.fetch()}, process.env.FETCH_INTERVAL_MINUTES * 60 * 1000);
+}

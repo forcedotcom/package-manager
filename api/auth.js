@@ -18,7 +18,6 @@ const AUTH_URL = process.env.AUTH_URL || 'https://steelbrick.my.salesforce.com';
 const CLIENT_URL = `${LOCAL_URL}:${CLIENT_PORT}`;
 const CALLBACK_URL = `${API_URL}/oauth2/callback`;
 const PROD_LOGIN = "https://login.salesforce.com";
-const TEST_LOGIN = "https://test.salesforce.com";
 
 function requestLogout(req, res, next) {
     try {
@@ -40,7 +39,7 @@ function oauthLoginURL(req, res, next) {
 
 function oauthOrgURL(req, res, next) {
     try {
-        const url = buildURL("api id web refresh_token", {operation: "org", loginUrl: req.query.isSandbox ? TEST_LOGIN : PROD_LOGIN});
+        const url = buildURL("api id web refresh_token", {operation: "org", loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN});
         res.json(url);
     } catch (e) {
         next(e);
