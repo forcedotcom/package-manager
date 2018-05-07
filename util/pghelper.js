@@ -1,6 +1,6 @@
 const { Pool } = require('pg');
 
-const VERBOSE_SQL = process.env.VERBOSE && process.env.VERBOSE.indexOf('SQL') !== -1;
+const VERBOSE_SQL = process.env.VERBOSE && process.env.VERBOSE.indexOf('SQL') !== -1 ? "true" : null;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres"
