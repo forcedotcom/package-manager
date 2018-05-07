@@ -8,7 +8,7 @@ const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox FROM license
 async function fetch(fetchAll) {
     let fromDate = null;
     if (!fetchAll) {
-        let latest = await db.query(`select max(modified_date) from license`);
+        let latest = await db.query(`select max(modified_date) from org`);
         if (latest.length > 0) {
             fromDate = latest[0].max;
         }
