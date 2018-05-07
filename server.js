@@ -8,6 +8,7 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const SESSION_TIMEOUT_HOURS = process.env.SESSION_TIMEOUT_HOURS || 2;
 
 const express = require('express'),
+    enforce = require('express-sslify'),
     path = require('path'),
     bodyParser = require('body-parser'),
     cookieSession = require('cookie-session'),
@@ -27,6 +28,10 @@ const express = require('express'),
 sqlinit.init();
 
 const app = express();
+
+if (process.env.FORCE_HTTPS === "true") {
+    app.use(enforce.HTTPS({trustProtoHeader: true}));
+}
 
 app.set('port', process.env.PORT || 5000);
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
