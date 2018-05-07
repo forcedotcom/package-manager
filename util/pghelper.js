@@ -6,6 +6,14 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres"
 });
 
+
+/**
+ * Utility function to execute a long init script against a Postgres database
+ */
+exports.init = (sql, cb) => {
+    pool.query(sql, [], cb);
+};
+
 /**
  * Utility function to execute a SQL select query against a Postgres database
  */

@@ -1,10 +1,3 @@
-create table if not exists init_script
-(
-  name     varchar(255) not null
-    constraint init_script_name_pk primary key,
-  run_date timestamp with time zone
-);
-
 create table if not exists package_org
 (
   id             serial      not null,
@@ -161,3 +154,15 @@ create index if not exists license_org_version_index
 
 create index if not exists license_package_org_version_index
   on license (org_id, package_id, package_version_id);
+
+-- Default internal non-account
+insert into account (account_name, account_id) values ('Internal', '000000000000000') on conflict do nothing;
+
+-- Patch 1
+alter table org
+  drop column if exists account_name;
+
+alter table package_org
+  add if not exists status varchar(80) null,
+  add if not exists description text null,
+  add if not exists refreshed_date timestamp with time zone;

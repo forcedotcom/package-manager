@@ -4,8 +4,8 @@ if (fs.existsSync(__dirname + '/.env')) {
     console.log(`Achtung. Running with local .env file.  Use for development purposes only.`);
 }
 
-// Ensure our database is alive and initialized
-require('./init/sqlinit');
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const SESSION_TIMEOUT_HOURS = process.env.SESSION_TIMEOUT_HOURS || 2;
 
 const express = require('express'),
     path = require('path'),
@@ -21,10 +21,12 @@ const express = require('express'),
     licenses = require('./api/licenses'),
     auth = require('./api/auth'),
     admin = require('./api/admin'),
-    app = express();
+    sqlinit = require('./init/sqlinit');
 
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const SESSION_TIMEOUT_HOURS = process.env.SESSION_TIMEOUT_HOURS || 2;
+// Ensure our database is alive and initialized
+sqlinit.init();
+
+const app = express();
 
 app.set('port', process.env.PORT || 5000);
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
