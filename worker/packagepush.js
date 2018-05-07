@@ -123,6 +123,17 @@ async function upgradeVersion(versionId, orgIds, scheduledDate, description) {
     return upgrade;
 }
 
+async function findRequestsByStatus(packageOrgId, status) {
+    let conn = await sfdc.buildOrgConnection(packageOrgId);
+
+    let soql = `SELECT Id,PackageVersionId,Status,ScheduledStartTime 
+        FROM PackagePushRequest 
+        WHERE Status IN (${status.map(v => `'${v}'`).join(",")})`;
+
+    let res = await conn.query(soql);
+    return res.records;
+}
+
 async function findRequestsByIds(packageOrgId, requestIds) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
@@ -130,6 +141,18 @@ async function findRequestsByIds(packageOrgId, requestIds) {
     let soql = `SELECT Id,PackageVersionId,Status,ScheduledStartTime 
         FROM PackagePushRequest 
         WHERE Id IN (${params.join(",")})`;
+
+    let res = await conn.query(soql);
+    return res.records;
+}
+
+async function findJobsByStatus(packageOrgId, requestIds, status) {
+    let conn = await sfdc.buildOrgConnection(packageOrgId);
+
+    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
+        FROM PackagePushJob
+        WHERE PackagePushRequestId IN (${status.map(v => `'${v}'`).join(",")})
+        AND Status IN (${status.map(v => `'${v}'`).join(",")})`;
 
     let res = await conn.query(soql);
     return res.records;
@@ -159,7 +182,9 @@ async function findErrorsByJobIds(packageOrgId, jobIds) {
     return res.records;
 }
 
+exports.findRequestsByStatus = findRequestsByStatus;
 exports.findRequestsByIds = findRequestsByIds;
+exports.findJobsByStatus = findJobsByStatus;
 exports.findJobsByRequestIds = findJobsByRequestIds;
 exports.findErrorsByJobIds = findErrorsByJobIds;
 exports.updatePushRequests = updatePushRequests;

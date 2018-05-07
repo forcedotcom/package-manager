@@ -56,7 +56,7 @@ async function retrieveByOrgId(org_id) {
 async function initOrg(conn, org_id) {
     let org = await refreshOrgConnection(conn, org_id);
     if (org.status === Status.Invalid) {
-        return await db.update(`UPDATE package_org SET status = $1, access_token = null WHERE org_id = $2`, [org.status, org_id]);
+        return await this.updateOrgStatus(org_id, org.status);
     } 
  
     await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
@@ -70,6 +70,10 @@ async function initOrg(conn, org_id) {
             status = excluded.status`;
     return await db.insert(sql,
         [org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status]);
+}
+
+async function updateOrgStatus(orgId, status) {
+    return await db.update(`UPDATE package_org SET status = $1, access_token = null WHERE org_id = $2`, [status, orgId]);
 }
 
 async function refreshOrgConnection(conn, org_id) {
@@ -142,4 +146,6 @@ exports.requestDelete = requestDelete;
 exports.retrieveById = retrieve;
 exports.retrieveByOrgId = retrieveByOrgId;
 exports.initOrg = initOrg;
+exports.updateOrgStatus = updateOrgStatus;
 exports.updateAccessToken = updateAccessToken;
+exports.Status = Status;

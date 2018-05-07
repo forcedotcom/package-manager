@@ -4,7 +4,7 @@ const sfdc = require('../api/sfdcconn'),
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
                     sfLma__Version_ID__c, RealVersionNumber__c, LastModifiedDate FROM sfLma__Package_Version__c`;
 
-async function fetch(fetchAll) {
+async function fetch(sb62Id, fetchAll) {
     let fromDate = null;
     if (!fetchAll) {
         let latest = await db.query(`select max(modified_date) from package_version`);
@@ -13,12 +13,12 @@ async function fetch(fetchAll) {
         }
     }
 
-    let recs = await query(fromDate);
+    let recs = await query(sb62Id, fromDate);
     return upsert(recs, 2000);
 }
 
-async function query(fromDate) {
-    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.sb62.orgId);
+async function query(sb62Id, fromDate) {
+    let conn = await sfdc.buildOrgConnection(sb62Id);
     let soql = SELECT_ALL;
     if (fromDate) {
         soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;

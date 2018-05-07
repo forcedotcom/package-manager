@@ -95,9 +95,10 @@ async function upsertBatch(recs) {
     await db.insert(sql, values);
 }
 
-async function mark() {
-    let sql = `update org set account_id = '${sfdc.INVALID_ID}', status = 'Not Found', modified_date = now() where account_id is null`;
-    let res = await db.update(sql);
+async function mark(isSandbox) {
+    let sql = `update org set account_id = $1, status = 'Not Found', modified_date = now() where account_id is null
+                and is_sandbox = $2`;
+    let res = await db.update(sql, [sfdc.INVALID_ID, isSandbox]);
     console.log(`Marked ${res.length} org records as invalid accounts`);
 }
 

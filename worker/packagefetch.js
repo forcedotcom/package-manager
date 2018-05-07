@@ -4,13 +4,13 @@ const sfdc = require('../api/sfdcconn'),
 const SELECT_ALL = `SELECT Id, Name, sflma__Developer_Org_ID__c, sfLma__Package_ID__c FROM sflma__Package__c
                     WHERE Status__c = 'Active'`;
 
-async function fetch() {
-    let recs = await query();
+async function fetch(sb62Id) {
+    let recs = await query(sb62Id);
     return upsert(recs, 2000);
 }
 
-async function query() {
-    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.sb62.orgId);
+async function query(sb62Id) {
+    let conn = await sfdc.buildOrgConnection(sb62Id);
     let soql = SELECT_ALL;
     let res = await conn.query(soql);
     return await load(res, conn);

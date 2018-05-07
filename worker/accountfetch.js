@@ -1,21 +1,21 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 
-async function fetch(fetchAll, batchSize = 500) {
-    return await queryAndStore(fetchAll, batchSize, false);
+async function fetch(org62Id, fetchAll, batchSize = 500) {
+    return await queryAndStore(org62Id, fetchAll, batchSize, false);
 }
 
-async function fetchBulk(fetchAll, batchSize = 5000) {
-    return await queryAndStore(fetchAll, batchSize, true);
+async function fetchBulk(org62Id, fetchAll, batchSize = 5000) {
+    return await queryAndStore(org62Id, fetchAll, batchSize, true);
 }
 
-async function queryAndStore(fetchAll, batchSize, useBulkAPI) {
+async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
     let fromDate = null;
-    let sql = `SELECT account_id, modified_date FROM account WHERE account_id NOT IN('${sfdc.INVALID_ID}', '${sfdc.INTERNAL_ID}')`;
+    let sql = `SELECT account_id, modified_date FROM account WHERE account_id NOT IN($1, $2)`;
     if (!fetchAll) {
         sql += ` AND account_name IS NULL ORDER BY modified_date asc`
     }
-    let accounts = await db.query(sql);
+    let accounts = await db.query(sql, [sfdc.INVALID_ID, sfdc.INTERNAL_ID]);
     let count = accounts.length;
     if (count === 0) {
         console.log("No accounts found to update");
@@ -26,7 +26,7 @@ async function queryAndStore(fetchAll, batchSize, useBulkAPI) {
         fromDate = accounts[0].modified_date;
     }
 
-    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.org62.orgId);
+    let conn = await sfdc.buildOrgConnection(org62Id);
     for (let start = 0; start < count;) {
         console.log(`Querying ${start} of ${count}`);
         await fetchBatch(conn, accounts.slice(start, start += batchSize), fromDate, useBulkAPI);

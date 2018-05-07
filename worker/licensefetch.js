@@ -6,7 +6,7 @@ const SELECT_ALL = `SELECT Id, LastModifiedDate, Name, sfLma__Subscriber_Org_ID_
     sfLma__Used_Licenses__c, sfLma__Package__c, sfLma__Package_Version__c FROM sfLma__License__c`;
 
 
-async function fetch(fetchAll) {
+async function fetch(sb62Id, fetchAll) {
     let fromDate = null;
     if (!fetchAll) {
         let latest = await db.query(`select max(modified_date) max from license`);
@@ -14,12 +14,12 @@ async function fetch(fetchAll) {
             fromDate = latest[0].max;
         }
     }
-    let recs = await query(fromDate);
+    let recs = await query(sb62Id, fromDate);
     return upsert(recs, 2000);
 }
 
-async function query(fromDate) {
-    let conn = await sfdc.buildOrgConnection(sfdc.NamedOrgs.sb62.orgId);
+async function query(sb62Id, fromDate) {
+    let conn = await sfdc.buildOrgConnection(sb62Id);
     let soql = SELECT_ALL;
     if (fromDate) {
         soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;
