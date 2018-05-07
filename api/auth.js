@@ -13,10 +13,10 @@ const PORT = process.env.PORT || 5000;
 const CLIENT_PORT = process.env.CLIENT_PORT || PORT;
 const API_URL = process.env.API_URL || `${LOCAL_URL}:${PORT}`;
 const AUTH_URL = process.env.AUTH_URL || 'https://steelbrick.my.salesforce.com';
+const CLIENT_URL = process.env.CLIENT_URL || `${LOCAL_URL}:${CLIENT_PORT}`;
+const CALLBACK_URL = process.env.CALLBACK_URL || `${API_URL}/oauth2/callback`;
 
 // Constants
-const CLIENT_URL = `${LOCAL_URL}:${CLIENT_PORT}`;
-const CALLBACK_URL = `${API_URL}/oauth2/callback`;
 const PROD_LOGIN = "https://login.salesforce.com";
 
 function requestLogout(req, res, next) {
