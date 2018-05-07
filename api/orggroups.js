@@ -1,6 +1,7 @@
 const db = require('../util/pghelper');
 const orgs = require('./orgs');
 const push = require('../worker/packagepush');
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = "SELECT id, name, description FROM org_group";
 
@@ -105,7 +106,10 @@ async function requestDelete(req, res, next) {
 function requestUpgrade(req, res, next) {
     push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.body.description)
         .then((upgrade) => {return res.json(upgrade)})
-        .catch((e) => {console.error(e); next(e)});
+        .catch((error) => {
+            logger.error("Failed to upgrade org group", {org_group_id: req.params.id, ...error}); 
+            next(error);
+        });
 }
 
 async function insertOrgMembers(groupId, orgIds) {

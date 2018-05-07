@@ -1,5 +1,6 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate FROM AllOrganization`;
 
@@ -20,7 +21,7 @@ async function queryAndStore(btOrgId, fetchAll, batchSize, useBulkAPI) {
     let orgs = await db.query(sql);
     let count = orgs.length;
     if (count === 0) {
-        console.log("No orgs found to update");
+        logger.info("No orgs found to update");
         return; 
     }
 
@@ -30,7 +31,7 @@ async function queryAndStore(btOrgId, fetchAll, batchSize, useBulkAPI) {
 
     let conn = await sfdc.buildOrgConnection(btOrgId);
     for (let start = 0; start < count;) {
-        console.log(`Querying ${start} of ${count}`);
+        logger.info(`Retrieving org records`, {batch: start, count});
         await fetchBatch(conn, orgs.slice(start, start += batchSize), fromDate, useBulkAPI);
     }
 }
@@ -59,8 +60,8 @@ async function fetchBatch(conn, orgs, fromDate, useBulkAPI) {
         .on("end", async () => {
             await upsert(orgs, 2000);
         })
-        .on("error", err => {
-            console.error(err);
+        .on("error", error => {
+            logger.error("Failed to retrieve orgs", error);
         });
     if (!useBulkAPI) {
         await query.run({ autoFetch : true, maxFetch : 100000 });
@@ -70,10 +71,10 @@ async function fetchBatch(conn, orgs, fromDate, useBulkAPI) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new orgs found");
+        logger.info("No new orgs found");
         return; // nothing to see here
     }
-    console.log(`${count} new orgs found`);
+    logger.info(`New orgs found`, {count});
     for (let start = 0; start < count;) {
         await upsertBatch(recs.slice(start, start += batchSize));
     }
@@ -99,7 +100,9 @@ async function mark(isSandbox) {
     let sql = `update org set account_id = $1, status = 'Not Found', modified_date = now() where account_id is null
                 and is_sandbox = $2`;
     let res = await db.update(sql, [sfdc.INVALID_ID, isSandbox]);
-    console.log(`Marked ${res.length} org records as invalid accounts`);
+    if (res.length > 0) {
+        logger.info(`Marked org records as invalid accounts`, {count: res.length});
+    }
 }
 
 exports.fetch = fetch;

@@ -1,4 +1,5 @@
 const db = require('../util/pghelper');
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox FROM license 
                     WHERE status in ('Trial','Active') 
@@ -29,31 +30,31 @@ async function query(fromDate) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new license orgs found");
+        logger.info("No new license orgs found");
         return;
     }
-    console.log(`${count} new license orgs found`);
+    logger.info(`New license orgs found`, {count});
     if (count <= batchSize) {
         return await upsertBatch(recs);
     }
     for (let start = 0; start < count;) {
-        console.log(`Batching ${start} of ${count}`);
+        logger.info(`Upserting license orgs`, {batch: start, count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }
 }
 
 async function upsertBatch(recs) {
-    let values = [];
-    let sql = "INSERT INTO org (org_id, instance, is_sandbox) VALUES";
-    for (let i = 0, n = 1; i < recs.length; i++) {
+    let values = [new Date()];
+    let sql = "INSERT INTO org (org_id, instance, is_sandbox, modified_date) VALUES";
+    for (let i = 0, n = 2; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++})`;
+        sql += `($${n++},$${n++},$${n++}, $1)`;
         values.push(rec.org_id, rec.instance, rec.is_sandbox);
     }
-    sql += ` on conflict (org_id) do nothing`;
+    sql += ` on conflict (org_id) do update set modified_date = excluded.modified_date`;
     await db.insert(sql, values);
 }
 

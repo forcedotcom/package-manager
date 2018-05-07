@@ -81,8 +81,8 @@ async function refreshOrgConnection(conn, org_id) {
         let org = await conn.sobject("Organization").retrieve(org_id);
         return {org_id, status: Status.Connected, instance_url: conn.instanceUrl, refresh_token: conn.refreshToken, access_token: conn.accessToken,
             name: org.Name, division: org.Division, namespace: org.NamespacePrefix, instance_name: org.InstanceName};
-    } catch (e) {
-        if (e.name === "invalid_grant") {
+    } catch (error) {
+        if (error.name === "invalid_grant") {
             return {org_id: org_id, status: Status.Invalid};
         }
         

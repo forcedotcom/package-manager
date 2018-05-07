@@ -1,5 +1,6 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
+const logger = require('../util/logger').logger;
 
 async function fetchByIds(packageOrgId, orgIds) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
@@ -122,15 +123,15 @@ async function load(result, conn) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new orgs found")
+        logger.info("No new orgs found")
         return; // nothing to see here
     }
-    console.log(`${count} new orgs found`)
+    logger.info(`New subscriber orgs found`, {count})
     if (count <= batchSize) {
         return await upsertBatch(recs);
     }
     for (let start = 0; start < count;) {
-        console.log(`Batching ${start} of ${count}`);
+        logger.info(`Batch upserting subscriber orgs`, {batch: start, count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }
 }

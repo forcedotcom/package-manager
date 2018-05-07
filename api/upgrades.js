@@ -1,7 +1,7 @@
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const licensefetch = require('../worker/licensefetch');
-
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `select u.id, u.start_time, u.description, count(i.*) item_count
                     from upgrade u
@@ -108,15 +108,21 @@ async function requestItemsByUpgrade(req, res, next) {
                 let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
                 if (item.status !== pushReqs[0].Status) {
                     item.status = pushReqs[0].Status;
-                    await updateUpgradeItemStatus(item.id, item.status);
-                    console.log(`Status changed for item ${item.id} to ${item.status}`);
-                    if (item.status === "Complete") {
-                        completed = true;
+                    try {
+                        await updateUpgradeItemStatus(item.id, item.status);
+                        logger.debug(`Upgrade item status changed`, {item: item.id, status: item.status});
+                        if (item.status === "Complete") {
+                            completed = true;
+                        }
+                    } catch (error) {
+                        logger.error("Failed to update upgrade item status", error);
                     }
                 }
             }
             if (completed) {
-                refreshLicenses().then(() => console.log("Done.")).catch((e) => console.error(e));
+                refreshLicenses()
+                    .then(() => logger.info("Licenses refreshed"))
+                    .catch((error) => logger.error("Failed to refresh licenses", error));
             }
         }
 
@@ -206,7 +212,9 @@ async function requestJobStatusByItem(req, res, next) {
         let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
         if (item.status !== pushReqs[0].Status) {
             item.status = pushReqs[0].Status;
-            updateUpgradeItemStatus(item.id, item.status).then(() => console.log(`Status changed for item ${item.id} to ${item.status}`)).catch(err => console.error(err));
+            updateUpgradeItemStatus(item.id, item.status)
+                .then(() => logger.debug(`Upgrade item status changed`, {item: item.id, status: item.status}))
+                .catch(error => logger.error('Failed to update upgrade item status', error));
         }
         let pushJobs = await push.findJobsByRequestIds(item.package_org_id, [item.push_request_id]);
         let statusMap = {};

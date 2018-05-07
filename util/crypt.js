@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require('../util/logger').logger;
+
 /*
     crypt.js - wrapper for crypto
     All taken from thenativeweb/crypto2 (because I couldn't get the full module to work)
@@ -51,8 +53,8 @@ const passwordEncryptObjects = async function (password, objects, fields) {
                 }
             }
         }
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        logger.error("Failed to encrypt objects", error);
     }
 };
 
@@ -77,8 +79,8 @@ const passwordDecryptObjects = async function (password, objects, fields) {
                 }
             }
         }
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        logger.error("Failed to decrypt objects", error);
     }
 };
 

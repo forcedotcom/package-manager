@@ -1,5 +1,6 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id, LastModifiedDate, Name, sfLma__Subscriber_Org_ID__c, sfLma__Org_Instance__c, sfLma__License_Type__c, 
     sfLma__Subscriber_Org_Is_Sandbox__c, sfLma__Status__c, sfLma__Install_Date__c, sfLma__Expiration__c, 
@@ -60,17 +61,17 @@ async function load(result, conn) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new licenses found in sb62");
+        logger.info("No new licenses found in sb62");
         return; // nothing to see here
     }
-    console.log(`${count} new licenses found in sb62`);
+    logger.info(`New licenses found in sb62`, {count});
     if (count <= batchSize) {
-        console.log(`Upserting ${recs.length}`);
+        logger.info(`Upserting license records`, {count: recs.length});
         return await upsertBatch(recs);
     }
 
     for (let start = 0; start < count;) {
-        console.log(`Batch upserting ${Math.min(start+batchSize,count)} of ${count}`);
+        logger.info(`Batch upserting license records`, {batch: Math.min(start+batchSize,count), count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }
 }

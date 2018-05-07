@@ -100,7 +100,8 @@ create table if not exists package
     constraint package_sfid_pk primary key,
   name           varchar(255),
   package_id     varchar(18),
-  package_org_id varchar(18)
+  package_org_id varchar(18),
+  modified_date       timestamp with time zone
 );
 
 create table if not exists package_version
@@ -161,6 +162,9 @@ insert into account (account_name, account_id) values ('Internal', '000000000000
 -- Patch 1
 alter table org
   drop column if exists account_name;
+
+alter table package
+  add if not exists modified_date timestamp with time zone;
 
 alter table package_org
   add if not exists status varchar(80) null,

@@ -1,5 +1,6 @@
-const sfdc = require('../api/sfdcconn'),
-    db = require('../util/pghelper');
+const sfdc = require('../api/sfdcconn');
+const db = require('../util/pghelper');
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
                     sfLma__Version_ID__c, RealVersionNumber__c, LastModifiedDate FROM sfLma__Package_Version__c`;
@@ -56,15 +57,15 @@ async function load(result, conn) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new package versions found");
+        logger.info("No new package versions found");
         return; // nothing to see here
     }
-    console.log(`${count} new package versions found`);
+    logger.info(`New package versions found`, {count});
     if (count <= batchSize) {
         return await upsertBatch(recs);
     }
     for (let start = 0; start < count;) {
-        console.log(`Batching ${start} of ${count}`);
+        logger.info(`Batch upserting package versions`, {batch: start, count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }
 }
@@ -113,7 +114,6 @@ async function queryLatest(packageIds) {
          GROUP BY package_id) x
         INNER JOIN package_version v ON v.package_id = x.package_id AND v.real_version_number = x.real_version_number`;
 
-    console.log(sql);
     return db.query(sql, values);
 }
 

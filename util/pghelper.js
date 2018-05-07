@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const logger = require('./logger').logger;
 
 const VERBOSE_SQL = process.env.VERBOSE && process.env.VERBOSE.indexOf('SQL') !== -1 ? "true" : null;
 
@@ -19,7 +20,7 @@ exports.init = (sql, cb) => {
  */
 exports.query = async (sql, values) => {
     if (VERBOSE_SQL) {
-        console.log(sql, values || '');
+        logger.debug(sql, values);
     }
 
     let result = await pool.query(sql, values);

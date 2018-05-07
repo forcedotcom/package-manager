@@ -22,7 +22,8 @@ const express = require('express'),
     licenses = require('./api/licenses'),
     auth = require('./api/auth'),
     admin = require('./api/admin'),
-    sqlinit = require('./init/sqlinit');
+    sqlinit = require('./init/sqlinit'),
+    logger = require('./util/logger').logger;
 
 // Ensure our database is alive and initialized
 sqlinit.init();
@@ -113,7 +114,7 @@ app.get('/*', (req, res) => {
 });
 
 app.listen(app.get('port'), function () {
-    console.log('Express listening on port ' + app.get('port'));
+    logger.info('Express initialized', {port: app.get('port')});
 });
 
 if (process.env.FETCH_INTERVAL_MINUTES != null) {

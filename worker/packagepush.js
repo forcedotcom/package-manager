@@ -5,6 +5,7 @@ const ALLOWED_ORGS = ['00D0q000000CxI3','00D37000000KnsY', '00D37000000Knsn', '0
 const sfdc = require('../api/sfdcconn');
 const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
+const logger = require('../util/logger').logger;
 
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
@@ -31,12 +32,12 @@ async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
 
 async function cancelRequests(conn) {
     let res = await conn.query("SELECT Id,PackageVersionId,Status,ScheduledStartTime FROM PackagePushRequest WHERE Status = 'Created'");
-    console.log(`Canceling: ${res.records.length} requests`);
+    logger.info(`Canceling push upgrade requests`, {count: res.records.length});
     let canceled = res.records.map((v) => {
         return conn.sobject('PackagePushRequest').update({Id: v.Id, Status: "Canceled"});
     });
     res = await Promise.all(canceled);
-    console.log(`Canceled: ${res.records.length} requests`);
+    logger.info(`Canceled push upgrade requests`, {count: res.records.length});
 }
 
 async function clearRequests(packageOrgIds) {

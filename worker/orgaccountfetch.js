@@ -1,5 +1,6 @@
 const db = require('../util/pghelper');
 const sfdc = require('../api/sfdcconn');
+const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT DISTINCT account_id FROM org WHERE account_id is not null 
                     AND account_id NOT IN('${sfdc.INVALID_ID}', '${sfdc.INTERNAL_ID}')`;
@@ -29,31 +30,31 @@ async function query(fromDate) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        console.log("No new org accounts found");
+        logger.info("No new org accounts found");
         return;
     }
-    console.log(`${count} new org accounts found`);
+    logger.info(`New org accounts found`, {count});
     if (count <= batchSize) {
         return await upsertBatch(recs);
     }
     for (let start = 0; start < count;) {
-        console.log(`Batching ${start} of ${count}`);
+        logger.info(`Batch upserting org accounts`, {batch: start, count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }
 }
 
 async function upsertBatch(recs) {
-    let values = [];
-    let sql = "INSERT INTO account (account_id) VALUES";
-    for (let i = 0, n = 1; i < recs.length; i++) {
+    let values = [new Date()]; // Set modified_date to now for new-found accounts
+    let sql = "INSERT INTO account (account_id, modified_date) VALUES";
+    for (let i = 0, n = 2; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++})`;
+        sql += `($${n++}, $1)`;
         values.push(rec.account_id);
     }
-    sql += ` on conflict (account_id) do nothing`;
+    sql += ` on conflict (account_id) do update set modified_date = excluded.modified_date`;
     await db.insert(sql, values);
 }
 

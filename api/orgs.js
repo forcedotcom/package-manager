@@ -1,5 +1,6 @@
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
+const logger = require('../util/logger').logger;
 
 
 const SELECT_ALL = `SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
@@ -59,7 +60,10 @@ function requestUpgrade(req, res, next) {
         .then((upgrade) => {
             return res.json(upgrade)
         })
-        .catch((e) => {console.error(e); next(e)});
+        .catch((error) => {
+            logger.error("Failed to upgrade org", {org_id: req.params.id, ...error}); 
+            next(error);
+        });
 }
 
 async function findByGroup(orgGroupId) {

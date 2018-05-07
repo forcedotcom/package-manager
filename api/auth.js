@@ -3,6 +3,7 @@
 const jsforce = require('jsforce');
 const qs = require('query-string');
 const packageorgs = require('./packageorgs');
+const logger = require('../util/logger').logger;
 
 // Configurable parameters
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -65,12 +66,12 @@ async function oauthCallback(req, res, next) {
                 req.session.access_token = conn.accessToken;
                 res.redirect(`${CLIENT_URL}/authresponse?redirectTo=${state.redirectTo}`);
         }
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        logger.error("Failed to authorize user", error);
         let errs = {
-            message: e.message,
-            severity: e.severity,
-            code: e.code
+            message: error.message,
+            severity: error.severity,
+            code: error.code
         };
 
         res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
