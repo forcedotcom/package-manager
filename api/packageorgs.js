@@ -87,10 +87,19 @@ async function refreshOrgConnection(conn, org_id) {
         }
         
         // No access to the Organization object.  Not ideal, but our token was still refreshed.
-        return {org_id, status: Status.Connected, instance_url: conn.instanceUrl, refresh_token: conn.refreshToken, access_token: conn.accessToken};
+        return {org_id, name: parseNameFromMyUrl(conn.instanceUrl), status: Status.Connected, instance_url: conn.instanceUrl, refresh_token: conn.refreshToken, access_token: conn.accessToken};
     }
 }
-    
+
+function parseNameFromMyUrl(instanceUrl) {
+    let n = instanceUrl.indexOf("://");
+    let m = instanceUrl.indexOf(".my.salesforce.com");
+    if (n === -1 || m === -1) {
+        return null; // Nope. Bad url! Bad url!
+    }
+    return instanceUrl.substring(n+3, m).toUpperCase();
+}
+
 async function updateAccessToken(org_id, access_token) {
     let encrypto = {access_token: access_token};
     await crypt.passwordEncryptObjects(CRYPT_KEY, [encrypto]);
