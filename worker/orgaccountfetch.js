@@ -7,7 +7,7 @@ const SELECT_ALL = `SELECT DISTINCT account_id FROM org WHERE account_id is not 
 async function fetch(fetchAll) {
     let fromDate = null;
     if(!fetchAll) {
-        let latest = await db.query(`select max(modified_date) from org`);
+        let latest = await db.query(`select max(modified_date) from account`);
         if (latest.length > 0) {
             fromDate = latest[0].max;
         }
