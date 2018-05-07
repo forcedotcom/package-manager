@@ -113,5 +113,7 @@ app.listen(app.get('port'), function () {
 
 if (process.env.FETCH_INTERVAL_MINUTES != null) {
     const fetch = require('./worker/fetch');
+    // Fetch once up front, then reschedule.
+    fetch.fetch();
     setInterval(() => {fetch.fetch()}, process.env.FETCH_INTERVAL_MINUTES * 60 * 1000);
 }
