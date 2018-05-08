@@ -84,11 +84,12 @@ export default class extends React.Component {
                         </div>
                     </div>
                 </div>
+                {this.props.packageorg.namespace !== null ? 
                 <div className="slds-col--padded slds-size--1-of-1">
                     <br/>
                     <PackageVersionCard packageVersions={this.state.packageVersions}/>
-                </div>
+                </div> : ""}
             </div>
-        );
+        )
     }
 }

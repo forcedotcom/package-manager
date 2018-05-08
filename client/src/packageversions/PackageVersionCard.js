@@ -4,6 +4,7 @@ import moment from "moment/moment";
 import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
+import * as sortage from "../services/sortage";
 
 export default class extends React.Component {
     state = {itemCount: "..."};
@@ -24,9 +25,10 @@ export default class extends React.Component {
     
     render() {
         let columns = [
-            {Header: "Version Number", accessor: "version_number", sortable: true, clickable: true},
-            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll"), sortable: true},
-            {Header: "Version ID", accessor: "version_id"},
+            {Header: "Version Number", accessor: "version_number", sortable: true, clickable: true,
+                sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}},
+            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll"), sortable: false},
+            {Header: "Version ID", accessor: "version_id", sortable: false},
             {Header: "Status", accessor: "status", sortable: true}
         ];
         

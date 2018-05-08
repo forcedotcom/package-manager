@@ -1,12 +1,5 @@
 const db = require('../util/pghelper');
 
-const SELECT_ALL_HEROKU_CONNECT =
-    `SELECT pv.id, pv.sfid, pv.name, p.name as package_name, pv.sflma__version__c as version_number, pv.RealVersionNumber__c as real_version_number,
-        pv.sflma__package__c as package_id, pv.sflma__release_date__c as release_date, pv.status__c as status, pv.sflma__version_id__c as version_id, 
-        p.sflma__developer_org_id__c as package_org_id 
-    FROM sflma__package_version__c as pv 
-    INNER JOIN sflma__package__c as p on pv.sflma__package__c = p.sfid`;
-
 const SELECT_ALL =
     `SELECT 
         pv.id, pv.sfid, pv.name, pv.version_number, pv.real_version_number, pv.package_id, pv.release_date, pv.status, pv.version_id, 

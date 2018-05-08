@@ -36,4 +36,19 @@ export let setTabIndex = (contextKey, index) => {
     if (contextKey) {
         window.localStorage.setItem(TABS_PREFIX + contextKey, index);
     }
-}
+};
+
+export let getSortableVersion = (dotVersion) => {
+    if(!dotVersion)
+        return 0;
+    let realVersionNumber = dotVersion.split(".");
+    let sortableVersion = realVersionNumber.map(v => {
+        let value = v;
+        let missingZeroes = 4-value.length;
+        for (let z = 0; z < missingZeroes; z++) {
+            value = '0' + value;
+        }
+        return value;
+    }).join("");
+    return sortableVersion;
+};

@@ -4,6 +4,7 @@ import moment from "moment/moment";
 import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
+import * as sortage from "../services/sortage";
 
 export default class extends React.Component {
     state = {packageVersions: [], itemCount: "..."};
@@ -35,9 +36,11 @@ export default class extends React.Component {
             {Header: "Package", accessor: "package_name", sortable: true, clickable: true},
             {Header: "License Status", accessor: "license_status", sortable: true},
             {Header: "Version Number", minWidth: 170, id: "version_number", accessor: d => d.version_number === d.latest_version_number ? d.version_number :
-                    <span style={{borderRadius: "4px", margin: 0, fontWeight: "bold", padding: "2px 4px 2px 4px"}} className="slds-theme--success">{d.version_number}&nbsp;&nbsp;=&gt;&nbsp;&nbsp;{d.latest_version_number}</span>, sortable: true, clickable: true},
+                    <span style={{borderRadius: "4px", margin: 0, fontWeight: "bold", padding: "2px 4px 2px 4px"}} className="slds-theme--success">{d.version_number}&nbsp;&nbsp;=&gt;&nbsp;&nbsp;{d.latest_version_number}</span>, sortable: true, clickable: true,
+                sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
+            },
             {Header: "Status", accessor: "status", sortable: true},
-            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll"), sortable: true}
+            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll"), sortable: false}
         ];
 
         return (

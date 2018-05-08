@@ -58,7 +58,7 @@ export default class extends React.Component {
                     <HeaderField label="Description" value={this.state.packageorg.description}/>
                     <HeaderField label="Org ID" value={this.state.packageorg.org_id}/>
                 </RecordHeader>
-                <PackageOrgView packageorg={this.state.packageorg}/>;
+                <PackageOrgView packageorg={this.state.packageorg}/>
                 {this.state.isEditing ? <EditPackageOrgWindow packageorg={this.state.packageorg} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
             </div>
         );

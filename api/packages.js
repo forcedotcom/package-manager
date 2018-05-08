@@ -1,8 +1,5 @@
 const db = require('../util/pghelper');
 
-const SELECT_ALL_HEROKU_CONNECT = "SELECT id, sfid, name, sflma__developer_org_id__c as package_org_id, sflma__package_id__c as package_id" +
-    " FROM sflma__package__c";
-
 const SELECT_ALL = "SELECT id, sfid, name, package_org_id, package_id" +
     " FROM package";
 
