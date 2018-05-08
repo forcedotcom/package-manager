@@ -12,8 +12,8 @@ export default class extends React.Component {
 
     render() {
         const columns = [
-            {Header: "Name", accessor: "name", sortable: true, clickable: true, filterable: true},
-            {Header: "Description", accessor: "description", clickable: true, filterable: true}
+            {Header: "Name", accessor: "name", sortable: true, clickable: true},
+            {Header: "Description", accessor: "description", clickable: true}
         ];
         return (
             <DataTable id="OrgGroupList" data={this.props.orggroups} onClick={this.linkHandler} onFilter={this.props.onFilter} onSelect={this.props.onSelect} columns={columns}/>

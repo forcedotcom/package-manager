@@ -32,7 +32,7 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid, batchSize) {
         return; 
     }
 
-    if (!fetchAll) {
+    if (!fetchAll && !fetchInvalid) {
         fromDate = orgs[0].modified_date;
     }
 
