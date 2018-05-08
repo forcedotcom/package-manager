@@ -4,24 +4,31 @@ const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate FROM AllOrganization`;
 
+const Status = {NotFound: 'Not Found'};
+
 async function fetch(btOrgId, fetchAll, batchSize = 500) {
-    return await queryAndStore(btOrgId, fetchAll, batchSize, false);
+    return await queryAndStore(btOrgId, fetchAll, false, batchSize, false);
 }
 
-async function fetchBulk(btOrgId, fetchAll, batchSize = 5000) {
-    return await queryAndStore(btOrgId, fetchAll, batchSize, true);
+async function refetchInvalid(btOrgId, batchSize = 500) {
+    return await queryAndStore(btOrgId, false, true, batchSize, false);
 }
 
-async function queryAndStore(btOrgId, fetchAll, batchSize, useBulkAPI) {
+async function queryAndStore(btOrgId, fetchAll, fetchInvalid, batchSize) {
+    let conn = await sfdc.buildOrgConnection(btOrgId);
     let fromDate = null;
     let sql = `select org_id, modified_date from org`;
-    if (!fetchAll) {
+    if (fetchInvalid) {
+        sql += ` where status = '${Status.NotFound}'`
+    } else if (!fetchAll) {
         sql += ` where account_id is null order by modified_date desc`
     }
     let orgs = await db.query(sql);
     let count = orgs.length;
     if (count === 0) {
         logger.info("No orgs found to update");
+        // Ping the org anyway, to keep our love (and, session) alive.
+        await conn.query(SELECT_ALL + ' LIMIT 1');
         return; 
     }
 
@@ -29,14 +36,13 @@ async function queryAndStore(btOrgId, fetchAll, batchSize, useBulkAPI) {
         fromDate = orgs[0].modified_date;
     }
 
-    let conn = await sfdc.buildOrgConnection(btOrgId);
     for (let start = 0; start < count;) {
         logger.info(`Retrieving org records`, {batch: start, count});
-        await fetchBatch(conn, orgs.slice(start, start += batchSize), fromDate, useBulkAPI);
+        await fetchBatch(conn, orgs.slice(start, start += batchSize), fromDate);
     }
 }
 
-async function fetchBatch(conn, orgs, fromDate, useBulkAPI) {
+async function fetchBatch(conn, orgs, fromDate) {
     let soql = SELECT_ALL;
     let orgIds = orgs.map(o => o.org_id);
 
@@ -49,7 +55,7 @@ async function fetchBatch(conn, orgs, fromDate, useBulkAPI) {
     if (fromDate) {
         soql += ` AND LastModifiedDate > ${fromDate.toISOString()}`;
     }
-    let query = (useBulkAPI ? conn.bulk.query(soql) : conn.query(soql))
+    let query = conn.query(soql)
         .on("record", rec => {
             let org = orgMap[rec.Id.substring(0,15)];
             org.name = rec.Name;
@@ -63,9 +69,8 @@ async function fetchBatch(conn, orgs, fromDate, useBulkAPI) {
         .on("error", error => {
             logger.error("Failed to retrieve orgs", error);
         });
-    if (!useBulkAPI) {
-        await query.run({ autoFetch : true, maxFetch : 100000 });
-    }
+    
+    await query.run({autoFetch: true, maxFetch: 100000});
 }
 
 async function upsert(recs, batchSize) {
@@ -82,22 +87,22 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = "INSERT INTO org (org_id, name, type, modified_date, account_id) VALUES";
+    let sql = "INSERT INTO org (org_id, name, type, modified_date, account_id, status) VALUES";
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
+        sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, null)`;
         values.push(rec.org_id, rec.name, rec.type, rec.modified_date, rec.account_id);
     }
     sql += ` on conflict (org_id) do update set name = excluded.name, type = excluded.type, modified_date = excluded.modified_date, 
-            account_id = excluded.account_id`;
+            account_id = excluded.account_id, status = null`;
     await db.insert(sql, values);
 }
 
 async function mark(isSandbox) {
-    let sql = `update org set account_id = $1, status = 'Not Found', modified_date = now() where account_id is null
+    let sql = `update org set account_id = $1, status = '${Status.NotFound}', modified_date = now() where account_id is null
                 and is_sandbox = $2`;
     let res = await db.update(sql, [sfdc.INVALID_ID, isSandbox]);
     if (res.length > 0) {
@@ -106,5 +111,5 @@ async function mark(isSandbox) {
 }
 
 exports.fetch = fetch;
-exports.fetchBulk = fetchBulk;
+exports.refetchInvalid = refetchInvalid;
 exports.mark = mark;

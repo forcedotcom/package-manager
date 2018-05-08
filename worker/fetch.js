@@ -12,6 +12,7 @@ const packageorgs = require('../api/packageorgs');
 
 async function fetch(fetchAll) {
     try {
+        logger.info(`=== Fetching${fetchAll ? ' All ' : ' '}Data ===`);
         // Packages
         await ps.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll);
     
@@ -52,7 +53,8 @@ async function fetch(fetchAll) {
         }
     }
 
-    try { // Accounts - first populate accounts from orgs, then fill in details from org62
+    try { 
+        // Accounts - first populate accounts from orgs, then fill in details from org62
         await orgaccounts.fetch(fetchAll);
         await accounts.fetch(sfdc.NamedOrgs.org62.orgId, fetchAll);
     } catch (error) {
@@ -61,6 +63,57 @@ async function fetch(fetchAll) {
             packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid);
         }
     }
+    logger.info("=== Done ===")
+}
+
+
+/**
+ * Fetch all orgs again, ignoring modified dates
+ * @returns {Promise<void>}
+ */
+async function refetch() {
+    this.fetch(true);
+}
+
+/**
+ * Fetch all orgs marked previously as invalid, in case any fell through the cracks before, or became valid again.
+ * @returns {Promise<void>}
+ */
+async function refetchInvalid() {
+    logger.info(`=== Fetching Invalid Org Data ===`);
+    try {
+        await orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId);
+        await orgs.mark(false);
+    } catch (error) {
+        logger.error('Failed to fetch production org data', error);
+        if (error.name === "invalid_grant") {
+            packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid);
+        }
+    }
+
+    try {
+        await orgs.refetchInvalid(sfdc.NamedOrgs.sbt.orgId);
+        await orgs.mark(true);
+    } catch (error) {
+        logger.error('Failed to fetch sandbox org data', error);
+        if (error.name === "invalid_grant") {
+            packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid);
+        }
+    }
+
+    try { 
+        // Accounts - first populate accounts from orgs, then fill in details from org62
+        await orgaccounts.fetch();
+        await accounts.fetch(sfdc.NamedOrgs.org62.orgId);
+    } catch (error) {
+        logger.error('Failed to fetch account data', error);
+        if (error.name === "invalid_grant") {
+            packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid);
+        }
+    }
+    logger.info("=== Done ===")
 }
 
 exports.fetch = fetch;
+exports.refetch = refetch;
+exports.refetchInvalid = refetchInvalid;

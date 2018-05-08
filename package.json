@@ -18,7 +18,7 @@
     "express-sslify": "^1.2.0",
     "heroku-logger": "^0.3.1",
     "jsforce": "^1.8.4",
-    "moment": "^2.22.0",
+    "moment": "^2.22.1",
     "node-rsa": "^0.4.2",
     "node-soap": "^1.0.0",
     "path": "^0.12.7",
