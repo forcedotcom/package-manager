@@ -15,13 +15,15 @@ export default class extends React.Component {
         data: [],
         selection: [],
         selectAll: false,
+        pageSize: this.props.pageSize || 20,
+        minRows: this.props.minRows || 3,
         keyField: this.props.keyField || "id"
     };
 
     componentWillReceiveProps(props) {
         this.setState({
             columns: props.columns,
-            data: props.data
+            data: props.data || []
         });
     }
 
@@ -150,9 +152,10 @@ export default class extends React.Component {
                 ref={r => (this.checkboxTable = r)}
                 data={this.state.data}
                 columns={this.state.columns}
-                filterable={this.props.filterable || (this.state.data && this.state.data.length && (this.state.data.length > 20)) ? true: false}
-                showPagination={this.state.data && this.state.data.length && (this.state.data.length > 40) ? true : false}
-                minRows={this.props.minRows || 3}
+                pageSize={this.state.pageSize}
+                filterable={this.props.filterable || this.state.data.length > this.state.pageSize}
+                showPagination={this.props.showPagination || this.state.data.length > this.state.pageSize}
+                minRows={this.state.minRows}
                 keyField={this.state.keyField}
                 className="-striped -highlight"
                 pivotBy={this.props.pivots || []}
