@@ -2,19 +2,18 @@ const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const licensefetch = require('../worker/licensefetch');
 const logger = require('../util/logger').logger;
-
-const SELECT_ALL = `select u.id, u.start_time, u.description, count(i.*) item_count
+const SELECT_ALL = `select u.id, u.start_time, u.created_by, u.description, count(i.*) item_count
                     from upgrade u
                     inner join upgrade_item i on i.upgrade_id = u.id
-                    group by u.id, u.start_time, u.description`;
+                    group by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ONE = `select u.id, u.start_time, u.description, count(i.*) item_count
+const SELECT_ONE = `select u.id, u.start_time, u.created_by, u.description, count(i.*) item_count
                     from upgrade u
                     inner join upgrade_item i on i.upgrade_id = u.id
                     where u.id = $1
-                    group by u.id, u.start_time, u.description`;
+                    group by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id,
         count(j.*) job_count
@@ -32,7 +31,7 @@ const SELECT_ALL_ITEMS_BY_UPGRADE =
         where i.upgrade_id = $1
         ${GROUP_BY_ALL_ITEMS}`;
 
-const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         pv.version_number, pv.version_id,
         p.name package_name
         FROM upgrade_item i
@@ -40,7 +39,7 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
         INNER JOIN package p on p.sfid = pv.package_id`;
 
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status,
-        i.start_time,
+        i.start_time, i.created_by,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id,
         a.account_name
@@ -51,18 +50,18 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;
 
-async function createUpgrade(scheduledDate, description) {
+async function createUpgrade(scheduledDate, createdBy, description) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    let recs = await db.insert('INSERT INTO upgrade (start_time,description) VALUES ($1,$2)', [isoTime,description]);
+    let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description) VALUES ($1,$2,$3)', [isoTime,createdBy,description]);
     return recs[0];
 }
 
-async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status) {
+async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let recs = await db.insert('INSERT INTO upgrade_item' +
-        ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status)' +
-        ' VALUES ($1,$2,$3,$4,$5,$6)',
-        [upgradeId, requestId, packageOrgId, versionId, isoTime, status]);
+        ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status, created_by)' +
+        ' VALUES ($1,$2,$3,$4,$5,$6,$7)',
+        [upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy]);
     return recs[0];
 }
 
@@ -245,25 +244,25 @@ async function requestJobStatusByItem(req, res, next) {
 
 
 async function requestActivateUpgradeItem(req, res, next) {
-    return requestStatusUpdate(req, res, next, "Pending");
+    return requestStatusUpdate(req, res, next, push.Status.Pending);
 }
 
 async function requestActivateUpgradeItems(req, res, next) {
-    return requestUpdateItemStatus(req, res, next, "Pending");
+    return requestUpdateItemStatus(req, res, next, push.Status.Pending);
 }
 
 async function requestCancelUpgradeItem(req, res, next) {
-    return requestStatusUpdate(req, res, next, "Canceled");
+    return requestStatusUpdate(req, res, next, push.Status.Canceled);
 }
 
 async function requestCancelUpgradeItems(req, res, next) {
-    return requestUpdateItemStatus(req, res, next, "Canceled");
+    return requestUpdateItemStatus(req, res, next, push.Status.Canceled);
 }
 
 async function requestStatusUpdate(req, res, next, status) {
     let id = req.params.id;
     try {
-        return await push.updatePushRequests([id], status);
+        return await push.updatePushRequests([id], status, req.session.username);
     } catch (err) {
         next(err);
     }
@@ -272,7 +271,7 @@ async function requestStatusUpdate(req, res, next, status) {
 async function requestUpdateItemStatus(req, res, next, status) {
     const ids = req.body.items;
     try {
-        let result = await push.updatePushRequests(ids, status);
+        let result = await push.updatePushRequests(ids, status, req.session.username);
         res.json(result);
     } catch (err) {
         next(err);

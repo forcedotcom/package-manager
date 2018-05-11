@@ -7,16 +7,19 @@ export default class extends React.Component {
     state = {items: []};
 
     componentDidMount() {
-        orgGroupService.requestByTextSearch("").then(items => this.setState({items: items}));
+        orgGroupService.requestByTextSearch("", this.props.excludeId).then(items => this.setState({items: items}));
     }
     
     searchKeyChangeHandler = (key) => {
         let text = key.target.value || "";
-        orgGroupService.requestByTextSearch(text).then(items => this.setState({items: items}));
+        orgGroupService.requestByTextSearch(text, this.props.excludeId).then(items => 
+        {
+            this.setState({items: items});
+        });
     };
     
     groupChangeHandler = (groupId) => {
-        this.props.onAdd(groupId);
+        this.props.onAdd(groupId, this.props.removeAfterAdd);
     };
 
     render() {

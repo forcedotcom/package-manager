@@ -2,7 +2,10 @@ import React from 'react';
 import * as authService from "../services/AuthService";
 
 export default class extends React.Component {
-    state = {};
+    constructor(props) {
+        super(props);
+        sessionStorage.removeItem('user');
+    }
 
     loginHandler = () => {
         authService.oauthLoginURL("/orgs").then(url => {

@@ -44,6 +44,7 @@ export default class extends React.Component {
     };
 
     upgradeHandler = (versions, startDate, description) => {
+        this.setState({schedulingUpgrade: false});
         orgGroupService.requestUpgrade(this.state.orggroup.id, versions.map(v => v.latest_version_id), startDate, description).then((upgrade) => {
             window.location = `/upgrade/${upgrade.id}`;
         });

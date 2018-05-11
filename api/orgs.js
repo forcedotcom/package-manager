@@ -4,12 +4,15 @@ const logger = require('../util/logger').logger;
 
 
 const SELECT_ALL = `SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
-                    a.account_name
+                    a.account_name,
+                    g.name group_name
                     FROM org o
-                    INNER JOIN account a on a.account_id = o.account_id`;
+                    INNER JOIN account a on a.account_id = o.account_id
+                    LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
+                    LEFT JOIN org_group AS g ON g.id = m.org_group_id`;
 
-const SELECT_MEMBERS = SELECT_ALL +
-    " INNER JOIN org_group_member AS m ON o.org_id = m.org_id";
+// const SELECT_MEMBERS = SELECT_ALL +
+//     " INNER JOIN org_group_member AS m ON o.org_id = m.org_id";
 
 const SELECT_WITH_LICENCE = SELECT_ALL +
     " INNER JOIN license lc ON o.org_id = lc.org_id";
@@ -56,7 +59,7 @@ function requestById(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.body.description)
+    push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
         .then((upgrade) => {
             return res.json(upgrade)
         })
@@ -68,7 +71,7 @@ function requestUpgrade(req, res, next) {
 
 async function findByGroup(orgGroupId) {
     let where = " WHERE m.org_group_id = $1";
-    return await db.query(SELECT_MEMBERS + where, [orgGroupId])
+    return await db.query(SELECT_ALL + where, [orgGroupId])
 }
 
 exports.requestAll = requestAll;

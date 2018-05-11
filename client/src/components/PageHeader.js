@@ -5,6 +5,25 @@ import {HeaderIcon} from "./Icons";
 import {ButtonDropdown, DropdownItem} from "./Dropdown";
 import moment from "moment/moment";
 
+export class HeaderNote extends React.Component {
+    render() {
+        return (
+            <div className="slds-scoped-notification slds-media slds-media_center slds-p-around_none">
+                <div className="slds-media__figure">
+                    <span className={`slds-icon_container slds-icon-utility-${this.props.type || "info"}`} title="information">
+                      <svg className="slds-icon slds-icon_small slds-icon-text-default">
+                        <use xmlnsXlink="http://www.w3.org/1999/xlink" xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${this.props.type || "info"}`} />
+                      </svg>
+                    </span>
+                </div>
+                <div className="slds-media__body">
+                    <p>{this.props.children}</p>
+                </div>
+            </div>
+        );
+    }
+}
+
 export class HeaderField extends React.Component {
     render() {
 
@@ -44,7 +63,7 @@ export class RecordHeader extends React.Component {
         if (this.props.actions) {
             for (let i = 0; i < this.props.actions.length; i++) {
                 const currentAction = this.props.actions[i];
-                let btn = <button key={currentAction.label} disabled={currentAction.disabled} className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
+                let btn = <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled} className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
                     {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
                                                 {currentAction.detail}
                                             </ReactTooltip> : ''}
@@ -82,6 +101,9 @@ export class RecordHeader extends React.Component {
                     </div>
                 </div>
                 <div className="slds-grid slds-page-header__detail-row">
+                    {this.props.notes}
+                </div>
+                <div className="slds-grid slds-page-header__detail-row">
                     {this.props.children}
                 </div>
             </div>
@@ -100,7 +122,7 @@ export class CardHeader extends React.Component {
         if (this.props.actions) {
             for (let i = 0; i < this.props.actions.length; i++) {
                 const currentAction = this.props.actions[i];
-                let btn = <button key={currentAction.label} disabled={currentAction.disabled} className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
+                let btn = <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled} className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
                     {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
                                                 {currentAction.detail}
                                             </ReactTooltip> : ''}
@@ -118,19 +140,24 @@ export class CardHeader extends React.Component {
             actionBar.push(<div key={i} className="slds-button-group" role="group">{groups[i].actions}</div>);
         }
         return (
-            <header className="slds-card__header slds-grid">
+            <header className="slds-card__header slds-form--stacked">
                 <div className="slds-media slds-media--center slds-has-flexi-truncate">
                     <div className="slds-media__figure">
                         <HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="small"/>
                     </div>
                     <div className="slds-media__body">
-                        <h3 className="slds-text-heading--small slds-truncate" title={this.props.title}>{this.props.title}</h3>
+                        <h3 className="slds-text-heading--small slds-truncate"
+                            title={this.props.title}>{this.props.title}</h3>
                         <p className="slds-text-body--small">{this.props.count} versions</p>
                     </div>
+                    <div className="slds-col slds-no-flex slds-align-bottom">
+                        {actionBar}
+                    </div>
                 </div>
-                <div className="slds-col slds-no-flex slds-align-bottom">
-                    {actionBar}
-                </div>
+                {this.props.children ?
+                    <div className="slds-p-top--x-small">
+                        {this.props.children}
+                    </div> : ""}
             </header>
         );
     }

@@ -25,8 +25,8 @@ export default class extends React.Component {
         let columns = [
             {Header: "Name", accessor: "name", sortable: true, clickable: true},
             {Header: "Account", accessor: "account_name", sortable: true, clickable: true},
-            {Header: "Package", accessor: "package_name", sortable: true},
-            {Header: "Version Number", accessor: "version_number", sortable: true,
+            {Header: "Package", accessor: "package_name", sortable: true, clickable: true},
+            {Header: "Version Number", accessor: "version_number", sortable: true, clickable: true,
                 sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}},
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
             {Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("lll"), sortable: true},

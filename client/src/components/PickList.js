@@ -1,6 +1,5 @@
 import React from 'react';
-
-import {Icon, ButtonIcon} from "./Icons";
+import {Icon} from "./Icons";
 
 class ListItem extends React.Component {
     clickHandler = () => {
@@ -9,7 +8,7 @@ class ListItem extends React.Component {
 
     render() {
         return (
-            <li className="slds-dropdown__item slds-has-icon--left" role="menuitem option" tabIndex="-1">
+            <li className="slds-dropdown__item slds-has-icon--left" tabIndex="-1">
                 <a tabIndex="-1" className="slds-truncate" onMouseDown={this.clickHandler}>{this.props.label}</a>
             </li>
         );
@@ -18,10 +17,12 @@ class ListItem extends React.Component {
 
 class Dropdown extends React.Component {
     render() {
-        let items = this.props.items.map((item) => <ListItem data={item[this.props.valueField]} label={item[this.props.labelField]} onSelect={this.props.onChange}/>);
+        let items = this.props.items.map((item) => <ListItem data={this.props.valueField ? item[this.props.valueField] : item} 
+                                                             label={this.props.labelField ? item[this.props.labelField] : item} 
+                                                             onSelect={this.props.onChange}/>);
         return (
             <div className="slds-dropdown slds-dropdown--left slds-dropdown--small slds-dropdown--menu" style={{display: this.props.isOpen ? "inherit" : "none"}}>
-                <ul className="slds-dropdown__list" role="menu">
+                <ul className="slds-dropdown__list">
                     {items}
                 </ul>
             </div>
@@ -31,8 +32,8 @@ class Dropdown extends React.Component {
 
 export default class extends React.Component {
     state = {
-        value: undefined,
-        label: this.props.label || 'Select an option',
+        value: this.props.value,
+        label: this.props.label || this.props.value || 'Select an option',
         isOpen: false
     };
 

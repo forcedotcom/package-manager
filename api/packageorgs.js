@@ -7,7 +7,7 @@ const Status = {Connected: "Connected", Invalid: "Invalid", Missing: "Missing"};
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 
 const SELECT_ALL = `SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, 
-                    refresh_token, access_token, status, refreshed_date 
+                    refresh_token, access_token, type, status, refreshed_date 
                     FROM public.package_org`;
 
 async function requestAll(req, res, next) {
@@ -122,8 +122,9 @@ async function requestDelete(req, res, next) {
 async function requestUpdate(req, res, next) {
     try {
         let orgId = req.body.packageorg.org_id;
+        let type = req.body.packageorg.type;
         let description = req.body.packageorg.description;
-        let orgs = await db.update(`UPDATE package_org SET description = $1 WHERE org_id = $2`, [description, orgId]);
+        let orgs = await db.update(`UPDATE package_org SET description = $1, type = $2 WHERE org_id = $3`, [description, type, orgId]);
         return res.json(orgs[0]);
     } catch (err) {
         return next(err);

@@ -21,6 +21,7 @@ export default class extends React.Component {
             {Header: "Number", accessor: "id", minWidth: 30, sortable: true, clickable: true},
             {Header: "Description", accessor: "description", minWidth: 300, clickable: true},
             {Header: "Start Time", id: "start_time", accessor: d => moment(d.start_time).format("lll"), sortable: true, clickable: true},
+            {Header: "Created By", accessor: "created_by", sortable: true},
             {Header: "Items", accessor: "item_count", sortable: true}
         ];
         return (

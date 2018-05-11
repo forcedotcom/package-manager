@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
-import {BrowserRouter as Router, Route, Link} from "react-router-dom";
+import {BrowserRouter as Router, Link, Route} from "react-router-dom";
+import ReactTooltip from 'react-tooltip';
 
 import {Icon} from './components/Icons';
 
@@ -29,17 +30,38 @@ import UpgradeItemRecord from "./upgrades/UpgradeItemRecord";
 import Login from "./auth/Login";
 import Logout from "./auth/Logout";
 
+import * as authService from "./services/AuthService";
+
 import {
     ADMIN_ICON,
     AUTH_ICON,
     LICENSE_ICON,
-    ORG_GROUP_ICON, ORG_ICON,
+    ORG_GROUP_ICON,
+    ORG_ICON,
     PACKAGE_ICON,
     PACKAGE_ORG_ICON,
     UPGRADE_ICON
 } from "./Constants";
 
 class App extends Component {
+    state = {
+        username: "",
+        display_name: ""
+    };
+
+    componentDidMount() {
+        let u = sessionStorage.getItem("user");
+        if (!u) {
+            authService.requestUser().then(user => {
+                sessionStorage.setItem("user", JSON.stringify(user));
+                this.setState({user});
+            }).catch(e => this.setState({user: {error: e}}));
+        } else {
+            let user = JSON.parse(u);
+            this.setState({username: user.username, display_name: user.display_name});
+        }
+    }
+    
     render() {
         return (
             <Router>
@@ -47,28 +69,32 @@ class App extends Component {
                     <header className="menu">
                         <ul className="slds-list--horizontal">
                             <li className="slds-list__item">
-                                <Link to="/"><Icon name={ORG_ICON.name} category={ORG_ICON.category}/>Orgs</Link>
+                                <Link style={{whiteSpace: "nowrap"}} to="/"><Icon name={ORG_ICON.name} category={ORG_ICON.category}/>Orgs</Link>
                             </li>
                             <li className="slds-list__item">
-                                <Link to="/orggroups"><Icon name={ORG_GROUP_ICON.name} category={ORG_GROUP_ICON.category}/>Org Groups</Link>
+                                <Link style={{whiteSpace: "nowrap"}} className="slds-nowrap" to="/orggroups"><Icon name={ORG_GROUP_ICON.name} category={ORG_GROUP_ICON.category}/>Org Groups</Link>
                             </li>
                             <li className="slds-list__item">
-                                <Link to="/licenses"><Icon name={LICENSE_ICON.name} category={LICENSE_ICON.category}/>Licenses</Link>
+                                <Link style={{whiteSpace: "nowrap"}} to="/licenses"><Icon name={LICENSE_ICON.name} category={LICENSE_ICON.category}/>Licenses</Link>
                             </li>
                             <li className="slds-list__item">
-                                <Link to="/packages"><Icon name={PACKAGE_ICON.name} category={PACKAGE_ICON.category}/>Packages</Link>
+                                <Link style={{whiteSpace: "nowrap"}} to="/packages"><Icon name={PACKAGE_ICON.name} category={PACKAGE_ICON.category}/>Packages</Link>
                             </li>
                             <li className="slds-list__item">
-                                <Link to="/packageorgs"><Icon name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>Package Orgs</Link>
+                                <Link style={{whiteSpace: "nowrap"}} to="/packageorgs"><Icon name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>Package Orgs</Link>
                             </li>
                             <li className="slds-list__item">
-                                <Link to="/upgrades"><Icon name={UPGRADE_ICON.name} category={UPGRADE_ICON.category}/>Upgrades</Link>
+                                <Link style={{whiteSpace: "nowrap"}} to="/upgrades"><Icon name={UPGRADE_ICON.name} category={UPGRADE_ICON.category}/>Upgrades</Link>
                             </li>
                             <li className="slds-list__item">
-                                <Link to="/admin"><Icon name={ADMIN_ICON.name} category={ADMIN_ICON.category}/>Administration</Link>
+                                <Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name} category={ADMIN_ICON.category}/>Administration</Link>
                             </li>
-                            <li className="slds-list__item">
-                                <Link to="/logout"><Icon name={AUTH_ICON.name} category={AUTH_ICON.category}/>Logout</Link>
+                            <li style={{width: "100%"}}>&nbsp;</li>
+                            <li className="slds-list__item"> 
+                                <Link data-tip data-for="logout" style={{whiteSpace: "nowrap"}} to="/logout"><Icon name={AUTH_ICON.name} category={AUTH_ICON.category}/>Logout {this.state.display_name}</Link>
+                                <ReactTooltip id="logout" place="left" delayShow={600}>
+                                    Logged in as {this.state.username}
+                                </ReactTooltip>
                             </li>
                         </ul>
                     </header>

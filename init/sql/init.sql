@@ -11,6 +11,7 @@ create table if not exists package_org
   instance_url   varchar(100),
   refresh_token  varchar(256),
   access_token   varchar(256),
+  type           varchar(80),
   status         varchar(80),
   refreshed_date timestamp with time zone
 );
@@ -69,7 +70,8 @@ create unique index if not exists org_group_member_org_id_org_group_id_uindex
 create table if not exists upgrade (
   id          serial primary key,
   start_time  timestamp with time zone,
-  description text
+  description text,
+  created_by  varchar(255)
 );
 
 create table if not exists upgrade_item (
@@ -79,7 +81,8 @@ create table if not exists upgrade_item (
   package_org_id     varchar(18),
   package_version_id varchar(18),
   status             varchar(40),
-  start_time         timestamp with time zone
+  start_time         timestamp with time zone,
+  created_by  varchar(255)
 );
 
 create table if not exists upgrade_job (
@@ -101,7 +104,7 @@ create table if not exists package
   name           varchar(255),
   package_id     varchar(18),
   package_org_id varchar(18),
-  modified_date       timestamp with time zone
+  modified_date  timestamp with time zone
 );
 
 create table if not exists package_version
@@ -157,7 +160,8 @@ create index if not exists license_package_org_version_index
   on license (org_id, package_id, package_version_id);
 
 -- Default internal non-account
-insert into account (account_name, account_id) values ('Internal', '000000000000000') on conflict do nothing;
+insert into account (account_name, account_id) values ('Internal', '000000000000000')
+on conflict do nothing;
 
 -- Patch 1
 alter table org
@@ -167,6 +171,14 @@ alter table package
   add if not exists modified_date timestamp with time zone;
 
 alter table package_org
+  add if not exists type varchar(80) null,
   add if not exists status varchar(80) null,
   add if not exists description text null,
   add if not exists refreshed_date timestamp with time zone;
+
+alter table upgrade
+    add if not exists   created_by  varchar(255) null;
+
+alter table upgrade_item
+    add if not exists   created_by  varchar(255) null;
+

@@ -48,13 +48,13 @@ function oauthOrgURL(req, res, next) {
 }
 
 function buildURL(scope, state) {
-    let conn = buildConnection(undefined, undefined, state.loginUrl);
+    let conn = buildAuthConnection(undefined, undefined, state.loginUrl);
     return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
 }
 
 async function oauthCallback(req, res, next) {
     let state = JSON.parse(req.query.state);
-    let conn = buildConnection(null, null, state.loginUrl);
+    let conn = buildAuthConnection(null, null, state.loginUrl);
     try {
         let userInfo = await conn.authorize(req.query.code);
         switch (state.operation) {
@@ -63,6 +63,9 @@ async function oauthCallback(req, res, next) {
                 res.redirect(`${CLIENT_URL}/authresponse`);
                 break;
             default:
+                const user = await conn.identity();
+                req.session.username = user.username;
+                req.session.display_name = user.display_name;
                 req.session.access_token = conn.accessToken;
                 res.redirect(`${CLIENT_URL}/authresponse?redirectTo=${state.redirectTo}`);
         }
@@ -78,7 +81,20 @@ async function oauthCallback(req, res, next) {
     }
 }
 
-function buildConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
+async function requestUser(req, res, next) {
+    const conn = buildAuthConnection(req.session.access_token);
+    try {
+        let user = await conn.identity();
+        // Store policy details on user session object
+        user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
+        res.json(user);
+    } catch (e) {
+        logger.error("Failed to identify current user", {...e});
+        next(e);
+    }
+}
+
+function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
     return new jsforce.Connection({
             oauth2: {
                 loginUrl: loginUrl,
@@ -93,6 +109,7 @@ function buildConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
     );
 }
 
+exports.requestUser = requestUser;
 exports.requestLogout = requestLogout;
 exports.oauthLoginURL = oauthLoginURL;
 exports.oauthOrgURL = oauthOrgURL;

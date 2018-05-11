@@ -24,9 +24,9 @@ export default class extends React.Component {
     };
 
     refreshHandler = () => {
-        this.setState({packageorg: {name: '...', division: '...', org_id: '...', namespace: '...', instance_url: '...', instance_name:'...'}});
+        this.setState({isRefreshing: true});
         packageOrgService.requestRefresh([this.state.packageorg.org_id]).then((packageorgs) => {
-            this.setState({packageorg: packageorgs[0]});
+            this.setState({packageorg: packageorgs[0], isRefreshing: false});
         });
     };
 
@@ -47,7 +47,7 @@ export default class extends React.Component {
     render() {
 
         let actions = [
-            {label: "Refresh", handler: this.refreshHandler},
+            {label: "Refresh", handler: this.refreshHandler, disabled: this.state.isRefreshing},
             {label: "Edit", handler: this.editHandler},
             {label: "Delete", handler: this.deleteHandler}
         ];
@@ -57,6 +57,7 @@ export default class extends React.Component {
                 <RecordHeader type="Package Org" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name} actions={actions}>
                     <HeaderField label="Description" value={this.state.packageorg.description}/>
                     <HeaderField label="Org ID" value={this.state.packageorg.org_id}/>
+                    <HeaderField label="Type" value={this.state.packageorg.type}/>
                 </RecordHeader>
                 <PackageOrgView packageorg={this.state.packageorg}/>
                 {this.state.isEditing ? <EditPackageOrgWindow packageorg={this.state.packageorg} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}

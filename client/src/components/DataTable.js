@@ -11,7 +11,6 @@ const CheckboxTable = checkboxHOC(ReactTable);
 
 export default class extends React.Component {
     state = {
-        columns: [],
         data: [],
         selection: [],
         selectAll: false,
@@ -21,10 +20,7 @@ export default class extends React.Component {
     };
 
     componentWillReceiveProps(props) {
-        this.setState({
-            columns: props.columns,
-            data: props.data || []
-        });
+        this.setState({data: props.data || []});
     }
 
     handleSelection = (key, shift, row) => {
@@ -123,7 +119,7 @@ export default class extends React.Component {
             getTrProps: (s, r) => {
                 // someone asked for an example of a background color change
                 // here it is...
-                const selected = r && this.isSelected(r.original[this.state.keyField]);
+                const selected = r && r.original && this.isSelected(r.original[this.state.keyField]);
                 return {
                     style: {
                         backgroundColor: selected ? "#E0FFE0" : "inherit"
@@ -151,14 +147,14 @@ export default class extends React.Component {
             <CheckboxTable
                 ref={r => (this.checkboxTable = r)}
                 data={this.state.data}
-                columns={this.state.columns}
+                columns={this.props.columns}
                 pageSize={this.state.pageSize}
                 filterable={this.props.filterable || this.state.data.length > this.state.pageSize}
                 showPagination={this.props.showPagination || this.state.data.length > this.state.pageSize}
                 minRows={this.state.minRows}
                 keyField={this.state.keyField}
                 className="-striped -highlight"
-                pivotBy={this.props.pivots || []}
+                pivotBy={this.props.pivotBy || []}
                 onSortedChange={newSorted => sortage.changeSortOrder(this.props.id, newSorted[0].id, newSorted[0].desc ? "desc" : "asc")}
                 onFilteredChange={(column, value) => this.handleFilter(column, value)}
                 {...selectionProps}

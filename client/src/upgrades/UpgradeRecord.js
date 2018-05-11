@@ -2,7 +2,7 @@ import React from 'react';
 
 import * as upgradeService from '../services/UpgradeService';
 
-import {RecordHeader, HeaderField} from '../components/PageHeader';
+import {HeaderField, RecordHeader} from '../components/PageHeader';
 import UpgradeView from "./UpgradeView";
 import * as upgradeItemService from "../services/UpgradeItemService";
 import * as sortage from "../services/sortage";
@@ -47,6 +47,7 @@ export default class extends React.Component {
                 <RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
                     <HeaderField label="Start Time" format="date" value={this.state.upgrade.start_time}/>
                     <HeaderField label="State" value={this.state.status}/>
+                    <HeaderField label="Created By" value={this.state.upgrade.created_by}/>
                 </RecordHeader>
                 <UpgradeView upgrade={this.state.upgrade} items={this.state.items} status={this.state.status}/>
             </div>

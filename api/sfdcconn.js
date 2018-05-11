@@ -3,11 +3,18 @@
 const jsforce = require('jsforce');
 const packageorgs = require('./packageorgs');
 
+const OrgTypes = {
+    AllProductionOrgs: "All Production Orgs",
+    AllSandboxOrgs: "All Sandbox Orgs",
+    Accounts: "Accounts",
+    Licenses: "Licenses"
+};
+
 const NamedOrgs = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {
-    bt: {orgId: "00DA0000000gYotMAE", name: "BT2 Black Tab", instanceUrl: "https://bt2.my.salesforce.com"},
-    sbt: {orgId: "00DJ00000001ECoMAM", name: "SBT2 Black Tab", instanceUrl: "https://sbt2.cs10.my.salesforce.com"},
-    org62: {orgId: "00D000000000062EAA", name: "Org 62", instanceUrl: "https://org62.my.salesforce.com"},
-    sb62: {orgId: "00D300000008V7fEAE", name: "SB 62", instanceUrl: "https://steelbrick.my.salesforce.com"}
+    bt: {orgId: "00DA0000000gYotMAE", type: OrgTypes.AllProductionOrgs, name: "BT2 Black Tab", instanceUrl: "https://bt2.my.salesforce.com"},
+    sbt: {orgId: "00DJ00000001ECoMAM", type: OrgTypes.AllSandboxOrgs, name: "SBT2 Black Tab", instanceUrl: "https://sbt2.cs10.my.salesforce.com"},
+    org62: {orgId: "00D000000000062EAA", type: OrgTypes.Accounts, name: "Org 62", instanceUrl: "https://org62.my.salesforce.com"},
+    sb62: {orgId: "00D300000008V7fEAE", type: OrgTypes.Licenses, name: "SteelBrick 62", instanceUrl: "https://steelbrick.my.salesforce.com"}
 };
 
 const PORT = process.env.PORT || 5000;

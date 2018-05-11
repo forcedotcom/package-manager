@@ -19,6 +19,7 @@ export default class extends React.Component {
             {Header: "Package Namespace", accessor: "namespace", clickable: true},
             {Header: "Org ID", accessor: "org_id", minWidth: 120, clickable: true},
             {Header: "Instance Name", accessor: "instance_name"},
+            {Header: "Type", accessor: "type"},
             {Header: "Status", minWidth: 100, accessor: "status", style: {fontWeight: "bold", textTransform: "uppercase"},
                 Cell: row => (<b className={row.value === "Connected" ? "slds-text-color_success" : "slds-text-color_error"}>{row.value}</b>)}
         ];

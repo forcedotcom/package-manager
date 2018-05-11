@@ -36,12 +36,13 @@ export default class extends React.Component {
             {Header: "Org ID", accessor: "org_id", sortable: true, clickable: true, filterable: true},
             {Header: "Account", accessor: "account_name", sortable: true, clickable: true, filterable: true},
             {Header: "Instance", accessor: "instance", sortable: true, filterable: true},
+            {Header: "Groups", accessor: "group_name", sortable: true, filterable: true},
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true, filterable: true}
         ];
         
         const actions = [];
         if (this.props.onRemove) {
-            actions.push({label: "Remove Selected Orgs", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0});
+            actions.push({label: "Remove Selected Member Orgs", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0});
         }
         
         return (

@@ -19,10 +19,7 @@ exports.init = (sql, cb) => {
  * Utility function to execute a SQL select query against a Postgres database
  */
 exports.query = async (sql, values) => {
-    if (VERBOSE_SQL) {
-        logger.debug(sql, values);
-    }
-
+    logger.debug(sql, values);
     let result = await pool.query(sql, values);
     return result.rows;
 };

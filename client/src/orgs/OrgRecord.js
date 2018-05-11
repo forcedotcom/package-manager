@@ -80,7 +80,7 @@ export default class extends React.Component {
                     <HeaderField label="Type" value={this.state.org.is_sandbox ? "Sandbox" : "Production"}/>
                 </RecordHeader>
                 <OrgView org={this.state.org} versions={this.state.versions}/>
-                {this.state.addingToGroup ?  <SelectGroupWindow org={this.state.org} versions={this.state.validVersions} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
+                {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
                 {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow org={this.state.org} versions={this.state.validVersions} onUpgrade={this.upgradeHandler} onCancel={this.closeSchedulerWindow}/> : ""}
             </div>
         );

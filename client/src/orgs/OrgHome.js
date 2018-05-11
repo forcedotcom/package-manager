@@ -54,12 +54,9 @@ export default class extends React.Component {
         
         return (
             <div>
-                <HomeHeader type="orgs"
-                            title="Orgs"
-                            actions={actions}
-                            itemCount={this.state.itemCount}/>
+                <HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
                 <OrgList orgs={this.state.orgs} onSort={this.sortHandler} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
-                {this.state.addingToGroup ?  <SelectGroupWindow org={this.state.org} versions={this.state.validVersions} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
+                {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
             </div>
         );
     }

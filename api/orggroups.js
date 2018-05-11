@@ -16,6 +16,11 @@ async function requestAll(req, res, next) {
         whereParts.push(`(name LIKE $${values.length} OR description LIKE $${values.length})`);
         limit = " LIMIT 7"
     }
+
+    if (req.query.excludeId) {
+        values.push(req.query.excludeId);
+        whereParts.push(`id != $${values.length}`)
+    }
     
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
     let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;
@@ -104,7 +109,7 @@ async function requestDelete(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.body.description)
+    push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
         .then((upgrade) => {return res.json(upgrade)})
         .catch((error) => {
             logger.error("Failed to upgrade org group", {org_group_id: req.params.id, ...error}); 

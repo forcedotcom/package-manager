@@ -2,7 +2,7 @@ import React from 'react';
 
 import DataTable from "../components/DataTable";
 import moment from "moment/moment";
-import {CardHeader} from "../components/PageHeader";
+import {CardHeader, HeaderNote} from "../components/PageHeader";
 import {UPGRADE_ITEM_ICON} from "../Constants";
 import * as upgradeItemService from "../services/UpgradeItemService";
 
@@ -75,14 +75,28 @@ export default class extends React.Component {
             }
         ];
 
+        let user = JSON.parse(sessionStorage.getItem("user"));
+        let canActivate = user.enforce_activation_policy === "false" || (this.props.upgrade.created_by != null && this.props.upgrade.created_by !== user.username);
+        const notes = [];
+        if (!canActivate) {
+            notes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an upgrade cannot activate it.</HeaderNote>)
+        } else if (user.enforce_activation_policy === "false") {
+            notes.push(<HeaderNote key="activation_warning">Activation policy enforcement is disabled for testing purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
+        }
+
         const actions = [
-            {label: "Activate Selected", disabled: this.props.status === "Closed" || this.state.selected.length === 0, handler: this.activationHandler},
-            {label: "Cancel Selected", disabled: this.props.status === "Closed" || this.state.selected.length === 0, handler: this.cancelationHandler}
+            {label: "Activate Selected", handler: this.activationHandler,
+                disabled: this.props.status === "Closed" || this.state.selected.length === 0 || !canActivate,
+                detail: "Update the selected items to Pending state to proceed with upgrades"},
+            {label: "Cancel Selected", handler: this.cancelationHandler,
+                disabled: this.props.status === "Closed" || this.state.selected.length === 0}
         ];
 
         return (
             <div className="slds-card">
-                <CardHeader title="Upgrade Requests" icon={UPGRADE_ITEM_ICON} actions={actions} count={this.state.itemCount}/>
+                <CardHeader title="Upgrade Requests" icon={UPGRADE_ITEM_ICON} actions={actions} count={this.state.itemCount}>
+                    {notes}
+                </CardHeader>
                 <section className="slds-card__body">
                     <DataTable id="UpgradeItemCard" data={this.props.items} onClick={this.linkHandler} onFilter={this.filterHandler} onSelect={this.selectionHandler} columns={columns}/>
                 </section>

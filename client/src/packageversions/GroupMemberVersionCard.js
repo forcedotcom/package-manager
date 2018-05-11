@@ -5,6 +5,8 @@ import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
 import * as sortage from "../services/sortage";
+import * as orgGroupService from "../services/OrgGroupService";
+import SelectGroupWindow from "../orgs/SelectGroupWindow";
 
 export default class extends React.Component {
     state = {selected: [], itemCount: "..."};
@@ -39,6 +41,27 @@ export default class extends React.Component {
         this.props.onRemove(this.state.selected);
     };
 
+    addToGroupHandler = (groupId, removeAfterAdd) => {
+        this.setState({addingToGroup: false});
+        orgGroupService.requestAddMembers(groupId, this.state.selected).then(res => {
+            if (removeAfterAdd) {
+                this.props.onRemove(this.state.selected);
+            }
+            window.location = `/orggroup/${groupId}`;
+        });
+    };
+
+    closeGroupWindow = () => {
+        this.setState({addingToGroup: false});
+    };
+
+    openGroupWindow = () => {
+        this.setState({addingToGroup: true});
+    };
+
+    openGroupWindowAndMove = () => {
+        this.setState({addingToGroup: true, removeAfterAdd: true});
+    };
 
     filterHandler = (filtered, column, value) => {
         this.setState({itemCount: filtered.length});
@@ -59,10 +82,10 @@ export default class extends React.Component {
             {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll")},
         ];
 
-        const actions = [];
-        if (this.props.onRemove) {
-            actions.push({label: "Remove Selected Orgs", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0});
-        }
+        const actions = [
+            {label: "Copy To Group", handler: this.openGroupWindow, disabled: this.state.selected.length === 0},
+            {label: "Move To Group", handler: this.openGroupWindowAndMove, disabled: this.state.selected.length === 0},
+            {label: "Remove Selected Orgs", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0}];
 
         return (
             <div className="slds-card">
@@ -72,6 +95,7 @@ export default class extends React.Component {
                                onSelect={this.selectionHandler} onClick={this.linkHandler} onFilter={this.filterHandler}/>
                 </section>
                 <footer className="slds-card__footer"></footer>
+                {this.state.addingToGroup ?  <SelectGroupWindow excludeId={this.props.orggroup.id} removeAfterAdd={this.state.removeAfterAdd} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
             </div>
         );
     }

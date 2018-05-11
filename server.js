@@ -59,6 +59,7 @@ app.use(function (req, res, next) {
     next();
 });
 
+app.get('/oauth2/user', auth.requestUser);
 app.get('/oauth2/logout', auth.requestLogout);
 app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
