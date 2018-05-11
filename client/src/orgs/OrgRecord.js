@@ -11,16 +11,10 @@ import {ORG_ICON} from "../Constants";
 import * as orgGroupService from "../services/OrgGroupService";
 import SelectGroupWindow from "./SelectGroupWindow";
 
-const ALLOWED_ORGS = ['00D0q000000CxI3', '00D37000000KnsY', '00D37000000Knsn', '00D1I000001dehP', '00Dj0000000JprU', '00D0m0000008dxK'];
-
 export default class extends React.Component {
     state = { org: {} };
 
     upgradeHandler = (versions, startDate, description) => {
-        if (ALLOWED_ORGS.indexOf(this.state.org.org_id) === -1) {
-            window.alert(`${this.state.org.org_id} is not in ALLOWED_ORGS`);
-            return;
-        }
         orgService.requestUpgrade(this.state.org.org_id, versions.map(v => v.latest_version_id), startDate, description).then((upgrade) => {
             window.location = `/upgrade/${upgrade.id}`;
         });

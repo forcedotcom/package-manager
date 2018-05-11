@@ -1,7 +1,5 @@
 'use strict';
 
-const ALLOWED_ORGS = ['00D0q000000CxI3','00D37000000KnsY', '00D37000000Knsn', '00D1I000001dehP', '00Dj0000000JprU', '00D0m0000008dxK'];
-
 const sfdc = require('../api/sfdcconn');
 const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
@@ -77,12 +75,6 @@ async function updatePushRequests(upgradeItemIds, status, currentUser) {
 }
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
-    for (let i = 0; i < orgIds.length; i++) {
-        if (ALLOWED_ORGS.indexOf(orgIds[i]) === -1) {
-            throw new Error(`${orgIds[i]} is not in ALLOWED_ORGS.  Aborting operation.  Shame on you.`);
-        }
-    }
-
     let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
 
     let versions = await packageversions.findLatestByOrgIds(versionIds, orgIds);

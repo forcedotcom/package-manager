@@ -145,7 +145,21 @@ export default class extends React.Component {
 
         return (
             <CheckboxTable
-                defaultFilterMethod={(filter, row) => row[filter.id] && row[filter.id].toLowerCase().indexOf(filter.value.toLowerCase()) !== -1}
+                defaultFilterMethod={(filter, row) => {
+                    let neg = filter.value.startsWith("!");
+                    let filterVal = neg ? filter.value.substring(1) : filter.value;
+                    if (filterVal === "")
+                        return true; // No filter after all.
+                    
+                    let fieldVal = row[filter.id];
+                    if (!fieldVal) 
+                        return false;
+                    if (neg) {
+                        return fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) === -1;
+                    } else {
+                        return fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) !== -1;
+                    }
+                }}
                 ref={r => (this.checkboxTable = r)}
                 data={this.state.data}
                 columns={this.props.columns}
