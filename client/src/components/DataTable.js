@@ -145,6 +145,7 @@ export default class extends React.Component {
 
         return (
             <CheckboxTable
+                defaultFilterMethod={(filter, row) => row[filter.id] && row[filter.id].toLowerCase().indexOf(filter.value.toLowerCase()) !== -1}
                 ref={r => (this.checkboxTable = r)}
                 data={this.state.data}
                 columns={this.props.columns}

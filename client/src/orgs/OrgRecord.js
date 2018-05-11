@@ -1,5 +1,5 @@
 import React from 'react';
-
+import {NotificationManager} from 'react-notifications';
 
 import * as orgService from '../services/OrgService';
 import * as packageVersionService from "../services/PackageVersionService";
@@ -54,9 +54,12 @@ export default class extends React.Component {
         return valid.length > 0 ? valid : null;
     };
 
-    addToGroupHandler = (groupId) => {
+    addToGroupHandler = (groupId, groupName) => {
         this.setState({addingToGroup: false});
-        orgGroupService.requestAddMembers(groupId, [this.state.org.org_id]).then(res => window.location = `/orggroup/${groupId}`);
+        orgGroupService.requestAddMembers(groupId, [this.state.org.org_id]).then(() => {
+            NotificationManager.success(`Added org to ${groupName}`, "Added orgs", 5000, () => window.location = `/orggroup/${groupId}`);
+            orgService.requestById(this.state.org.org_id).then(org => this.setState({org}));
+        });
     };
 
     closeGroupWindow = () => {
@@ -78,6 +81,7 @@ export default class extends React.Component {
                     <HeaderField label="Org ID" value={this.state.org.org_id}/>
                     <HeaderField label="Instance" value={this.state.org.instance}/>
                     <HeaderField label="Type" value={this.state.org.is_sandbox ? "Sandbox" : "Production"}/>
+                    <HeaderField label="Groups" value={this.state.org.groups}/>
                 </RecordHeader>
                 <OrgView org={this.state.org} versions={this.state.versions}/>
                 {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}

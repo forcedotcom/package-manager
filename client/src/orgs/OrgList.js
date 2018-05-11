@@ -2,10 +2,8 @@ import React from 'react';
 import DataTable from "../components/DataTable";
 
 export default class extends React.Component {
-    linkHandler = (e, column, rowInfo, instance) => {
-        if (column.id !== "org_id") {
-            window.location = "/org/" + rowInfo.row.org_id;
-        }
+    linkHandler = (e, column, rowInfo) => {
+        window.location = "/org/" + rowInfo.row.org_id;
     };
 
     render() {
@@ -16,7 +14,7 @@ export default class extends React.Component {
             {Header: "Instance", accessor: "instance", sortable: true},
             {Header: "Edition", accessor: "type", sortable: true},
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
-            {Header: "Groups", accessor: "group_name", sortable: true}
+            {Header: "Groups", accessor: "groups", sortable: true}
         ];
         return (
             <DataTable keyField="org_id" id="OrgList" data={this.props.orgs} onFilter={this.props.onFilter} onClick={this.linkHandler} onSelect={this.props.onSelect}  columns={columns}/>

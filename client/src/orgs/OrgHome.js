@@ -1,4 +1,5 @@
 import React from 'react';
+import {NotificationManager} from 'react-notifications';
 
 import * as orgService from '../services/OrgService';
 import * as orgGroupService from '../services/OrgGroupService';
@@ -30,13 +31,16 @@ export default class extends React.Component {
         this.setState({selected});
     };
 
-    filterHandler = (filtered, column, value) => {
+    filterHandler = (filtered) => {
         this.setState({itemCount: filtered.length});
     };
     
-    addToGroupHandler = (groupId) => {
+    addToGroupHandler = (groupId, groupName) => {
         this.setState({addingToGroup: false});
-        orgGroupService.requestAddMembers(groupId, this.state.selected).then(res => window.location = `/orggroup/${groupId}`);
+        orgGroupService.requestAddMembers(groupId, this.state.selected).then(res => {
+            NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
+            this.setState({selected: []});
+        });
     };
 
     closeGroupWindow = () => {

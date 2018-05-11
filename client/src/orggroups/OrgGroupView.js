@@ -12,10 +12,12 @@ export default class extends React.Component {
             <div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
                 <Tabs id="OrgGroupView">
                     <div label="Members">
-                        <GroupMemberOrgCard orggroup={this.props.orggroup} orgs={this.props.members} onRemove={this.props.onRemoveMember}/>
+                        <GroupMemberOrgCard orggroup={this.props.orggroup} orgs={this.props.members} 
+                                            onSelect={this.props.onSelect} actions={this.props.memberActions}/>
                     </div>
                     <div label="Versions">
-                        <GroupMemberVersionCard orggroup={this.props.orggroup} packageVersions={this.props.versions} onRemove={this.props.onRemoveMember} onSort={this.props.onSort}/>
+                        <GroupMemberVersionCard orggroup={this.props.orggroup} packageVersions={this.props.versions} 
+                                                onSelect={this.props.onSelect} actions={this.props.memberActions}/>
                     </div>
                 </Tabs>
             </div>

@@ -18,8 +18,8 @@ export default class extends React.Component {
         });
     };
     
-    groupChangeHandler = (groupId) => {
-        this.props.onAdd(groupId, this.props.removeAfterAdd);
+    groupChangeHandler = (groupId, groupName) => {
+        this.props.onAdd(groupId, groupName, this.props.removeAfterAdd);
     };
 
     render() {

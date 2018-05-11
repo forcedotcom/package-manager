@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {BrowserRouter as Router, Link, Route} from "react-router-dom";
 import ReactTooltip from 'react-tooltip';
+import {NotificationContainer} from 'react-notifications';
 
 import {Icon} from './components/Icons';
 
@@ -126,6 +127,7 @@ class App extends Component {
                     <Route path="/login" component={Login}/>
                     <Route path="/logout" component={Logout}/>
                     <Route path="/authresponse" component={AuthResponse}/>
+                    <NotificationContainer/>
                 </div>
             </Router>
         );

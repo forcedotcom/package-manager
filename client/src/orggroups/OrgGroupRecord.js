@@ -1,14 +1,16 @@
 import React from 'react';
 
 import * as orgGroupService from '../services/OrgGroupService';
+import * as packageVersionService from "../services/PackageVersionService";
+import * as sortage from "../services/sortage";
 
+import {NotificationManager} from 'react-notifications';
 import {RecordHeader, HeaderField} from '../components/PageHeader';
 import OrgGroupView from "./OrgGroupView";
 import EditGroupWindow from "./EditGroupWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
-import * as packageVersionService from "../services/PackageVersionService";
-import * as sortage from "../services/sortage";
 import {ORG_GROUP_ICON} from "../Constants";
+import SelectGroupWindow from "../orgs/SelectGroupWindow";
 
 export default class extends React.Component {
     SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
@@ -16,7 +18,8 @@ export default class extends React.Component {
     state = {
         isEditing: false,
         orggroup: {},
-        sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc")
+        sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc"),
+        selected: [],
     };
 
     componentDidMount() {
@@ -88,15 +91,49 @@ export default class extends React.Component {
         });
     };
 
-    removeMemberHandler = (selected) => {
-        if (window.confirm(`Are you sure you want to remove ${selected.length} member(s)?`)) {
-            orgGroupService.requestRemoveMembers(this.state.orggroup.id, selected).then(members => {
+    removeMembersHandler = () => {
+        if (window.confirm(`Are you sure you want to remove ${this.state.selected.length} member(s)?`)) {
+            orgGroupService.requestRemoveMembers(this.state.orggroup.id, this.state.selected).then(members => {
                 packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
                     let validVersions = this.stripVersions(versions);
                     this.setState({members, versions, validVersions});
                 });                
             });
+            return true;
         }
+        return false;
+    };
+
+    addToGroupHandler = (groupId, groupName, removeAfterAdd) => {
+        this.setState({addingToGroup: false});
+        orgGroupService.requestAddMembers(groupId, this.state.selected).then(res => {
+            let moved = false;
+            if (removeAfterAdd) {
+                moved = this.removeMembersHandler();
+            }
+            if (moved) {
+                NotificationManager.success(`Moved ${this.state.selected.length} org(s) to ${groupName}`, "Moved orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
+            } else {
+                NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
+            }
+            this.setState({selected: [], removeAfterAdd: false});
+        });
+    };
+
+    closeGroupWindow = () => {
+        this.setState({addingToGroup: false});
+    };
+
+    addingToGroupHandler = () => {
+        this.setState({addingToGroup: true});
+    };
+
+    movingToGroupHandler = () => {
+        this.setState({addingToGroup: true, removeAfterAdd: true});
+    };
+
+    selectionHandler = (selected) => {
+        this.setState({selected});
     };
 
     render() {
@@ -104,15 +141,22 @@ export default class extends React.Component {
             {handler:this.schedulingWindowHandler, label:"Upgrade Packages", group:"upgrade", disabled: !this.state.validVersions}, 
             {handler:this.editHandler, label:"Edit"}, 
             {handler:this.deleteHandler, label:"Delete"}];
+
+        let memberActions = [
+            {label: "Copy To Group", handler: this.addingToGroupHandler, disabled: this.state.selected.length === 0},
+            {label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.length === 0},
+            {label: "Remove Orgs", group: "remove", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0}];
         
         return (
             <div>
                 <RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
                     <HeaderField label="" value={this.state.orggroup.description}/>
                 </RecordHeader>
-                <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} onRemoveMember={this.removeMemberHandler}/>;
+                <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} 
+                              onSelect={this.selectionHandler} memberActions={memberActions} />;
                 {this.state.isEditing ?  <EditGroupWindow orggroup={this.state.orggroup} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
                 {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow versions={this.state.validVersions} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
+                {this.state.addingToGroup ?  <SelectGroupWindow excludeId={this.state.orggroup.id} removeAfterAdd={this.state.removeAfterAdd} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
             </div>
         );
     }
