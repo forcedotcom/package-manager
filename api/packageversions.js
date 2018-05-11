@@ -79,9 +79,6 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
 
         whereParts.push(`gm.org_group_id IN (${params.join(",")})`);
         values = values.concat(orgGroupIds);
-
-        // Filter out orgs already on the latest version
-        // whereParts.push(`l.package_version_id != pvl.sfid`);
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";

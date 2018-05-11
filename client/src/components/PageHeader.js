@@ -149,7 +149,7 @@ export class CardHeader extends React.Component {
                     <div className="slds-media__body">
                         <h3 className="slds-text-heading--small slds-truncate"
                             title={this.props.title}>{this.props.title}</h3>
-                        <p className="slds-text-body--small">{this.props.count} versions</p>
+                        <p className="slds-text-body--small">{this.props.count} found</p>
                     </div>
                     <div className="slds-col slds-no-flex slds-align-bottom">
                         {actionBar}
@@ -268,7 +268,7 @@ export class HomeHeader extends React.Component {
                         </div>
                     </div>
                 </div>
-                <p className="slds-text-body--small slds-m-top--x-small">{this.props.itemCount} {this.props.type.toLowerCase()}</p>
+                {this.props.itemCount ? <p className="slds-text-body--small slds-m-top--x-small">{this.props.itemCount} found</p> : <p>&nbsp;</p> }
                 {this.props.children ?  <div className="slds-grid slds-page-header__detail-row">{this.props.children}</div> : "" }
             </div>
         );

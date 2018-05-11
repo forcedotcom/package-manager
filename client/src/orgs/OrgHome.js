@@ -12,7 +12,7 @@ import SelectGroupWindow from "./SelectGroupWindow";
 export default class extends React.Component {
     SORTAGE_KEY = "OrgList";
 
-    state = {view: "grid", sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "account_name", "asc"), orgs: [], selected: [], itemCount: "..."};
+    state = {view: "grid", sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "account_name", "asc"), orgs: [], selected: []};
 
     componentDidMount() {
         orgService.requestAll(this.state.sortOrder)
