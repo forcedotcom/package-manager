@@ -15,8 +15,12 @@ export default class extends React.Component {
     state = { org: {} };
 
     upgradeHandler = (versions, startDate, description) => {
-        orgService.requestUpgrade(this.state.org.org_id, versions.map(v => v.latest_version_id), startDate, description).then((upgrade) => {
-            window.location = `/upgrade/${upgrade.id}`;
+        orgService.requestUpgrade(this.state.org.org_id, versions.map(v => v.latest_version_id), startDate, description).then((res) => {
+            if (res.message) {
+                NotificationManager.error(res.message, "Upgrade failed");
+            } else {
+                window.location = `/upgrade/${res.id}`;
+            }
         });
     };
 
@@ -72,6 +76,7 @@ export default class extends React.Component {
         return (
             <div>
                 <RecordHeader type="Org" icon={ORG_ICON} title={this.state.org.account_name} actions={actions}>
+                    <HeaderField label="Name" value={this.state.org.name}/>
                     <HeaderField label="Org ID" value={this.state.org.org_id}/>
                     <HeaderField label="Instance" value={this.state.org.instance}/>
                     <HeaderField label="Type" value={this.state.org.is_sandbox ? "Sandbox" : "Production"}/>

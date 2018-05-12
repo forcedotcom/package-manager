@@ -42,19 +42,8 @@ export default class extends React.Component {
                                 <span className="slds-assistive-text">Close</span>
                             </button>
                         </div>
-                        <div className="slds-modal__content slds-p-around_medium">
-
+                        <div style={{height: 350}} className="slds-modal__content slds-p-around_medium">
                             <div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
-                                <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="name">Description</label>
-                                    <div className="slds-form-element__control">
-                                        <textarea className="slds-input" rows={2} id="description" value={this.state.description} onChange={this.handleDescriptionChange}/>
-                                    </div>
-                                </div>
-                                <div className="slds-form-element">
-                                    <label className="slds-form-element__label">Selected Versions</label>
-                                    {this.props.versions ? <VersionPills versions={this.props.versions} onUpdateVersions={this.handleVersionChange.bind(this)}/> : ""}
-                                </div>
                                 <div className="slds-form-element">
                                     <label className="slds-form-element__label" htmlFor="text-input-id-1">Start Date</label>
                                     <DatePicker className="slds-input"
@@ -65,6 +54,16 @@ export default class extends React.Component {
                                         timeIntervals={5}
                                         dateFormat="LLL"
                                         timeCaption="time"/>
+                                </div>
+                                <div className="slds-form-element">
+                                    <label className="slds-form-element__label" htmlFor="name">Description</label>
+                                    <div className="slds-form-element__control">
+                                        <textarea className="slds-input" rows={2} id="description" value={this.state.description} onChange={this.handleDescriptionChange}/>
+                                    </div>
+                                </div>
+                                <div className="slds-form-element">
+                                    <label className="slds-form-element__label">Selected Versions</label>
+                                    {this.props.versions ? <VersionPills versions={this.props.versions} onUpdateVersions={this.handleVersionChange.bind(this)}/> : ""}
                                 </div>
                             </div>
                         </div>

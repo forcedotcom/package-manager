@@ -62,8 +62,8 @@ function requestById(req, res, next) {
 
 function requestUpgrade(req, res, next) {
     push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
-        .then((upgrade) => {
-            return res.json(upgrade)
+        .then((result) => {
+            return res.json(result)
         })
         .catch((error) => {
             logger.error("Failed to upgrade org", {org_id: req.params.id, ...error}); 

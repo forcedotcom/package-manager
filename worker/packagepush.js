@@ -75,6 +75,37 @@ async function updatePushRequests(upgradeItemIds, status, currentUser) {
 }
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
+    if (process.env.ALLOWED_ORGS) {
+        // Whitelisting enforced.
+        orgIds = orgIds.filter(orgId => {
+            let allowed = process.env.ALLOWED_ORGS.indexOf(orgId) !== -1; 
+            if (!allowed) {
+                logger.warn("Skipping disallowed org", {org_id: orgId});
+                return false; 
+            } else {
+                return true;
+            }
+        }); 
+    }
+
+    if (process.env.DENIED_ORGS) {
+        // Blacklisting enforced.
+        orgIds = orgIds.filter(orgId => {
+            let denied = process.env.DENIED_ORGS.indexOf(orgId) !== -1;
+            if (denied) {
+                logger.warn("Skipping denied org", {org_id: orgId});
+                return false;
+            } else {
+                return true;
+            }
+        });
+    }
+
+    if (orgIds.length === 0) {
+        // Orgs were stripped above, nothing to do 
+        return {message: "None of your orgs were allowed to be upgraded"};
+    }
+
     let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
 
     let versions = await packageversions.findLatestByOrgIds(versionIds, orgIds);
@@ -90,9 +121,40 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description) {
     let conns = {}, pushReqs = {};
 
-    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
-
     let versions = await packageversions.findLatestByGroupIds(versionIds, orgGroupIds);
+
+    if (process.env.ALLOWED_ORGS) {
+        // Whitelisting enforced.
+        versions = versions.filter(version => {
+            let allowed = process.env.ALLOWED_ORGS.indexOf(version.org_id) !== -1;
+            if (!allowed) {
+                logger.warn("Skipping disallowed org", {org_id: version.org_id});
+                return false;
+            } else {
+                return true;
+            }
+        });
+    }
+
+    if (process.env.DENIED_ORGS) {
+        // Blacklisting enforced.
+        versions = versions.filter(version => {
+            let denied = process.env.DENIED_ORGS.indexOf(version.org_id) !== -1;
+            if (denied) {
+                logger.warn("Skipping denied org", {org_id: version.org_id});
+                return false;
+            } else {
+                return true;
+            }
+        });
+    }
+
+    if (versions.length === 0) {
+        // Orgs were stripped above, nothing to do 
+        return {message: "None of your orgs were allowed to be upgraded"};
+    }
+    
+    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
     for (let i = 0; i < versions.length; i++) {
         let version = versions[i];
         let orgKey = version.package_org_id, reqKey = version.package_org_id + version.latest_version_id;
@@ -194,5 +256,4 @@ exports.updatePushRequests = updatePushRequests;
 exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroups = upgradeOrgGroups;
-exports.upgradeVersion = upgradeVersion;
 exports.Status = Status;
