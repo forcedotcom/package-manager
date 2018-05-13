@@ -17,7 +17,8 @@ class ListItem extends React.Component {
 
 class Dropdown extends React.Component {
     render() {
-        let items = this.props.items.map((item) => <ListItem data={this.props.valueField ? item[this.props.valueField] : item} 
+        let items = this.props.items.map((item) => <ListItem key={this.props.valueField ? item[this.props.valueField] : item}
+                                                             data={this.props.valueField ? item[this.props.valueField] : item} 
                                                              label={this.props.labelField ? item[this.props.labelField] : item} 
                                                              onSelect={this.props.onChange}/>);
         return (
