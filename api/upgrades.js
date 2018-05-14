@@ -14,15 +14,18 @@ const SELECT_ONE = `select u.id, u.start_time, u.created_by, u.description, coun
                     group by u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
+        u.description,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id,
         count(j.*) job_count
         FROM upgrade_item i
+        inner join upgrade u on u.id = i.upgrade_id
         inner join package_version pv on pv.version_id = i.package_version_id
         inner join package p on p.sfid = pv.package_id
         inner join upgrade_job j on j.item_id = i.id`;
 
 const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+        u.description,
         pv.version_number, pv.version_id,
         p.name, p.sfid`;
 
@@ -32,9 +35,11 @@ const SELECT_ALL_ITEMS_BY_UPGRADE =
         ${GROUP_BY_ALL_ITEMS}`;
 
 const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
+        u.description,
         pv.version_number, pv.version_id,
         p.name package_name
         FROM upgrade_item i
+        INNER JOIN upgrade u on u.id = i.upgrade_id
         INNER JOIN package_version pv on pv.version_id = i.package_version_id
         INNER JOIN package p on p.sfid = pv.package_id`;
 

@@ -86,7 +86,7 @@ export default class extends React.Component {
         ];
         return (
             <div>
-                <RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.id} actions={actions} notes={notes}>
+                <RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.description} actions={actions} notes={notes}>
                     <HeaderField label="Start Time" format="datetime" value={this.state.item.start_time}/>
                     <HeaderField label="Status" value={this.state.item.status}/>
                     <HeaderField label="Created By" value={this.state.item.created_by}/>
