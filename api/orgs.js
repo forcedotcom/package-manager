@@ -97,7 +97,7 @@ async function insertOrgsFromSubscribers(recs) {
 
     let sql = `INSERT INTO org (org_id, name, type, instance, account_id, modified_date) 
                        VALUES ${params.join(",")}
-                       on conflict do nothing`;
+                       on conflict (org_id) do update set status = null, account_id = excluded.account_id where excluded.status = 'Not Found'`;
     return db.insert(sql, values);
 }
 
