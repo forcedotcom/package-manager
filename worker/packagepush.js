@@ -247,8 +247,26 @@ async function findErrorsByJobIds(packageOrgId, jobIds) {
     return res.records;
 }
 
+async function findSubscribersByIds(packageOrgIds, orgIds) {
+    let records = [];
+    for (let i = 0; i < packageOrgIds.length; i++) {
+        let conn = await sfdc.buildOrgConnection(packageOrgIds[i]);
+        let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
+                    OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber
+                    WHERE OrgKey IN ('${orgIds.join("','")}')`;
+        try {
+            let res = await conn.query(soql);
+            records = records.concat(res.records);
+        } catch (e) {
+            logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], ...e});
+        }
+    }
+    return records;
+}
+
 exports.findRequestsByStatus = findRequestsByStatus;
 exports.findRequestsByIds = findRequestsByIds;
+exports.findSubscribersByIds = findSubscribersByIds;
 exports.findJobsByStatus = findJobsByStatus;
 exports.findJobsByRequestIds = findJobsByRequestIds;
 exports.findErrorsByJobIds = findErrorsByJobIds;

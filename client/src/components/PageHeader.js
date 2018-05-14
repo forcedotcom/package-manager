@@ -170,6 +170,37 @@ export class FormHeader extends React.Component {
     };
 
     render() {
+        let groups = [];
+        let currentGroup = null;
+        if (this.props.actions) {
+            for (let i = 0; i < this.props.actions.length; i++) {
+                const currentAction = this.props.actions[i];
+                let btn =
+                    <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled}
+                            className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
+                        {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
+                            {currentAction.detail}
+                        </ReactTooltip> : ''}
+                    </button>;
+                if (currentGroup == null || currentGroup.key !== currentAction.group) {
+                    currentGroup = {key: currentAction.group, actions: [btn]};
+                    groups.push(currentGroup);
+                } else {
+                    currentGroup.actions.push(btn);
+                }
+            }
+        } else {
+            groups = [{key: "group", actions: [
+                {handler: this.props.onSave, label: "Save"},
+                {handler: this.props.onCancel, label: "Cancel"}]
+            }];    
+        }
+        
+        let actionBar = [];
+        for (let i = 0; i < groups.length; i++) {
+            actionBar.push(<div key={i} className="slds-button-group" role="group">{groups[i].actions}</div>);
+        }
+        
         return (
             <div style={{borderLeft: 0, borderRight: 0, borderRadius: "0.25rem 0.25rem 0 0", zIndex: 2}} className="slds-page-header">
                 <div className="slds-grid">
@@ -187,10 +218,7 @@ export class FormHeader extends React.Component {
                         </div>
                     </div>
                     <div className="slds-col slds-no-flex slds-align-bottom">
-                        <div className="slds-button-group" role="group">
-                            <button className="slds-button slds-button--neutral" onClick={this.props.onSave}>Save</button>
-                            <button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel</button>
-                        </div>
+                        {actionBar}
                     </div>
                 </div>
                 {this.props.children ?  <div className="slds-grid slds-page-header__detail-row">{this.props.children}</div> : "" }

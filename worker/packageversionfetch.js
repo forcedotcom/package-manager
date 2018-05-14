@@ -3,7 +3,7 @@ const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
-                    sfLma__Version_ID__c, RealVersionNumber__c, LastModifiedDate FROM sfLma__Package_Version__c`;
+                    sfLma__Version_ID__c, LastModifiedDate FROM sfLma__Package_Version__c`;
 
 async function fetch(sb62Id, fetchAll) {
     let fromDate = null;
@@ -20,11 +20,12 @@ async function fetch(sb62Id, fetchAll) {
 
 async function query(sb62Id, fromDate) {
     let conn = await sfdc.buildOrgConnection(sb62Id);
-    let soql = SELECT_ALL;
+    let whereParts = [`sfLma__Version_Number__c != null`];
     if (fromDate) {
-        soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;
+        whereParts.push(`LastModifiedDate > ${fromDate.toISOString()}`);
     }
-    let res = await conn.query(soql);
+    let where = ` WHERE ${whereParts.join(" AND ")}`;
+    let res = await conn.query(SELECT_ALL + where);
     return await load(res, conn);
 }
 
@@ -39,7 +40,7 @@ async function load(result, conn) {
             sfid: v.Id,
             name: v.Name,
             version_number: v.sfLma__Version_Number__c,
-            real_version_number: v.RealVersionNumber__c,
+            version_sort: toVersionSort(v.sfLma__Version_Number__c),
             major_version: v.sfLma__Version_Number__c ? v.sfLma__Version_Number__c.split(".")[0] : null,
             package_id: v.sfLma__Package__c,
             release_date: new Date(v.sfLma__Release_Date__c).toISOString(),
@@ -54,6 +55,21 @@ async function load(result, conn) {
     return recs;
 }
 
+function toVersionSort(versionNumber) {
+    let segments = versionNumber.split(".");
+    while(segments.length < 3) {
+        segments.push("0");
+    }
+    let paddedNumbers = segments.map(n => {
+        let s = n;
+        while (s.length < 4) {
+            s = "0" + s;
+        }
+        return s;
+    });
+    return paddedNumbers.join("");
+}
+
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
@@ -61,9 +77,6 @@ async function upsert(recs, batchSize) {
         return; // nothing to see here
     }
     logger.info(`New package versions found`, {count});
-    if (count <= batchSize) {
-        return await upsertBatch(recs);
-    }
     for (let start = 0; start < count;) {
         logger.info(`Batch upserting package versions`, {batch: start, count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
@@ -72,7 +85,7 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = `INSERT INTO package_version (sfid, name, version_number, real_version_number, major_version, package_id,
+    let sql = `INSERT INTO package_version (sfid, name, version_number, version_sort, major_version, package_id,
                release_date, modified_date, status, version_id) VALUES `;
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
@@ -80,11 +93,11 @@ async function upsertBatch(recs) {
             sql += ','
         }
         sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
-        values.push(rec.sfid, rec.name, rec.version_number, rec.real_version_number, rec.major_version, rec.package_id,
+        values.push(rec.sfid, rec.name, rec.version_number, rec.version_sort, rec.major_version, rec.package_id,
             rec.release_date, rec.modified_date, rec.status, rec.version_id);
     }
     sql += ` on conflict (sfid) do update set
-        name = excluded.name, version_number = excluded.version_number, real_version_number = excluded.real_version_number, major_version = excluded.major_version,
+        name = excluded.name, version_number = excluded.version_number, version_sort = excluded.version_sort, major_version = excluded.major_version,
         package_id = excluded.package_id, release_date = excluded.release_date, modified_date = excluded.modified_date, 
         status = excluded.status, version_id = excluded.version_id`;
     await db.insert(sql, values);
@@ -96,7 +109,7 @@ async function fetchLatest() {
 }
 
 async function queryLatest(packageIds) {
-    let whereParts = ["real_version_number != '-1'"], values = [];
+    let whereParts = ["status IN ('Pre-Release', 'Verified')"], values = [];
 
     if (packageIds) {
         let params = [];
@@ -109,10 +122,10 @@ async function queryLatest(packageIds) {
     let where = whereParts.length > 0 ? ` WHERE ${whereParts.join(" AND ")}` : "";
 
     let sql = `SELECT v.package_id, v.sfid, v.version_id, v.name, v.version_number FROM
-        (SELECT package_id, MAX(real_version_number) real_version_number FROM package_version
+        (SELECT package_id, MAX(version_sort) version_sort FROM package_version
          ${where} 
          GROUP BY package_id) x
-        INNER JOIN package_version v ON v.package_id = x.package_id AND v.real_version_number = x.real_version_number`;
+        INNER JOIN package_version v ON v.package_id = x.package_id AND v.version_sort = x.version_sort`;
 
     return db.query(sql, values);
 }

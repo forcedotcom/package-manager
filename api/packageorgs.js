@@ -10,11 +10,15 @@ const SELECT_ALL = `SELECT id, name, description, division, namespace, org_id, i
                     refresh_token, access_token, type, status, refreshed_date 
                     FROM public.package_org`;
 
+const SELECT_ALL_WITH_REFRESH_TOKEN = `SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, 
+                    refresh_token, access_token, type, status, refreshed_date 
+                    FROM public.package_org`;
+
 async function requestAll(req, res, next) {
     let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;
     try {
         let recs = await db.query(SELECT_ALL + sort, []);
-        await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ['access_token', 'refresh_token']);
+        await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token"]);
 
         let ids = recs.map(o => o.org_id);
         Object.entries(sfdc.NamedOrgs).forEach(([key, val]) => {
@@ -32,8 +36,10 @@ async function requestAll(req, res, next) {
 async function requestById(req, res, next) {
     let id = req.params.id;
     try {
-        let rec = await retrieveByOrgId(id);
-        return res.json(rec);
+        let where = " WHERE org_id = $1";
+        let recs = await db.query(SELECT_ALL + where, [id]);
+        await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
+        return res.json(recs[0]);
     } catch (err) {
         next(err);
     }
@@ -41,14 +47,14 @@ async function requestById(req, res, next) {
 
 async function retrieve(id) {
     let where = " WHERE id = $1";
-    let recs = await db.query(SELECT_ALL + where, [id]);
+    let recs = await db.query(SELECT_ALL_WITH_REFRESH_TOKEN + where, [id]);
     await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
     return recs[0];
 }
 
 async function retrieveByOrgId(org_id) {
     let where = " WHERE org_id = $1";
-    let recs = await db.query(SELECT_ALL + where, [org_id]);
+    let recs = await db.query(SELECT_ALL_WITH_REFRESH_TOKEN + where, [org_id]);
     await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
     return recs[0];
 }

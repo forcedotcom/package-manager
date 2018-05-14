@@ -1,7 +1,8 @@
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
-
+const sfdc = require('../api/sfdcconn');
+const packageorgs = require('../api/packageorgs');
 
 const SELECT_ALL = `
     SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
@@ -71,6 +72,58 @@ function requestUpgrade(req, res, next) {
         });
 }
 
+async function requestAdd(req, res, next) {
+    let packageOrgs = await db.query(`SELECT org_id FROM package_org WHERE status = $1 AND namespace is not null`, [packageorgs.Status.Connected]);
+    let packageOrgIds = packageOrgs.map(o => o.org_id); 
+    await push.findSubscribersByIds(packageOrgIds, req.body.orgIds)
+        .then(async (recs) => {
+            await insertOrgsFromSubscribers(recs);
+            await insertOrgPackageVersionsFromSubscribers(recs);
+            await requestAll(req, res, next);
+        })
+        .catch((error) => {
+            logger.error("Failed to fetch subscriber orgs", {package_org_id: packageOrgIds, ...error});
+            next(error);
+        });
+}
+
+async function insertOrgsFromSubscribers(recs) {
+    let params = [], values = [];
+    for (let i = 0, n = 1; i < recs.length; i++) {
+        let rec = recs[i];
+        params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`);
+        values.push(rec.OrgKey.substring(0,15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID, new Date().toISOString());
+    }
+
+    let sql = `INSERT INTO org (org_id, name, type, instance, account_id, modified_date) 
+                       VALUES ${params.join(",")}
+                       on conflict do nothing`;
+    return db.insert(sql, values);
+}
+
+async function insertOrgPackageVersionsFromSubscribers(recs) {
+    let versionIds = recs.map(r => r.MetadataPackageVersionId);
+    let versions = await db.query(`SELECT sfid, package_id, version_id FROM package_version WHERE version_id IN ('${versionIds.join("','")}')`);
+    let versionMap = {};
+    for (let i = 0; i < versions.length; i++) {
+        let v = versions[i];
+        versionMap[v.version_id] = v;
+    }
+    
+    let params = [], values = [];
+    for (let i = 0, n = 1; i < recs.length; i++) {
+        let rec = recs[i];
+        let pv = versionMap[rec.MetadataPackageVersionId];
+        params.push(`($${n++},$${n++},$${n++},$${n++},$${n++})`);
+        values.push(rec.OrgKey.substring(0,15), pv.package_id, pv.sfid, "None", new Date().toISOString());
+    }
+
+    let sql = `INSERT INTO org_package_version (org_id, package_id, package_version_id, license_status, modified_date) 
+                       VALUES ${params.join(",")}
+                       on conflict (org_id, package_id) do nothing`;
+    return db.insert(sql, values);
+}
+
 async function findByGroup(orgGroupId) {
     let where = " WHERE m.org_group_id = $1";
     return await db.query(SELECT_ALL + where + GROUP_BY, [orgGroupId])
@@ -83,7 +136,9 @@ async function findByIds(orgIds) {
     return await db.query(SELECT_ALL + where + GROUP_BY, orgIds)
 }
 
+
 exports.requestAll = requestAll;
+exports.requestAdd = requestAdd;
 exports.requestById = requestById;
 exports.requestUpgrade = requestUpgrade;
 exports.findByGroup = findByGroup;

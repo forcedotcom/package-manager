@@ -2,29 +2,29 @@ const db = require('../util/pghelper');
 
 const SELECT_ALL =
     `SELECT 
-        pv.id, pv.sfid, pv.name, pv.version_number, pv.real_version_number, pv.package_id, pv.release_date, pv.status, pv.version_id, 
+        pv.id, pv.sfid, pv.name, pv.version_number, pv.version_sort, pv.package_id, pv.release_date, pv.status, pv.version_id, 
         p.package_org_id, p.name as package_name 
     FROM package_version pv 
     INNER JOIN package p on p.sfid = pv.package_id`;
 
-const SELECT_ALL_WITH_LICENSE =
+const SELECT_ALL_IN_ORG =
     `SELECT
-        pv.id, pv.sfid, pv.name, pv.version_number, pv.real_version_number, pv.package_id, pv.release_date, pv.status, pv.version_id,
+        pv.id, pv.sfid, pv.name, pv.version_number, pv.version_sort, pv.package_id, pv.release_date, pv.status, pv.version_id,
         p.package_org_id, p.name as package_name, 
         pvl.version_number latest_version_number, pvl.version_id latest_version_id,
-        l.org_id, l.status license_status,
+        op.org_id, op.license_status,
         o.instance,
         a.account_name
     FROM package_version pv
     INNER JOIN package p on p.sfid = pv.package_id
     INNER JOIN package_version_latest pvl ON pvl.package_id = pv.package_id
-    INNER JOIN license l ON l.package_version_id = pv.sfid
-    INNER JOIN org o ON o.org_id = l.org_id
+    INNER JOIN org_package_version op ON op.package_version_id = pv.sfid
+    INNER JOIN org o ON o.org_id = op.org_id
     INNER JOIN account a ON a.account_id = o.account_id`;
 
-const SELECT_ALL_WITH_LICENSE_IN_GROUP =
-    SELECT_ALL_WITH_LICENSE +
-    ` INNER JOIN org_group_member gm ON gm.org_id = l.org_id`;
+const SELECT_ALL_IN_ORG_GROUP =
+    SELECT_ALL_IN_ORG +
+    ` INNER JOIN org_group_member gm ON gm.org_id = op.org_id`;
 
 async function requestAll(req, res, next) {
     try {
@@ -60,18 +60,18 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
     }
 
     if (licensedOrgIds) {
-        select = SELECT_ALL_WITH_LICENSE;
+        select = SELECT_ALL_IN_ORG;
 
         let params = [];
         for(let i = 1; i <= licensedOrgIds.length; i++) {
             params.push('$' + (values.length + i));
         }
-        whereParts.push(`l.org_id IN (${params.join(",")})`);
+        whereParts.push(`op.org_id IN (${params.join(",")})`);
         values = values.concat(licensedOrgIds);
     }
 
     if (orgGroupIds) {
-        select = SELECT_ALL_WITH_LICENSE_IN_GROUP;
+        select = SELECT_ALL_IN_ORG_GROUP;
         let params = [];
         for(let i = 1; i <= orgGroupIds.length; i++) {
             params.push('$' + (values.length + i));
@@ -82,7 +82,7 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let orderBy = ` ORDER BY ${sortField === "version_number" ? "real_version_number" : sortField || "release_date"} ${sortDir || "desc"}, package_name`;
+    let orderBy = ` ORDER BY ${sortField === "version_number" ? "version_sort" : sortField || "release_date"} ${sortDir || "desc"}, package_name`;
     return db.query(select + where + orderBy, values);
 }
 
@@ -112,7 +112,7 @@ async function findByIds(versionIds) {
 }
 
 async function findLatestByOrgIds(versionIds, orgIds) {
-    let whereParts = [], values = [], select = SELECT_ALL_WITH_LICENSE;
+    let whereParts = [], values = [], select = SELECT_ALL_IN_ORG;
 
     if (versionIds) {
         let params = [];
@@ -129,11 +129,11 @@ async function findLatestByOrgIds(versionIds, orgIds) {
             params.push('$' + (values.length + i));
         }
 
-        whereParts.push(`l.org_id IN (${params.join(",")})`);
+        whereParts.push(`op.org_id IN (${params.join(",")})`);
         values = values.concat(orgIds);
 
         // Filter out orgs already on the latest version
-        whereParts.push(`l.package_version_id != pvl.sfid`);
+        whereParts.push(`op.package_version_id != pvl.sfid`);
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
@@ -154,7 +154,7 @@ async function findLatestByGroupIds(versionIds, orgGroupIds) {
 
 
     if (orgGroupIds) {
-        select = SELECT_ALL_WITH_LICENSE_IN_GROUP;
+        select = SELECT_ALL_IN_ORG_GROUP;
         let params = [];
         for(let i = 1; i <= orgGroupIds.length; i++) {
             params.push('$' + (values.length + i));
@@ -164,7 +164,7 @@ async function findLatestByGroupIds(versionIds, orgGroupIds) {
         values = values.concat(orgGroupIds);
 
         // Filter out orgs already on the latest version
-        whereParts.push(`l.package_version_id != pvl.sfid`);
+        whereParts.push(`op.package_version_id != pvl.sfid`);
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";

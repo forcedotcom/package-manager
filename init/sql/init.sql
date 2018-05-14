@@ -59,6 +59,19 @@ create table if not exists org_group_member (
 create unique index if not exists org_group_member_org_id_org_group_id_uindex
   on public.org_group_member (org_id, org_group_id);
 
+create table org_package_version (
+  id                 serial not null
+    constraint org_package_version_pkey
+    primary key,
+  org_id             varchar(18),
+  package_id         varchar(18),
+  package_version_id varchar(18),
+  license_status     varchar(40),
+  modified_date      timestamp with time zone,
+  constraint org_package_version_org_id_package_id_pk
+  unique (org_id, package_id)
+);
+
 -- create table if not exists org_group_criteria (
 --   id     serial primary key,
 --   org_group_id integer,
@@ -82,7 +95,7 @@ create table if not exists upgrade_item (
   package_version_id varchar(18),
   status             varchar(40),
   start_time         timestamp with time zone,
-  created_by  varchar(255)
+  created_by         varchar(255)
 );
 
 create table if not exists upgrade_job (
@@ -109,18 +122,18 @@ create table if not exists package
 
 create table if not exists package_version
 (
-  id                  serial      not null,
-  sfid                varchar(18) not null
+  id             serial      not null,
+  sfid           varchar(18) not null
     constraint package_version_sfid_pk primary key,
-  name                varchar(255),
-  version_number      varchar(20),
-  real_version_number varchar(12),
-  major_version       int,
-  package_id          varchar(18),
-  release_date        timestamp with time zone,
-  modified_date       timestamp with time zone,
-  status              varchar(20),
-  version_id          varchar(18)
+  name           varchar(255),
+  version_number varchar(20),
+  version_sort   varchar(12),
+  major_version  int,
+  package_id     varchar(18),
+  release_date   timestamp with time zone,
+  modified_date  timestamp with time zone,
+  status         varchar(20),
+  version_id     varchar(18)
 );
 
 create table if not exists package_version_latest
@@ -177,8 +190,12 @@ alter table package_org
   add if not exists refreshed_date timestamp with time zone;
 
 alter table upgrade
-    add if not exists   created_by  varchar(255) null;
+  add if not exists created_by varchar(255) null;
 
 alter table upgrade_item
-    add if not exists   created_by  varchar(255) null;
+  add if not exists created_by varchar(255) null;
+
+alter table package_version
+  add if not exists version_sort varchar(12) null,
+  drop column if exists real_version_number;
 

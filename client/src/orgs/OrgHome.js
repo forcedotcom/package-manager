@@ -8,6 +8,7 @@ import * as sortage from '../services/sortage';
 import {HomeHeader} from '../components/PageHeader';
 import OrgList from './OrgList';
 import SelectGroupWindow from "./SelectGroupWindow";
+import AddOrgWindow from "../orggroups/AddOrgWindow";
 
 export default class extends React.Component {
     SORTAGE_KEY = "OrgList";
@@ -34,33 +35,49 @@ export default class extends React.Component {
     filterHandler = (filtered) => {
         this.setState({itemCount: filtered.length});
     };
-    
-    addToGroupHandler = (groupId, groupName) => {
+
+    saveHandler = (orgIds) => {
+        orgService.requestAdd(orgIds).then((orgs) => {
+            this.setState({isAdding: false, orgs, itemCount: orgs.length});
+        }).catch(e => console.error(e));
+    };
+
+    addingHandler = () => {
+        this.setState({isAdding: true});
+    };
+
+    cancelHandler = () => {
+        this.setState({isAdding: false});
+    };
+
+    addToGroup = (groupId, groupName) => {
         this.setState({addingToGroup: false});
-        orgGroupService.requestAddMembers(groupId, this.state.selected).then(res => {
+        orgGroupService.requestAddMembers(groupId, this.state.selected).then(() => {
             NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
             this.setState({selected: []});
         });
     };
 
-    closeGroupWindow = () => {
+    cancelAddingToGroupHandler = () => {
         this.setState({addingToGroup: false});
     };
 
-    openGroupWindow = () => {
+    addingToGroupHandler = () => {
         this.setState({addingToGroup: true});
     };
     
     render() {
         const actions = [
-            {label: "Add To Group", disabled: this.state.selected.length === 0, handler: this.openGroupWindow},
+            {label: "Add To Group", group: "selectable", disabled: this.state.selected.length === 0, handler: this.addingToGroupHandler},
+            {label: "Import", handler: this.addingHandler}
         ];
         
         return (
             <div>
                 <HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
                 <OrgList orgs={this.state.orgs} onSort={this.sortHandler} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
-                {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
+                {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroup.bind(this)} onCancel={this.cancelAddingToGroupHandler}/> : ""}
+                {this.state.isAdding ?  <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
             </div>
         );
     }

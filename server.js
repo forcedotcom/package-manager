@@ -68,6 +68,7 @@ app.get('/oauth2/callback', auth.oauthCallback);
 app.get('/api/admin/fetch', admin.requestFetch);
 
 app.get('/api/orgs', orgs.requestAll);
+app.put('/api/orgs', orgs.requestAdd);
 app.get('/api/orgs/:id', orgs.requestById);
 app.post('/api/orgs/:id/upgrade', orgs.requestUpgrade);
 

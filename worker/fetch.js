@@ -1,3 +1,5 @@
+const logger = require('../util/logger').logger;
+
 const ps = require('./packagefetch');
 const pvs = require('./packageversionfetch');
 const licenses = require('./licensefetch');
@@ -6,7 +8,7 @@ const orgs = require('./orgfetch');
 const orgaccounts = require('./orgaccountfetch');
 const accounts = require('./accountfetch');
 const sfdc = require('../api/sfdcconn');
-const logger = require('../util/logger').logger;
+const orgpackageversions = require('./orgpackageversionfetch');
 
 const packageorgs = require('../api/packageorgs');
 
@@ -20,9 +22,10 @@ async function fetch(fetchAll) {
         await pvs.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll);
         await pvs.fetchLatest();
         
-        // Licenses
+        // Licenses - first populate licenses, then find duplicates and mark invalid
         await licenses.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll);
-        
+        await licenses.markInvalid();
+
         // Orgs - first populate orgs from licenses, then fill in details from blacktab
         await licenseorgs.fetch(fetchAll);
     } catch (error) {
@@ -30,7 +33,6 @@ async function fetch(fetchAll) {
         if (error.name === "invalid_grant") {
             packageorgs.updateOrgStatus(sfdc.NamedOrgs.sb62.orgId, packageorgs.Status.Invalid);
         }
-
     }
 
     try {
@@ -54,6 +56,12 @@ async function fetch(fetchAll) {
         if (error.name === "invalid_grant") {
             packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid);
         }
+    }
+
+    try {
+        await orgpackageversions.fetch();
+    } catch (error) {
+        logger.error('Failed to fetch org package versions data', error);
     }
 
     try { 

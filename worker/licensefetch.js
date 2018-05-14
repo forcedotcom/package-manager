@@ -97,4 +97,37 @@ async function upsertBatch(recs) {
     await db.insert(sql, values);
 }
 
+async function markInvalid() {
+    let dupes = await db.query(`
+        SELECT distinct l.org_id, v.package_id
+        FROM license l
+        INNER JOIN package_version v on v.sfid = l.package_version_id
+        group by l.org_id, v.package_id having count(*) > 1`);
+    let dupeOrgIds = dupes.map(r => r.org_id);
+    let dupePkgIds = dupes.map(r => r.package_id);
+    
+    let prev = null;
+    let invalidIds = [];
+    dupes = await db.query(`
+        SELECT l.id, l.org_id, v.package_id, v.version_number, v.version_sort
+        FROM license l
+        INNER JOIN package_version v on v.sfid = l.package_version_id
+        WHERE l.org_id IN ('${dupeOrgIds.join("','")}')
+        AND v.package_id IN ('${dupePkgIds.join("','")}')
+        ORDER BY org_id, package_id, version_sort desc`);
+    for (let i = 0; i < dupes.length; i++) {
+        let dupe = dupes[i];
+        let curr = dupe.org_id + dupe.package_id;
+        if (curr === prev) {
+            invalidIds.push(dupe.id);
+        }
+        prev = curr;
+    }
+
+    const sql = `UPDATE license SET status = 'Invalid' 
+                     WHERE id IN ('${invalidIds.join("','")}')`;
+    await db.update(sql);
+}
+
 exports.fetch = fetch;
+exports.markInvalid = markInvalid;
