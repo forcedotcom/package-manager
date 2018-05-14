@@ -45,7 +45,7 @@ export default class extends React.Component {
         return (
             <div>
                 <RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
-                    <HeaderField label="Start Time" format="date" value={this.state.upgrade.start_time}/>
+                    <HeaderField label="Start Time" format="datetime" value={this.state.upgrade.start_time}/>
                     <HeaderField label="State" value={this.state.status}/>
                     <HeaderField label="Created By" value={this.state.upgrade.created_by}/>
                 </RecordHeader>
