@@ -170,30 +170,27 @@ export class FormHeader extends React.Component {
     };
 
     render() {
+        let actions = this.props.actions ? this.props.actions : [
+            {handler: this.props.onSave, label: "Save"},
+            {handler: this.props.onCancel, label: "Cancel"}];
+        
         let groups = [];
         let currentGroup = null;
-        if (this.props.actions) {
-            for (let i = 0; i < this.props.actions.length; i++) {
-                const currentAction = this.props.actions[i];
-                let btn =
-                    <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled}
-                            className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
-                        {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                            {currentAction.detail}
-                        </ReactTooltip> : ''}
-                    </button>;
-                if (currentGroup == null || currentGroup.key !== currentAction.group) {
-                    currentGroup = {key: currentAction.group, actions: [btn]};
-                    groups.push(currentGroup);
-                } else {
-                    currentGroup.actions.push(btn);
-                }
+        for (let i = 0; i < actions.length; i++) {
+            const currentAction = actions[i];
+            let btn =
+                <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled}
+                        className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
+                    {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
+                        {currentAction.detail}
+                    </ReactTooltip> : ''}
+                </button>;
+            if (currentGroup == null || currentGroup.key !== currentAction.group) {
+                currentGroup = {key: currentAction.group, actions: [btn]};
+                groups.push(currentGroup);
+            } else {
+                currentGroup.actions.push(btn);
             }
-        } else {
-            groups = [{key: "group", actions: [
-                {handler: this.props.onSave, label: "Save"},
-                {handler: this.props.onCancel, label: "Cancel"}]
-            }];    
         }
         
         let actionBar = [];
