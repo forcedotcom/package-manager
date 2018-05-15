@@ -45,18 +45,15 @@ import {
 } from "./Constants";
 
 class App extends Component {
-    state = {
-        username: "",
-        display_name: ""
-    };
+    state = {};
 
     componentDidMount() {
         let u = sessionStorage.getItem("user");
         if (!u) {
             authService.requestUser().then(user => {
                 sessionStorage.setItem("user", JSON.stringify(user));
-                this.setState({user});
-            }).catch(e => this.setState({user: {error: e}}));
+                this.setState({...user});
+            }).catch(e => this.setState({display_name: "Invalid", username: e.message}));
         } else {
             let user = JSON.parse(u);
             this.setState({username: user.username, display_name: user.display_name});
@@ -91,12 +88,16 @@ class App extends Component {
                                 <Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name} category={ADMIN_ICON.category}/>Administration</Link>
                             </li>
                             <li style={{width: "100%"}}>&nbsp;</li>
-                            <li className="slds-list__item"> 
-                                <Link data-tip data-for="logout" style={{whiteSpace: "nowrap"}} to="/logout"><Icon name={AUTH_ICON.name} category={AUTH_ICON.category}/>Logout {this.state.display_name}</Link>
-                                <ReactTooltip id="logout" place="left" delayShow={600}>
-                                    Logged in as {this.state.username}
-                                </ReactTooltip>
-                            </li>
+
+                            {this.state.username ? 
+                                <li className="slds-list__item">
+                                    <Link data-tip data-for="logout" style={{whiteSpace: "nowrap"}} to="/logout"><Icon
+                                        name={AUTH_ICON.name}
+                                        category={AUTH_ICON.category}/>Logout {this.state.display_name}</Link>
+                                    <ReactTooltip id="logout" place="left" delayShow={600}>
+                                        Logged in as {this.state.username}
+                                    </ReactTooltip>
+                                </li> : ""}
                         </ul>
                     </header>
 
