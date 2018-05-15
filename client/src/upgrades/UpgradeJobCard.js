@@ -31,7 +31,7 @@ export default class extends React.Component {
         }
     }
 
-    filterHandler = (filtered, column, value) => {
+    filterHandler = (filtered) => {
         this.setState({itemCount: filtered.length});
     };
     
@@ -46,8 +46,8 @@ export default class extends React.Component {
                     <div data-tip data-for={row.org_id}>
                         <span style={{
                         padding: "2px 10px 2px 10px",
-                        backgroundColor: row.original.error ? "#C00" : "inherit",
-                        color: row.original.error ? "white" : "inherit",
+                        backgroundColor: row.value === 'Ineligible' || row.original.error ? "#C00" : "inherit",
+                        color: row.value === 'Ineligible' || row.original.error ? "white" : "inherit",
                         borderRadius: '10px',
                         transition: 'all .3s ease-in'}}>
                             {row.value ? row.value : "Retrieving Status..."}</span>

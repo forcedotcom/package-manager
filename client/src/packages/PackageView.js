@@ -14,14 +14,17 @@ export default class extends React.Component {
     SORTAGE_KEY_ORGS = "OrgCard";
 
     state = {
+        pkg: {},
         sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "name", "asc"),
         sortOrderOrgs: sortage.getSortOrder(this.SORTAGE_KEY_ORGS, "account_name", "asc")
     };
 
     componentWillReceiveProps(props) {
-        this.setState({pkg: props.pkg});
-        packageVersionService.findByPackage(props.pkg.sfid, this.state.sortOrderVersions).then(packageVersions => this.setState({packageVersions}));
-        orgService.requestByPackage(props.pkg.sfid, this.state.sortOrderOrgs).then(orgs => this.setState({orgs}));
+        if (props.pkg.sfid) {
+            this.setState({pkg: props.pkg});
+            packageVersionService.findByPackage(props.pkg.sfid, this.state.sortOrderVersions).then(packageVersions => this.setState({packageVersions}));
+            orgService.requestByPackage(props.pkg.sfid, this.state.sortOrderOrgs).then(orgs => this.setState({orgs}));
+        }
     };
 
     orgSortHandler = (field) => {

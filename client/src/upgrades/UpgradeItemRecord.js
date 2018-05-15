@@ -46,9 +46,11 @@ export default class extends React.Component {
                 done = false;
             }
         }
-        this.setState({item, jobs, status: done ? "Closed" : "Open"});
+        
+        const secs = 3;
+        this.setState({item, jobs, status: done ? "Done" : `Polling every ${secs} seconds`});
         if (!done) {
-            setTimeout(this.fetchStatus.bind(this), 3000);
+            setTimeout(this.fetchStatus.bind(this), secs * 1000);
         }
     }
 

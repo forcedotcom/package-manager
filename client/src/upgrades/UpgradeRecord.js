@@ -28,16 +28,17 @@ export default class extends React.Component {
     }
 
     updateStatus(items) {
-        let done = true;
+        let done = false;
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            if (["Created", "Pending", "InProgress"].indexOf(item.status) !== -1) {
-                done = false;
+            if (["Created", "Pending", "InProgress"].indexOf(item.status) === -1) {
+                done = true;
             }
         }
-        this.setState({items, status: done ? "Closed" : "Open"});
+        const secs = 5;
+        this.setState({items, status: done ? "Done" : `Polling every ${secs} seconds`});
         if (!done) {
-            setTimeout(this.fetchItemsWithStatus.bind(this), 5000);
+            setTimeout(this.fetchItemsWithStatus.bind(this), secs * 1000);
         }
     }
 
@@ -45,7 +46,7 @@ export default class extends React.Component {
         return (
             <div>
                 <RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
-                    <HeaderField label="Start Time" format="datetime" value={this.state.upgrade.start_time}/>
+                    <HeaderField label="Scheduled Start Time" format="datetime" value={this.state.upgrade.start_time}/>
                     <HeaderField label="State" value={this.state.status}/>
                     <HeaderField label="Created By" value={this.state.upgrade.created_by}/>
                 </RecordHeader>

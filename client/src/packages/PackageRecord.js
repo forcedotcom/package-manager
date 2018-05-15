@@ -10,7 +10,9 @@ export default class extends React.Component {
     state = { pkg: {} };
 
     componentDidMount() {
-        packageService.requestById(this.props.match.params.packageId).then(pkg => this.setState({pkg}));
+        packageService.requestById(this.props.match.params.packageId).then(pkg => {
+            this.setState({pkg})
+        });
     }
 
     render() {

@@ -5,29 +5,51 @@ const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
 
-const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled"};
+const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible"};
 
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
     let pushReq = await conn.sobject("PackagePushRequest").create(body);
-    return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
+    let item = await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
+    return item;
 }
 
 async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
-    let body = [];
+    let pushJobs = [];
     for (let i = 0; i < orgIds.length; i++) {
-        body.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
+        pushJobs.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
     }
 
-    let results = await conn.sobject("PackagePushJob").create(body);
+    // Create job and batch, and execute it
+    let job = conn.bulk.createJob("PackagePushJob", "insert");
+    let batch = job.createBatch();
+    batch.execute(pushJobs);
     
-    let jobs = [];
-    for (let i = 0; i < results.length; i++) {
-        jobs.push({org_id: orgIds[i], job_id: results[i].id, status: results[i].success ? Status.Created : results[i].errors});
-    }
-
-    await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
+    // listen for events
+    batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
+        logger.error('Failed to batch load PushUpgradeJob records', {...batchInfo});
+    });
+    batch.on("queue", function (batchInfo) { // fired when batch request is queued in server.
+        logger.debug('Queued batch of PushUpgradeJob records', {...batchInfo});
+        batch.poll(1000 /* interval(ms) */, 20000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
+    });
+    batch.on("response", async function (results) { // fired when batch finished and result retrieved
+        let jobs = [];
+        for (let i = 0; i < results.length; i++) {
+            let res = results[i];
+            let orgId = orgIds[i];
+            jobs.push({
+                org_id: orgId,
+                job_id: res.id,
+                status: res.success ? Status.Created : Status.Ineligible
+            });
+            if (!res.success) {
+                logger.error("Failed to schedule push upgrade job", {org_id: orgId, ...res.errors})
+            }
+        }
+        await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
+    });
 }
 
 async function cancelRequests(conn) {
@@ -154,6 +176,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
         return {message: "None of your orgs were allowed to be upgraded"};
     }
     
+    let items = [];
     let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
     for (let i = 0; i < versions.length; i++) {
         let version = versions[i];
@@ -164,6 +187,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
         let pushReq = pushReqs[reqKey] = pushReqs[reqKey] || // Initialized if not found
             {item: await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy), conn: conn, orgIds: []};
 
+        items.push(pushReq.item);
         // Add this particular org id to the batch
         pushReq.orgIds.push(version.org_id);
     }
@@ -172,7 +196,8 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
     Object.entries(pushReqs).forEach(async ([key, pushReq]) => {
         await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.push_request_id, pushReq.orgIds);
     });
-
+    
+    console.log(JSON.stringify(items));
     return upgrade;
 }
 

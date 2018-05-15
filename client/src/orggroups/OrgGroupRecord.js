@@ -110,7 +110,7 @@ export default class extends React.Component {
 
     addToGroupHandler = (groupId, groupName, removeAfterAdd) => {
         this.setState({addingToGroup: false});
-        orgGroupService.requestAddMembers(groupId, this.state.selected).then(res => {
+        orgGroupService.requestAddMembers(groupId, this.state.selected).then(() => {
             let moved = false;
             if (removeAfterAdd) {
                 moved = this.removeMembersHandler();

@@ -1,7 +1,10 @@
 import React from 'react';
 
+import * as orgGroupService from '../services/OrgGroupService';
+
 import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
+import SelectGroupWindow from "./SelectGroupWindow";
 
 export default class extends React.Component {
     state = {
@@ -15,7 +18,7 @@ export default class extends React.Component {
         }
     };
     
-    linkHandler = (e, column, rowInfo, instance) => {
+    linkHandler = (e, column, rowInfo) => {
         window.location = "/org/" + rowInfo.row.org_id;
     };
 
@@ -27,7 +30,26 @@ export default class extends React.Component {
         this.props.onRemove(this.state.selected);
     };
 
-    filterHandler = (filtered, column, value) => {
+    addToGroupHandler = (groupId) => {
+        this.setState({addingToGroup: false});
+        orgGroupService.requestAddMembers(groupId, this.state.selected).then(() => {
+            window.location = `/orggroup/${groupId}`;
+        });
+    };
+
+    closeGroupWindow = () => {
+        this.setState({addingToGroup: false});
+    };
+
+    openGroupWindow = () => {
+        this.setState({addingToGroup: true});
+    };
+
+    openGroupWindowAndMove = () => {
+        this.setState({addingToGroup: true, removeAfterAdd: true});
+    };
+    
+    filterHandler = (filtered) => {
         this.setState({itemCount: filtered.length});
     };
     
@@ -40,7 +62,9 @@ export default class extends React.Component {
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true}
         ];
         
-        const actions = [];
+        const actions = [ 
+            {label: "Add To Group", handler: this.openGroupWindow, disabled: this.state.selected.length === 0}
+        ];
         if (this.props.onRemove) {
             actions.push({label: "Remove Selected Member Orgs", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0});
         }
@@ -51,7 +75,8 @@ export default class extends React.Component {
                 <div className="slds-card__body">
                     <DataTable keyField="org_id" id="OrgCard" data={this.props.orgs} onClick={this.linkHandler}  onFilter={this.filterHandler} onSelect={this.selectionHandler} columns={columns}/>
                 </div>
-                <footer className="slds-card__footer"></footer>
+                <footer className="slds-card__footer"/>
+                {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
             </article>
         );
     }

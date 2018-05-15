@@ -55,7 +55,7 @@ export default class extends React.Component {
     
     render() {
         let columns = [
-            {Header: "Start Time", id: "start_time", accessor: d => moment(d.start_time).format("lll"), sortable: true, clickable: true},
+            {Header: "Scheduled Start Time", id: "start_time", accessor: d => moment(d.start_time).format("lll"), sortable: true, clickable: true},
             {Header: "Package Name", accessor: "package_name", sortable: true, clickable: true},
             {Header: "Package Version", accessor: "version_number", sortable: true, clickable: true},
             {Header: "Orgs", accessor: "job_count", sortable: true},

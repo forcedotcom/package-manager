@@ -22,7 +22,16 @@ export default class extends React.Component {
     };
     
     upgradeHandler = () => {
-        this.props.onUpgrade(this.state.versions, this.state.startDate, this.state.description);
+        let valid = true;
+        if (this.state.description === null || this.state.description === "") {
+            this.setState({missingDescription: true});
+            valid = false;
+        } else {
+            this.setState({missingDescription: false});
+        }
+        
+        if (valid)
+            this.props.onUpgrade(this.state.versions, this.state.startDate, this.state.description);
     };
 
     handleVersionChange = (versions) => {
@@ -55,11 +64,13 @@ export default class extends React.Component {
                                         dateFormat="LLL"
                                         timeCaption="time"/>
                                 </div>
-                                <div className="slds-form-element">
-                                    <label className="slds-form-element__label" htmlFor="name">Description</label>
+                                <div className={`slds-form-element ${this.state.missingDescription ? "slds-has-error" : ""}`}>
+                                    <label className="slds-form-element__label" htmlFor="name"><abbr
+                                        className="slds-required" title="required">*</abbr>Description</label>
                                     <div className="slds-form-element__control">
                                         <textarea className="slds-input" rows={2} id="description" value={this.state.description} onChange={this.handleDescriptionChange}/>
                                     </div>
+                                    {this.state.missingDescription ? <span className="slds-form-element__help" id="form-error-01">Description is required</span> : "" }
                                 </div>
                                 <div className="slds-form-element">
                                     <label className="slds-form-element__label">Selected Versions</label>

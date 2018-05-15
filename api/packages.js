@@ -34,7 +34,7 @@ async function requestById(req, res, next) {
     let where = " WHERE " + ((typeof id === "string") ? "sfid = $1" : "id = $1");
 
     try {
-        let recs = await db.query(SELECT_ALL + where, [id])
+        let recs = await db.query(SELECT_ALL + where, [id]);
         return res.json(recs[0]);
     } catch (err) {
         next(err);
