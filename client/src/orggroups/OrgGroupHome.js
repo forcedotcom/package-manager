@@ -25,8 +25,8 @@ export default class extends React.Component {
     };
 
     saveHandler = (orggroup) => {
-        orgGroupService.requestCreate(orggroup).then(() => {
-            orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups, addingOrgGroup: false}));
+        orgGroupService.requestCreate(orggroup).then((orggroup) => {
+            window.location = `/orggroup/${orggroup.id}`;
         });
     };
 
