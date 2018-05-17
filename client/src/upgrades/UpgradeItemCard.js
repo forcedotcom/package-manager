@@ -45,11 +45,11 @@ export default class extends React.Component {
                     <div>
                     <span style={{
                         padding: "2px 10px 2px 10px",
-                        backgroundColor: row.value === "Failed" ? "#C00" : row.value === "Canceled" || row.original.eligible_job_count === "0" ? "#d0a600" : "inherit",
-                        color: (row.value === "Failed" || row.original.eligible_job_count === "0" || row.value === "Canceled") ? "white" : "inherit",
+                        backgroundColor: row.value === "Failed" ? "#C00" : row.value === "Canceled" || (row.original.job_count !== "0" && row.original.eligible_job_count === "0") ? "#d0a600" : "inherit",
+                        color: (row.value === "Failed" || (row.original.job_count !== "0" && row.original.eligible_job_count === "0") || row.value === "Canceled") ? "white" : "inherit",
                         borderRadius: '10px',
                         transition: 'all .3s ease-in'}}>
-                        {row.original.eligible_job_count === "0" ? Status.Ineligible : row.value}
+                        {(row.original.job_count !== "0" && row.original.eligible_job_count === "0") ? Status.Ineligible : row.value}
                     </span>
                     </div>
                 )
