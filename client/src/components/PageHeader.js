@@ -181,9 +181,10 @@ export class FormHeader extends React.Component {
             let btn =
                 <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled}
                         className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
-                    {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                        {currentAction.detail}
-                    </ReactTooltip> : ''}
+                    {currentAction.detail ? 
+                        <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
+                            {currentAction.detail}
+                        </ReactTooltip> : ''}
                 </button>;
             if (currentGroup == null || currentGroup.key !== currentAction.group) {
                 currentGroup = {key: currentAction.group, actions: [btn]};
@@ -251,9 +252,10 @@ export class HomeHeader extends React.Component {
                 let btn = 
                     <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled} 
                                       className="slds-button slds-button--neutral" onClick={currentAction.handler}>{currentAction.label}
-                        {currentAction.detail ? <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                                                    {currentAction.detail}
-                                                </ReactTooltip> : ''}
+                        {currentAction.detail ? 
+                            <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
+                                {currentAction.detail}
+                            </ReactTooltip> : ''}
                     </button>;
                 if (currentGroup == null || currentGroup.key !== currentAction.group) {
                     currentGroup = {key: currentAction.group, actions: [btn]};

@@ -66,9 +66,9 @@ function requestUpgrade(req, res, next) {
         .then((result) => {
             return res.json(result)
         })
-        .catch((error) => {
-            logger.error("Failed to upgrade org", {org_id: req.params.id, ...error}); 
-            next(error);
+        .catch(e => {
+            logger.error("Failed to upgrade org", {org_id: req.params.id, error: e.message || e}); 
+            next(e);
         });
 }
 
@@ -77,13 +77,21 @@ async function requestAdd(req, res, next) {
     let packageOrgIds = packageOrgs.map(o => o.org_id); 
     await push.findSubscribersByIds(packageOrgIds, req.body.orgIds)
         .then(async (recs) => {
-            await insertOrgsFromSubscribers(recs);
+            let uniqueSet = new Set(); 
+            let uniqueRecs = recs.filter(rec => {
+                if (uniqueSet.has(rec.OrgKey))
+                    return false;
+                uniqueSet.add(rec.OrgKey);
+                return true;
+            });
+            
+            await insertOrgsFromSubscribers(uniqueRecs);
             await insertOrgPackageVersionsFromSubscribers(recs);
             await requestAll(req, res, next);
         })
-        .catch((error) => {
-            logger.error("Failed to fetch subscriber orgs", {package_org_id: packageOrgIds, ...error});
-            next(error);
+        .catch(e => {
+            logger.error("Failed to fetch subscriber orgs", {package_org_id: packageOrgIds, error: e.message || e});
+            next(e);
         });
 }
 
@@ -120,8 +128,13 @@ async function insertOrgPackageVersionsFromSubscribers(recs) {
 
     let sql = `INSERT INTO org_package_version (org_id, package_id, package_version_id, license_status, modified_date) 
                        VALUES ${params.join(",")}
-                       on conflict (org_id, package_id) do nothing`;
+                       on conflict (org_id, package_id) do update set package_version_id = excluded.package_version_id`;
     return db.insert(sql, values);
+}
+
+async function refreshOrgPackageVersions(packageOrgId, orgIds) {
+    let subs = await push.findSubscribersByIds([packageOrgId], orgIds);
+    return await insertOrgPackageVersionsFromSubscribers(subs);
 }
 
 async function findByGroup(orgGroupId) {
@@ -143,3 +156,4 @@ exports.requestById = requestById;
 exports.requestUpgrade = requestUpgrade;
 exports.findByGroup = findByGroup;
 exports.findByIds = findByIds;
+exports.refreshOrgPackageVersions = refreshOrgPackageVersions;

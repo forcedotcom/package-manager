@@ -20,7 +20,7 @@ export default class extends React.Component {
         let columns = [
             {Header: "Number", accessor: "id", minWidth: 30, sortable: true, clickable: true},
             {Header: "Description", accessor: "description", minWidth: 300, clickable: true},
-            {Header: "SCheduled Start Time", id: "start_time", accessor: d => moment(d.start_time).format("lll"), sortable: true, clickable: true},
+            {Header: "Scheduled Start Time", id: "start_time", accessor: d => moment(d.start_time).format("lll"), sortable: true, clickable: true},
             {Header: "Created By", accessor: "created_by", sortable: true},
             {Header: "Items", accessor: "item_count", sortable: true}
         ];

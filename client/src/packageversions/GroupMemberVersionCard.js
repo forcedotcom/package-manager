@@ -9,6 +9,12 @@ import {PACKAGE_VERSION_ICON} from "../Constants";
 export default class extends React.Component {
     state = {itemCount: "..."};
 
+    componentWillReceiveProps(props) {
+        if (props.packageVersions) {
+            this.setState({itemCount: props.packageVersions.length});
+        }
+    };
+    
     linkHandler = (e, column, rowInfo) => {
         switch (column.id) {
             case "org_id":
@@ -24,19 +30,13 @@ export default class extends React.Component {
             default:
         }
     };
-
-    componentWillReceiveProps(props) {
-        if (props.packageVersions) {
-            this.setState({itemCount: props.packageVersions.length});
-        }
-    };
     
     filterHandler = (filtered) => {
         this.setState({itemCount: filtered.length});
     };
 
     render() {
-        let columns = [
+        const columns = [
             {Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
             {Header: "Account Name", accessor: "account_name", clickable: true},
             {Header: "Package", accessor: "package_name", clickable: true},
@@ -51,14 +51,14 @@ export default class extends React.Component {
         ];
 
         return (
-            <div className="slds-card">
+            <article className="slds-card">
                 <CardHeader title="Installed Versions" icon={PACKAGE_VERSION_ICON} actions={this.props.actions} count={this.state.itemCount}/>
-                <section className="slds-card__body">
-                    <DataTable keyField="org_id" id="GroupMemberVersionCard" data={this.props.packageVersions} columns={columns} 
-                               onSelect={this.props.onSelect} onClick={this.linkHandler} onFilter={this.filterHandler}/>
-                </section>
+                <div className="slds-card__body">
+                    <DataTable selection={this.props.selected} keyField="org_id" id="GroupMemberVersionCard" data={this.props.packageVersions} columns={columns} 
+                               onClick={this.linkHandler} onFilter={this.filterHandler} onSelect={this.props.onSelect} />
+                </div>
                 <footer className="slds-card__footer"/>
-            </div>
+            </article>
         );
     }
 }

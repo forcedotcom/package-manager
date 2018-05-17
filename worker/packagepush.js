@@ -5,14 +5,15 @@ const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
 
-const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible"};
+const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Activating: "Activating", Canceling: "Canceling", Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible"};
+const ActiveStatus = {Created: Status.Created, Pending: Status.Pending, InProgress: Status.InProgress, Activating: Status.Activating, Canceling: Status.Canceling};
+let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
     let pushReq = await conn.sobject("PackagePushRequest").create(body);
-    let item = await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
-    return item;
+    return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
 }
 
 async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
@@ -42,37 +43,47 @@ async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
             jobs.push({
                 org_id: orgId,
                 job_id: res.id,
-                status: res.success ? Status.Created : Status.Ineligible
+                status: res.success ? Status.Created : Status.Ineligible,
+                message: res.success ? null : res.errors.join(", ")
             });
             if (!res.success) {
-                logger.error("Failed to schedule push upgrade job", {org_id: orgId, ...res.errors})
+                logger.error("Failed to schedule push upgrade job", {org_id: orgId, error: res.errors.join(", ")})
             }
         }
-        await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
+        try {
+            await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs)
+        } catch (e) {
+            logger.error("Failed to create upgrade jobs", {item: itemId, jobs: jobs.length, error: e.message || e})
+        }
     });
 }
 
-async function cancelRequests(conn) {
+async function cancelRequests(packageOrgId) {
+    let conn = await sfdc.buildOrgConnection(packageOrgId);
     let res = await conn.query(`SELECT Id,PackageVersionId,Status,ScheduledStartTime FROM PackagePushRequest WHERE Status = '${Status.Created}'`);
-    logger.info(`Canceling push upgrade requests`, {count: res.records.length});
+    if (res.records.length === 0)
+        return logger.info("No requests found to cancel", {org_id: packageOrgId});
+    
+    logger.info(`Canceling push upgrade requests`, {org_id: packageOrgId, count: res.records.length});
     let canceled = res.records.map((v) => {
         return conn.sobject('PackagePushRequest').update({Id: v.Id, Status: Status.Canceled});
     });
-    res = await Promise.all(canceled);
-    logger.info(`Canceled push upgrade requests`, {count: res.records.length});
+    try {
+        await Promise.all(canceled);
+        logger.info(`Canceled push upgrade requests`, {org_id: packageOrgId, count: res.records.length});
+    } catch (e) {
+        logger.error(`Failed to canceled push upgrade requests`, {org_id: packageOrgId, count: res.records.length, error: e.message || e});
+    }
 }
 
 async function clearRequests(packageOrgIds) {
     for (let i = 0; i < packageOrgIds.length; i++) {
-        let conn = await sfdc.buildOrgConnection(packageOrgIds[i]);
-        await cancelRequests(conn);
+        await cancelRequests(packageOrgIds[i]);
     }
 }
 
-async function updatePushRequests(upgradeItemIds, status, currentUser) {
+async function updatePushRequests(items, status, currentUser) {
     let conns = {}, batches = {};
-
-    let items = await upgrades.findItemsByIds(upgradeItemIds);
     for (let i = 0; i < items.length; i++) {
         let item = items[i];
         if (status === Status.Pending && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
@@ -197,7 +208,6 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
         await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.push_request_id, pushReq.orgIds);
     });
     
-    console.log(JSON.stringify(items));
     return upgrade;
 }
 
@@ -254,7 +264,21 @@ async function findJobsByRequestIds(packageOrgId, requestIds) {
     let params = requestIds.map(v => `'${v}'`);
     let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
         FROM PackagePushJob
-        WHERE PackagePushRequestId IN (${params.join(",")})`;
+        WHERE PackagePushRequestId IN (${params.join(",")})
+        ORDER BY Id`;
+
+    let res = await conn.query(soql);
+    return res.records;
+}
+
+async function findJobsByIds(packageOrgId, jobIds) {
+    let conn = await sfdc.buildOrgConnection(packageOrgId);
+
+    let params = jobIds.map(v => `'${v}'`);
+    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
+        FROM PackagePushJob
+        WHERE Id IN (${params.join(",")})
+        ORDER BY Id`;
 
     let res = await conn.query(soql);
     return res.records;
@@ -266,7 +290,8 @@ async function findErrorsByJobIds(packageOrgId, jobIds) {
     let params = jobIds.map(v => `'${v}'`);
     let soql = `SELECT Id,ErrorDetails,ErrorMessage,ErrorSeverity,ErrorTitle,ErrorType,PackagePushJobId 
         FROM PackagePushError
-        WHERE PackagePushJobId IN (${params.join(",")})`;
+        WHERE PackagePushJobId IN (${params.join(",")})
+        ORDER BY PackagePushJobId`;
 
     let res = await conn.query(soql);
     return res.records;
@@ -283,7 +308,7 @@ async function findSubscribersByIds(packageOrgIds, orgIds) {
             let res = await conn.query(soql);
             records = records.concat(res.records);
         } catch (e) {
-            logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], ...e});
+            logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], error: e.message || e});
         }
     }
     return records;
@@ -294,9 +319,11 @@ exports.findRequestsByIds = findRequestsByIds;
 exports.findSubscribersByIds = findSubscribersByIds;
 exports.findJobsByStatus = findJobsByStatus;
 exports.findJobsByRequestIds = findJobsByRequestIds;
+exports.findJobsByIds = findJobsByIds;
 exports.findErrorsByJobIds = findErrorsByJobIds;
 exports.updatePushRequests = updatePushRequests;
 exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroups = upgradeOrgGroups;
 exports.Status = Status;
+exports.isActiveStatus = isActiveStatus;

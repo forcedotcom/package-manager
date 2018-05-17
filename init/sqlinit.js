@@ -12,6 +12,7 @@ async function init() {
         logger.info('Database is alive and ready');
     } catch (error) {
         logger.error('Database failed to initialize', error);
+        process.exit(99);
     }
 }
 

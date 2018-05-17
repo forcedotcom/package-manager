@@ -13,11 +13,13 @@ export default class extends React.Component {
                 <Tabs id="OrgGroupView">
                     <div label="Members">
                         <GroupMemberOrgCard orggroup={this.props.orggroup} orgs={this.props.members} 
-                                            onSelect={this.props.onSelect} actions={this.props.memberActions}/>
+                                            onSelect={this.props.onSelect} actions={this.props.memberActions}
+                                            selected={this.props.selected} />
                     </div>
                     <div label="Versions">
                         <GroupMemberVersionCard orggroup={this.props.orggroup} packageVersions={this.props.versions} 
-                                                onSelect={this.props.onSelect} actions={this.props.memberActions}/>
+                                                onSelect={this.props.onSelect} actions={this.props.memberActions}
+                                                selected={this.props.selected} />
                     </div>
                 </Tabs>
             </div>

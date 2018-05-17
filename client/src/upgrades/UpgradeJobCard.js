@@ -8,7 +8,7 @@ import {UPGRADE_JOB_ICON} from "../Constants";
 export default class extends React.Component {
     state = {done: false, itemCount: "..."};
     
-    linkHandler = (e, column, rowInfo, instance) => {
+    linkHandler = (e, column, rowInfo) => {
         switch(column.id) {
             case "org_id":
             case "account_name":
@@ -43,17 +43,17 @@ export default class extends React.Component {
             {Header: "Version", accessor: "version_number", sortable: true, clickable: true, maxWidth: 100, filterable: true},
             {Header: "Status", accessor: "status", sortable: true, filterable: true,
                 Cell: row => (
-                    <div data-tip data-for={row.org_id}>
-                        <span style={{
+                    <div>
+                        <span data-tip data-for={row.org_id} style={{
                         padding: "2px 10px 2px 10px",
-                        backgroundColor: row.value === 'Ineligible' || row.original.error ? "#C00" : "inherit",
-                        color: row.value === 'Ineligible' || row.original.error ? "white" : "inherit",
+                        backgroundColor: row.original.message ? "#C00" : "inherit",
+                        color: row.original.message ? "white" : "inherit",
                         borderRadius: '10px',
                         transition: 'all .3s ease-in'}}>
                             {row.value ? row.value : "Retrieving Status..."}</span>
-                        {row.original.error ? 
-                            <ReactTooltip id={row.org_id} place="bottom" type="error">
-                                {row.original.error.message}
+                        {row.original.message ? 
+                            <ReactTooltip effect="solid" id={row.org_id} place="bottom" type={row.original.message ? "error" : "warning"}>
+                                {row.original.message}
                             </ReactTooltip>
                         : ""}
                     </div>
@@ -67,7 +67,7 @@ export default class extends React.Component {
                 <section className="slds-card__body">
                     <DataTable id="UpgradeJobCard" minRows="1" data={this.props.jobs} onFilter={this.filterHandler} onClick={this.linkHandler} columns={columns}/>
                 </section>
-                <footer className="slds-card__footer"></footer>
+                <footer className="slds-card__footer"/>
             </div>
         );
     }

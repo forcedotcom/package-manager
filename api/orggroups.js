@@ -111,9 +111,9 @@ async function requestDelete(req, res, next) {
 function requestUpgrade(req, res, next) {
     push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
         .then((result) => {return res.json(result)})
-        .catch((error) => {
-            logger.error("Failed to upgrade org group", {org_group_id: req.params.id, ...error}); 
-            next(error);
+        .catch((e) => {
+            logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e}); 
+            next(e);
         });
 }
 

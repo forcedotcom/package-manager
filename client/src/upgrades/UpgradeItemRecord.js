@@ -19,55 +19,75 @@ export default class extends React.Component {
     };
 
     componentDidMount() {
-        upgradeItemService.requestById(this.props.match.params.itemId).then(item => this.setState({item}));
-        upgradeJobService.findByUpgradeItem(this.props.match.params.itemId, this.state.sortOrderJobs).then(jobs => {
-            this.setState({jobs});
-            this.fetchStatus();
+        // Here we pass in true to query for the request status the first time.
+        upgradeItemService.requestById(this.props.match.params.itemId, true).then(item => {
+            this.loadItemJobs(item);
+            this.checkStatus(item);
         });
     };
 
-    fetchStatus() {
-        upgradeJobService.fetchJobStatusByItem(this.state.item.id).then(res => this.updateStatus(res))
+    loadItemJobs(item) {
+        // Note that we don't perform the (expensive) job here.  Only later from checkJobStatus.
+        upgradeJobService.requestAllJobs(item.id, this.state.sortOrderJobs).then(jobs => {
+            this.setState({item, jobs});
+            this.checkJobStatus();
+        });
     }
 
-    updateStatus(res) {
-        let done = true;
-        const {item, jobs} = this.state;
-        for (let i = 0; i < jobs.length; i++) {
-            const j = jobs[i];
-            j.status = res.status[j.job_id] || j.status;
-            let error = res.errors[j.job_id];
-            if (error) {
-                j.status = error.title;
-                j.error = error;
-            }
-            
-            if (["Created", "Pending", "InProgress"].indexOf(j.status) !== -1) {
-                done = false;
-            }
+    checkStatus(item) {
+        let doneOrNotStarted = upgradeItemService.isDoneStatus(item.status) || item.status === upgradeItemService.Status.Created;
+        if(doneOrNotStarted)
+            return; // Don't keep pinging until we know we are activated
+
+        const secondsDelay = 3;
+        console.log(`Checking upgrade status again in ${secondsDelay} seconds`);
+        setTimeout(this.fetchStatus.bind(this), (secondsDelay) * 1000);
+    }
+
+    fetchStatus() {
+        upgradeItemService.requestById(this.state.item.id, true).then(item => {
+            this.setState({item});
+            this.checkStatus(item);
+        })
+    }
+
+    checkJobStatus() {
+        let item = this.state.item;
+        let notStarted = item.status === upgradeItemService.Status.Created;
+        if(notStarted)
+            return; // Don't start pinging until we know we are activated
+
+        let foundOne = false;
+        for (let i = 0; i < this.state.jobs.length && !foundOne; i++) {
+            if (!upgradeItemService.isDoneStatus(this.state.jobs[i].status))
+                foundOne = true;
         }
         
-        const secs = 3;
-        this.setState({item, jobs, status: done ? "Done" : `Polling every ${secs} seconds`});
-        if (!done) {
-            setTimeout(this.fetchStatus.bind(this), secs * 1000);
-        }
+        if (!foundOne)
+            return; // All of our jobs are done, so don't bother pinging.
+        
+        // Use a simpleton variable delay based on number of jobs
+        const secondsDelay = 5 + this.state.jobs.length / 100;
+        console.log(`Checking job status again in ${secondsDelay} seconds`);
+        setTimeout(this.fetchJobStatus.bind(this), (secondsDelay) * 1000);
     }
 
-    jobSortHandler = (field) => {
-        let sortOrder = sortage.changeSortOrder(this.SORTAGE_KEY_JOBS, field);
-        upgradeJobService.findByUpgradeItem(this.props.item.id, sortOrder).then(jobs => this.setState({jobs, sortOrderJobs: sortOrder}));
-    };
-
+    fetchJobStatus() {
+        upgradeJobService.requestAllJobs(this.state.item.id, this.state.sortOrderJobs, true).then(jobs => {
+            this.setState({jobs});
+            this.checkJobStatus();
+        });
+    }
+    
     handleActivation = () => {
         if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
-            upgradeItemService.activateById(this.state.item.id).then(res => window.location.reload());
+            upgradeItemService.activateItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]));
         }
     };
 
     handleCancelation = () => {
-        if (window.confirm(`Are you sure you want to cancel this request?`)) {
-            upgradeItemService.cancelById(this.state.item.id).then(res => window.location.reload());
+        if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
+            upgradeItemService.cancelItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]));
         }
     };
 
@@ -82,18 +102,18 @@ export default class extends React.Component {
         }
         
         let actions = [
-            {label: "Activate Request", handler:this.handleActivation, disabled: this.state.item.status !== 'Created' || !canActivate,
+            {label: "Activate Request", handler:this.handleActivation, disabled: this.state.item.status !== upgradeItemService.Status.Created || !canActivate,
                 detail: canActivate ? "Update the selected items to Pending state to proceed with upgrades" : "The same user that scheduled an upgrade cannot activate it"},
-            {label: "Cancel Request", handler:this.handleCancelation, disabled: ["Created", "Pending"].indexOf(this.state.item.status) === -1 }
+            {label: "Cancel Request", handler:this.handleCancelation, disabled: [upgradeItemService.Status.Created, upgradeItemService.Status.Pending].indexOf(this.state.item.status) === -1 }
         ];
         return (
             <div>
                 <RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.description} actions={actions} notes={notes}>
                     <HeaderField label="Start Time" format="datetime" value={this.state.item.start_time}/>
-                    <HeaderField label="Status" value={this.state.item.status}/>
+                    <HeaderField label="Status" value={this.state.item.status} className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
                     <HeaderField label="Created By" value={this.state.item.created_by}/>
                 </RecordHeader>
-                <UpgradeItemView onSort={this.jobSortHandler} jobs={this.state.jobs}/>
+                <UpgradeItemView jobs={this.state.jobs}/>
             </div>
         );
     }

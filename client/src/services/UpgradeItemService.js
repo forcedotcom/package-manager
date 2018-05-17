@@ -1,11 +1,16 @@
 import * as h from './h';
 
+
+
 let url = "/api/upgradeitems";
 
-export let requestById = id => h.get(`${url}/${id}`);
-export let activateById = id => h.post(`${url}/${id}/activate`);
-export let cancelById = id => h.post(`${url}/${id}/cancel`);
-export let findByUpgrade = (upgradeId, sort) => h.get(url, {upgradeId, sort_field: sort.field, sort_dir: sort.direction});
-export let findByUpgradeWithStatus = (upgradeId, sort) => h.get(url, {fetchStatus: "true", upgradeId, sort_field: sort.field, sort_dir: sort.direction});
+export let requestById = (id, fetchStatus) => h.get(`${url}/${id}`, {fetchStatus});
+export let findByUpgrade = (upgradeId, sort, fetchStatus) => h.get(url, {upgradeId, sort_field: sort.field, sort_dir: sort.direction, fetchStatus});
 export let activateItems = (items) => h.post(url + "/activate", {items});
 export let cancelItems = (items) => h.post(url + "/cancel", {items});
+
+
+export const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Canceling: "Canceling", 
+    Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible"};
+export const DoneStatus = {Succeeded: Status.Succeeded, Failed: Status.Failed, Canceled: Status.Canceled, Ineligible: Status.Ineligible};
+export let isDoneStatus = (status) => typeof DoneStatus[status] !== "undefined";

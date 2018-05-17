@@ -142,9 +142,10 @@ export default class extends React.Component {
                 } : {};
             }
         };
-
+        
+        let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable; 
         return (
-            <CheckboxTable
+            <TableImpl
                 defaultFilterMethod={(filter, row) => {
                     let neg = filter.value.startsWith("!");
                     let filterVal = neg ? filter.value.substring(1) : filter.value;

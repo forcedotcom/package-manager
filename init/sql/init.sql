@@ -59,7 +59,7 @@ create table if not exists org_group_member (
 create unique index if not exists org_group_member_org_id_org_group_id_uindex
   on public.org_group_member (org_id, org_group_id);
 
-create table org_package_version (
+create table if not exists org_package_version (
   id                 serial not null
     constraint org_package_version_pkey
     primary key,
@@ -105,8 +105,12 @@ create table if not exists upgrade_job (
   push_request_id varchar(18),
   job_id          varchar(18),
   org_id          varchar(18),
-  status          varchar(40)
+  status          varchar(40),
+  message         text
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS
+  upgrade_job_job_id_uindex ON upgrade_job (job_id);
 
 -- sb62 data
 create table if not exists package
@@ -173,7 +177,8 @@ create index if not exists license_package_org_version_index
   on license (org_id, package_id, package_version_id);
 
 -- Default internal non-account
-insert into account (account_name, account_id) values ('Internal', '000000000000000'),('Unknown/Invalid', '000000000000001')
+insert into account (account_name, account_id)
+values ('Internal', '000000000000000'), ('Unknown/Invalid', '000000000000001')
 on conflict do nothing;
 
 -- Patch 1
@@ -199,3 +204,5 @@ alter table package_version
   add if not exists version_sort varchar(12) null,
   drop column if exists real_version_number;
 
+alter table upgrade_job
+  add if not exists message text null;

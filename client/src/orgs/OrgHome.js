@@ -53,7 +53,7 @@ export default class extends React.Component {
     addToGroup = (groupId, groupName) => {
         this.setState({addingToGroup: false});
         orgGroupService.requestAddMembers(groupId, this.state.selected).then(() => {
-            NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
+            NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 7000, ()=> window.location = `/orggroup/${groupId}`);
             this.setState({selected: []});
         });
     };

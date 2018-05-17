@@ -100,7 +100,7 @@ export default class extends React.Component {
             orgGroupService.requestRemoveMembers(this.state.orggroup.id, this.state.selected).then(members => {
                 packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
                     let validVersions = this.stripVersions(versions);
-                    this.setState({members, versions, validVersions});
+                    this.setState({members, versions, validVersions, selected: []});
                 });                
             });
             return true;
@@ -116,9 +116,9 @@ export default class extends React.Component {
                 moved = this.removeMembersHandler();
             }
             if (moved) {
-                NotificationManager.success(`Moved ${this.state.selected.length} org(s) to ${groupName}`, "Moved orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
+                NotificationManager.success(`Moved ${this.state.selected.length} org(s) to ${groupName}`, "Moved orgs", 7000, ()=> window.location = `/orggroup/${groupId}`);
             } else {
-                NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 5000, ()=> window.location = `/orggroup/${groupId}`);
+                NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 7000, ()=> window.location = `/orggroup/${groupId}`);
             }
             this.setState({selected: [], removeAfterAdd: false});
         });
@@ -157,7 +157,7 @@ export default class extends React.Component {
                     <HeaderField label="" value={this.state.orggroup.description}/>
                 </RecordHeader>
                 <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} 
-                              onSelect={this.selectionHandler} memberActions={memberActions} />;
+                              onSelect={this.selectionHandler} memberActions={memberActions} selected={this.state.selected} />;
                 {this.state.isEditing ?  <EditGroupWindow orggroup={this.state.orggroup} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
                 {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow versions={this.state.validVersions} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
                 {this.state.addingToGroup ?  <SelectGroupWindow excludeId={this.state.orggroup.id} removeAfterAdd={this.state.removeAfterAdd} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
