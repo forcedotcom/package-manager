@@ -30,8 +30,11 @@ export default class extends React.Component {
             this.setState({missingDescription: false});
         }
         
-        if (valid)
-            this.props.onUpgrade(this.state.versions, this.state.startDate, this.state.description);
+        if (!valid)
+            return;
+        
+        this.setState({isScheduling: true});
+        this.props.onUpgrade(this.state.versions, this.state.startDate, this.state.description);
     };
 
     handleVersionChange = (versions) => {
@@ -81,11 +84,19 @@ export default class extends React.Component {
 
                         <div className="slds-modal__footer">
                             <button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel</button>
-                            <button className="slds-button slds-button--neutral slds-button--brand" onClick={this.upgradeHandler.bind(this)}>Schedule</button>
+                            <button className="slds-button slds-button--neutral slds-button--brand" onClick={this.upgradeHandler.bind(this)}>
+                                {this.state.isScheduling ?
+                                    <div style={{width: "3em"}}>&nbsp;
+                                        <div role="status" className="slds-spinner slds-spinner_x-small">
+                                            <div className="slds-spinner__dot-a"/>
+                                            <div className="slds-spinner__dot-b"/>
+                                        </div>
+                                    </div> : "Schedule" }
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div className="slds-modal-backdrop slds-modal-backdrop--open"></div>
+                <div className="slds-modal-backdrop slds-modal-backdrop--open"/>
             </div>
         );
     }
@@ -113,6 +124,7 @@ class VersionPills extends React.Component {
             <div>{pills}</div>);
     }
 }
+
 class VersionPill extends React.Component {
     state = {version: this.props.version};
 

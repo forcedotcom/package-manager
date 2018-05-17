@@ -78,10 +78,14 @@ async function oauthCallback(req, res, next) {
         };
 
         res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
+        next(error);
     }
 }
 
 async function requestUser(req, res, next) {
+    if (!req.session.access_token) {
+        return; // Not logged in.
+    }
     const conn = buildAuthConnection(req.session.access_token);
     try {
         let user = await conn.identity();

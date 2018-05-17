@@ -26,8 +26,8 @@ export default class extends React.Component {
 
     render() {
         const actions = [
-            {handler: this.onAdd, disabled: this.state.isAdding, label: "Add"},
-            {handler: this.props.onCancel, disabled: this.state.isAdding, label: "Cancel"}
+            {handler: this.onAdd, spinning: this.state.isAdding, label: "Add"},
+            {handler: this.props.onCancel, label: "Cancel"}
         ];
         
         return (
@@ -50,7 +50,7 @@ export default class extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div className="slds-modal-backdrop slds-modal-backdrop--open"></div>
+                <div className="slds-modal-backdrop slds-modal-backdrop--open"/>
             </div>
         );
     }

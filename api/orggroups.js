@@ -37,7 +37,7 @@ async function requestById(req, res, next) {
     let where = " WHERE id = $1";
 
     try {
-        let rows = await db.query(SELECT_ALL + where, [req.params.id])
+        let rows = await db.query(SELECT_ALL + where, [req.params.id]);
         return res.json(rows[0]);
     } catch (err) {
         next(err);
@@ -75,7 +75,11 @@ async function requestCreate(req, res, next) {
     try {
         let og = req.body;
         let rows = await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [og.name, og.description || '']);
-        return res.json(rows);
+
+        if (og.orgIds && og.orgIds.length > 0) {
+            await insertOrgMembers(rows[0].id, og.orgIds);
+        }
+        return res.json(rows[0]);
     } catch (err) {
         return next(err);
     }
@@ -99,7 +103,7 @@ async function requestDelete(req, res, next) {
     try {
         let ids = req.body.orggroupIds;
         let n = 1;
-        let params = ids.map(v => `$${n++}`);
+        let params = ids.map(() => `$${n++}`);
         await db.delete(`DELETE FROM org_group_member WHERE org_group_id IN (${params.join(",")})`, ids);
         await db.delete(`DELETE FROM org_group WHERE id IN (${params.join(",")})`, ids);
         return res.send({result: 'ok'});
@@ -118,8 +122,21 @@ function requestUpgrade(req, res, next) {
 }
 
 async function insertOrgMembers(groupId, orgIds) {
+    let l = 1;
+    let orgIdParams = orgIds.map(() => `($${l++})`);
+    let missingOrgs = await db.query(`
+        SELECT t.org_id
+        FROM (VALUES ${orgIdParams.join(",")}) AS t (org_id) 
+        LEFT JOIN org ON t.org_id = org.org_id
+        WHERE org.org_id IS NULL`, orgIds);
+    
+    if (missingOrgs.length > 0) {
+        logger.debug(`Adding missing orgs`, {count: missingOrgs.length});
+        await orgs.addOrgsByIds(missingOrgs.map(o => o.org_id));
+    }
+    
     let n = 2;
-    let params = orgIds.map(v => `($1,$${n++})`);
+    let params = orgIds.map(() => `($1,$${n++})`);
     let values = [groupId].concat(orgIds);
     let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
@@ -128,7 +145,7 @@ async function insertOrgMembers(groupId, orgIds) {
 
 async function deleteOrgMembers(groupId, orgIds) {
     let n = 2;
-    let params = orgIds.map(v => `$${n++}`);
+    let params = orgIds.map(() => `$${n++}`);
     let values = [groupId].concat(orgIds);
     let sql = `DELETE FROM org_group_member WHERE org_group_id = $1 AND org_id IN (${params.join(",")})`;
     return await db.delete(sql, values);

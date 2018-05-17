@@ -3,7 +3,7 @@ import React from 'react';
 import DataTable from "../components/DataTable";
 import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
-import {UPGRADE_ITEM_ICON} from "../Constants";
+import {Status, UPGRADE_ITEM_ICON} from "../Constants";
 
 export default class extends React.Component {
     state = {itemCount: "..."};
@@ -45,11 +45,11 @@ export default class extends React.Component {
                     <div>
                     <span style={{
                         padding: "2px 10px 2px 10px",
-                        backgroundColor: row.value === "Failed" ? "#C00" : row.value === "Canceled" ? "#d0a600" : "inherit",
-                        color: (row.value === "Failed" || row.value === "Canceled") ? "white" : "inherit",
+                        backgroundColor: row.value === "Failed" ? "#C00" : row.value === "Canceled" || row.original.eligible_job_count === "0" ? "#d0a600" : "inherit",
+                        color: (row.value === "Failed" || row.original.eligible_job_count === "0" || row.value === "Canceled") ? "white" : "inherit",
                         borderRadius: '10px',
                         transition: 'all .3s ease-in'}}>
-                        {row.value}
+                        {row.original.eligible_job_count === "0" ? Status.Ineligible : row.value}
                     </span>
                     </div>
                 )

@@ -73,26 +73,34 @@ function requestUpgrade(req, res, next) {
 }
 
 async function requestAdd(req, res, next) {
+    try {
+        await addOrgsByIds(req.body.orgIds);
+        await requestAll(req, res, next);
+    } catch(e) {
+        logger.error("Failed to fetch subscriber orgs", {org_ids: req.body.orgIds, error: e.message || e});
+        next(e);
+    }
+}
+
+async function addOrgsByIds(orgIds) {
     let packageOrgs = await db.query(`SELECT org_id FROM package_org WHERE status = $1 AND namespace is not null`, [packageorgs.Status.Connected]);
     let packageOrgIds = packageOrgs.map(o => o.org_id); 
-    await push.findSubscribersByIds(packageOrgIds, req.body.orgIds)
-        .then(async (recs) => {
-            let uniqueSet = new Set(); 
-            let uniqueRecs = recs.filter(rec => {
-                if (uniqueSet.has(rec.OrgKey))
-                    return false;
-                uniqueSet.add(rec.OrgKey);
-                return true;
-            });
-            
-            await insertOrgsFromSubscribers(uniqueRecs);
-            await insertOrgPackageVersionsFromSubscribers(recs);
-            await requestAll(req, res, next);
-        })
-        .catch(e => {
-            logger.error("Failed to fetch subscriber orgs", {package_org_id: packageOrgIds, error: e.message || e});
-            next(e);
-        });
+    let recs = await push.findSubscribersByIds(packageOrgIds, orgIds);
+    let uniqueSet = new Set(); 
+    let uniqueRecs = recs.filter(rec => {
+        if (uniqueSet.has(rec.OrgKey))
+            return false;
+        uniqueSet.add(rec.OrgKey);
+        return true;
+    });
+    
+    if (uniqueRecs.length === 0) {
+        logger.info("Did not find any subscribers for given org ids", {org_ids: orgIds.join(", ")});
+        return;
+    }
+    
+    await insertOrgsFromSubscribers(uniqueRecs);
+    await insertOrgPackageVersionsFromSubscribers(recs);
 }
 
 async function insertOrgsFromSubscribers(recs) {
@@ -132,9 +140,38 @@ async function insertOrgPackageVersionsFromSubscribers(recs) {
     return db.insert(sql, values);
 }
 
+const SUBSCRIBER_FETCH_BATCH_SIZE = 40; // we have to batch, until the PackageSubscriber API can scale without timing out.
 async function refreshOrgPackageVersions(packageOrgId, orgIds) {
-    let subs = await push.findSubscribersByIds([packageOrgId], orgIds);
-    return await insertOrgPackageVersionsFromSubscribers(subs);
+    let batchSize = SUBSCRIBER_FETCH_BATCH_SIZE;
+    for (let start = 0; start < count;) {
+        logger.debug(`Refreshing subscriber info`, {batch: start, count});
+        let batchIds = orgIds.slice(start, start + batchSize);
+        let subs;
+        try {
+            subs = await push.findSubscribersByIds([packageOrgId], batchIds);
+            start += batchSize;
+        } catch (e) {
+            if (batchSize * 4 <= SUBSCRIBER_FETCH_BATCH_SIZE) {
+                console.error("Failed to fetch subscribers", {org_id: packageOrgId, batch_size: batchSize})
+            } 
+            batchSize = batchSize / 2;
+            continue;
+        }
+        await insertOrgPackageVersionsFromSubscribers(subs);
+    }
+}
+
+async function reloadOrgPackageVersions(packageOrgId, orgIds) {
+    push.bulkFindSubscribersByIds([packageOrgId], orgIds, (subs, error) => {
+        if (error) {
+            logger.error("Failed to query org package versions", {error: error.message || error});
+            return;
+        }
+        
+        insertOrgPackageVersionsFromSubscribers(subs)
+            .then(recs => logger.debug("Updated org package versions", {count: recs.length}))
+            .catch(e => logger.error("Failed to store org package versions", {error: e.message || e}));
+    });
 }
 
 async function findByGroup(orgGroupId) {
@@ -156,4 +193,6 @@ exports.requestById = requestById;
 exports.requestUpgrade = requestUpgrade;
 exports.findByGroup = findByGroup;
 exports.findByIds = findByIds;
-exports.refreshOrgPackageVersions = refreshOrgPackageVersions;
+exports.addOrgsByIds = addOrgsByIds;
+exports.refreshOrgPackageVersions = reloadOrgPackageVersions;
+// exports.refreshOrgPackageVersions = refreshOrgPackageVersions;

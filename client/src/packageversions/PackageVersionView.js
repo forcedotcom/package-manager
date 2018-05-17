@@ -10,7 +10,9 @@ export default class extends React.Component {
     state = {packageVersion: this.props.packageVersion, sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "account_name", "asc")};
 
     componentWillReceiveProps(props) {
-        orgService.requestByPackageVersion(props.packageVersion.sfid, this.state.sortOrder).then(orgs => this.setState({orgs}));
+        if (props.packageVersion.sfid) {
+            orgService.requestByPackageVersion(props.packageVersion.sfid, this.state.sortOrder).then(orgs => this.setState({orgs}));
+        }
     }
 
     sortHandler = (field) => {

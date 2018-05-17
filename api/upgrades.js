@@ -18,7 +18,7 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
         u.description,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id,
-        count(j.*) job_count
+        count(j.*) job_count, count(NULLIF(j.status, 'Ineligible')) eligible_job_count
         FROM upgrade_item i
         inner join upgrade u on u.id = i.upgrade_id
         inner join package_version pv on pv.version_id = i.package_version_id
@@ -105,17 +105,22 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
             continue; // Ignore the ineligible.
         
         const pushJob = pushJobs[p++]; // Increment push job counter here, and not before
-        if (pushJob.Status !== upgradeJob.status) {
+        if (pushJob.Status === upgradeJob.status) 
+            continue; // no changes, move along
+        
+        const isDone = !push.isActiveStatus(pushJob.status);
+        if (pushJob.status === push.Status.Failed) {
+            // Special handling for errored, below.
+            errored.push(upgradeJob);
+        } else {
             upgradeJob.status = pushJob.Status;
-            updated.push(upgradeJob);
-            const isDone = !push.isActiveStatus(upgradeJob.status);
-            if (upgradeJob.status === push.Status.Failed) {
-                errored.push(upgradeJob);
-            } else if (isDone) {
+            if (isDone) {
+                // Nor errors, so we assume complete
                 upgraded.push(upgradeJob);
             }
-            completed += isDone ? 1 : 0;
         }
+        updated.push(upgradeJob);
+        completed += isDone ? 1 : 0;
     }
 
     if (errored.length > 0) {
@@ -130,6 +135,7 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
         for (let i = 0; i < errored.length; i++) {
             let err = pushErrors[i];
             errored[i].message = err.ErrorMessage;
+            errored[i].status = push.Status.Failed;
         }
     }
     
@@ -140,7 +146,7 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
     if (upgraded.length > 0) {
         await orgs.refreshOrgPackageVersions(upgraded[0].package_org_id, upgraded.map(j => j.org_id));
     }
-    return {complete: completed, remaining: upgradeJobs.length - completed};
+    return {complete: completed, remaining: pushJobs.length - completed};
 }
 
 async function upsertUpgradeJobs(upgradeId, itemId, requestId, jobs) {
@@ -259,7 +265,7 @@ function requestItemById(req, res, next) {
 
 async function retrieveItemById(id) {
     let where = " WHERE i.id = $1";
-    let recs = await db.query(SELECT_ONE_ITEM + where, [id])
+    let recs = await db.query(SELECT_ONE_ITEM + where, [id]);
     return recs[0];
 }
 
@@ -277,10 +283,20 @@ async function requestActivateUpgradeItems(req, res, next) {
     const ids = req.body.items;
     try {
         let items = await findItemsByIds(ids);
-        await push.updatePushRequests(items, push.Status.Pending, req.session.username);
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].status !== push.Status.Pending) {
-                items[i].status = push.Status.Activating;
+        items = items.filter(i => {
+            if (i.eligible_job_count === "0") {
+                logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id});
+                return false;
+            } else {
+                return true;
+            }
+        });
+        if (items.length > 0) {
+            await push.updatePushRequests(items, push.Status.Pending, req.session.username);
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].status !== push.Status.Pending) {
+                    items[i].status = push.Status.Activating;
+                }
             }
         }
         res.json(items);
@@ -305,6 +321,12 @@ async function requestCancelUpgradeItems(req, res, next) {
     }
 }
 
+async function cancelAllRequests() {
+    let orgs = await db.query(`SELECT org_id FROM package_org WHERE namespace is not null`);
+    await push.clearRequests(orgs.map(o => o.org_id));
+}
+
+exports.cancelAllRequests = cancelAllRequests;
 exports.requestById = requestById;
 exports.requestItemById = requestItemById;
 exports.requestJobById = requestJobById;

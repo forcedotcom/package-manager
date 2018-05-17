@@ -7,10 +7,12 @@ export default class extends React.Component {
     state = {upgrades: []};
 
     componentWillReceiveProps(props) {
-        this.setState({upgrades: props.upgrades});
+        if (props.upgrades) {
+            this.setState({upgrades: props.upgrades});
+        }
     }
 
-    linkHandler = (e, column, rowInfo, instance) => {
+    linkHandler = (e, column, rowInfo) => {
         if (rowInfo) {
             window.location = "/upgrade/" + rowInfo.row.id;
         }

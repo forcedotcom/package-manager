@@ -5,9 +5,6 @@ import moment from "moment/moment";
 export default class extends React.Component {
     state = {activities: []};
 
-    componentWillReceiveProps(props) {
-    }
-
     render() {
         return (
             <div className="slds-form--stacked slds-grid slds-wrap slds-m-top">

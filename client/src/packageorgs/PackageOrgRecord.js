@@ -47,7 +47,7 @@ export default class extends React.Component {
     render() {
 
         let actions = [
-            {label: "Refresh", handler: this.refreshHandler, disabled: this.state.isRefreshing},
+            {label: "Refresh", handler: this.refreshHandler, spinning: this.state.isRefreshing},
             {label: "Edit", handler: this.editHandler},
             {label: "Delete", handler: this.deleteHandler}
         ];

@@ -3,13 +3,13 @@ import React from 'react';
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as sortage from "../services/sortage";
-
 import {NotificationManager} from 'react-notifications';
+
+import {ORG_GROUP_ICON} from "../Constants";
 import {RecordHeader, HeaderField} from '../components/PageHeader';
 import OrgGroupView from "./OrgGroupView";
-import EditGroupWindow from "./EditGroupWindow";
+import GroupFormWindow from "./GroupFormWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
-import {ORG_GROUP_ICON} from "../Constants";
 import SelectGroupWindow from "../orgs/SelectGroupWindow";
 
 export default class extends React.Component {
@@ -47,8 +47,8 @@ export default class extends React.Component {
     };
 
     upgradeHandler = (versions, startDate, description) => {
-        this.setState({schedulingUpgrade: false});
         orgGroupService.requestUpgrade(this.state.orggroup.id, versions.map(v => v.latest_version_id), startDate, description).then((res) => {
+            this.setState({schedulingUpgrade: false});
             if (res.message) {
                 NotificationManager.error(res.message, "Upgrade failed");
             } else {
@@ -149,7 +149,7 @@ export default class extends React.Component {
         let memberActions = [
             {label: "Copy To Group", handler: this.addingToGroupHandler, disabled: this.state.selected.length === 0},
             {label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.length === 0},
-            {label: "Remove Orgs", group: "remove", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0}];
+            {label: "Remove From Group", group: "remove", handler: this.removeMembersHandler, disabled: this.state.selected.length === 0}];
         
         return (
             <div>
@@ -158,7 +158,7 @@ export default class extends React.Component {
                 </RecordHeader>
                 <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} 
                               onSelect={this.selectionHandler} memberActions={memberActions} selected={this.state.selected} />;
-                {this.state.isEditing ?  <EditGroupWindow orggroup={this.state.orggroup} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+                {this.state.isEditing ?  <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
                 {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow versions={this.state.validVersions} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
                 {this.state.addingToGroup ?  <SelectGroupWindow excludeId={this.state.orggroup.id} removeAfterAdd={this.state.removeAfterAdd} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
             </div>

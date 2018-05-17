@@ -5,7 +5,7 @@ import * as upgradeService from '../services/UpgradeService';
 import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
 import * as upgradeItemService from "../services/UpgradeItemService";
 import * as sortage from "../services/sortage";
-import {UPGRADE_ICON} from "../Constants";
+import {isDoneStatus, Status, UPGRADE_ICON} from "../Constants";
 import UpgradeItemCard from "./UpgradeItemCard";
 
 export default class extends React.Component {
@@ -26,17 +26,18 @@ export default class extends React.Component {
     };
 
     checkItemStatus() {
-        let foundOne = false, foundOneStarted = false;
-        for (let i = 0; i < this.state.items.length && !foundOne; i++) {
-            if (!upgradeItemService.isDoneStatus(this.state.items[i].status))
-                foundOne = true;
-            if (this.state.items[i].status !== upgradeItemService.Status.Created)
-                foundOneStarted = true;
+        let shouldPing = false, started = false;
+        for (let i = 0; i < this.state.items.length; i++) {
+            const itemStatus = this.state.items[i].status;
+            if (!isDoneStatus(itemStatus) && itemStatus !== Status.Created)
+                shouldPing = true;
+            if (itemStatus !== Status.Created)
+                started = true;
         }
 
-        this.setState({status: !foundOneStarted ? "Not Started" : foundOne ? "In Progress" : "Done"}); 
+        this.setState({status: !started ? "Not Started" : shouldPing ? "In Progress" : "Done"}); 
 
-        if (!foundOne)
+        if (!shouldPing)
             return; // All of our items are done, so don't bother pinging.
         
         const secondsDelay = 3;
@@ -70,19 +71,19 @@ export default class extends React.Component {
 
     render() {
         let user = JSON.parse(sessionStorage.getItem("user"));
-        let canActivate = user.enforce_activation_policy === "false" || (this.state.upgrade.created_by != null && this.state.upgrade.created_by !== user.username);
+        let userCanActivate = user.enforce_activation_policy === "false" || (this.state.upgrade.created_by != null && this.state.upgrade.created_by !== user.username);
         const itemNotes = [];
-        if (!canActivate) {
+        if (!userCanActivate) {
             itemNotes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an upgrade cannot activate it.</HeaderNote>)
         } else if (user.enforce_activation_policy === "false") {
             itemNotes.push(<HeaderNote key="activation_warning">Activation policy enforcement is disabled for testing purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
         }
         
         const itemActions = [
-            {label: "Activate Selected", handler: this.activationHandler,
-                disabled: this.state.status === "Closed" || this.state.selected.length === 0 || !canActivate,
+            {label: "Activate Selected", handler: this.activationHandler.bind(this),
+                disabled: this.state.status === "Closed" || this.state.selected.length === 0 || !userCanActivate,
                 detail: "Update the selected items to Pending state to proceed with upgrades"},
-            {label: "Cancel Selected", handler: this.cancelationHandler,
+            {label: "Cancel Selected", handler: this.cancelationHandler.bind(this),
                 disabled: this.state.status === "Closed" || this.state.selected.length === 0}
         ];
         

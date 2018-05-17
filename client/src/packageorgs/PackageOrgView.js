@@ -22,7 +22,9 @@ export default class extends React.Component {
     };
 
     componentWillReceiveProps(props) {
-        packageVersionService.findByPackageOrgId(props.packageorg.org_id, this.state.sortOrderVersions).then(packageVersions => this.setState({packageVersions}));
+        if (props.packageorg.org_id) {
+            packageVersionService.findByPackageOrgId(props.packageorg.org_id, this.state.sortOrderVersions).then(packageVersions => this.setState({packageVersions}));
+        }
     }
 
     render() {

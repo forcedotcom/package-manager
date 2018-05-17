@@ -5,15 +5,14 @@ import {ORG_GROUP_ICON} from "../Constants";
 export default class extends React.Component {
     constructor(props) {
         super(props);
+        let orggroup = props.orggroup || {id: "", name: "", description: ""};
         this.state = {
-            id: this.props.orggroup.id,
-            name: this.props.orggroup.name || "",
-            description: this.props.orggroup.description || "",
-            orgIds: []
+            ...orggroup, orgIds: []
         };
     }
 
     saveHandler = () => {
+        this.setState({isSaving: true});
         this.props.onSave(this.state);    
     };
     
@@ -32,12 +31,15 @@ export default class extends React.Component {
     };
 
     render() {
+        let actions = [
+            {handler: this.saveHandler, label: "Save", spinning: this.state.isSaving},
+            {handler: this.props.onCancel, label: "Cancel"}
+        ];
         return (
             <div>
                 <div className="slds-modal slds-fade-in-open">
                     <div className="slds-modal__container">
-                        <FormHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.name}
-                                    onSave={this.saveHandler} onCancel={this.props.onCancel}/>
+                        <FormHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.name} actions={actions}/>
                         <div className="slds-modal__content slds-p-around_medium">
 
                             <div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
@@ -69,7 +71,7 @@ export default class extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div className="slds-modal-backdrop slds-modal-backdrop--open"></div>
+                <div className="slds-modal-backdrop slds-modal-backdrop--open"/>
             </div>
         );
     }

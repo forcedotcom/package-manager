@@ -3,11 +3,11 @@ import React from 'react';
 import * as upgradeItemService from '../services/UpgradeItemService';
 
 import {RecordHeader, HeaderField, HeaderNote} from '../components/PageHeader';
-import UpgradeItemView from "./UpgradeItemView";
 import * as sortage from "../services/sortage";
 import * as upgradeJobService from "../services/UpgradeJobService";
-import {UPGRADE_ITEM_ICON} from "../Constants";
+import {isDoneStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
+import UpgradeJobCard from "./UpgradeJobCard";
 
 export default class extends React.Component {
     SORTAGE_KEY_JOBS = "UpgradeJobCard";
@@ -35,7 +35,7 @@ export default class extends React.Component {
     }
 
     checkStatus(item) {
-        let doneOrNotStarted = upgradeItemService.isDoneStatus(item.status) || item.status === upgradeItemService.Status.Created;
+        let doneOrNotStarted = isDoneStatus(item.status) || item.status === Status.Created;
         if(doneOrNotStarted)
             return; // Don't keep pinging until we know we are activated
 
@@ -53,13 +53,13 @@ export default class extends React.Component {
 
     checkJobStatus() {
         let item = this.state.item;
-        let notStarted = item.status === upgradeItemService.Status.Created;
+        let notStarted = item.status === Status.Created;
         if(notStarted)
             return; // Don't start pinging until we know we are activated
 
         let foundOne = false;
         for (let i = 0; i < this.state.jobs.length && !foundOne; i++) {
-            if (!upgradeItemService.isDoneStatus(this.state.jobs[i].status))
+            if (!isDoneStatus(this.state.jobs[i].status))
                 foundOne = true;
         }
         
@@ -102,9 +102,9 @@ export default class extends React.Component {
         }
         
         let actions = [
-            {label: "Activate Request", handler:this.handleActivation, disabled: this.state.item.status !== upgradeItemService.Status.Created || !canActivate,
+            {label: "Activate Request", handler:this.handleActivation, disabled: this.state.item.status !== Status.Created || !canActivate,
                 detail: canActivate ? "Update the selected items to Pending state to proceed with upgrades" : "The same user that scheduled an upgrade cannot activate it"},
-            {label: "Cancel Request", handler:this.handleCancelation, disabled: [upgradeItemService.Status.Created, upgradeItemService.Status.Pending].indexOf(this.state.item.status) === -1 }
+            {label: "Cancel Request", handler:this.handleCancelation, disabled: [Status.Created, Status.Pending].indexOf(this.state.item.status) === -1 }
         ];
         return (
             <div>
@@ -113,7 +113,9 @@ export default class extends React.Component {
                     <HeaderField label="Status" value={this.state.item.status} className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
                     <HeaderField label="Created By" value={this.state.item.created_by}/>
                 </RecordHeader>
-                <UpgradeItemView jobs={this.state.jobs}/>
+                <div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
+                    <UpgradeJobCard jobs={this.state.jobs}/>
+                </div>
             </div>
         );
     }

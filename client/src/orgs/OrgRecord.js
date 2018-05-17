@@ -5,11 +5,11 @@ import * as orgService from '../services/OrgService';
 import * as packageVersionService from "../services/PackageVersionService";
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
-import OrgView from "./OrgView";
 import ScheduleUpgradeWindow from "./ScheduleUpgradeWindow";
 import {ORG_ICON} from "../Constants";
 import * as orgGroupService from "../services/OrgGroupService";
 import SelectGroupWindow from "./SelectGroupWindow";
+import InstalledVersionCard from "../packageversions/InstalledVersionCard";
 
 export default class extends React.Component {
     state = { org: {} };
@@ -82,7 +82,11 @@ export default class extends React.Component {
                     <HeaderField label="Type" value={this.state.org.is_sandbox ? "Sandbox" : "Production"}/>
                     <HeaderField label="Groups" value={this.state.org.groups}/>
                 </RecordHeader>
-                <OrgView org={this.state.org} versions={this.state.versions}/>
+                <div className="slds-form--stacked slds-grid slds-wrap slds-m-top--medium">
+                    <div className="slds-col--padded slds-size--1-of-1">
+                        <InstalledVersionCard packageVersions={this.state.versions}/>
+                    </div>
+                </div>
                 {this.state.addingToGroup ?  <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
                 {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow org={this.state.org} versions={this.state.validVersions} onUpgrade={this.upgradeHandler} onCancel={this.closeSchedulerWindow}/> : ""}
             </div>

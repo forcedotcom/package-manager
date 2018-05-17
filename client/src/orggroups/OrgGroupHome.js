@@ -5,7 +5,7 @@ import * as sortage from '../services/sortage';
 
 import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
-import NewOrgGroupWindow from "./NewOrgGroupWindow"
+import GroupFormWindow from "./GroupFormWindow";
 
 export default class extends React.Component {
     SORTAGE_KEY = "OrgGroupList";
@@ -22,10 +22,6 @@ export default class extends React.Component {
     
     newHandler = () => {
         this.setState({addingOrgGroup: true});
-    };
-
-    editHandler = (orggroup) => {
-        window.location = "/orggroup/" + orggroup.id + "/edit";
     };
 
     saveHandler = (orggroup) => {
@@ -59,9 +55,8 @@ export default class extends React.Component {
                             title="Org Groups"
                             itemCount={this.state.itemCount}
                             actions={actions}/>
-                <OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler} onSelect={this.selectionHandler} onDelete={this.deleteHandler} onEdit={this.editHandler}/>
-                {this.state.addingOrgGroup ?  <NewOrgGroupWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
-
+                <OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
+                {this.state.addingOrgGroup ?  <GroupFormWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
             </div>
         );
     }

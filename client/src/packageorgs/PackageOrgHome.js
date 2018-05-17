@@ -58,7 +58,7 @@ export default class extends React.Component {
     render() {
         const actions = [
             {label: "Add Package Org", group: "add", detail: "Shift-click to add sandbox org", handler: this.newHandler},
-            {label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.length === 0 || this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
+            {label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.length === 0, spinning: this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
             {label: "Delete", handler: this.deleteHandler, disabled: this.state.selected.length === 0, detail: "Remove the selected org"}
         ];
         

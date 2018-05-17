@@ -83,7 +83,7 @@ async function clearRequests(packageOrgIds) {
 }
 
 async function updatePushRequests(items, status, currentUser) {
-    let conns = {}, batches = {};
+    let conns = {};
     for (let i = 0; i < items.length; i++) {
         let item = items[i];
         if (status === Status.Pending && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
@@ -95,16 +95,12 @@ async function updatePushRequests(items, status, currentUser) {
             }
         }
         let conn = conns[item.package_org_id] = conns[item.package_org_id] || await sfdc.buildOrgConnection(item.package_org_id);
-        let batch = batches[item.push_request_id] = (batches[item.push_request_id] || {conn: conn, requests: []});
-        batch.requests.push({Id: item.push_request_id, Status: status});
+        try {
+            await batch.conn.sobject('PackagePushRequest').update({Id: item.push_request_id, Status: status});
+        } catch (e) {
+            logger.error("Failed to update push request", {id: item.push_request_id, org_id: item.package_org_id, url: conn.instanceUrl})
+        }
     }
-
-    // Now, just update requests.
-    let promises = [];
-    Object.entries(batches).forEach(([key, batch]) => {
-        promises.push(batch.conn.sobject('PackagePushRequest').update(batch.requests));
-    });
-    return await Promise.all(promises);
 }
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
@@ -298,7 +294,7 @@ async function findErrorsByJobIds(packageOrgId, jobIds) {
 }
 
 async function findSubscribersByIds(packageOrgIds, orgIds) {
-    let records = [];
+    let subs = [];
     for (let i = 0; i < packageOrgIds.length; i++) {
         let conn = await sfdc.buildOrgConnection(packageOrgIds[i]);
         let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
@@ -306,17 +302,40 @@ async function findSubscribersByIds(packageOrgIds, orgIds) {
                     WHERE OrgKey IN ('${orgIds.join("','")}')`;
         try {
             let res = await conn.query(soql);
-            records = records.concat(res.records);
+            subs = subs.concat(res.records);
         } catch (e) {
             logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], error: e.message || e});
         }
     }
-    return records;
+    return subs;
 }
+
+function bulkFindSubscribersByIds(packageOrgIds, orgIds, callback) {
+    for (let i = 0; i < packageOrgIds.length; i++) {
+        let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
+                    OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber
+                    WHERE OrgKey IN ('${orgIds.join("','")}')`;
+        sfdc.buildOrgConnection(packageOrgIds[i]).then(conn => {
+            let subs = [];
+            conn.bulk.query(soql)
+                .on("record", rec => {
+                    subs.push(rec);
+                })
+                .on("end", async () => {
+                    callback(subs);
+                })
+                .on("error", error => {
+                    callback(null, error);
+                });
+        });
+    }
+}
+
 
 exports.findRequestsByStatus = findRequestsByStatus;
 exports.findRequestsByIds = findRequestsByIds;
 exports.findSubscribersByIds = findSubscribersByIds;
+exports.bulkFindSubscribersByIds = bulkFindSubscribersByIds;
 exports.findJobsByStatus = findJobsByStatus;
 exports.findJobsByRequestIds = findJobsByRequestIds;
 exports.findJobsByIds = findJobsByIds;
