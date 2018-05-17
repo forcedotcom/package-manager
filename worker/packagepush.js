@@ -96,7 +96,7 @@ async function updatePushRequests(items, status, currentUser) {
         }
         let conn = conns[item.package_org_id] = conns[item.package_org_id] || await sfdc.buildOrgConnection(item.package_org_id);
         try {
-            await batch.conn.sobject('PackagePushRequest').update({Id: item.push_request_id, Status: status});
+            await conn.sobject('PackagePushRequest').update({Id: item.push_request_id, Status: status});
         } catch (e) {
             logger.error("Failed to update push request", {id: item.push_request_id, org_id: item.package_org_id, url: conn.instanceUrl, error: e.message || e})
         }
