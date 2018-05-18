@@ -47,11 +47,14 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status, j.message,
         i.start_time, i.created_by,
         pv.version_number, pv.version_id,
+        pvc.version_number current_version_number, pvc.version_id current_version_id,
         p.name package_name, p.sfid package_id, p.package_org_id,
         a.account_name
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
         INNER JOIN package_version pv on pv.version_id = i.package_version_id
+        INNER JOIN org_package_version opv on opv.package_id = pv.package_id AND opv.org_id = j.org_id
+        INNER JOIN package_version pvc on pvc.sfid = opv.package_version_id
         INNER JOIN package p on p.sfid = pv.package_id
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;

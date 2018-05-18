@@ -37,10 +37,11 @@ export default class extends React.Component {
     
     render() {
         let columns = [
-            {Header: "Org ID", accessor: "org_id", clickable: true, maxWidth: 200, filterable: true},
-            {Header: "Account", accessor: "account_name", sortable: true, clickable: true, maxWidth: 400, filterable: true},
-            {Header: "Package Name", accessor: "package_name", sortable: true, clickable: true, maxWidth: 300, filterable: true},
-            {Header: "Version", accessor: "version_number", sortable: true, clickable: true, maxWidth: 100, filterable: true},
+            {Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
+            {Header: "Account", accessor: "account_name", sortable: true, clickable: true, minWidth: 250, filterable: true},
+            {Header: "Package Name", accessor: "package_name", sortable: true, clickable: true, minWidth: 200, filterable: true},
+            {Header: "Current Version", accessor: "current_version_number", sortable: true, clickable: true, minWidth: 100, filterable: true},
+            {Header: "Upgrade Version", accessor: "version_number", sortable: true, clickable: true, minWidth: 100, filterable: true},
             {Header: "Status", accessor: "status", sortable: true, filterable: true,
                 Cell: row => (
                     <div>
