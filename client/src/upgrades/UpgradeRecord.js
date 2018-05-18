@@ -35,7 +35,7 @@ export default class extends React.Component {
                 started = true;
         }
 
-        this.setState({status: !started ? "Not Started" : shouldPing ? "In Progress" : "Done"}); 
+        this.setState({status: !started ? "Not Started" : shouldPing ? "Active" : "Done"}); 
 
         if (!shouldPing)
             return; // All of our items are done, so don't bother pinging.
