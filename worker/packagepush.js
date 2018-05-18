@@ -94,7 +94,18 @@ async function updatePushRequests(items, status, currentUser) {
                 throw new Error(`Cannot activate upgrade item ${item.id} by the same user ${currentUser} who created it`);
             }
         }
-        let conn = conns[item.package_org_id] = conns[item.package_org_id] || await sfdc.buildOrgConnection(item.package_org_id);
+
+        let conn = conns[item.package_org_id];
+        if (!conn) {
+            try {
+                conn = await sfdc.buildOrgConnection(item.package_org_id);
+                conns[item.package_org_id] = conn;
+            } catch (e) {
+                logger.error("No valid package org found for upgrade item", {id: item.id, package_org_id: item.package_org_id, error: e.message || e});
+                continue;
+            }
+        }
+        
         try {
             await conn.sobject('PackagePushRequest').update({Id: item.push_request_id, Status: status});
         } catch (e) {
@@ -187,10 +198,19 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
     let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
     for (let i = 0; i < versions.length; i++) {
         let version = versions[i];
-        let orgKey = version.package_org_id, reqKey = version.package_org_id + version.latest_version_id;
 
-        let conn = conns[orgKey] = conns[orgKey] || await sfdc.buildOrgConnection(version.package_org_id);
+        let conn = conns[version.package_org_id];
+        if (!conn) {
+            try {
+                conn = await sfdc.buildOrgConnection(version.package_org_id);
+                conns[version.package_org_id] = conn;
+            } catch (e) {
+                logger.error("No valid package org found for version", {id: version.version_id, package_org_id: version.package_org_id, org_id: version.org_id, error: e.message || e});
+                continue;
+            }
+        }
 
+        let reqKey = version.package_org_id + version.latest_version_id;
         let pushReq = pushReqs[reqKey] = pushReqs[reqKey] || // Initialized if not found
             {item: await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy), conn: conn, orgIds: []};
 

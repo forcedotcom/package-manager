@@ -108,8 +108,8 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
         if (pushJob.Status === upgradeJob.status) 
             continue; // no changes, move along
         
-        const isDone = !push.isActiveStatus(pushJob.status);
-        if (pushJob.status === push.Status.Failed) {
+        const isDone = !push.isActiveStatus(pushJob.Status);
+        if (pushJob.Status === push.Status.Failed) {
             // Special handling for errored, below.
             errored.push(upgradeJob);
         } else {
