@@ -79,7 +79,7 @@ async function fetch(fetchAll) {
 
 
 /**
- * Fetch all orgs again, ignoring modified dates
+ * Fetch everything again, ignoring modified dates
  * @returns {Promise<void>}
  */
 async function refetch() {

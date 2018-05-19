@@ -66,6 +66,7 @@ app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
 
 app.get('/api/admin/fetch', admin.requestFetch);
+app.get('/api/admin/fetchinvalid', admin.requestFetchInvalid);
 
 app.get('/api/orgs', orgs.requestAll);
 app.put('/api/orgs', orgs.requestAdd);

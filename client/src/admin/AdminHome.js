@@ -4,6 +4,7 @@ import * as adminService from '../services/AdminService';
 
 import {Icon} from "../components/Icons";
 import {ADMIN_ICON} from "../Constants";
+import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
     state = {settings: {}};
@@ -12,20 +13,42 @@ export default class extends React.Component {
         // adminService.request().then(settings => this.setState({settings}));
     }
 
-    bulkHandler = () => {
-        adminService.fetch().then(response => console.log(response));
+    fetchHandler = () => {
+        NotificationManager.info(`Fetching latest package, license and org data`, "Fetching");
+        adminService.fetch().then(response => {
+            NotificationManager.success(`Fetched latest package, license and org data`, "Success", 5000);
+            console.log(response);
+        }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
+    };
+
+    refetchInvalidHandler = () => {
+        NotificationManager.info(`Re-fetching orgs marked as invalid`, "Fetching Invalids");
+        adminService.fetchInvalid().then(response => {
+            NotificationManager.success(`Re-fetched orgs marked as invalid`, "Success", 5000);
+            console.log(response);
+        }).catch(e => NotificationManager.error(`Failed to re-fetching orgs marked as invalid. ${e.message || e}`, "Failure", 8000))
+    };
+    
+    refetchAllHandler = () => {
+        NotificationManager.info(`Fetching all package, license and org data`, "Fetching All");
+        adminService.fetch(true).then(response => {
+            NotificationManager.success(`Fetched all package, license and org data`, "Success", 5000);
+            console.log(response);
+        }).catch(e => NotificationManager.error(`Failed to fetch all package, license and org data.  ${e.message || e}`, "Failure", 8000))
     };
     
     render() {
         return (
             <div>
                 <AdminHeader type="Admin" icon={ADMIN_ICON} title="Administration" onUpgrade={this.openSchedulerWindow}>
-                    <button className="slds-button slds-button--neutral" onClick={this.bulkHandler}>Bulk</button>
+                    <button className="slds-button slds-button--neutral" onClick={this.fetchHandler}>Fetch Latest</button>
+                    <button className="slds-button slds-button--neutral" onClick={this.refetchInvalidHandler}>Re-Fetch Invalid Orgs</button>
+                    <button className="slds-button slds-button--neutral" onClick={this.refetchAllHandler}>Re-Fetch All</button>
                 </AdminHeader>
                 <ProgressBar/>
 
                 
-                <div className="slds-grid slds-gutters">
+                {/*<div className="slds-grid slds-gutters">
                     <div className="slds-col slds-size_2-of-3">
                         <Section title="Section Tootle">
                             <div className="slds-card">
@@ -54,7 +77,7 @@ export default class extends React.Component {
                             </TimelineEntry>
                         </ul>
                     </div>
-                </div>
+                </div>*/}
             </div>
         );
     }
@@ -179,7 +202,7 @@ class AdminHeader extends React.Component {
                     <div className="slds-col slds-no-flex slds-align-bottom">
                         <div className="slds-button-group" role="group">
                             {this.props.children}
-                            <button className="slds-button slds-button--neutral" onClick={this.props.onEdit}>Edit</button>
+                            {/*<button className="slds-button slds-button--neutral" onClick={this.props.onEdit}>Edit</button>*/}
                         </div>
                     </div>
                 </div>

@@ -1,11 +1,19 @@
 'use strict';
 
-const sfdc = require("../api/sfdcconn");
-const orgfetch = require("../worker/orgfetch");
+const fetch = require("../worker/fetch");
 
 async function requestFetch(req, res, next) {
     try {
-        await orgfetch.fetchBulk(sfdc.NamedOrgs.sbt.orgId);
+        await fetch.fetch(req.query.all);
+        return res.send({success: true});
+    } catch (e) {
+        next(e);
+    }
+}
+
+async function requestFetchInvalid(req, res, next) {
+    try {
+        await fetch.refetchInvalid();
         return res.send({success: true});
     } catch (e) {
         next(e);
@@ -13,3 +21,4 @@ async function requestFetch(req, res, next) {
 }
 
 exports.requestFetch = requestFetch;
+exports.requestFetchInvalid = requestFetchInvalid;
