@@ -62,7 +62,7 @@ async function retrieveByOrgId(org_id) {
 async function initOrg(conn, org_id) {
     let org = await refreshOrgConnection(conn, org_id);
     if (org.status === Status.Invalid) {
-        return await this.updateOrgStatus(org_id, org.status);
+        return await updateOrgStatus(org_id, org.status);
     } 
  
     await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);

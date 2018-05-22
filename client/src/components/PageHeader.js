@@ -64,7 +64,7 @@ export class RecordHeader extends React.Component {
         for (let i = 0; i < actions.length; i++) {
             const currentAction = actions[i];
             let btn = 
-                <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
+                <button data-tip={currentAction.detail} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
                         className="slds-button slds-button--neutral" onClick={currentAction.handler}>
                 {currentAction.spinning ?
                     <div style={{width: "3em"}}>&nbsp;
@@ -74,9 +74,7 @@ export class RecordHeader extends React.Component {
                         </div>
                     </div> : currentAction.label }
                     {currentAction.detail ? 
-                        <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                                            {currentAction.detail}
-                                        </ReactTooltip> : ''}
+                        <ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
                 </button>;
             if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
                 currentGroup = {key: currentAction.group, actions: [btn]};
@@ -134,7 +132,7 @@ export class CardHeader extends React.Component {
         for (let i = 0; i < actions.length; i++) {
             const currentAction = actions[i];
             let btn = 
-                <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
+                <button data-tip={currentAction.detail} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
                         className="slds-button slds-button--neutral" onClick={currentAction.handler}>
                     {currentAction.spinning ? 
                         <div style={{width: "3em"}}>&nbsp;
@@ -144,10 +142,8 @@ export class CardHeader extends React.Component {
                             </div>
                         </div> : currentAction.label }
                     {currentAction.detail ? 
-                        <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                                            {currentAction.detail}
-                                        </ReactTooltip> : ''}
-                        </button>;
+                        <ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
+                </button>;
             if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
                 currentGroup = {key: currentAction.group, actions: [btn]};
                 groups.push(currentGroup);
@@ -199,7 +195,7 @@ export class FormHeader extends React.Component {
         for (let i = 0; i < actions.length; i++) {
             const currentAction = actions[i];
             let btn = 
-                <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
+                <button data-tip={currentAction.detail} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
                         className="slds-button slds-button--neutral" onClick={currentAction.handler}>
                     {currentAction.spinning ? 
                         <div style={{width: "3em"}}>&nbsp;
@@ -209,9 +205,7 @@ export class FormHeader extends React.Component {
                             </div>
                         </div> : currentAction.label }
                     {currentAction.detail ? 
-                        <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                            {currentAction.detail}
-                        </ReactTooltip> : ''}
+                        <ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
                 </button>;
             if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
                 currentGroup = {key: currentAction.group, actions: [btn]};
@@ -277,7 +271,7 @@ export class HomeHeader extends React.Component {
         for (let i = 0; i < actions.length; i++) {
             const currentAction = actions[i];
             let btn = 
-                <button data-tip data-for={currentAction.label} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning} 
+                <button data-tip={currentAction.detail} key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning} 
                                   className="slds-button slds-button--neutral" onClick={currentAction.handler}>
                     {currentAction.spinning ?
                         <div style={{width: "3em"}}>&nbsp;
@@ -287,9 +281,7 @@ export class HomeHeader extends React.Component {
                             </div>
                         </div> : currentAction.label }
                     {currentAction.detail ? 
-                        <ReactTooltip id={currentAction.label} place="left" effect="solid" delayShow={900} type="info">
-                            {currentAction.detail}
-                        </ReactTooltip> : ''}
+                        <ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
                 </button>;
             if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
                 currentGroup = {key: currentAction.group, actions: [btn]};

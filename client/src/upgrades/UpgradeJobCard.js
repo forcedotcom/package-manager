@@ -1,9 +1,9 @@
 import React from 'react';
-import ReactTooltip from 'react-tooltip';
 
 import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {UPGRADE_JOB_ICON} from "../Constants";
+import MessageWindow from "../components/MessageWindow";
 
 export default class extends React.Component {
     state = {done: false, itemCount: "..."};
@@ -35,6 +35,16 @@ export default class extends React.Component {
         this.setState({itemCount: filtered.length});
     };
     
+    openMessageWindow = (event) => {
+        const msg = event.target.getAttribute("data-message");
+        if (msg) {
+            const subj = event.target.getAttribute("data-subject");
+            this.setState({showMessage: true, messageSubject: subj, messageDetail: msg});
+        }
+    };
+    
+    closeMessageWindow = () => this.setState({showMessage: null});
+    
     render() {
         let columns = [
             {Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
@@ -45,18 +55,14 @@ export default class extends React.Component {
             {Header: "Status", accessor: "status", sortable: true, filterable: true,
                 Cell: row => (
                     <div>
-                        <span data-tip data-for={row.org_id} style={{
+                        <span data-subject={row.value} data-message={row.original.message} onClick={this.openMessageWindow} style={{
                         padding: "2px 10px 2px 10px",
                         backgroundColor: row.original.message ? "#C00" : "inherit",
+                        cursor: row.original.message ? "pointer" : "inherit",
                         color: row.original.message ? "white" : "inherit",
                         borderRadius: '10px',
                         transition: 'all .3s ease-in'}}>
                             {row.value ? row.value : "Retrieving Status..."}</span>
-                        {row.original.message ? 
-                            <ReactTooltip effect="solid" id={row.org_id} place="bottom" type={row.original.message ? "error" : "warning"}>
-                                {row.original.message}
-                            </ReactTooltip>
-                        : ""}
                     </div>
                 )
             }
@@ -69,6 +75,7 @@ export default class extends React.Component {
                     <DataTable id="UpgradeJobCard" minRows="1" data={this.props.jobs} onFilter={this.filterHandler} onClick={this.linkHandler} columns={columns}/>
                 </section>
                 <footer className="slds-card__footer"/>
+                {this.state.showMessage ?  <MessageWindow subject={this.state.messageSubject} message={this.state.messageDetail} onClose={this.closeMessageWindow}/> : ""}
             </div>
         );
     }
