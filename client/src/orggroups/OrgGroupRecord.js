@@ -175,7 +175,7 @@ export default class extends React.Component {
                 <OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members} 
                               onSelect={this.selectionHandler} memberActions={memberActions} selected={this.state.selected} />;
                 {this.state.isEditing ?  <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
-                {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow versions={this.state.validVersions} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
+                {this.state.schedulingUpgrade ?  <ScheduleUpgradeWindow versions={this.state.validVersions} description={`Upgrading Group: ${this.state.orggroup.name}`} onUpgrade={this.upgradeHandler.bind(this)} onCancel={this.cancelSchedulingHandler}/> : ""}
                 {this.state.addingToGroup ?  <SelectGroupWindow excludeId={this.state.orggroup.id} removeAfterAdd={this.state.removeAfterAdd} onAdd={this.addToGroupHandler.bind(this)} onCancel={this.closeGroupWindow}/> : ""}
             </div>
         );
