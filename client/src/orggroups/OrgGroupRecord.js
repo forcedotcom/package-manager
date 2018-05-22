@@ -6,7 +6,7 @@ import * as sortage from "../services/sortage";
 import {NotificationManager} from 'react-notifications';
 
 import {ORG_GROUP_ICON} from "../Constants";
-import {RecordHeader, HeaderField} from '../components/PageHeader';
+import {HeaderField, RecordHeader} from '../components/PageHeader';
 import OrgGroupView from "./OrgGroupView";
 import GroupFormWindow from "./GroupFormWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
@@ -106,8 +106,8 @@ export default class extends React.Component {
         });
     };
 
-    removeMembersHandler = () => {
-        if (window.confirm(`Are you sure you want to remove ${this.state.selected.length} member(s)?`)) {
+    removeMembersHandler = (skipConfirmation) => {
+        if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.length} member(s)?`)) {
             orgGroupService.requestRemoveMembers(this.state.orggroup.id, this.state.selected).then(members => {
                 packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
                     let validVersions = this.stripVersions(versions);
@@ -120,16 +120,20 @@ export default class extends React.Component {
     };
 
     addToGroupHandler = (groupId, groupName, removeAfterAdd) => {
+        if (removeAfterAdd && !window.confirm(`Are you sure you want to move ${this.state.selected.length} member(s) to ${groupName}?`)) {
+            this.setState({addingToGroup: false, removeAfterAdd: false});
+            return;
+        } 
         this.setState({addingToGroup: false});
-        orgGroupService.requestAddMembers(groupId, this.state.selected).then(() => {
+        orgGroupService.requestAddMembers(groupId, groupName, this.state.selected).then((orggroup) => {
             let moved = false;
             if (removeAfterAdd) {
-                moved = this.removeMembersHandler();
+                moved = this.removeMembersHandler(true);
             }
             if (moved) {
-                NotificationManager.success(`Moved ${this.state.selected.length} org(s) to ${groupName}`, "Moved orgs", 7000, ()=> window.location = `/orggroup/${groupId}`);
+                NotificationManager.success(`Moved ${this.state.selected.length} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
             } else {
-                NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${groupName}`, "Added orgs", 7000, ()=> window.location = `/orggroup/${groupId}`);
+                NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
             }
             this.setState({selected: [], removeAfterAdd: false});
         });

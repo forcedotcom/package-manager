@@ -14,6 +14,9 @@ export default class extends React.Component {
         let text = key.target.value || "";
         orgGroupService.requestByTextSearch(text, this.props.excludeId).then(items => 
         {
+            if (items.length === 0) {
+                items.push({name: text, description: `Create new group named "${text}"`, id: -1})
+            }
             this.setState({items: items});
         });
     };

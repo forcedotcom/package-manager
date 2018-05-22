@@ -56,7 +56,7 @@ async function requestMembers(req, res, next) {
 
 async function requestAddMembers(req, res, next) {
     try {
-        let results = await insertOrgMembers(req.params.id, req.body.orgIds);
+        let results = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
         return res.json(results);
     } catch (err) {
         return next(err);
@@ -78,7 +78,7 @@ async function requestCreate(req, res, next) {
         let rows = await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [og.name, og.description || '']);
 
         if (og.orgIds && og.orgIds.length > 0) {
-            await insertOrgMembers(rows[0].id, og.orgIds);
+            await insertOrgMembers(rows[0].id, rows[0].name, og.orgIds);
         }
         return res.json(rows[0]);
     } catch (err) {
@@ -92,7 +92,7 @@ async function requestUpdate(req, res, next) {
         await db.update('UPDATE org_group SET name=$1, description=$2 WHERE id=$3', [og.name, og.description, og.id]);
         
         if (og.orgIds && og.orgIds.length > 0) {
-            await insertOrgMembers(og.id, og.orgIds);
+            await insertOrgMembers(og.id, og.name, og.orgIds);
         }
         return res.send({result: 'ok'});
     } catch (err) {
@@ -131,7 +131,14 @@ function requestRefreshOrgPackageVersions(req, res, next) {
         });
 }
 
-async function insertOrgMembers(groupId, orgIds) {
+async function insertOrgMembers(groupId, groupName, orgIds) {
+    let orggroup;
+    if (groupId === "-1" && groupName && groupName !== "") {
+        // First, create our new group.
+        orggroup = (await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [groupName, '']))[0];
+    } else {
+        orggroup = (await db.query(SELECT_ALL + " WHERE id = $1", [groupId]))[0];
+    }    
     let l = 1;
     let orgIdParams = orgIds.map(() => `($${l++})`);
     let missingOrgs = await db.query(`
@@ -147,10 +154,11 @@ async function insertOrgMembers(groupId, orgIds) {
     
     let n = 2;
     let params = orgIds.map(() => `($1,$${n++})`);
-    let values = [groupId].concat(orgIds);
+    let values = [orggroup.id].concat(orgIds);
     let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
-    return await db.insert(sql, values);
+    await db.insert(sql, values);
+    return orggroup;
 }
 
 async function deleteOrgMembers(groupId, orgIds) {

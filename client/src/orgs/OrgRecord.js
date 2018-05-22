@@ -54,8 +54,8 @@ export default class extends React.Component {
 
     addToGroupHandler = (groupId, groupName) => {
         this.setState({addingToGroup: false});
-        orgGroupService.requestAddMembers(groupId, [this.state.org.org_id]).then(() => {
-            NotificationManager.success(`Added org to ${groupName}`, "Added orgs", 7000, () => window.location = `/orggroup/${groupId}`);
+        orgGroupService.requestAddMembers(groupId, groupName, [this.state.org.org_id]).then((orggroup) => {
+            NotificationManager.success(`Added org to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
             orgService.requestById(this.state.org.org_id).then(org => this.setState({org}));
         });
     };

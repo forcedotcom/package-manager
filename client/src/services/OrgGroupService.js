@@ -7,7 +7,7 @@ export let requestByTextSearch = (text, excludeId) => h.get(url, {text, excludeI
 export let requestById = id => h.get(url + "/" + id);
 
 export let requestMembers = id => h.get(url + "/" + id + "/members");
-export let requestAddMembers = (id, orgIds) => h.post(url + "/" + id + "/members", {orgIds});
+export let requestAddMembers = (id, name, orgIds) => h.post(url + "/" + id + "/members", {orgIds, name});
 export let requestRemoveMembers = (id, orgIds) => h.post(url + "/" + id + "/members/remove", {orgIds});
 
 export let requestUpdate = orggroup => h.put(url, orggroup);
