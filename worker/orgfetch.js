@@ -73,7 +73,7 @@ async function upsert(recs, batchSize) {
         logger.info("No new orgs found in batch");
         return; // nothing to see here
     }
-    logger.info(`New orgs found in batch`, {count});
+    logger.info(`Upserting orgs found in batch`, {count});
     for (let start = 0; start < count;) {
         await upsertBatch(recs.slice(start, start += batchSize));
     }
