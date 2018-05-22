@@ -1,6 +1,6 @@
 'use strict';
 
-const logger = require('./logger').logger;
+const logger = require('../util/logger').logger;
 const fetch = require("../worker/fetch");
 const subfetch = require("../worker/subfetch");
 
