@@ -47,7 +47,7 @@ export default class extends React.Component {
         return (
             <div>
                 <AdminHeader type="Admin" icon={ADMIN_ICON} title="Administration" onUpgrade={this.openSchedulerWindow}>
-                    <button className="slds-button slds-button--neutral" onClick={this.fetchSubsHandler}>Fetch Subscribers</button>
+                    {/*<button className="slds-button slds-button--neutral" onClick={this.fetchSubsHandler}>Fetch Subscribers</button>*/}
                     <button className="slds-button slds-button--neutral" onClick={this.fetchHandler}>Fetch Latest</button>
                     <button className="slds-button slds-button--neutral" onClick={this.refetchInvalidHandler}>Re-Fetch Invalid Orgs</button>
                     <button className="slds-button slds-button--neutral" onClick={this.refetchAllHandler}>Re-Fetch All</button>

@@ -37,9 +37,6 @@ async function fetch(fetchAll) {
 
     try {
         await orgs.fetch(sfdc.NamedOrgs.bt.orgId, fetchAll);
-        if (sfdc.NamedOrgs.gs0bt) {
-            await orgs.fetch(sfdc.NamedOrgs.gs0bt.orgId, fetchAll);
-        }
         await orgs.mark(false);
     } catch (error) {
         logger.error('Failed to fetch production org data', error);
@@ -94,7 +91,6 @@ async function refetchInvalid() {
     logger.info(`=== Fetching Invalid Org Data ===`);
     try {
         await orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId);
-        await orgs.refetchInvalid(sfdc.NamedOrgs.gs0bt.orgId);
         await orgs.mark(false);
     } catch (error) {
         logger.error('Failed to fetch production org data', error);

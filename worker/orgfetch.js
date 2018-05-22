@@ -16,7 +16,6 @@ async function refetchInvalid(btOrgId, batchSize = 500) {
 
 async function queryAndStore(btOrgId, fetchAll, fetchInvalid, batchSize) {
     let conn = await sfdc.buildOrgConnection(btOrgId);
-    let fromDate = null;
     let sql = `select org_id, modified_date from org`;
     if (fetchInvalid) {
         sql += ` where status = '${Status.NotFound}'`
@@ -32,17 +31,13 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid, batchSize) {
         return; 
     }
 
-    if (!fetchAll && !fetchInvalid) {
-        fromDate = orgs[0].modified_date;
-    }
-
     for (let start = 0; start < count;) {
         logger.info(`Retrieving org records`, {batch: start, count});
-        await fetchBatch(conn, orgs.slice(start, start += batchSize), fromDate);
+        await fetchBatch(conn, orgs.slice(start, start += batchSize));
     }
 }
 
-async function fetchBatch(conn, orgs, fromDate) {
+async function fetchBatch(conn, orgs) {
     let soql = SELECT_ALL;
     let orgIds = orgs.map(o => o.org_id);
 
@@ -52,9 +47,7 @@ async function fetchBatch(conn, orgs, fromDate) {
         orgMap[org.org_id] = org;
     }
     soql += ` WHERE Id IN ('${orgIds.join("','")}')`;
-    if (fromDate) {
-        soql += ` AND LastModifiedDate > ${fromDate.toISOString()}`;
-    }
+    let updated = [];
     let query = conn.query(soql)
         .on("record", rec => {
             let org = orgMap[rec.Id.substring(0,15)];
@@ -62,9 +55,10 @@ async function fetchBatch(conn, orgs, fromDate) {
             org.type = rec.OrganizationType;
             org.account_id = rec.Account;
             org.modified_date = new Date(rec.LastModifiedDate).toISOString();
+            updated.push(org);
         })
         .on("end", async () => {
-            await upsert(orgs, 2000);
+            await upsert(updated, 2000);
         })
         .on("error", error => {
             logger.error("Failed to retrieve orgs", error);
@@ -76,10 +70,10 @@ async function fetchBatch(conn, orgs, fromDate) {
 async function upsert(recs, batchSize) {
     let count = recs.length;
     if (count === 0) {
-        logger.info("No new orgs found");
+        logger.info("No new orgs found in batch");
         return; // nothing to see here
     }
-    logger.info(`New orgs found`, {count});
+    logger.info(`New orgs found in batch`, {count});
     for (let start = 0; start < count;) {
         await upsertBatch(recs.slice(start, start += batchSize));
     }

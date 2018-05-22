@@ -12,7 +12,6 @@ const OrgTypes = {
 
 const NamedOrgs = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {
     bt: {orgId: "00DA0000000gYotMAE", type: OrgTypes.AllProductionOrgs, name: "BT2 Black Tab", instanceUrl: "https://bt2.my.salesforce.com"},
-    gs0bt: {orgId: "00D900000008aHuEAI", type: OrgTypes.AllProductionOrgs, name: "GS0 Black Tab", instanceUrl: "https://gs0bt.my.salesforce.com"},
     sbt: {orgId: "00DJ00000001ECoMAM", type: OrgTypes.AllSandboxOrgs, name: "SBT2 Black Tab", instanceUrl: "https://sbt2.cs10.my.salesforce.com"},
     org62: {orgId: "00D000000000062EAA", type: OrgTypes.Accounts, name: "Org 62", instanceUrl: "https://org62.my.salesforce.com"},
     sb62: {orgId: "00D300000008V7fEAE", type: OrgTypes.Licenses, name: "SteelBrick 62", instanceUrl: "https://steelbrick.my.salesforce.com"}
