@@ -6,7 +6,8 @@ import * as packageOrgService from '../services/PackageOrgService';
 export default class extends React.Component {
     state = {
         orgIds: [],
-        isAdding: false
+        isAdding: false,
+        orgs: ""
     };
 
     componentDidMount() {
@@ -17,11 +18,16 @@ export default class extends React.Component {
         this.setState({isAdding: true});
         this.props.onSave(this.state.orgIds);    
     };
-
+    
     orgsChangeHandler = (event) => {
+        this.setState({orgs: event.target.value});
+    };
+
+    orgsBlurHandler = (event) => {
         let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0,15));
-        let orgIds = vals.filter(elem => elem !== "" && (elem.length === 15));
-        this.setState({orgIds: orgIds});
+        let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length === 15 && elem.startsWith("00D"))));
+        let orgIds = Array.from(orgIdSet);
+        this.setState({orgIds: orgIds, orgs: orgIds.join(", ")});
     };
 
     render() {
@@ -42,8 +48,8 @@ export default class extends React.Component {
                                     <div className="slds-form-element__control">
                                         <textarea className="slds-textarea"
                                                   placeholder="Comma, space or newline-delimited list of valid org ids"
-                                                  id="org_id_import" value={this.state.orgIds.join(", ")} rows="7"
-                                                  onChange={this.orgsChangeHandler}/>
+                                                  id="org_id_import" value={this.state.orgs} rows="7"
+                                                  onChange={this.orgsChangeHandler} onBlur={this.orgsBlurHandler}/>
                                     </div>
                                 </div>
                             </div>
