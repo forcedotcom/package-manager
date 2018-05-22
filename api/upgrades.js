@@ -1,6 +1,6 @@
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
-const orgs = require('./orgs');
+const orgpackageversions = require('./orgpackageversions');
 const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `select u.id, u.start_time, u.created_by, u.description, count(i.*) item_count
@@ -89,41 +89,53 @@ async function handleUpgradeItemStatusChange(item, newStatus) {
 async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
     if (pushJobs.length > upgradeJobs.length) {
         // Should never ever happen.
-        logger.error("Fail: pushJobs does not match upgradeJobs", {pushjobs: pushJobs.length, upgradejobs: upgradeJobs.length});
+        logger.error("Fail: pushJobs does not match upgradeJobs", {
+            pushjobs: pushJobs.length,
+            upgradejobs: upgradeJobs.length
+        });
         return {};
     }
-    
+
     // Assumption: pushJobs is already ordered by Id
-    upgradeJobs.sort(function(a, b) {
+    upgradeJobs.sort(function (a, b) {
         return a.job_id > b.job_id ? 1 : -1;
     });
-    
+
     let updated = [];
     let upgraded = [];
     let errored = [];
-    let completed = 0;
     for (let u = 0, p = 0; u < upgradeJobs.length; u++) {
         let upgradeJob = upgradeJobs[u];
         if (upgradeJob.status === push.Status.Ineligible)
             continue; // Ignore the ineligible.
-        
+
         const pushJob = pushJobs[p++]; // Increment push job counter here, and not before
-        if (pushJob.Status === upgradeJob.status) 
-            continue; // no changes, move along
-        
-        const isDone = !push.isActiveStatus(pushJob.Status);
-        if (pushJob.Status === push.Status.Failed) {
-            // Special handling for errored, below.
-            errored.push(upgradeJob);
-        } else {
-            upgradeJob.status = pushJob.Status;
-            if (isDone) {
-                // Nor errors, so we assume complete
+
+        if (pushJob.Status === push.Status.Succeeded) {
+            // Our upgrade finished, we are told.
+            if (upgradeJob.version_id !== upgradeJob.current_version_id) {
+                // ...but our local version information does not yet match.  Fetch it.
                 upgraded.push(upgradeJob);
             }
-        }
+        } 
+
+        // Check if our local status matches the remote status. If so, we can skip.
+        if (pushJob.Status === upgradeJob.status)
+            continue; 
+
+        // New status, so update our local copy.
         updated.push(upgradeJob);
-        completed += isDone ? 1 : 0;
+        
+        if (pushJob.Status === push.Status.Failed) {
+            // Special handling for errored later.  Don't set the status in updateJob object yet.
+            errored.push(upgradeJob);
+            continue;
+        } 
+        
+        if (pushJob.Status === push.Status.Succeeded) {
+            upgraded.push(upgradeJob);
+        }
+        upgradeJob.status = pushJob.Status;
     }
 
     if (errored.length > 0) {
@@ -131,25 +143,29 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
         let pushErrors = await push.findErrorsByJobIds(errored[0].package_org_id, errorJobIds);
         if (pushErrors.length !== errored.length) {
             // Should never ever happen.
-            logger.error("Fail: pushErrors does not match errored", {pusherrors: pushErrors.length, errored: errored.length});
+            logger.error("Fail: pushErrors does not match errored", {
+                pusherrors: pushErrors.length,
+                errored: errored.length
+            });
             return {};
         }
-        
+
         for (let i = 0; i < errored.length; i++) {
             let err = pushErrors[i];
             errored[i].message = err.ErrorMessage;
             errored[i].status = push.Status.Failed;
         }
     }
-    
+
     if (updated.length > 0) {
         await upsertUpgradeJobs(null, null, null, updated);
     }
-    
+
     if (upgraded.length > 0) {
-        await orgs.refreshOrgPackageVersions(upgraded[0].package_org_id, upgraded.map(j => j.org_id));
+        await orgpackageversions.refreshOrgPackageVersions(upgraded.map(j => j.org_id), [upgraded[0].package_org_id]);
     }
-    return {complete: completed, remaining: pushJobs.length - completed};
+    
+    return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};
 }
 
 async function upsertUpgradeJobs(upgradeId, itemId, requestId, jobs) {
@@ -226,7 +242,7 @@ async function requestAllJobs(req, res, next) {
         if (req.query.fetchStatus && upgradeJobs.length > 0) {
             let pushJobs = await push.findJobsByRequestIds(upgradeJobs[0].package_org_id, [upgradeJobs[0].push_request_id]);
             handleUpgradeJobsStatusChange(pushJobs, upgradeJobs)
-                .then(({complete, remaining}) => logger.debug(`Upgrade job status changes`, {complete, remaining}))
+                .then(({updated, succeeded, errored}) => logger.debug(`Upgrade job status changes`, {updated, succeeded, errored}))
                 .catch(error => logger.error('Failed to update upgrade item status', error));
         }
         

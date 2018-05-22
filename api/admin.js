@@ -1,19 +1,39 @@
 'use strict';
 
 const fetch = require("../worker/fetch");
+const subfetch = require("../worker/subfetch");
 
-async function requestFetch(req, res, next) {
+const jobQueue = [];
+const jobSet = new Set();
+
+class AdminJob {
+    
+}
+
+function requestFetch(req, res, next) {
     try {
-        await fetch.fetch(req.query.all);
+        fetch.fetch(req.query.all).then(() => {logger.debug("Finished fetching data", {all: req.query.all})})
+            .catch(e => logger.error("Failed to fetch data", {all: req.query.all, error: e.message || e}))
         return res.send({success: true});
     } catch (e) {
         next(e);
     }
 }
 
-async function requestFetchInvalid(req, res, next) {
+function requestFetchSubscribers(req, res, next) {
     try {
-        await fetch.refetchInvalid();
+        subfetch.fetch(req.query.all).then(() => {logger.debug("Finished fetching subscriber data", {all: req.query.all})})
+            .catch(e => logger.error("Failed to fetch subscriber data", {all: req.query.all, error: e.message || e}))
+        return res.send({success: true});
+    } catch (e) {
+        next(e);
+    }
+}
+
+function requestFetchInvalid(req, res, next) {
+    try {
+        fetch.refetchInvalid().then(() => {logger.debug("Finished fetching invalid orgs")})
+            .catch(e => logger.error("Failed to fetch invalid orgs", {error: e.message || e}))
         return res.send({success: true});
     } catch (e) {
         next(e);
@@ -21,4 +41,5 @@ async function requestFetchInvalid(req, res, next) {
 }
 
 exports.requestFetch = requestFetch;
+exports.requestFetchSubscribers = requestFetchSubscribers;
 exports.requestFetchInvalid = requestFetchInvalid;

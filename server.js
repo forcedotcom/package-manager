@@ -27,10 +27,16 @@ const express = require('express'),
     logger = require('./util/logger').logger,
     moment = require('moment');
 
+const http = require('http');
+const socketIo = require('socket.io');
+
+
 // Ensure our database is alive and initialized
 sqlinit.init();
 
+// Setup express and socket.io
 const app = express();
+const server = http.Server(app);
 
 if (process.env.FORCE_HTTPS === "true") {
     app.use(enforce.HTTPS({trustProtoHeader: true}));
@@ -66,6 +72,7 @@ app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
 
 app.get('/api/admin/fetch', admin.requestFetch);
+app.get('/api/admin/fetchsubscribers', admin.requestFetchSubscribers);
 app.get('/api/admin/fetchinvalid', admin.requestFetchInvalid);
 
 app.get('/api/orgs', orgs.requestAll);
@@ -82,6 +89,7 @@ app.post('/api/orggroups', orggroups.requestCreate);
 app.post('/api/orggroups/:id/upgrade', orggroups.requestUpgrade);
 app.put('/api/orggroups', orggroups.requestUpdate);
 app.post('/api/orggroups/delete', orggroups.requestDelete);
+app.post('/api/orggroups/refresh', orggroups.requestRefreshOrgPackageVersions);
 
 app.get('/api/licenses', licenses.requestAll);
 app.get('/api/licenses/:id', licenses.requestById);
@@ -115,10 +123,28 @@ app.get('/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-app.listen(app.get('port'), function () {
+server.listen(app.get('port'), function () {
     logger.info('Express initialized', {port: app.get('port')});
 });
 
+// Kick off socket.io
+const io = socketIo.listen(server);
+io.on('connection', function (socket) {
+    /*setInterval(() => socket.emit('news', [
+        "Welcome to the machine.",
+        "Do not make me regret this.",
+        "Look both ways before crossing.",
+        "Mind the gap.",
+        "It only takes one drink.",
+        "Do you know where your children are?",
+    ][Math.floor(Math.random() * 6)]), Math.floor(Math.random() * 6) * 1000);
+    socket.on('my other event', function (data) {
+        console.log(data);
+    });*/
+});
+
+
+// Define singleton fetch intervals.
 if (process.env.FETCH_INTERVAL_MINUTES != null) {
     // Fetch once up front, then reschedule.
     fetch.fetch();
@@ -142,4 +168,3 @@ if (process.env.REFETCH_INTERVAL_DAYS != null) {
     let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
     logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${process.env.REFETCH_INTERVAL_DAYS} days`)
 }
-

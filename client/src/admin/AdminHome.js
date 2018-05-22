@@ -5,6 +5,7 @@ import * as adminService from '../services/AdminService';
 import {Icon} from "../components/Icons";
 import {ADMIN_ICON} from "../Constants";
 import {NotificationManager} from "react-notifications";
+import * as io from "socket.io-client";
 
 export default class extends React.Component {
     state = {settings: {}};
@@ -16,7 +17,13 @@ export default class extends React.Component {
     fetchHandler = () => {
         NotificationManager.info(`Fetching latest package, license and org data`, "Fetching");
         adminService.fetch().then(response => {
-            NotificationManager.success(`Fetched latest package, license and org data`, "Success", 5000);
+            console.log(response);
+        }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
+    };
+
+    fetchSubsHandler = () => {
+        NotificationManager.info(`Fetching org data from package subscribers`, "Fetching Subscribers");
+        adminService.fetchSubscribers().then(response => {
             console.log(response);
         }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
     };
@@ -24,7 +31,6 @@ export default class extends React.Component {
     refetchInvalidHandler = () => {
         NotificationManager.info(`Re-fetching orgs marked as invalid`, "Fetching Invalids");
         adminService.fetchInvalid().then(response => {
-            NotificationManager.success(`Re-fetched orgs marked as invalid`, "Success", 5000);
             console.log(response);
         }).catch(e => NotificationManager.error(`Failed to re-fetching orgs marked as invalid. ${e.message || e}`, "Failure", 8000))
     };
@@ -41,11 +47,13 @@ export default class extends React.Component {
         return (
             <div>
                 <AdminHeader type="Admin" icon={ADMIN_ICON} title="Administration" onUpgrade={this.openSchedulerWindow}>
+                    <button className="slds-button slds-button--neutral" onClick={this.fetchSubsHandler}>Fetch Subscribers</button>
                     <button className="slds-button slds-button--neutral" onClick={this.fetchHandler}>Fetch Latest</button>
                     <button className="slds-button slds-button--neutral" onClick={this.refetchInvalidHandler}>Re-Fetch Invalid Orgs</button>
                     <button className="slds-button slds-button--neutral" onClick={this.refetchAllHandler}>Re-Fetch All</button>
                 </AdminHeader>
                 <ProgressBar/>
+                <Socker/>
 
                 
                 {/*<div className="slds-grid slds-gutters">
@@ -83,6 +91,87 @@ export default class extends React.Component {
     }
 }
 
+class AdminHeader extends React.Component {
+    static defaultProps = {
+        icon: {name: "calibration", category: "standard"}
+    };
+
+    render() {
+        return (
+            <div className="slds-page-header">
+                <div className="slds-grid">
+                    <div className="slds-col slds-has-flexi-truncate">
+                        <div className="slds-media">
+                            <div className="slds-media__figure">
+                                <Icon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
+                            </div>
+                            <div className="slds-media__body">
+                                <p className="slds-text-heading--label">{this.props.type}</p>
+                                <div className="slds-grid">
+                                    <h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle"
+                                        title={this.props.title}>{this.props.title}</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="slds-col slds-no-flex slds-align-bottom">
+                        <div className="slds-button-group" role="group">
+                            {this.props.children}
+                            {/*<button className="slds-button slds-button--neutral" onClick={this.props.onEdit}>Edit</button>*/}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+class Socker extends React.Component {
+    constructor() {
+        super();
+        this.state = {
+            response: false,
+            endpoint: "http://127.0.0.1:5000"
+        };
+    }
+
+    componentDidMount() {
+        const { endpoint } = this.state;
+        let socket = io.connect(endpoint);
+        socket.on('news', function (data) {
+            console.log(data);
+            socket.emit('my other event', { my: 'data' });
+        });
+    }
+
+    render() {
+        const { response } = this.state;
+        return (
+            <div style={{ textAlign: "center" }}>
+                {response
+                    ? <p>
+                        The temperature in Florence is: {response} °F
+                    </p>
+                    : <p>Loading...</p>}
+            </div>
+        );
+    }
+}
+
+class ProgressBar extends React.Component {
+    render() {
+        return (
+            <div className="slds-progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"
+                 role="progressbar">
+              <span className="slds-progress-bar__value" style={{width: '25%'}}>
+                <span className="slds-assistive-text">Progress: 25%</span>
+              </span>
+            </div>
+        );
+    }
+}
+
+/*
 class Section extends React.Component {
     state = {isopen: "slds-is-open"};
     toggleExpando = () => {
@@ -176,54 +265,6 @@ class TimelineEntry extends React.Component {
     }
 }
 
-class AdminHeader extends React.Component {
-    static defaultProps = {
-        icon: {name: "calibration", category: "standard"}
-    };
-
-    render() {
-        return (
-            <div className="slds-page-header">
-                <div className="slds-grid">
-                    <div className="slds-col slds-has-flexi-truncate">
-                        <div className="slds-media">
-                            <div className="slds-media__figure">
-                                <Icon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
-                            </div>
-                            <div className="slds-media__body">
-                                <p className="slds-text-heading--label">{this.props.type}</p>
-                                <div className="slds-grid">
-                                    <h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle"
-                                        title={this.props.title}>{this.props.title}</h1>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="slds-col slds-no-flex slds-align-bottom">
-                        <div className="slds-button-group" role="group">
-                            {this.props.children}
-                            {/*<button className="slds-button slds-button--neutral" onClick={this.props.onEdit}>Edit</button>*/}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-}
-
-class ProgressBar extends React.Component {
-    render() {
-        return (
-            <div className="slds-progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"
-                 role="progressbar">
-              <span className="slds-progress-bar__value" style={{width: '25%'}}>
-                <span className="slds-assistive-text">Progress: 25%</span>
-              </span>
-            </div>
-        );
-    }
-}
-
 class AdminCard extends React.Component {
     render() {
         return (
@@ -267,8 +308,8 @@ class AdminCard extends React.Component {
                     </div>
                     {this.props.children}
                 </div>
-                {/*<footer className="slds-card__footer">Card Footer</footer>*/}
             </article>
         );
     }
 }
+*/

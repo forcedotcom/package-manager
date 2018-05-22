@@ -1,12 +1,11 @@
 const { Pool } = require('pg');
 const logger = require('./logger').logger;
 
-const VERBOSE_SQL = process.env.VERBOSE && process.env.VERBOSE.indexOf('SQL') !== -1 ? "true" : null;
-
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres"
 });
 
+const MAX_SQL_DEBUG_LENGTH = 1000;
 
 /**
  * Utility function to execute a long init script against a Postgres database
@@ -19,7 +18,12 @@ exports.init = (sql, cb) => {
  * Utility function to execute a SQL select query against a Postgres database
  */
 exports.query = async (sql, values) => {
-    logger.debug(sql, values);
+    if (sql.length > MAX_SQL_DEBUG_LENGTH) {
+        logger.debug(sql.substring(0, MAX_SQL_DEBUG_LENGTH) + "..." + sql.substring(sql.length - 20));
+    } else {
+        logger.debug(sql, values);
+    }
+     
     let result = await pool.query(sql, values);
     return result.rows;
 };

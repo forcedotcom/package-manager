@@ -2,6 +2,7 @@ const db = require('../util/pghelper');
 const orgs = require('./orgs');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
+const orgpackageversions = require('../api/orgpackageversions');
 
 const SELECT_ALL = "SELECT id, name, description FROM org_group";
 
@@ -121,6 +122,15 @@ function requestUpgrade(req, res, next) {
         });
 }
 
+function requestRefreshOrgPackageVersions(req, res, next) {
+    orgpackageversions.refreshOrgPackageVersionsByGroup(req.body.id)
+        .then((result) => {return res.json(result)})
+        .catch((e) => {
+            logger.error("Failed to refersh org package versions in group", {org_group_id: req.params.id, error: e.message || e}); 
+            next(e);
+        });
+}
+
 async function insertOrgMembers(groupId, orgIds) {
     let l = 1;
     let orgIdParams = orgIds.map(() => `($${l++})`);
@@ -160,3 +170,4 @@ exports.requestCreate = requestCreate;
 exports.requestUpdate = requestUpdate;
 exports.requestDelete = requestDelete;
 exports.requestUpgrade = requestUpgrade;
+exports.requestRefreshOrgPackageVersions = requestRefreshOrgPackageVersions;

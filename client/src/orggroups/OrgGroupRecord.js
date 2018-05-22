@@ -81,6 +81,17 @@ export default class extends React.Component {
         }).catch(e => console.error(e));
     };
     
+    refreshHandler = () => {
+        this.setState({isRefreshing: true});
+        orgGroupService.requestRefresgPackageVersions(this.state.orggroup.id).then(() => {
+                // Reload our versions because they may have changed
+                packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
+                    let validVersions = this.stripVersions(versions);
+                    this.setState({versions, validVersions, isRefreshing: false});
+                });
+            }).catch(e => console.error(e));
+    };
+    
     editHandler = () => {
         this.setState({isEditing: true});
     };
@@ -143,6 +154,7 @@ export default class extends React.Component {
     render() {
         let actions = [
             {handler:this.schedulingWindowHandler, label:"Upgrade Packages", group:"upgrade", disabled: !this.state.validVersions}, 
+            {handler:this.refreshHandler, label:"Refresh Versions", spinning: this.state.isRefreshing, detail: "Fetch latest installed package version information for all orgs in this group."}, 
             {handler:this.editHandler, label:"Edit"}, 
             {handler:this.deleteHandler, label:"Delete"}];
 

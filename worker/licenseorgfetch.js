@@ -1,7 +1,9 @@
+
+const moment = require("moment");
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 
-const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox FROM license 
+const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox, modified_date FROM license 
                     WHERE status in ('Trial','Active') 
                     AND instance IS NOT NULL
                     AND (expiration IS NULL OR expiration > DATE 'tomorrow')`;
@@ -24,19 +26,34 @@ async function query(fromDate) {
         values.push(fromDate);
         select += ` AND modified_date > $${values.length}`;
     }
+    select += `order by modified_date asc`;
     return await db.query(select, values);
 }
 
 async function upsert(recs, batchSize) {
-    let count = recs.length;
-    if (count === 0) {
+    if (recs.length === 0) {
         logger.info("No new license orgs found");
         return;
     }
-    logger.info(`New license orgs found`, {count});
-    if (count <= batchSize) {
-        return await upsertBatch(recs);
+    
+    let msgs = [];
+    let orgs = new Map();
+    for(let i = 0; i < recs.length; i++) {
+        let rec = recs[i];   
+        let old = orgs.get(rec.org_id);
+        if (old) {
+            msgs.push(`Found conflicting org: ${old.org_id} in ${old.instance} modified ${moment(old.modified_date).format("lll")}. Replacing with: ${rec.org_id} in ${rec.instance} modified ${moment(rec.modified_date).format("lll")}`);
+        }
+        orgs.set(rec.org_id, rec);
     }
+    recs = Array.from(orgs.values());
+    let count = recs.length;
+    if (msgs.length > 0) {
+        logger.info('===== CONFLICTING LICENSE ORGS FOUND =====');
+        logger.info("    " + msgs.join("\n    "));
+        logger.info('===== *********** ******* **** ***** =====');
+    }
+    logger.info(`New license orgs found`, {count});
     for (let start = 0; start < count;) {
         logger.info(`Upserting license orgs`, {batch: start, count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
@@ -44,15 +61,15 @@ async function upsert(recs, batchSize) {
 }
 
 async function upsertBatch(recs) {
-    let values = [new Date()];
+    let values = [];
     let sql = "INSERT INTO org (org_id, instance, is_sandbox, modified_date) VALUES";
-    for (let i = 0, n = 2; i < recs.length; i++) {
+    for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++}, $1)`;
-        values.push(rec.org_id, rec.instance, rec.is_sandbox);
+        sql += `($${n++},$${n++},$${n++},$${n++})`;
+        values.push(rec.org_id, rec.instance, rec.is_sandbox, rec.modified_date);
     }
     sql += ` on conflict (org_id) do update set modified_date = excluded.modified_date`;
     await db.insert(sql, values);

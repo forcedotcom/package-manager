@@ -8,6 +8,7 @@ import * as upgradeJobService from "../services/UpgradeJobService";
 import {isDoneStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
+import * as Constants from "../Constants";
 
 export default class extends React.Component {
     SORTAGE_KEY_JOBS = "UpgradeJobCard";
@@ -72,13 +73,13 @@ export default class extends React.Component {
         setTimeout(this.fetchJobStatus.bind(this), (secondsDelay) * 1000);
     }
 
-    fetchJobStatus() {
+    fetchJobStatus = () => {
         upgradeJobService.requestAllJobs(this.state.item.id, this.state.sortOrderJobs, true).then(jobs => {
             this.setState({jobs});
             this.checkJobStatus();
         });
-    }
-    
+    };
+
     handleActivation = () => {
         if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
             upgradeItemService.activateItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]));
@@ -102,6 +103,8 @@ export default class extends React.Component {
         }
         
         let actions = [
+            {label: "Fetch Status", handler:this.fetchJobStatus, disabled: !Constants.isDoneStatus(this.state.item.status),
+                detail: "Click to refresh the upgrade status and org installed version information.  Only allowed after the upgrade request is marked as complete."},
             {label: "Activate Request", handler:this.handleActivation, disabled: this.state.item.status !== Status.Created || !canActivate,
                 detail: canActivate ? "Update the selected items to Pending state to proceed with upgrades" : "The same user that scheduled an upgrade cannot activate it"},
             {label: "Cancel Request", handler:this.handleCancelation, disabled: [Status.Created, Status.Pending].indexOf(this.state.item.status) === -1 }

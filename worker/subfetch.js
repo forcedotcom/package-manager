@@ -7,7 +7,7 @@ const SELECT_ALL = `SELECT Id,OrgName,OrgType,InstalledStatus,InstanceName,OrgSt
 
 const Status = {NotFound: 'Not Found'};
 
-async function fetch(packageOrgId, fetchAll, batchSize = 100) {
+async function fetch(fetchAll, packageOrgId, batchSize = 100) {
     return await queryAndStore(packageOrgId, fetchAll, false, batchSize, false);
 }
 
@@ -16,6 +16,8 @@ async function refetchInvalid(packageOrgId, batchSize = 100) {
 }
 
 async function queryAndStore(packageOrgId, fetchAll, fetchInvalid, batchSize) {
+    packageOrgId = packageOrgId || '00DA0000000K7g8MAC'; // CPQ org for now.
+    
     let conn = await sfdc.buildOrgConnection(packageOrgId);
     let fromDate = null;
     let sql = `select org_id, modified_date from org`;
@@ -43,7 +45,7 @@ async function queryAndStore(packageOrgId, fetchAll, fetchInvalid, batchSize) {
     }
 }
 
-async function fetchBatch(conn, orgs) {
+async function fetchBatch(conn, orgs, useBulkAPI) {
     let soql = SELECT_ALL;
     let orgIds = orgs.map(o => o.org_id);
 
@@ -53,7 +55,7 @@ async function fetchBatch(conn, orgs) {
         orgMap[org.org_id] = org;
     }
     soql += ` WHERE OrgKey IN ('${orgIds.join("','")}')`;
-    let query = conn.query(soql)
+    let query = (useBulkAPI ? conn.bulk.query(soql) : conn.query(soql))
         .on("record", rec => {
             let org = orgMap[rec.Id.substring(0,15)];
             org.name = rec.OrgName;
@@ -69,7 +71,9 @@ async function fetchBatch(conn, orgs) {
             logger.error("Failed to retrieve orgs", error);
         });
 
-    await query.run({autoFetch: true, maxFetch: 100000});
+    if (!useBulkAPI) {
+        await query.run({autoFetch: true, maxFetch: 100000});
+    }
 }
 
 async function upsert(recs, batchSize) {
