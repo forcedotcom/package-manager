@@ -39,7 +39,7 @@ export default class extends React.Component {
                             <h2 className="slds-text-heading--medium">Select Group</h2>
                         </div>
                         <div style={{height: 450}} className="slds-modal__content slds-p-around_medium">
-                            <Lookup placeholder="Select a group"
+                            <Lookup placeholder="Select a group, or name a new one"
                                     items={this.state.items}
                                     valueField="id"
                                     labelField="name"
