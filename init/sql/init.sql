@@ -1,3 +1,15 @@
+create table if not exists admin_job
+(
+  id            serial not null
+    constraint admin_job_id_pk primary key,
+  name          varchar(255),
+  status        varchar(80),
+  steps         integer,
+  progress      integer,
+  message       text,
+  modified_date timestamp with time zone
+);
+
 create table if not exists package_org
 (
   id             serial      not null,
@@ -110,7 +122,8 @@ create table if not exists upgrade_job (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS
-  upgrade_job_job_id_uindex ON upgrade_job (job_id);
+  upgrade_job_job_id_uindex
+  ON upgrade_job (job_id);
 
 -- sb62 data
 create table if not exists package
