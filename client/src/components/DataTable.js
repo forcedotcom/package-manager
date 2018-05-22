@@ -74,7 +74,7 @@ export default class extends React.Component {
         const selection = [];
         if (selectAll) {
             // we need to get at the internals of ReactTable
-            const wrappedInstance = this.checkboxTable.getWrappedInstance();
+            const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
             // the 'sortedData' property contains the currently accessible records based on the filter and sort
             const currentRecords = wrappedInstance.getResolvedState().sortedData;
             // we just push all the IDs onto the selection array
@@ -91,7 +91,7 @@ export default class extends React.Component {
 
     handleFilter = (column, value) => {
         if (this.props.onFilter) {
-            const wrappedInstance = this.checkboxTable.getWrappedInstance();
+            const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
             const currentRecords = wrappedInstance.getResolvedState().sortedData;
             this.props.onFilter(currentRecords, column, value)
         }
