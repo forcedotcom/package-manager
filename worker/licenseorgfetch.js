@@ -26,7 +26,7 @@ async function query(fromDate) {
         values.push(fromDate);
         select += ` AND modified_date > $${values.length}`;
     }
-    select += `order by modified_date asc`;
+    select += ` order by modified_date asc`;
     return await db.query(select, values);
 }
 
