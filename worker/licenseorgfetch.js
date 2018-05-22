@@ -41,8 +41,8 @@ async function upsert(recs, batchSize) {
     for(let i = 0; i < recs.length; i++) {
         let rec = recs[i];   
         let old = orgs.get(rec.org_id);
-        if (old) {
-            msgs.push(`Found conflicting org: ${old.org_id} in ${old.instance} modified ${moment(old.modified_date).format("lll")}. Replacing with: ${rec.org_id} in ${rec.instance} modified ${moment(rec.modified_date).format("lll")}`);
+        if (old && old.instance !== rec.instance) {
+            msgs.push(`Org ${old.org_id} was in ${old.instance} modified ${moment(old.modified_date).format("lll")}. Updating with ${rec.instance} modified ${moment(rec.modified_date).format("lll")}`);
         }
         orgs.set(rec.org_id, rec);
     }
@@ -51,7 +51,6 @@ async function upsert(recs, batchSize) {
     if (msgs.length > 0) {
         logger.info('===== CONFLICTING LICENSE ORGS FOUND =====');
         logger.info("    " + msgs.join("\n    "));
-        logger.info('===== *********** ******* **** ***** =====');
     }
     logger.info(`New license orgs found`, {count});
     for (let start = 0; start < count;) {
