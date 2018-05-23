@@ -8,11 +8,11 @@ const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 
 const SELECT_ALL = `SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, 
                     refresh_token, access_token, type, status, refreshed_date 
-                    FROM public.package_org`;
+                    FROM package_org`;
 
 const SELECT_ALL_WITH_REFRESH_TOKEN = `SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, 
                     refresh_token, access_token, type, status, refreshed_date 
-                    FROM public.package_org`;
+                    FROM package_org`;
 
 async function requestAll(req, res, next) {
     let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;

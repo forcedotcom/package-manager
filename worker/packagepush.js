@@ -337,6 +337,7 @@ function bulkFindSubscribersByIds(packageOrgIds, orgIds, callback) {
                     WHERE OrgKey IN ('${orgIds.join("','")}')`;
         sfdc.buildOrgConnection(packageOrgIds[i]).then(conn => {
             let subs = [];
+            conn.bulk.pollTimeout = 30 * 1000;
             conn.bulk.query(soql)
                 .on("record", rec => {
                     subs.push(rec);

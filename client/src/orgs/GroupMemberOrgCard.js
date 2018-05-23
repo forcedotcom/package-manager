@@ -24,6 +24,7 @@ export default class extends React.Component {
     render() {
         const columns = [
             {Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
+            {Header: "Name", accessor: "name", sortable: true, clickable: true},
             {Header: "Account", accessor: "account_name", sortable: true, clickable: true},
             {Header: "Instance", accessor: "instance", sortable: true},
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
