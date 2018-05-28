@@ -23,9 +23,7 @@ const express = require('express'),
     auth = require('./api/auth'),
     admin = require('./api/admin'),
     sqlinit = require('./init/sqlinit'),
-    fetch = require('./worker/fetch'),
-    logger = require('./util/logger').logger,
-    moment = require('moment');
+    logger = require('./util/logger').logger;
 
 const http = require('http');
 const socketIo = require('socket.io');
@@ -72,8 +70,9 @@ app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
 
 app.get('/api/admin/fetch', admin.requestFetch);
-app.get('/api/admin/fetchsubscribers', admin.requestFetchSubscribers);
 app.get('/api/admin/fetchinvalid', admin.requestFetchInvalid);
+app.get('/api/admin/jobs', admin.requestJobs);
+app.post('/api/admin/jobs/cancel', admin.requestCancel);
 
 app.get('/api/orgs', orgs.requestAll);
 app.put('/api/orgs', orgs.requestAdd);
@@ -130,41 +129,8 @@ server.listen(app.get('port'), function () {
 // Kick off socket.io
 const io = socketIo.listen(server);
 io.on('connection', function (socket) {
-    /*setInterval(() => socket.emit('news', [
-        "Welcome to the machine.",
-        "Do not make me regret this.",
-        "Look both ways before crossing.",
-        "Mind the gap.",
-        "It only takes one drink.",
-        "Do you know where your children are?",
-    ][Math.floor(Math.random() * 6)]), Math.floor(Math.random() * 6) * 1000);
-    socket.on('my other event', function (data) {
-        console.log(data);
-    });*/
+    admin.connect(socket);
 });
 
-
-// Define singleton fetch intervals.
-if (process.env.FETCH_INTERVAL_MINUTES != null) {
-    // Fetch once up front, then reschedule.
-    fetch.fetch();
-    setInterval(() => {fetch.fetch()}, process.env.FETCH_INTERVAL_MINUTES * 60 * 1000);
-}
-
-if (process.env.REFETCH_INVALID_INTERVAL_HOURS != null) {
-    // Always start heavyweight tasks at the end of the day.
-    let interval = process.env.REFETCH_INVALID_INTERVAL_HOURS * 60 * 60 * 1000;
-    let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-    setTimeout(() => setInterval(() => {fetch.refetchInvalid()}, interval), delay);
-    let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-    logger.info(`Scheduled re-fetching of invalid orgs starting ${startTime} and recurring every ${process.env.REFETCH_INVALID_INTERVAL_HOURS} hours`)
-}
-
-if (process.env.REFETCH_INTERVAL_DAYS != null) {
-    // Always start heavyweight at the end of the day.
-    let interval = process.env.REFETCH_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
-    let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-    setTimeout(() => setInterval(() => {fetch.refetch()}, interval), delay);
-    let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-    logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${process.env.REFETCH_INTERVAL_DAYS} days`)
-}
+// Set job intervals
+admin.scheduleJobs();

@@ -83,7 +83,7 @@ export default class extends React.Component {
     
     refreshHandler = () => {
         this.setState({isRefreshing: true});
-        orgGroupService.requestRefresgPackageVersions(this.state.orggroup.id).then(() => {
+        orgGroupService.requestRefreshPackageVersions(this.state.orggroup.id).then(() => {
                 // Reload our versions because they may have changed
                 packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
                     let validVersions = this.stripVersions(versions);

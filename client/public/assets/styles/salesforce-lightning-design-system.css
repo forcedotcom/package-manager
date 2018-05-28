@@ -5772,7 +5772,6 @@ a.slds-button--inverse:focus {
   margin-top: -0.4375rem;
   line-height: 1;
   border: 0;
-  /* @Todo - we need to be sure this is deprecated since the color sems to be the correct gray I see in specs */
   fill: #b0adab; }
 
 .slds-input-has-icon_left .slds-input__icon, .slds-input-has-icon--left .slds-input__icon {

@@ -114,6 +114,7 @@ async function requestDelete(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
+    // TODO ADMIN JOB
     push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
         .then((result) => {return res.json(result)})
         .catch((e) => {
@@ -123,6 +124,7 @@ function requestUpgrade(req, res, next) {
 }
 
 function requestRefreshOrgPackageVersions(req, res, next) {
+    // TODO ADMIN JOB
     orgpackageversions.refreshOrgPackageVersionsByGroup(req.body.id)
         .then((result) => {return res.json(result)})
         .catch((e) => {

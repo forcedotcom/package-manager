@@ -1,91 +1,160 @@
 import React from 'react';
+import moment from "moment";
 
 import * as adminService from '../services/AdminService';
 
 import {Icon} from "../components/Icons";
 import {ADMIN_ICON} from "../Constants";
-import {NotificationManager} from "react-notifications";
 import * as io from "socket.io-client";
+import Tabs from "../components/Tabs";
 
 export default class extends React.Component {
-    state = {settings: {}};
-
-    componentDidMount() {
-        // adminService.request().then(settings => this.setState({settings}));
-    }
-
-    fetchHandler = () => {
-        NotificationManager.info(`Fetching latest package, license and org data`, "Fetching");
-        adminService.fetch().then(response => {
-            console.log(response);
-        }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
+    state = {
+        jobs: [],
+        queue: [],
+        history: [],
+        socket: null
     };
 
-    fetchSubsHandler = () => {
-        NotificationManager.info(`Fetching org data from package subscribers`, "Fetching Subscribers");
-        adminService.fetchSubscribers().then(response => {
-            console.log(response);
-        }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
+    componentDidMount() {
+        let socket = io.connect();
+        let self = this;
+        socket.on('jobs', function (data) {
+            self.setState({jobs: data || []});
+        });
+        socket.on('job-history', function (data) {
+            self.setState({history: data || []});
+        });
+        socket.on('job-queue', function (data) {
+            self.setState({queue: data || []});
+        });
+        
+        adminService.requestJobs().then(res => {
+            this.setState({socket, jobs: res.jobs, queue: res.queue, history: res.history})
+        });
+    }
+
+    cancellationHandler = (job) => {
+        job.cancelling = true;
+        adminService.requestCancel([job.id]).then(res => this.setState({jobs: res.jobs, queue: res.queue, history: res.history}));
+    };
+    
+    fetchHandler = () => {
+        this.state.socket.emit("fetch", {});
+        // NotificationManager.info(`Fetching latest package, license and org data`, "Fetching");
+        // adminService.fetch().then(response => {
+        //     console.log(response);
+        // }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
     };
 
     refetchInvalidHandler = () => {
-        NotificationManager.info(`Re-fetching orgs marked as invalid`, "Fetching Invalids");
-        adminService.fetchInvalid().then(response => {
-            console.log(response);
-        }).catch(e => NotificationManager.error(`Failed to re-fetching orgs marked as invalid. ${e.message || e}`, "Failure", 8000))
+        this.state.socket.emit("fetch-invalid", {});
+        // NotificationManager.info(`Re-fetching orgs marked as invalid`, "Fetching Invalids");
+        // adminService.fetchInvalid().then(response => {
+        //     console.log(response);
+        // }).catch(e => NotificationManager.error(`Failed to fetch orgs marked as invalid. ${e.message || e}`, "Failure", 8000))
     };
     
     refetchAllHandler = () => {
-        NotificationManager.info(`Fetching all package, license and org data`, "Fetching All");
-        adminService.fetch(true).then(response => {
-            NotificationManager.success(`Fetched all package, license and org data`, "Success", 5000);
-            console.log(response);
-        }).catch(e => NotificationManager.error(`Failed to fetch all package, license and org data.  ${e.message || e}`, "Failure", 8000))
+        this.state.socket.emit("fetch-all", {});
+        // NotificationManager.info(`Fetching all package, license and org data`, "Fetching All");
+        // adminService.fetch(true).then(response => {
+        //     console.log(response);
+        // }).catch(e => NotificationManager.error(`Failed to fetch all package, license and org data.  ${e.message || e}`, "Failure", 8000))
+    };
+    
+    showAllHistoryHandler = () => {
+        this.setState({showAllHistory: true});  
     };
     
     render() {
+        let activeCards = [];
+        if (this.state.jobs.length > 0) {
+            for (let i = 0; i < this.state.jobs.length; i++) {
+                let job = this.state.jobs[i];
+                let actions = [];
+                if (job.stepIndex !== job.stepCount && !job.cancelled) {
+                    actions.push({label: "Cancel Job", handler: () => this.cancellationHandler(job), spinning: job.cancelling});
+                }
+                activeCards.push(
+                    <AdminCard key={job.id} title={job.name} actions={actions}>
+                        <ProgressBar message={job.message} progress={job.stepIndex / job.stepCount} success={job.errors.length === 0}/>
+                        {job.errors.length > 0 ?
+                            <Section title="Errors"><Results lines={job.errors} divider="slds-has-dividers_bottom-space"/></Section> : "" }
+                        {job.messages.length > 0 ?
+                            <Section closed="true" title="Results"><Results lines={job.messages}/></Section> : "" }
+                    </AdminCard>);
+            }
+        } else {
+            activeCards.push(
+                <div key="no-active" className="slds-text-body_regular slds-m-left--medium slds-text-color--weak">No active jobs</div>
+            );
+        }
+
+        let queueCards = [];
+        if (this.state.queue.length > 0) {
+            for (let i = 0; i < this.state.queue.length; i++) {
+                let job = this.state.queue[i];
+                queueCards.push(
+                    <AdminCard key={`${job.id}-queue-${i}`} title={job.name} actions={[
+                        {label: "Cancel Job", handler: () => this.cancellationHandler(job), spinning: job.cancelling}]}>
+                    </AdminCard>);
+            }
+        } else {
+            queueCards.push(
+                <div key="no-queue" className="slds-text-body_regular slds-m-left--medium slds-text-color--weak">No queued jobs</div>
+            );
+        }
+
+
+
+        let historyCards = [];
+        let historyCount = this.state.showAllHistory ? this.state.history.length : 10;
+        if (this.state.history.length > 0) {
+            for (let i = 0; i < Math.min(this.state.history.length, historyCount); i++) {
+                let job = this.state.history[i];
+                historyCards.push(
+                    <TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval} timestamp={moment(job.modifiedDate).format("lll")}>
+                            {job.errors.length > 0 ?
+                                <Section title="Errors"><Results lines={job.errors} divider="slds-has-dividers_bottom-space"/></Section> : "" }
+                            {job.messages.length > 0 ?
+                                <Section closed="true" title="Results"><Results lines={job.messages}/></Section> : "" }
+                    </TimelineEntry>);
+            }
+        } else {
+            historyCards.push(
+                <div key="no-history" className="slds-text-body_regular slds-m-around--x-small slds-text-color--weak">No job history</div>
+            );
+        }
+        if (!this.state.showAllHistory && this.state.history.length > historyCount) {
+            historyCards.push(<a className="slds-text-link slds-m-around--small" onClick={this.showAllHistoryHandler}>Show all ({this.state.history.length})</a> );
+        }
+        
         return (
             <div>
                 <AdminHeader type="Admin" icon={ADMIN_ICON} title="Administration" onUpgrade={this.openSchedulerWindow}>
-                    {/*<button className="slds-button slds-button--neutral" onClick={this.fetchSubsHandler}>Fetch Subscribers</button>*/}
                     <button className="slds-button slds-button--neutral" onClick={this.fetchHandler}>Fetch Latest</button>
-                    <button className="slds-button slds-button--neutral" onClick={this.refetchInvalidHandler}>Re-Fetch Invalid Orgs</button>
+                    <button className="slds-button slds-button--neutral" onClick={this.refetchInvalidHandler}>Fetch Invalid Orgs</button>
                     <button className="slds-button slds-button--neutral" onClick={this.refetchAllHandler}>Re-Fetch All</button>
                 </AdminHeader>
-                <ProgressBar/>
-                <Socker/>
-
                 
-                {/*<div className="slds-grid slds-gutters">
+                <div className="slds-grid slds-gutters">
                     <div className="slds-col slds-size_2-of-3">
-                        <Section title="Section Tootle">
-                            <div className="slds-card">
-                                <AdminCard title="Something cooler">
-                                    <ProgressBar/>
-                                </AdminCard>
+                        <Tabs id="Content">
+                            <div label={`Active Jobs (${this.state.jobs.length})`}>
+                                {activeCards}
                             </div>
-                            <div className="slds-card ">
-                                <AdminCard title="Something cooler">
-                                    <ProgressBar/>
-                                </AdminCard>
+                            <div label={`Queue (${this.state.queue.length})`}>
+                                {queueCards}
                             </div>
-                        </Section>
+                        </Tabs>
                     </div>
                     <div className="slds-col slds-size_1-of-3 slds-p-around_x-small">
                         <ul className="slds-timeline">
-                            <TimelineEntry>
-                                <p className="slds-m-horizontal_xx-small">This happened, like, so much.  Everywhere, splattering and shuddering in poo.</p>
-                                <article className="slds-box slds-timeline__item_details slds-theme_shade slds-m-top_x-small slds-m-horizontal_xx-small slds-p-around_medium"
-                                         id="task-item-expanded" aria-hidden="false">
-                                    <div>
-                                        <span className="slds-text-title">Description</span>
-                                        <p className="slds-p-top_x-small">Something cooler</p>
-                                    </div>
-                                </article>
-                            </TimelineEntry>
+                            {historyCards}
                         </ul>
                     </div>
-                </div>*/}
+                </div>
             </div>
         );
     }
@@ -117,7 +186,6 @@ class AdminHeader extends React.Component {
                     <div className="slds-col slds-no-flex slds-align-bottom">
                         <div className="slds-button-group" role="group">
                             {this.props.children}
-                            {/*<button className="slds-button slds-button--neutral" onClick={this.props.onEdit}>Edit</button>*/}
                         </div>
                     </div>
                 </div>
@@ -126,85 +194,82 @@ class AdminHeader extends React.Component {
     }
 }
 
-class Socker extends React.Component {
-    constructor() {
-        super();
-        this.state = {
-            response: false,
-            endpoint: "http://127.0.0.1:5000"
-        };
-    }
-
-    componentDidMount() {
-        const { endpoint } = this.state;
-        let socket = io.connect(endpoint);
-        socket.on('news', function (data) {
-            console.log(data);
-            socket.emit('my other event', { my: 'data' });
-        });
-    }
-
-    render() {
-        const { response } = this.state;
-        return (
-            <div style={{ textAlign: "center" }}>
-                {response
-                    ? <p>
-                        The temperature in Florence is: {response} °F
-                    </p>
-                    : <p>Loading...</p>}
-            </div>
-        );
-    }
-}
-
 class ProgressBar extends React.Component {
     render() {
+        let pct = `${Math.floor(this.props.progress * 100)}%`;
         return (
-            <div className="slds-progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"
-                 role="progressbar">
-              <span className="slds-progress-bar__value" style={{width: '25%'}}>
-                <span className="slds-assistive-text">Progress: 25%</span>
-              </span>
+            <div>
+                <div className="slds-grid slds-grid_align-spread slds-p-bottom_x-small" id="progress-bar-label-id-1">
+                    <span>{this.props.message}</span>
+                    <span aria-hidden="true">
+                      <strong>{pct} complete</strong>
+                    </span>
+                </div>
+                <div className="slds-progress-bar">
+                    <span className={`slds-progress-bar__value ${this.props.success && this.props.progress === 1 ? "slds-progress-bar__value_success" : ""}`} style={{width: pct}}/>
+                </div>
             </div>
         );
     }
 }
 
-/*
 class Section extends React.Component {
-    state = {isopen: "slds-is-open"};
+    state = {isopen: this.props.closed ? "" : "slds-is-open"};
     toggleExpando = () => {
         this.setState(prevState => ({isopen: prevState.isopen === "" ? "slds-is-open" : ""}));
     };
     render() {
         return (
-            <div class={`slds-p-left_x-small slds-section ${this.state.isopen}`}>
-                <h3 className="slds-section__title">
+            <div className={`slds-section ${this.state.isopen}`}>
+                <h3>
                     <button className="slds-button slds-section__title-action" onClick={this.toggleExpando}>
                         <svg
-                            className="slds-section__title-action-icon slds-button__icon slds-button__icon_left"
+                            className="slds-section__title-action-icon slds-button__icon--small slds-button__icon_left"
                             aria-hidden="true">
                             <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#switch"
                                  xmlnsXlink="http://www.w3.org/1999/xlink"/>
                         </svg>
-                        <span className="slds-truncate" title="Section Title">{this.props.title}</span>
+                        <span className="slds-truncate" title={this.props.title}>{this.props.title}</span>
                     </button>
                 </h3>
-                <div aria-hidden="true" className="slds-section__content" id="expando-unique-id">
+                <div className="slds-section__content">
                     {this.props.children}
                 </div>
             </div>
         );
     }
 }
+
+class Results extends React.Component {
+    render() {
+        let lines = this.props.lines.map((r,i) => <li key={i} className="slds-item">{r}</li>);
+        return (
+            <ul className={this.props.divider ? this.props.divider : "slds-list_ordered"}>
+                {lines}
+            </ul>
+        );
+    }
+}
+
 class TimelineEntry extends React.Component {
-    state = {type: "email", subject: "Bobahobo rulez", timestamp: "10:00am | 3/24/18", isopen: ""};
+    state = {type: this.props.type || "task", isopen: ""};
     toggleExpando = () => {
         this.setState(prevState => ({isopen: prevState.isopen === "" ? "slds-is-open" : ""}));
     };
 
     render() {
+        let interval = "";
+        if (this.props.interval) {
+            interval = 
+                <div className="slds-no-flex">
+                    <span className="slds-icon_container slds-icon-utility-rotate" title={`Recurring every ${moment.duration(this.props.interval).humanize()}`}>
+                      <svg className="slds-icon slds-icon_xx-small slds-icon-text-default slds-m-left_x-small">
+                        <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#rotate" xmlnsXlink="http://www.w3.org/1999/xlink" />
+                      </svg>
+                    </span>
+                </div>;
+        }
+
         return (
             <li>
                 <div className={`slds-timeline__item_expandable slds-timeline__item_${this.state.type} ${this.state.isopen}`}>
@@ -228,32 +293,15 @@ class TimelineEntry extends React.Component {
                             <div className="slds-grid slds-grid_align-spread slds-timeline__trigger">
                                 <div className="slds-grid slds-grid_vertical-align-center slds-truncate_container_75 slds-no-space">
                                     <h3 className="slds-truncate"
-                                        title={this.state.subject}>
+                                        title={this.props.subject}>
                                         <a>
-                                            <strong>{this.state.subject}</strong>
+                                            <strong>{this.props.subject}</strong>
                                         </a>
                                     </h3>
-                                    <div className="slds-no-flex">
-                                        <span className="slds-icon_container slds-icon-utility-rotate" title="Recurring Task">
-                                          <svg className="slds-icon slds-icon_xx-small slds-icon-text-default slds-m-left_x-small" aria-hidden="true">
-                                            <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#rotate" xmlnsXlink="http://www.w3.org/1999/xlink" />
-                                          </svg>
-                                          <span className="slds-assistive-text">Recurring Task</span>
-                                        </span>
-                                    </div>
+                                    {interval}
                                 </div>
                                 <div className="slds-timeline__actions slds-timeline__actions_inline">
-                                    <p className="slds-timeline__date">{this.state.timestamp}</p>
-                                    <button
-                                        className="slds-button slds-button_icon slds-button_icon-border-filled slds-button_icon-x-small"
-                                        aria-haspopup="true" title="More Options for this item">
-                                        <svg className="slds-button__icon" aria-hidden="true">
-                                            <use
-                                                xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#down"
-                                                xmlnsXlink="http://www.w3.org/1999/xlink"/>
-                                        </svg>
-                                        <span className="slds-assistive-text">More Options for this item</span>
-                                    </button>
+                                    <p className="slds-timeline__date">{this.props.timestamp}</p>
                                 </div>
                             </div>
                             {this.props.children}
@@ -267,49 +315,59 @@ class TimelineEntry extends React.Component {
 
 class AdminCard extends React.Component {
     render() {
+        let actions = this.props.actions ? this.props.actions : [];
+        let groups = [];
+        let currentGroup = null;
+        for (let i = 0; i < actions.length; i++) {
+            const currentAction = actions[i];
+            let btn =
+                <button key={currentAction.label} disabled={currentAction.disabled || currentAction.spinning}
+                        className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+                    {currentAction.spinning ?
+                        <div style={{width: "3em"}}>&nbsp;
+                            <div role="status" className="slds-spinner slds-spinner_x-small">
+                                <div className="slds-spinner__dot-a"/>
+                                <div className="slds-spinner__dot-b"/>
+                            </div>
+                        </div> : currentAction.label }
+                </button>;
+            if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
+                currentGroup = {key: currentAction.group, actions: [btn]};
+                groups.push(currentGroup);
+            } else {
+                currentGroup.actions.push(btn);
+            }
+        }
+
+        let actionBar = [];
+        for (let i = 0; i < groups.length; i++) {
+            actionBar.push(<div key={i} className="slds-button-group" role="group">{groups[i].actions}</div>);
+        }
+        
         return (
             <article className="slds-card">
                 <div className="slds-card__header slds-grid">
                     <header className="slds-media slds-media_center slds-has-flexi-truncate">
                         <div className="slds-media__figure">
-                            <span className="slds-icon_container slds-icon-standard-contact"
+                            <span className="slds-icon_container slds-icon-standard-bot"
                                   title="description of icon when needed">
                               <svg className="slds-icon slds-icon_small" aria-hidden="true">
-                                <use xlinkHref="/assets/icons/standard-sprite/svg/symbols.svg#contact"
+                                <use xlinkHref="/assets/icons/standard-sprite/svg/symbols.svg#bot"
                                      xmlnsXlink="http://www.w3.org/1999/xlink"/>
                               </svg>
                             </span>
                         </div>
                         <div className="slds-media__body">
-                            <h2>
-                                <a className="slds-card__header-link slds-truncate">
-                                    <span className="slds-text-heading_small">{this.props.title}</span>
-                                </a>
-                            </h2>
+                            <span className="slds-text-heading_small">{this.props.title}</span>
+                            <span className="slds-float--right slds-m-right--small slds-text-color_weak">{this.props.subtitle}</span>
                         </div>
                     </header>
-                    <div className="slds-no-flex">
-                        <button className="slds-button slds-button_neutral">New</button>
-                    </div>
+                    {actionBar}
                 </div>
                 <div className="slds-card__body slds-card__body_inner">
-
-                    <div className="slds-grid slds-gutters">
-                        <div className="slds-col slds-size_2-of-3">
-                            <div className="slds-box_x-small slds-m-around_x-small">
-
-
-                            </div>
-                        </div>
-                        <div className="slds-col slds-size_1-of-3">
-                            <div className="slds-box_x-small slds-text-align_center slds-m-around_x-small">
-                            </div>
-                        </div>
-                    </div>
                     {this.props.children}
                 </div>
             </article>
         );
     }
 }
-*/

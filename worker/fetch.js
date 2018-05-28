@@ -1,5 +1,3 @@
-const logger = require('../util/logger').logger;
-
 const ps = require('./packagefetch');
 const pvs = require('./packageversionfetch');
 const licenses = require('./licensefetch');
@@ -9,119 +7,117 @@ const orgaccounts = require('./orgaccountfetch');
 const accounts = require('./accountfetch');
 const sfdc = require('../api/sfdcconn');
 const orgpackageversions = require('./orgpackageversionfetch');
+const admin = require('../api/admin');
 
 const packageorgs = require('../api/packageorgs');
 
-async function fetch(fetchAll) {
-    try {
-        logger.info(`=== Fetching${fetchAll ? ' All ' : ' '}Data ===`);
-        // Packages
-        await ps.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll);
-    
-        // Package versions - first fetch versions, then use the data to populate latest versions
-        await pvs.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll);
-        await pvs.fetchLatest();
-        
-        // Licenses - first populate licenses, then find duplicates and mark invalid
-        await licenses.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll);
-        await licenses.markInvalid();
+function fetch(fetchAll) {
+    return new admin.AdminJob( 
+        fetchAll ? "fetch-all" : "fetch-latest",
+        fetchAll ? "Fetch all data" : "Fetch latest data", 
+        [
+            {
+                name: "Populating license data",
+                steps: [
+                    {name: "Fetching packages", handler: () => ps.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll)},
+                    {name: "Fetching package versions", handler: () => pvs.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll)},
+                    {name: "Fetching latest package versions", handler: () => pvs.fetchLatest()},
 
-        // Orgs - first populate orgs from licenses, then fill in details from blacktab
-        await licenseorgs.fetch(fetchAll);
-    } catch (error) {
-        logger.error('Failed to fetch LMA data', {error: error.message, stack: error.stack});
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.sb62.orgId, packageorgs.Status.Invalid);
-        }
-    }
-
-    try {
-        await orgs.fetch(sfdc.NamedOrgs.bt.orgId, fetchAll);
-        await orgs.mark(false);
-    } catch (error) {
-        logger.error('Failed to fetch production org data', error);
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid);
-        }
-    }
-
-    try {
-        await orgs.fetch(sfdc.NamedOrgs.sbt.orgId, fetchAll);
-        await orgs.mark(true);
-    } catch (error) {
-        logger.error('Failed to fetch sandbox org data', error);
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid);
-        }
-    }
-
-    try {
-        await orgpackageversions.fetch();
-    } catch (error) {
-        logger.error('Failed to fetch org package versions data', error);
-    }
-
-    try { 
-        // Accounts - first populate accounts from orgs, then fill in details from org62
-        await orgaccounts.fetch(fetchAll);
-        await accounts.fetch(sfdc.NamedOrgs.org62.orgId, fetchAll);
-    } catch (error) {
-        logger.error('Failed to fetch account data', error);
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid);
-        }
-    }
-    logger.info("=== Done ===")
-}
-
-
-/**
- * Fetch everything again, ignoring modified dates
- * @returns {Promise<void>}
- */
-async function refetch() {
-    this.fetch(true);
+                    {name: "Fetching licenses", handler: () => licenses.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll)},
+                    {name: "Invalidating conflicting licenses", handler: () => licenses.markInvalid()},
+                    {name: "Deriving orgs from licenses", handler: () => licenseorgs.fetch(fetchAll)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.sb62.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            },
+            {
+                name: "Populating production org data",
+                steps: [
+                    {name: "Fetching production orgs", handler: () => orgs.fetch(sfdc.NamedOrgs.bt.orgId, fetchAll)},
+                    {name: "Invalidating missing production orgs", handler: () => orgs.mark(false)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            }, 
+            {
+                name: "Populating sandbox org data",
+                steps: [
+                    {name: "Fetching sandbox orgs", handler: () => orgs.fetch(sfdc.NamedOrgs.sbt.orgId, fetchAll)},
+                    {name: "Invalidating missing sandbox orgs", handler: () => orgs.mark(true)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            },
+            {
+                name: "Populating org package versions",
+                steps: [
+                    {
+                        name: "Deriving org package versions from licenses",
+                        handler: () => orgpackageversions.fetch(fetchAll)
+                    }]
+            },
+            {
+                name: "Populating accounts data",
+                steps: [
+                    {name: "Deriving accounts from orgs", handler: () => orgaccounts.fetch(fetchAll)},
+                    {name: "Fetching account names", handler: () => accounts.fetch(sfdc.NamedOrgs.org62.orgId, fetchAll)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            }
+        ]);
 }
 
 /**
  * Fetch all orgs marked previously as invalid, in case any fell through the cracks before, or became valid again.
  * @returns {Promise<void>}
  */
-async function refetchInvalid() {
-    logger.info(`=== Fetching Invalid Org Data ===`);
-    try {
-        await orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId);
-        await orgs.mark(false);
-    } catch (error) {
-        logger.error('Failed to fetch production org data', error);
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid);
-        }
-    }
-
-    try {
-        await orgs.refetchInvalid(sfdc.NamedOrgs.sbt.orgId);
-        await orgs.mark(true);
-    } catch (error) {
-        logger.error('Failed to fetch sandbox org data', error);
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid);
-        }
-    }
-
-    try { 
-        // Accounts - first populate accounts from orgs, then fill in details from org62
-        await orgaccounts.fetch();
-        await accounts.fetch(sfdc.NamedOrgs.org62.orgId);
-    } catch (error) {
-        logger.error('Failed to fetch account data', error);
-        if (error.name === "invalid_grant") {
-            packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid);
-        }
-    }
-    logger.info("=== Done ===")
+function fetchInvalid() {
+    return new admin.AdminJob("fetch-invalid", "Fetch invalid org data", 
+        [
+            {
+                name: "Populating production org data",
+                steps: [
+                    {name: "Fetching invalid production orgs", handler: () => orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId)},
+                    {name: "Invalidating missing production orgs", handler: () => orgs.mark(false)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            },
+            {
+                name: "Populating sandbox org data",
+                steps: [
+                    {name: "Fetching invalid sandbox orgs", handler: () => orgs.fetch(sfdc.NamedOrgs.sbt.orgId)},
+                    {name: "Invalidating missing sandbox orgs", handler: () => orgs.mark(true)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            },
+            {
+                name: "Populating accounts data",
+                steps: [
+                    {name: "Deriving accounts from orgs", handler: () => orgaccounts.fetch(true)},
+                    {name: "Fetching account names", handler: () => accounts.fetch(sfdc.NamedOrgs.org62.orgId, true)}],
+                fail: (e) => {
+                    if (e.name === "invalid_grant") {
+                        packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid);
+                    }
+                }
+            }
+        ]);
 }
 
 exports.fetch = fetch;
-exports.refetch = refetch;
-exports.refetchInvalid = refetchInvalid;
+exports.fetchInvalid = fetchInvalid;

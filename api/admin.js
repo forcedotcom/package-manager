@@ -1,46 +1,221 @@
 'use strict';
 
-const logger = require('../util/logger').logger;
+const moment = require("moment");
+const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
-const subfetch = require("../worker/subfetch");
+const MAX_HISTORY = 100;
 
-const jobQueue = [];
-const jobSet = new Set();
+let jobQueue = [];
+let jobHistory = [];
+let socket = null;
+let activeJobs = new Map();
 
 class AdminJob {
+    constructor(type, name, steps) {
+        this.id = `${type}-${new Date().getTime()}`; // Simple id based on type and time
+        this.type = type;
+        this.name = name;
+        this.modifiedDate = new Date();
+        this.status = null;
+        this.steps = Array.from(steps);
+        this.stepIndex = 0;
+        this.stepCount = this.collectSteps(this.steps).length;
+        this.messages = [];
+        this.errors = [];
+        this.cancelled = false;
+    }
     
-}
+    progressUpdate(message, stepIndex, e) {
+        this.message = message;
+        this.messages.push(message);
+        if (e) {
+            this.errors.push(e);
+        }
+        this.stepIndex = stepIndex;
+        this.modifiedDate = new Date();
+        socket.emit("jobs", Array.from(activeJobs.values()));
+    }
+    
+    async run() {
+        if (activeJobs.has(this.type)) {
+            jobQueue.push(this);
+            socket.emit("job-queue", jobQueue);
+            return;
+        }
+        try {
+            activeJobs.set(this.type, this);
+            await this.runSteps(this.steps);
+            this.progressUpdate(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
+                this.cancelled ? this.stepIndex : this.stepCount);
+            logger.info(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
+                {steps: this.stepCount, errors: this.errors.length})
+        } catch (e) {
+            this.progressUpdate("Admin Job Failed", this.stepCount);
+            logger.error("Admin Job Failed", {error: e.message || e, steps: this.stepCount, errors: this.errors.length})
+        } finally {
+            activeJobs.delete(this.type);
+            jobHistory.push(this);
+            if (jobHistory.length > MAX_HISTORY) {
+                jobHistory.pop();
+            }
+            socket.emit("job-history", jobHistory);
+            let nextJob = jobQueue.pop();
+            socket.emit("job-queue", jobQueue);
+            if(nextJob) {
+                await nextJob.run();
+            }
+        }
+    }
 
-function requestFetch(req, res, next) {
-    try {
-        fetch.fetch(req.query.all).then(() => {logger.debug("Finished fetching data", {all: req.query.all})})
-            .catch(e => logger.error("Failed to fetch data", {all: req.query.all, error: e.message || e}));
-        return res.send({success: true});
-    } catch (e) {
-        next(e);
+    collectSteps(steps, allsteps) {
+        allsteps = allsteps || [];
+        for (let i = 0; i < steps.length; i++) {
+            let step = steps[i];
+            if (step.handler) {
+                allsteps.push(step);
+            }
+            if (step.steps) {
+                this.collectSteps(step.steps, allsteps);
+            }
+        }
+        return allsteps;
+    }
+    
+    async runSteps(steps) {
+        for (let i = 0; i < steps.length; i++) {
+            let step = steps[i];
+            if (this.cancelled) {
+                this.progressUpdate(`Canceling job before ${step.name.toLowerCase()}`, this.stepIndex);
+                break;
+            }
+            this.progressUpdate(step.name, this.stepIndex);
+            if (step.handler) {
+                try {
+                    await step.handler(this);
+                    this.progressUpdate(`Completed ${step.name.toLowerCase()}`, this.stepIndex + 1);
+                } catch (e) {
+                    this.progressUpdate(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex + 1,
+                        `${step.name.toLowerCase()}: ${e.message || e}`);
+                    if (step.fail) {
+                        step.fail(e, this);
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+            if (step.steps) {
+                try {
+                    await this.runSteps(step.steps);
+                    this.progressUpdate(`Completed ${step.name.toLowerCase()}`, this.stepIndex);
+                } catch (e) {
+                    this.progressUpdate(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex);
+                    if (step.fail) {
+                        step.fail(e, this);
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
+    }
+    
+    cancel() {
+        this.cancelled = true;
     }
 }
 
-function requestFetchSubscribers(req, res, next) {
-    try {
-        subfetch.fetch(req.query.all).then(() => {logger.debug("Finished fetching subscriber data", {all: req.query.all})})
-            .catch(e => logger.error("Failed to fetch subscriber data", {all: req.query.all, error: e.message || e}));
-        return res.send({success: true});
-    } catch (e) {
-        next(e);
+function connect(sock) {
+    socket = sock;
+    socket.on('fetch', function () {
+        fetchData().then(() => {});
+    });
+    socket.on('fetch-all', function () {
+        fetchData(true).then(() => {});
+    });
+    socket.on('fetch-invalid', function () {
+        fetchInvalidOrgs().then(() => {});
+    });
+    socket.on('cancel-jobs', function (data) {
+        cancelJobs(data);
+    });
+}
+
+function requestJobs(req, res) {
+    res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: jobHistory});    
+}
+
+function requestCancel(req, res) {
+    cancelJobs(req.body.jobIds);
+    res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: jobHistory});    
+}
+
+function cancelJobs(data) {
+    let jobIds = new Set(data);
+    Array.from(activeJobs.values()).forEach(j => {
+        if (jobIds.has(j.id)) {
+            j.cancel();
+            jobIds.delete(j.id);
+        }
+    });
+
+    if (jobIds.size > 0) {
+        // Also look in queue
+        jobQueue = jobQueue.filter(j => !jobIds.has(j.id));
+        socket.emit("job-queue", jobQueue);
     }
 }
 
-function requestFetchInvalid(req, res, next) {
-    try {
-        fetch.refetchInvalid().then(() => {logger.debug("Finished fetching invalid orgs")})
-            .catch(e => logger.error("Failed to fetch invalid orgs", {error: e.message || e}));
-        return res.send({success: true});
-    } catch (e) {
-        next(e);
+function scheduleJobs() {
+    // Define singleton fetch intervals.
+    if (process.env.FETCH_INTERVAL_MINUTES != null) {
+        let interval = process.env.FETCH_INTERVAL_MINUTES * 60 * 1000;
+        setInterval(() => {fetchData(false, interval).then(() => logger.info("Finished scheduled fetch"))}, interval);
+        logger.info(`Scheduled fetching of latest data every ${process.env.FETCH_INTERVAL_MINUTES} minutes`)
+    }
+
+    if (process.env.FETCH_INVALID_INTERVAL_HOURS != null) {
+        // Always start heavyweight tasks at the end of the day.
+        let interval = process.env.FETCH_INVALID_INTERVAL_HOURS * 60 * 60 * 1000;
+        let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
+        setTimeout(() => setInterval(() => {fetchInvalidOrgs(interval).then(() => logger.info("Finished scheduled fetch invalid orgs"))}, interval), delay);
+        let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
+        logger.info(`Scheduled fetching of invalid orgs starting ${startTime} and recurring every ${process.env.FETCH_INVALID_INTERVAL_HOURS} hours`)
+    }
+
+    if (process.env.REFETCH_INTERVAL_DAYS != null) {
+        // Always start heavyweight at the end of the day.
+        let interval = process.env.REFETCH_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+        let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
+        setTimeout(() => setInterval(() => {fetchData(true, interval).then(() => logger.info("Finished scheduled fetch all"))}, interval), delay);
+        let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
+        logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${process.env.REFETCH_INTERVAL_DAYS} days`)
     }
 }
 
-exports.requestFetch = requestFetch;
-exports.requestFetchSubscribers = requestFetchSubscribers;
-exports.requestFetchInvalid = requestFetchInvalid;
+function requestFetchData(req, res, next) {
+    fetchData(req.query.all).then(() => res.send({success: true})).catch(e => next(e));
+}
+
+async function fetchData(fetchAll, interval) {
+    const job = fetch.fetch(fetchAll);
+    job.interval = interval;
+    await job.run();
+}
+
+function requestFetchInvalidOrgs(req, res, next) {
+    fetchInvalidOrgs().then(() => res.send({success: true})).catch(e => next(e));
+}
+
+async function fetchInvalidOrgs(interval) {
+    const job = fetch.fetchInvalid();
+    job.interval = interval;
+    await job.run();
+}
+
+exports.connect = connect;
+exports.requestJobs = requestJobs;
+exports.requestCancel = requestCancel;
+exports.scheduleJobs = scheduleJobs;
+exports.requestFetch = requestFetchData;
+exports.requestFetchInvalid = requestFetchInvalidOrgs;
+exports.AdminJob = AdminJob;

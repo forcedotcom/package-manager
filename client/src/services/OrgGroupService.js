@@ -16,4 +16,4 @@ export let requestDelete = orggroupIds => h.post(url + "/delete", {orggroupIds})
 
 export let requestUpgrade = (id, versions, scheduled_date, description) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description});
 
-export let requestRefresgPackageVersions = (id) => h.post(url + "/refresh", {id});
+export let requestRefreshPackageVersions = (id) => h.post(url + "/refresh", {id});

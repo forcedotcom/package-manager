@@ -35,14 +35,14 @@ export default class extends React.Component {
     render() {
         return (
             <div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-                    <Tabs id="PackageView">
-                        <div label="Versions">
-                            <PackageVersionCard packageVersions={this.state.packageVersions}/>
-                        </div>
-                        <div label="Customers">
-                            <OrgCard title="Customers" orgs={this.state.orgs} onSort={this.orgSortHandler.bind(this)}/>
-                        </div>
-                    </Tabs>
+                <Tabs id="PackageView">
+                    <div label="Versions">
+                        <PackageVersionCard packageVersions={this.state.packageVersions}/>
+                    </div>
+                    <div label="Customers">
+                        <OrgCard title="Customers" orgs={this.state.orgs} onSort={this.orgSortHandler.bind(this)}/>
+                    </div>
+                </Tabs>
             </div>
         );
     }
