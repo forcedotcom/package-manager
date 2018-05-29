@@ -5,7 +5,10 @@ const logger = require('../util/logger').logger;
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
                     sfLma__Version_ID__c, LastModifiedDate FROM sfLma__Package_Version__c`;
 
-async function fetch(sb62Id, fetchAll) {
+let adminJob;
+
+async function fetch(sb62Id, fetchAll, job) {
+    adminJob = job;
     let fromDate = null;
     if (!fetchAll) {
         let latest = await db.query(`select max(modified_date) from package_version`);
@@ -49,7 +52,7 @@ async function load(result, conn) {
             version_id: v.sfLma__Version_ID__c
         };
     });
-    if (!result.done) {
+    if (!result.done && !adminJob.cancelled) {
         return fetchMore(result.nextRecordsUrl, conn, recs);
     }
     return recs;
@@ -77,7 +80,7 @@ async function upsert(recs, batchSize) {
         return; // nothing to see here
     }
     logger.info(`New package versions found`, {count});
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Batch upserting package versions`, {batch: start, count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }
@@ -103,8 +106,13 @@ async function upsertBatch(recs) {
     await db.insert(sql, values);
 }
 
-async function fetchLatest() {
+async function fetchLatest(job) {
+    adminJob = job;
+    
     let recs = await queryLatest();
+    if (adminJob.cancelled)
+        return;
+    
     return upsertLatest(recs);
 }
 

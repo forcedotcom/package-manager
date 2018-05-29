@@ -41,26 +41,14 @@ export default class extends React.Component {
     
     fetchHandler = () => {
         this.state.socket.emit("fetch", {});
-        // NotificationManager.info(`Fetching latest package, license and org data`, "Fetching");
-        // adminService.fetch().then(response => {
-        //     console.log(response);
-        // }).catch(e => NotificationManager.error(`Failed to fetch latest package, license and org data. ${e.message || e}`, "Failure", 8000))
     };
 
     refetchInvalidHandler = () => {
         this.state.socket.emit("fetch-invalid", {});
-        // NotificationManager.info(`Re-fetching orgs marked as invalid`, "Fetching Invalids");
-        // adminService.fetchInvalid().then(response => {
-        //     console.log(response);
-        // }).catch(e => NotificationManager.error(`Failed to fetch orgs marked as invalid. ${e.message || e}`, "Failure", 8000))
     };
     
     refetchAllHandler = () => {
         this.state.socket.emit("fetch-all", {});
-        // NotificationManager.info(`Fetching all package, license and org data`, "Fetching All");
-        // adminService.fetch(true).then(response => {
-        //     console.log(response);
-        // }).catch(e => NotificationManager.error(`Failed to fetch all package, license and org data.  ${e.message || e}`, "Failure", 8000))
     };
     
     showAllHistoryHandler = () => {
@@ -77,7 +65,7 @@ export default class extends React.Component {
                     actions.push({label: "Cancel Job", handler: () => this.cancellationHandler(job), spinning: job.cancelling});
                 }
                 activeCards.push(
-                    <AdminCard key={job.id} title={job.name} actions={actions}>
+                    <AdminCard key={job.id} title={job.name} status={job.status} actions={actions}>
                         <ProgressBar message={job.message} progress={job.stepIndex / job.stepCount} success={job.errors.length === 0}/>
                         {job.errors.length > 0 ?
                             <Section title="Errors"><Results lines={job.errors} divider="slds-has-dividers_bottom-space"/></Section> : "" }
@@ -127,7 +115,7 @@ export default class extends React.Component {
             );
         }
         if (!this.state.showAllHistory && this.state.history.length > historyCount) {
-            historyCards.push(<a className="slds-text-link slds-m-around--small" onClick={this.showAllHistoryHandler}>Show all ({this.state.history.length})</a> );
+            historyCards.push(<a key="no-history" className="slds-text-link slds-m-around--small" onClick={this.showAllHistoryHandler}>Show all ({this.state.history.length})</a> );
         }
         
         return (
@@ -359,7 +347,10 @@ class AdminCard extends React.Component {
                         </div>
                         <div className="slds-media__body">
                             <span className="slds-text-heading_small">{this.props.title}</span>
-                            <span className="slds-float--right slds-m-right--small slds-text-color_weak">{this.props.subtitle}</span>
+                            {this.props.status === "Complete" ? 
+                                <span style={{borderRadius: "4px", padding: "0 4px 0 4px"}} className="slds-float--right slds-theme--success slds-text-color_inverse">{this.props.status}</span> :
+                                <span style={{borderRadius: "4px", padding: "0 4px 0 4px"}} className="slds-float--right slds-theme--error slds-text-color_inverse">{this.props.status}</span> 
+                            }
                         </div>
                     </header>
                     {actionBar}

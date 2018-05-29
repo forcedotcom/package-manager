@@ -8,7 +8,11 @@ const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox, modified_date 
                     AND instance IS NOT NULL
                     AND (expiration IS NULL OR expiration > DATE 'tomorrow')`;
 
-async function fetch(fetchAll) {
+let adminJob;
+
+async function fetch(fetchAll, job) {
+    adminJob = job;
+    
     let fromDate = null;
     if (!fetchAll) {
         let latest = await db.query(`select max(modified_date) from org`);
@@ -53,7 +57,7 @@ async function upsert(recs, batchSize) {
         logger.info("    " + msgs.join("\n    "));
     }
     logger.info(`New license orgs found`, {count});
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Upserting license orgs`, {batch: start, count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }

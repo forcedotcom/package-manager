@@ -5,7 +5,11 @@ const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.package_version_id
                     FROM license l
                     INNER JOIN package_version v on v.sfid = l.package_version_id`;
 
-async function fetch(fetchAll) {
+let adminJob;
+
+async function fetch(fetchAll, job) {
+    adminJob = job;
+    
     let sql = SELECT_ALL;
     let values = ['Invalid'];
     let whereParts = [`l.status != $${values.length}`];
@@ -29,7 +33,7 @@ async function upsert(recs, batchSize) {
         return;
     }
     logger.info(`New org package versions found`, {count});
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Batch upserting org package versions`, {batch: start, count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }

@@ -5,7 +5,9 @@ const logger = require('../util/logger').logger;
 const SELECT_ALL = `SELECT DISTINCT account_id FROM org WHERE account_id is not null 
                     AND account_id NOT IN('${sfdc.INVALID_ID}', '${sfdc.INTERNAL_ID}')`;
 
-async function fetch(fetchAll) {
+let adminJob;
+async function fetch(fetchAll, job) {
+    adminJob = job;
     let fromDate = null;
     if(!fetchAll) {
         let latest = await db.query(`select max(modified_date) from account`);
@@ -34,10 +36,7 @@ async function upsert(recs, batchSize) {
         return;
     }
     logger.info(`New org accounts found`, {count});
-    if (count <= batchSize) {
-        return await upsertBatch(recs);
-    }
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Batch upserting org accounts`, {batch: start, count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }

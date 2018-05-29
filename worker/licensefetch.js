@@ -6,8 +6,10 @@ const SELECT_ALL = `SELECT Id, LastModifiedDate, Name, sfLma__Subscriber_Org_ID_
     sfLma__Subscriber_Org_Is_Sandbox__c, sfLma__Status__c, sfLma__Install_Date__c, sfLma__Expiration__c, 
     sfLma__Used_Licenses__c, sfLma__Package__c, sfLma__Package_Version__c FROM sfLma__License__c`;
 
+let adminJob;
 
-async function fetch(sb62Id, fetchAll) {
+async function fetch(sb62Id, fetchAll, job) {
+    adminJob = job;
     let fromDate = null;
     if (!fetchAll) {
         let latest = await db.query(`select max(modified_date) max from license`);
@@ -52,7 +54,7 @@ async function load(result, conn) {
             package_version_id: v.sfLma__Package_Version__c
         };
     });
-    if (!result.done) {
+    if (!result.done && !adminJob.cancelled) {
         return fetchMore(result.nextRecordsUrl, conn, recs);
     }
     return recs;
@@ -65,12 +67,7 @@ async function upsert(recs, batchSize) {
         return; // nothing to see here
     }
     logger.info(`New licenses found in sb62`, {count});
-    if (count <= batchSize) {
-        logger.info(`Upserting license records`, {count: recs.length});
-        return await upsertBatch(recs);
-    }
-
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Batch upserting license records`, {batch: Math.min(start+batchSize,count), count: count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }

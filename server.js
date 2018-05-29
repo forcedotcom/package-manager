@@ -53,7 +53,7 @@ app.use(cookieSession({
 app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.use(function (req, res, next) {
-    if (req.path.startsWith('/api') && !req.session.access_token) {
+    if (process.env.ENFORCE_AUTH !== "false" && req.path.startsWith('/api') && !req.session.access_token) {
         res.status(401).send();
         return;
     } 

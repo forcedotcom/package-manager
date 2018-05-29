@@ -5,16 +5,21 @@ const logger = require('../util/logger').logger;
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate FROM AllOrganization`;
 
 const Status = {NotFound: 'Not Found'};
+const QUERY_BATCH_SIZE = 500;
 
-async function fetch(btOrgId, fetchAll, batchSize = 500) {
-    return await queryAndStore(btOrgId, fetchAll, false, batchSize, false);
+let adminJob;
+
+async function fetch(btOrgId, fetchAll, job) {
+    adminJob = job;
+    return await queryAndStore(btOrgId, fetchAll, false, false);
 }
 
-async function refetchInvalid(btOrgId, batchSize = 500) {
-    return await queryAndStore(btOrgId, false, true, batchSize, false);
+async function refetchInvalid(btOrgId, job) {
+    adminJob = job;
+    return await queryAndStore(btOrgId, false, true, false);
 }
 
-async function queryAndStore(btOrgId, fetchAll, fetchInvalid, batchSize) {
+async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
     let conn = await sfdc.buildOrgConnection(btOrgId);
     let sql = `select org_id, modified_date from org`;
     if (fetchInvalid) {
@@ -31,9 +36,9 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid, batchSize) {
         return; 
     }
 
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Retrieving org records`, {batch: start, count});
-        await fetchBatch(conn, orgs.slice(start, start += batchSize));
+        await fetchBatch(conn, orgs.slice(start, start += QUERY_BATCH_SIZE));
     }
 }
 

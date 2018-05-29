@@ -2,12 +2,14 @@ const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 
-async function fetch(org62Id, fetchAll, batchSize = 500) {
-    return await queryAndStore(org62Id, fetchAll, batchSize, false);
-}
+const QUERY_BATCH_SIZE = 500;
 
-async function fetchBulk(org62Id, fetchAll, batchSize = 5000) {
-    return await queryAndStore(org62Id, fetchAll, batchSize, true);
+let adminJob;
+
+async function fetch(org62Id, fetchAll, job) {
+    adminJob = job;
+    
+    return await queryAndStore(org62Id, fetchAll, QUERY_BATCH_SIZE, false);
 }
 
 async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
@@ -23,7 +25,7 @@ async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
     }
 
     let conn = await sfdc.buildOrgConnection(org62Id);
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Querying accounts`, {start, count});
         await fetchBatch(conn, accounts.slice(start, start += batchSize), useBulkAPI);
     }
@@ -67,7 +69,7 @@ async function upsert(recs, batchSize) {
         return; // nothing to see here
     }
     logger.info(`New account records found`, {count});
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         await upsertBatch(recs.slice(start, start += batchSize));
     }
 }
@@ -97,5 +99,4 @@ async function mark() {
 }
 
 exports.fetch = fetch;
-exports.fetchBulk = fetchBulk;
 exports.mark = mark;

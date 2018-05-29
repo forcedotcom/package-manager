@@ -5,7 +5,11 @@ const logger = require('../util/logger').logger;
 const SELECT_ALL = `SELECT Id, Name, sflma__Developer_Org_ID__c, sfLma__Package_ID__c, LastModifiedDate
                     FROM sflma__Package__c`;
 
-async function fetch(sb62Id, fetchAll) {
+let adminJob;
+
+async function fetch(sb62Id, fetchAll, job) {
+    adminJob = job;
+    
     let fromDate = null;
     if (!fetchAll) {
         let latest = await db.query(`select max(modified_date) from package`);
@@ -39,7 +43,8 @@ async function load(result, conn) {
         return {sfid: v.Id, name: v.Name, package_org_id: v.sfLma__Developer_Org_ID__c, 
             package_id: v.sfLma__Package_ID__c, modified_date: v.LastModifiedDate};
     });
-    if (!result.done) {
+    
+    if (!result.done && !adminJob.cancelled) {
         return fetchMore(result.nextRecordsUrl, conn, recs);
     }
     return recs;
@@ -52,10 +57,7 @@ async function upsert(recs, batchSize) {
         return; // nothing to see here
     }
     logger.info(`New packages found`, {count});
-    if (count <= batchSize) {
-        return await upsertBatch(recs);
-    }
-    for (let start = 0; start < count;) {
+    for (let start = 0; start < count && !adminJob.cancelled;) {
         logger.info(`Batch upserting package records`, {batch: start, count});
         await upsertBatch(recs.slice(start, start += batchSize));
     }

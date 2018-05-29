@@ -45,11 +45,13 @@ class AdminJob {
         try {
             activeJobs.set(this.type, this);
             await this.runSteps(this.steps);
+            this.status = this.cancelled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
             this.progressUpdate(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
                 this.cancelled ? this.stepIndex : this.stepCount);
             logger.info(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
                 {steps: this.stepCount, errors: this.errors.length})
         } catch (e) {
+            this.status = "Failed";
             this.progressUpdate("Admin Job Failed", this.stepCount);
             logger.error("Admin Job Failed", {error: e.message || e, steps: this.stepCount, errors: this.errors.length})
         } finally {
