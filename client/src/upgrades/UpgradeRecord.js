@@ -28,16 +28,10 @@ export default class extends React.Component {
     };
 
     checkItemStatus() {
-        let shouldPing = false, started = false;
-        for (let i = 0; i < this.state.items.length; i++) {
-            const itemStatus = this.state.items[i].status;
-            if (!isDoneStatus(itemStatus) && itemStatus !== Status.Created)
-                shouldPing = true;
-            if (itemStatus !== Status.Created)
-                started = true;
-        }
-
-        this.setState({status: !started ? "Not Started" : shouldPing ? "Active" : "Done"}); 
+        let u = this.state.upgrade;
+        let status = u.inactive_item_count === u.item_count ? "Inactive" :  u.done_item_count !== u.item_count ? "Active" : "Done";
+        let shouldPing = status === "Active";
+        this.setState({status}); 
 
         if (!shouldPing)
             return; // All of our items are done, so don't bother pinging.

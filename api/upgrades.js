@@ -3,12 +3,36 @@ const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
 
-const SELECT_ALL = `select u.id, u.start_time, u.created_by, u.description, count(i.*) item_count
+const SELECT_ALL = `select u.id, u.start_time, u.created_by, u.description, 
+                        count(i.*) item_count, 
+                        count(CASE 
+                            WHEN i.status = 'Succeeded' THEN 1
+                            WHEN i.status = 'Failed' THEN 1
+                            WHEN i.status = 'Canceled' THEN 1
+                            WHEN i.status = 'Ineligible' THEN 1
+                            ELSE NULL 
+                            END) done_item_count,
+                        count(CASE
+                            WHEN i.status = 'Created' THEN 1
+                            ELSE NULL
+                            END) inactive_item_count
                     from upgrade u
                     inner join upgrade_item i on i.upgrade_id = u.id
                     group by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ONE = `select u.id, u.start_time, u.created_by, u.description, count(i.*) item_count
+const SELECT_ONE = `select u.id, u.start_time, u.created_by, u.description,
+                        count(i.*) item_count, 
+                        count(CASE 
+                            WHEN i.status = 'Succeeded' THEN 1
+                            WHEN i.status = 'Failed' THEN 1
+                            WHEN i.status = 'Canceled' THEN 1
+                            WHEN i.status = 'Ineligible' THEN 1
+                            ELSE NULL 
+                            END) done_item_count,
+                        count(CASE
+                            WHEN i.status = 'Created' THEN 1
+                            ELSE NULL
+                            END) inactive_item_count
                     from upgrade u
                     inner join upgrade_item i on i.upgrade_id = u.id
                     where u.id = $1
