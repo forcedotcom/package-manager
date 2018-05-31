@@ -115,7 +115,7 @@ export default class extends React.Component {
             for (let i = Math.min(this.state.history.length, historyCount) - 1; i >=0; i--) {
                 let job = this.state.history[i];
                 historyCards.push(
-                    <TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval} timestamp={moment(job.modifiedDate).format("lll")}>
+                    <TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval} error={job.errors.length > 0} timestamp={moment(job.modifiedDate).format("lll")}>
                             {job.errors.length > 0 ?
                                 <Section title="Errors"><Results lines={job.errors} divider="slds-has-dividers_bottom-space"/></Section> : "" }
                             {job.messages.length > 0 ?
@@ -225,13 +225,23 @@ class TimelineEntry extends React.Component {
     };
 
     render() {
-        let interval = "";
+        let interval = "", error = "";
         if (this.props.interval) {
             interval = 
                 <div className="slds-no-flex">
                     <span className="slds-icon_container slds-icon-utility-rotate" title={`Recurring every ${moment.duration(this.props.interval).humanize()}`}>
                       <svg className="slds-icon slds-icon_xx-small slds-icon-text-default slds-m-left_x-small">
                         <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#rotate" xmlnsXlink="http://www.w3.org/1999/xlink" />
+                      </svg>
+                    </span>
+                </div>;
+        }
+        if (this.props.error) {
+            error = 
+                <div className="slds-no-flex">
+                    <span className="slds-icon_container slds-icon-utility-error" title="One or more errors occurred">
+                      <svg className="slds-icon slds-icon_xx-small slds-icon-text-default slds-m-left_x-small slds-icon-text-error">
+                        <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#error" xmlnsXlink="http://www.w3.org/1999/xlink" />
                       </svg>
                     </span>
                 </div>;
@@ -259,13 +269,13 @@ class TimelineEntry extends React.Component {
                         <div className="slds-media__body">
                             <div className="slds-grid slds-grid_align-spread slds-timeline__trigger">
                                 <div className="slds-grid slds-grid_vertical-align-center slds-truncate_container_75 slds-no-space">
-                                    <h3 className="slds-truncate"
-                                        title={this.props.subject}>
+                                    <h3 className="slds-truncate" title={this.props.subject}>
                                         <a>
                                             <strong>{this.props.subject}</strong>
                                         </a>
                                     </h3>
                                     {interval}
+                                    {error}
                                 </div>
                                 <div className="slds-timeline__actions slds-timeline__actions_inline">
                                     <p className="slds-timeline__date">{this.props.timestamp}</p>
