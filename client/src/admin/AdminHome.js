@@ -10,7 +10,10 @@ import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
 
+const DEFAULT_HISTORY_LIMIT = 10;
+
 export default class extends React.Component {
+
     state = {
         jobs: [],
         queue: [],
@@ -110,9 +113,11 @@ export default class extends React.Component {
 
 
         let historyCards = [];
-        let historyCount = this.state.showAllHistory ? this.state.history.length : 10;
-        if (this.state.history.length > 0) {
-            for (let i = Math.min(this.state.history.length, historyCount) - 1; i >=0; i--) {
+        let historyCount = Math.min(this.state.history.length, DEFAULT_HISTORY_LIMIT);
+        if (this.state.showAllHistory)  
+            historyCount = this.state.history.length;
+        if (historyCount) {
+            for (let i = this.state.history.length - 1; i >= this.state.history.length - historyCount; i--) {
                 let job = this.state.history[i];
                 historyCards.push(
                     <TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval} error={job.errors.length > 0} timestamp={moment(job.modifiedDate).format("lll")}>
