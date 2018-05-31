@@ -1,22 +1,31 @@
 import React from 'react';
 import moment from "moment";
+import debounce from 'lodash.debounce';
 
 import * as adminService from '../services/AdminService';
 
-import {Icon} from "../components/Icons";
 import {ADMIN_ICON} from "../Constants";
 import * as io from "socket.io-client";
+import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
+import {RecordHeader} from "../components/PageHeader";
 
 export default class extends React.Component {
     state = {
         jobs: [],
         queue: [],
         history: [],
-        socket: null
+        socket: null,
+        isMini: window.innerWidth < 1000
     };
 
+    handleWindowResize = debounce(() => {
+            this.setState({ isMini: window.innerWidth < 1000 })
+        }, 200);
+    
     componentDidMount() {
+        window.addEventListener('resize', this.handleWindowResize);
+        
         let socket = io.connect();
         let self = this;
         socket.on('jobs', function (data) {
@@ -32,6 +41,10 @@ export default class extends React.Component {
         adminService.requestJobs().then(res => {
             this.setState({socket, jobs: res.jobs, queue: res.queue, history: res.history})
         });
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.handleWindowResize);
     }
 
     cancellationHandler = (job) => {
@@ -99,7 +112,7 @@ export default class extends React.Component {
         let historyCards = [];
         let historyCount = this.state.showAllHistory ? this.state.history.length : 10;
         if (this.state.history.length > 0) {
-            for (let i = 0; i < Math.min(this.state.history.length, historyCount); i++) {
+            for (let i = Math.min(this.state.history.length, historyCount) - 1; i >=0; i--) {
                 let job = this.state.history[i];
                 historyCards.push(
                     <TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval} timestamp={moment(job.modifiedDate).format("lll")}>
@@ -118,84 +131,50 @@ export default class extends React.Component {
             historyCards.push(<a key="no-history" className="slds-text-link slds-m-around--small" onClick={this.showAllHistoryHandler}>Show all ({this.state.history.length})</a> );
         }
         
+        let actions = [
+            {label: "Fetch Latest", handler: this.fetchHandler},
+            {label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
+            {label: "Re-Fetch All", handler: this.refetchAllHandler},
+        ];
         return (
             <div>
-                <AdminHeader type="Admin" icon={ADMIN_ICON} title="Administration" onUpgrade={this.openSchedulerWindow}>
-                    <button className="slds-button slds-button--neutral" onClick={this.fetchHandler}>Fetch Latest</button>
-                    <button className="slds-button slds-button--neutral" onClick={this.refetchInvalidHandler}>Fetch Invalid Orgs</button>
-                    <button className="slds-button slds-button--neutral" onClick={this.refetchAllHandler}>Re-Fetch All</button>
-                </AdminHeader>
-                
-                <div className="slds-grid slds-gutters">
-                    <div className="slds-col slds-size_2-of-3">
-                        <Tabs id="Content">
-                            <div label={`Active Jobs (${this.state.jobs.length})`}>
-                                {activeCards}
-                            </div>
-                            <div label={`Queue (${this.state.queue.length})`}>
-                                {queueCards}
-                            </div>
-                        </Tabs>
-                    </div>
-                    <div className="slds-col slds-size_1-of-3 slds-p-around_x-small">
-                        <ul className="slds-timeline">
-                            {historyCards}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-}
+                <RecordHeader type="Admin" icon={ADMIN_ICON} title="Administration" actions={actions}/>
 
-class AdminHeader extends React.Component {
-    static defaultProps = {
-        icon: {name: "calibration", category: "standard"}
-    };
-
-    render() {
-        return (
-            <div className="slds-page-header">
-                <div className="slds-grid">
-                    <div className="slds-col slds-has-flexi-truncate">
-                        <div className="slds-media">
-                            <div className="slds-media__figure">
-                                <Icon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
-                            </div>
-                            <div className="slds-media__body">
-                                <p className="slds-text-heading--label">{this.props.type}</p>
-                                <div className="slds-grid">
-                                    <h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle"
-                                        title={this.props.title}>{this.props.title}</h1>
+                {this.state.isMini ?
+                    <div className="slds-grid slds-gutters">
+                        <div className="slds-col slds-size_1-of-1">
+                            <Tabs id="Content">
+                                <div label={`Active Jobs (${this.state.jobs.length})`}>
+                                    {activeCards}
                                 </div>
-                            </div>
+                                <div label={`Queue (${this.state.queue.length})`}>
+                                    {queueCards}
+                                </div>
+                                <div label={`History (${this.state.history.length})`}>
+                                    {historyCards}
+                                </div>
+                            </Tabs>
                         </div>
                     </div>
-                    <div className="slds-col slds-no-flex slds-align-bottom">
-                        <div className="slds-button-group" role="group">
-                            {this.props.children}
+                    :
+                    <div className="slds-grid slds-gutters">
+                        <div className="slds-col slds-size_3-of-5">
+                            <Tabs id="Content">
+                                <div label={`Active Jobs (${this.state.jobs.length})`}>
+                                    {activeCards}
+                                </div>
+                                <div label={`Queue (${this.state.queue.length})`}>
+                                    {queueCards}
+                                </div>
+                            </Tabs>
+                        </div>
+                        <div className="slds-col slds-size_2-of-5 slds-p-around_x-small">
+                            <ul className="slds-timeline">
+                                {historyCards}
+                            </ul>
                         </div>
                     </div>
-                </div>
-            </div>
-        );
-    }
-}
-
-class ProgressBar extends React.Component {
-    render() {
-        let pct = `${Math.floor(this.props.progress * 100)}%`;
-        return (
-            <div>
-                <div className="slds-grid slds-grid_align-spread slds-p-bottom_x-small" id="progress-bar-label-id-1">
-                    <span>{this.props.message}</span>
-                    <span aria-hidden="true">
-                      <strong>{pct} complete</strong>
-                    </span>
-                </div>
-                <div className="slds-progress-bar">
-                    <span className={`slds-progress-bar__value ${this.props.success && this.props.progress === 1 ? "slds-progress-bar__value_success" : ""}`} style={{width: pct}}/>
-                </div>
+                }
             </div>
         );
     }

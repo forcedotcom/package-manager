@@ -112,9 +112,10 @@ export class RecordHeader extends React.Component {
                     <div className="slds-grid slds-page-header__detail-row">
                         {this.props.notes}
                     </div> : "" }
-                <div className="slds-grid slds-page-header__detail-row">
-                    {this.props.children}
-                </div>
+                {this.props.children ? 
+                    <div className="slds-grid slds-page-header__detail-row">
+                        {this.props.children}
+                    </div> : "" }
             </div>
         );
     }

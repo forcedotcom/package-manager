@@ -114,21 +114,10 @@ async function requestDelete(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    // TODO ADMIN JOB
     push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
         .then((result) => {return res.json(result)})
         .catch((e) => {
             logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e}); 
-            next(e);
-        });
-}
-
-function requestRefreshOrgPackageVersions(req, res, next) {
-    // TODO ADMIN JOB
-    orgpackageversions.refreshOrgPackageVersionsByGroup(req.body.id)
-        .then((result) => {return res.json(result)})
-        .catch((e) => {
-            logger.error("Failed to refersh org package versions in group", {org_group_id: req.params.id, error: e.message || e}); 
             next(e);
         });
 }
@@ -180,4 +169,3 @@ exports.requestCreate = requestCreate;
 exports.requestUpdate = requestUpdate;
 exports.requestDelete = requestDelete;
 exports.requestUpgrade = requestUpgrade;
-exports.requestRefreshOrgPackageVersions = requestRefreshOrgPackageVersions;

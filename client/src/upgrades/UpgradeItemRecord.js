@@ -9,6 +9,7 @@ import {isDoneStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import * as Constants from "../Constants";
+import ProgressBar from "../components/ProgressBar";
 
 export default class extends React.Component {
     SORTAGE_KEY_JOBS = "UpgradeJobCard";
@@ -16,7 +17,8 @@ export default class extends React.Component {
     state = {
         item: {},
         sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc"),
-        active: false
+        active: false,
+        jobs: []
     };
 
     componentDidMount() {
@@ -93,12 +95,15 @@ export default class extends React.Component {
     };
 
     render() {
+        let canActivate = true;
         let user = JSON.parse(sessionStorage.getItem("user"));
-        let canActivate = user.enforce_activation_policy === "false" || (this.state.item.created_by != null && this.state.item.created_by !== user.username);
+        if (user) {
+            canActivate = user.enforce_activation_policy === "false" || (this.state.item.created_by != null && this.state.item.created_by !== user.username);
+        }
         const notes = [];
         if (!canActivate) {
             notes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an upgrade cannot activate it.</HeaderNote>)
-        } else if (user.enforce_activation_policy === "false") {
+        } else if (!user || user.enforce_activation_policy === "false") {
             notes.push(<HeaderNote key="activation_warning">Activation policy enforcement is disabled for testing purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
         }
         
@@ -109,6 +114,17 @@ export default class extends React.Component {
                 detail: canActivate ? "Update the selected items to Pending state to proceed with upgrades" : "The same user that scheduled an upgrade cannot activate it"},
             {label: "Cancel Request", handler:this.handleCancelation, disabled: [Status.Created, Status.Pending].indexOf(this.state.item.status) === -1 }
         ];
+        
+        let count = this.state.jobs.length, completed = 0, errors = 0;
+        for (let i = 0; i < count; i++) {
+            let job = this.state.jobs[i];
+            if (isDoneStatus(job.status)) {
+                completed++;
+            }
+            if (job.status === Status.Failed) {
+                errors++;
+            }
+        }
         return (
             <div>
                 <RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.description} actions={actions} notes={notes}>
@@ -116,6 +132,7 @@ export default class extends React.Component {
                     <HeaderField label="Status" value={this.state.item.status} className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
                     <HeaderField label="Created By" value={this.state.item.created_by}/>
                 </RecordHeader>
+                <ProgressBar progress={completed / count} success={errors === 0}/>
                 <div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
                     <UpgradeJobCard jobs={this.state.jobs}/>
                 </div>

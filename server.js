@@ -69,8 +69,6 @@ app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
 
-app.get('/api/admin/fetch', admin.requestFetch);
-app.get('/api/admin/fetchinvalid', admin.requestFetchInvalid);
 app.get('/api/admin/jobs', admin.requestJobs);
 app.post('/api/admin/jobs/cancel', admin.requestCancel);
 
@@ -88,7 +86,6 @@ app.post('/api/orggroups', orggroups.requestCreate);
 app.post('/api/orggroups/:id/upgrade', orggroups.requestUpgrade);
 app.put('/api/orggroups', orggroups.requestUpdate);
 app.post('/api/orggroups/delete', orggroups.requestDelete);
-app.post('/api/orggroups/refresh', orggroups.requestRefreshOrgPackageVersions);
 
 app.get('/api/licenses', licenses.requestAll);
 app.get('/api/licenses/:id', licenses.requestById);

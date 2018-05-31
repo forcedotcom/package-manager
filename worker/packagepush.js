@@ -227,18 +227,6 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
     return upgrade;
 }
 
-async function upgradeVersion(versionId, orgIds, scheduledDate, createdBy, description) {
-    let version = await packageversions.findLatestByOrgIds([versionId], orgIds)[0];
-    let conn = await sfdc.buildOrgConnection(version.package_org_id);
-
-    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
-
-    let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy);
-    await createPushJob(conn, upgrade.id, item.id, item.push_request_id, orgIds);
-
-    return upgrade;
-}
-
 async function findRequestsByStatus(packageOrgId, status) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
@@ -330,33 +318,37 @@ async function findSubscribersByIds(packageOrgIds, orgIds) {
     return subs;
 }
 
-function bulkFindSubscribersByIds(packageOrgIds, orgIds, callback) {
+function bulkFindSubscribersByIds(packageOrgIds, orgIds) {
+    let queries = [];
     for (let i = 0; i < packageOrgIds.length; i++) {
-        let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
+        let p = new Promise((resolve, reject) => {
+            let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
                     OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber
                     WHERE OrgKey IN ('${orgIds.join("','")}')`;
-        sfdc.buildOrgConnection(packageOrgIds[i]).then(conn => {
-            let subs = [];
-            conn.bulk.pollTimeout = 30 * 1000;
-            conn.bulk.query(soql)
-                .on("record", rec => {
-                    subs.push(rec);
-                })
-                .on("end", async () => {
-                    callback(subs);
-                })
-                .on("error", error => {
-                    callback(null, error);
-                });
+            sfdc.buildOrgConnection(packageOrgIds[i]).then(conn => {
+                let subs = [];
+                conn.bulk.pollTimeout = 30 * 1000;
+                conn.bulk.query(soql)
+                    .on("record", rec => {
+                        subs.push(rec);
+                    })
+                    .on("end", async () => {
+                        resolve(subs);
+                    })
+                    .on("error", error => {
+                        reject(error);
+                    });
+            });
         });
+        queries.push(p);
     }
+    return Promise.all(queries);
 }
 
 
 exports.findRequestsByStatus = findRequestsByStatus;
 exports.findRequestsByIds = findRequestsByIds;
 exports.findSubscribersByIds = findSubscribersByIds;
-exports.bulkFindSubscribersByIds = bulkFindSubscribersByIds;
 exports.findJobsByStatus = findJobsByStatus;
 exports.findJobsByRequestIds = findJobsByRequestIds;
 exports.findJobsByIds = findJobsByIds;
@@ -367,3 +359,4 @@ exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroups = upgradeOrgGroups;
 exports.Status = Status;
 exports.isActiveStatus = isActiveStatus;
+exports.bulkFindSubscribersByIds = bulkFindSubscribersByIds;

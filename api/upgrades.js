@@ -1,6 +1,6 @@
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
-const orgpackageversions = require('./orgpackageversions');
+const admin = require('./admin');
 const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `select u.id, u.start_time, u.created_by, u.description, count(i.*) item_count
@@ -162,7 +162,7 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
     }
 
     if (upgraded.length > 0) {
-        await orgpackageversions.refreshOrgPackageVersions(upgraded.map(j => j.org_id), [upgraded[0].package_org_id]);
+        await admin.fetchVersions(upgraded.map(j => j.org_id), [upgraded[0].package_org_id]);
     }
     
     return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};

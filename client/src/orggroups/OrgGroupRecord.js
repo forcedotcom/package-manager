@@ -4,6 +4,8 @@ import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as sortage from "../services/sortage";
 import {NotificationManager} from 'react-notifications';
+import * as io from "socket.io-client";
+
 
 import {ORG_GROUP_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
@@ -23,6 +25,7 @@ export default class extends React.Component {
     };
 
     componentDidMount() {
+        this.setState({socket: io.connect()});
         orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => {
             orgGroupService.requestMembers(orggroup.id).then(members => this.setState({orggroup, members}));
         });
@@ -83,13 +86,18 @@ export default class extends React.Component {
     
     refreshHandler = () => {
         this.setState({isRefreshing: true});
-        orgGroupService.requestRefreshPackageVersions(this.state.orggroup.id).then(() => {
-                // Reload our versions because they may have changed
-                packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
-                    let validVersions = this.stripVersions(versions);
-                    this.setState({versions, validVersions, isRefreshing: false});
-                });
-            }).catch(e => console.error(e));
+        this.state.socket.emit("refresh-versions", this.state.orggroup.id);
+        this.state.socket.on('refresh-versions', this.versionsRefreshed);
+    };
+    
+    versionsRefreshed = (groupId) => {
+        if (this.state.orggroup.id === groupId) {
+            // Reload our versions because they may have changed
+            packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
+                let validVersions = this.stripVersions(versions);
+                this.setState({versions, validVersions, isRefreshing: false});
+            });
+        }
     };
     
     editHandler = () => {

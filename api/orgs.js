@@ -63,7 +63,6 @@ function requestById(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-    // TODO ADMIN JOB
     push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
         .then((result) => {
             return res.json(result)

@@ -3,6 +3,9 @@
 const moment = require("moment");
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
+const orgs = require("../api/orgs");
+const orgpackageversions = require("../api/orgpackageversions");
+
 const MAX_HISTORY = 100;
 
 let jobQueue = [];
@@ -25,7 +28,20 @@ class AdminJob {
         this.cancelled = false;
     }
     
-    progressUpdate(message, stepIndex, e) {
+    postMessage(message) {
+        this.message = message;
+        this.messages.push(message);
+        this.modifiedDate = new Date();
+        socket.emit("jobs", Array.from(activeJobs.values()));
+    }
+    
+    postError(e) {
+        this.errors.push(e);
+        this.modifiedDate = new Date();
+        socket.emit("jobs", Array.from(activeJobs.values()));
+    }
+    
+    postProgress(message, stepIndex, e) {
         this.message = message;
         this.messages.push(message);
         if (e) {
@@ -33,6 +49,7 @@ class AdminJob {
         }
         this.stepIndex = stepIndex;
         this.modifiedDate = new Date();
+        logger.info(message, e ? {error: e.message} : {});
         socket.emit("jobs", Array.from(activeJobs.values()));
     }
     
@@ -44,15 +61,17 @@ class AdminJob {
         }
         try {
             activeJobs.set(this.type, this);
+            this.postMessage(`Starting job ${this.name}`);
+
             await this.runSteps(this.steps);
             this.status = this.cancelled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
-            this.progressUpdate(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
+            this.postProgress(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
                 this.cancelled ? this.stepIndex : this.stepCount);
             logger.info(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
                 {steps: this.stepCount, errors: this.errors.length})
         } catch (e) {
             this.status = "Failed";
-            this.progressUpdate("Admin Job Failed", this.stepCount);
+            this.postProgress("Admin Job Failed", this.stepCount);
             logger.error("Admin Job Failed", {error: e.message || e, steps: this.stepCount, errors: this.errors.length})
         } finally {
             activeJobs.delete(this.type);
@@ -87,16 +106,16 @@ class AdminJob {
         for (let i = 0; i < steps.length; i++) {
             let step = steps[i];
             if (this.cancelled) {
-                this.progressUpdate(`Canceling job before ${step.name.toLowerCase()}`, this.stepIndex);
+                this.postProgress(`Canceling job before ${step.name.toLowerCase()}`, this.stepIndex);
                 break;
             }
-            this.progressUpdate(step.name, this.stepIndex);
+            this.postProgress(step.name, this.stepIndex);
             if (step.handler) {
                 try {
                     await step.handler(this);
-                    this.progressUpdate(`Completed ${step.name.toLowerCase()}`, this.stepIndex + 1);
+                    this.postProgress(`Completed ${step.name.toLowerCase()}`, this.stepIndex + 1);
                 } catch (e) {
-                    this.progressUpdate(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex + 1,
+                    this.postProgress(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex + 1,
                         `${step.name.toLowerCase()}: ${e.message || e}`);
                     if (step.fail) {
                         step.fail(e, this);
@@ -108,9 +127,9 @@ class AdminJob {
             if (step.steps) {
                 try {
                     await this.runSteps(step.steps);
-                    this.progressUpdate(`Completed ${step.name.toLowerCase()}`, this.stepIndex);
+                    this.postProgress(`Completed ${step.name.toLowerCase()}`, this.stepIndex);
                 } catch (e) {
-                    this.progressUpdate(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex);
+                    this.postProgress(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex);
                     if (step.fail) {
                         step.fail(e, this);
                     } else {
@@ -137,8 +156,13 @@ function connect(sock) {
     socket.on('fetch-invalid', function () {
         fetchInvalidOrgs().then(() => {});
     });
-    socket.on('cancel-jobs', function (data) {
-        cancelJobs(data);
+    socket.on('cancel-jobs', function (jobIds) {
+        cancelJobs(jobIds);
+    });
+    socket.on('refresh-versions', async function (groupId) {
+        let orgIds = (await orgs.findByGroup(groupId)).map(o => o.org_id);
+        await fetchVersions(orgIds);
+        socket.emit("refresh-versions", groupId);
     });
 }
 
@@ -194,18 +218,10 @@ function scheduleJobs() {
     }
 }
 
-function requestFetchData(req, res, next) {
-    fetchData(req.query.all).then(() => res.send({success: true})).catch(e => next(e));
-}
-
 async function fetchData(fetchAll, interval) {
     const job = fetch.fetch(fetchAll);
     job.interval = interval;
     await job.run();
-}
-
-function requestFetchInvalidOrgs(req, res, next) {
-    fetchInvalidOrgs().then(() => res.send({success: true})).catch(e => next(e));
 }
 
 async function fetchInvalidOrgs(interval) {
@@ -214,10 +230,14 @@ async function fetchInvalidOrgs(interval) {
     await job.run();
 }
 
+async function fetchVersions(orgIds) {
+    const job = orgpackageversions.fetchOrgPackageVersions(orgIds);
+    await job.run();
+}
+
 exports.connect = connect;
+exports.scheduleJobs = scheduleJobs;
 exports.requestJobs = requestJobs;
 exports.requestCancel = requestCancel;
-exports.scheduleJobs = scheduleJobs;
-exports.requestFetch = requestFetchData;
-exports.requestFetchInvalid = requestFetchInvalidOrgs;
+exports.fetchVersions = fetchVersions;
 exports.AdminJob = AdminJob;
