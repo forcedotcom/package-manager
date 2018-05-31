@@ -35,12 +35,6 @@ class AdminJob {
         socket.emit("jobs", Array.from(activeJobs.values()));
     }
     
-    postError(e) {
-        this.errors.push(e);
-        this.modifiedDate = new Date();
-        socket.emit("jobs", Array.from(activeJobs.values()));
-    }
-    
     postProgress(message, stepIndex, e) {
         this.message = message;
         this.messages.push(message);
@@ -71,13 +65,13 @@ class AdminJob {
                 {steps: this.stepCount, errors: this.errors.length})
         } catch (e) {
             this.status = "Failed";
-            this.postProgress("Admin Job Failed", this.stepCount);
+            this.postProgress("Admin Job Failed", this.stepCount, e);
             logger.error("Admin Job Failed", {error: e.message || e, steps: this.stepCount, errors: this.errors.length})
         } finally {
             activeJobs.delete(this.type);
             jobHistory.push(this);
             if (jobHistory.length > MAX_HISTORY) {
-                jobHistory.pop();
+                jobHistory.shift();
             }
             socket.emit("job-history", jobHistory);
             let nextJob = jobQueue.pop();
