@@ -234,7 +234,7 @@ class TimelineEntry extends React.Component {
                         <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#rotate" xmlnsXlink="http://www.w3.org/1999/xlink" />
                       </svg>
                     </span>
-                </div>;
+                </div>
         }
         if (this.props.error) {
             error = 
@@ -244,7 +244,7 @@ class TimelineEntry extends React.Component {
                         <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#error" xmlnsXlink="http://www.w3.org/1999/xlink" />
                       </svg>
                     </span>
-                </div>;
+                </div>
         }
 
         return (

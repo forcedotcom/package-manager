@@ -39,7 +39,7 @@ class AdminJob {
         this.message = message;
         this.messages.push(message);
         if (e) {
-            this.errors.push(e);
+            this.errors.push(String(e));
         }
         this.stepIndex = stepIndex;
         this.modifiedDate = new Date();
@@ -59,13 +59,11 @@ class AdminJob {
 
             await this.runSteps(this.steps);
             this.status = this.cancelled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
-            this.postProgress(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
-                this.cancelled ? this.stepIndex : this.stepCount);
-            logger.info(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", 
-                {steps: this.stepCount, errors: this.errors.length})
+            this.postProgress(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", this.cancelled ? this.stepIndex : this.stepCount);
+            logger.info(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", {steps: this.stepCount, errors: this.errors.length})
         } catch (e) {
             this.status = "Failed";
-            this.postProgress("Admin Job Failed", this.stepCount, e);
+            this.postProgress("Admin Job Failed", this.stepCount, `Failed ${this.name.toLowerCase()}: ${e.message || e}`);
             logger.error("Admin Job Failed", {error: e.message || e, steps: this.stepCount, errors: this.errors.length})
         } finally {
             activeJobs.delete(this.type);
