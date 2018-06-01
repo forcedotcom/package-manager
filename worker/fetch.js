@@ -119,5 +119,16 @@ function fetchInvalid() {
         ]);
 }
 
+function fetchVersions(orgIds, packageOrgIds) {
+    return new admin.AdminJob("refresh-versions", "Fetch package versions installed on orgs",
+        [
+            {
+                name: "Fetching invalid production orgs",
+                handler: (job) => orgpackageversions.fetchSubscribers(orgIds, packageOrgIds, job),
+            }
+        ]);
+}
+
 exports.fetch = fetch;
 exports.fetchInvalid = fetchInvalid;
+exports.fetchVersions = fetchVersions;

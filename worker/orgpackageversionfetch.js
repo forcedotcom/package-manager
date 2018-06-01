@@ -1,11 +1,39 @@
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const orgpackageversions = require('../api/orgpackageversions');
+const push = require('./packagepush');
 
 const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.package_version_id, l.status, l.modified_date 
                     FROM license l
                     INNER JOIN package_version v on v.sfid = l.package_version_id`;
 
 let adminJob;
+
+async function fetchSubscribers(orgIds, packageOrgIds, job) {
+    adminJob = job;
+    
+    if (!packageOrgIds) {
+        let i = 1;
+        let params = orgIds.map(() => `$${i++}`);
+        packageOrgIds = (await db.query(
+            `SELECT DISTINCT p.package_org_id
+                             FROM package p
+                             INNER JOIN org_package_version opv on opv.package_id = p.sfid
+                             WHERE opv.org_id IN (${params.join(",")})`, orgIds)).map(p => p.package_org_id);
+    }
+
+    job.postMessage(`Querying ${packageOrgIds.length} package orgs`);
+    let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
+    let subs = [];
+    for (let i = 0; i < arrs.length; i++) {
+        subs = subs.concat(arrs[i]);
+    }
+    job.postMessage(`Fetched ${subs.length} package subscribers`);
+    if (subs.length > 0) {
+        let opvs = await orgpackageversions.insertOrgPackageVersionsFromSubscribers(subs);
+        job.postMessage(`Updated ${opvs.length} org package versions`);
+    }
+}
 
 async function fetch(fetchAll, job) {
     adminJob = job;
@@ -60,3 +88,4 @@ async function upsertBatch(recs) {
 }
 
 exports.fetch = fetch;
+exports.fetchSubscribers = fetchSubscribers;

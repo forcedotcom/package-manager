@@ -222,8 +222,8 @@ async function fetchInvalidOrgs(interval) {
     await job.run();
 }
 
-async function fetchVersions(orgIds) {
-    const job = orgpackageversions.fetchOrgPackageVersions(orgIds);
+async function fetchVersions(orgIds, packageOrgIds) {
+    const job = fetch.fetchVersions(orgIds, packageOrgIds);
     await job.run();
 }
 

@@ -96,6 +96,9 @@ export default class extends React.Component {
             packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
                 let validVersions = this.stripVersions(versions);
                 this.setState({versions, validVersions, isRefreshing: false});
+            }).catch(e => {
+                this.setState({isRefreshing: false});
+                NotificationManager.error(e.message, "Refresh Failed");
             });
         }
     };
@@ -111,7 +114,7 @@ export default class extends React.Component {
     deleteHandler = () => {
         orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
             window.location = '/orggroups';
-        });
+        }).catch(e => NotificationManager.error(e.message, "Delete Failed"));
     };
 
     removeMembersHandler = (skipConfirmation) => {
@@ -121,7 +124,7 @@ export default class extends React.Component {
                     let validVersions = this.stripVersions(versions);
                     this.setState({members, versions, validVersions, selected: []});
                 });                
-            });
+            }).catch(e => NotificationManager.error(e.message, "Removal Failed"));
             return true;
         }
         return false;
@@ -144,7 +147,7 @@ export default class extends React.Component {
                 NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
             }
             this.setState({selected: [], removeAfterAdd: false});
-        });
+        }).catch(e => NotificationManager.error(e.message, "Addition Failed"));
     };
 
     closeGroupWindow = () => {

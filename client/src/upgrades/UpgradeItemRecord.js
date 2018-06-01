@@ -10,6 +10,7 @@ import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import * as Constants from "../Constants";
 import ProgressBar from "../components/ProgressBar";
+import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
     SORTAGE_KEY_JOBS = "UpgradeJobCard";
@@ -32,7 +33,7 @@ export default class extends React.Component {
     loadItemJobs(item) {
         // Note that we don't perform the (expensive) job here.  Only later from checkJobStatus.
         upgradeJobService.requestAllJobs(item.id, this.state.sortOrderJobs).then(jobs => {
-            this.setState({item, jobs});
+            this.setState({item, jobs, isCanceling: false, isActivating: false});
             this.checkJobStatus();
         });
     }
@@ -51,7 +52,7 @@ export default class extends React.Component {
         upgradeItemService.requestById(this.state.item.id, true).then(item => {
             this.setState({item});
             this.checkStatus(item);
-        })
+        }).catch(e => NotificationManager.error(e.message, "Fetch Failed"));
     }
 
     checkJobStatus() {
@@ -79,21 +80,35 @@ export default class extends React.Component {
     }
 
     fetchJobStatus = () => {
+        this.setState({isFetchingStatus: true});
         upgradeJobService.requestAllJobs(this.state.item.id, this.state.sortOrderJobs, true).then(jobs => {
-            this.setState({jobs});
+            this.setState({jobs, isFetchingStatus: false});
             this.checkJobStatus();
+        }).catch(e => {
+            this.setState({isFetchingStatus: false});
+            NotificationManager.error(e.message, "Fetch Failed");
         });
     };
 
     handleActivation = () => {
         if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
-            upgradeItemService.activateItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]));
+            this.setState({isActivating: true});
+            upgradeItemService.activateItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]))
+                .catch(e => {
+                    this.setState({isActivating: true});
+                    NotificationManager.error(e.message, "Activation Failed");
+                });
         }
     };
 
-    handleCancelation = () => {
+    handleCancellation = () => {
         if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
-            upgradeItemService.cancelItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]));
+            this.setState({isCancelling: true});
+            upgradeItemService.cancelItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]))
+                .catch(e => {
+                    this.setState({isCancelling: true});
+                    NotificationManager.error(e.message, "Cancellation Failed");
+                });
         }
     };
 
@@ -111,11 +126,11 @@ export default class extends React.Component {
         }
         
         let actions = [
-            {label: "Fetch Status", handler:this.fetchJobStatus, disabled: !Constants.isDoneStatus(this.state.item.status),
+            {label: "Fetch Status", handler:this.fetchJobStatus, spinning: this.state.isFetchingStatus, disabled: !Constants.isDoneStatus(this.state.item.status),
                 detail: "Click to refresh the upgrade status and org installed version information.  Only allowed after the upgrade request is marked as complete."},
-            {label: "Activate Request", handler:this.handleActivation, disabled: this.state.item.status !== Status.Created || !canActivate,
+            {label: "Activate Request", handler:this.handleActivation, spinning: this.state.isActivating, disabled: this.state.item.status !== Status.Created || !canActivate,
                 detail: canActivate ? "Update the selected items to Pending state to proceed with upgrades" : "The same user that scheduled an upgrade cannot activate it"},
-            {label: "Cancel Request", handler:this.handleCancelation, disabled: [Status.Created, Status.Pending].indexOf(this.state.item.status) === -1 }
+            {label: "Cancel Request", handler:this.handleCancellation, spinning: this.state.isCancelling, disabled: [Status.Created, Status.Pending].indexOf(this.state.item.status) === -1 }
         ];
         
         let count = this.state.jobs.length, completed = 0, errors = 0;
