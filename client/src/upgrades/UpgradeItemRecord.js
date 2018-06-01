@@ -62,7 +62,10 @@ export default class extends React.Component {
 
         let foundOne = false;
         for (let i = 0; i < this.state.jobs.length && !foundOne; i++) {
-            if (!isDoneStatus(this.state.jobs[i].status))
+            const job = this.state.jobs[i];
+            if (!isDoneStatus(job.status))
+                foundOne = true;
+            else if (job.status === Status.Succeeded && job.current_version_number !== job.version_number)
                 foundOne = true;
         }
         
