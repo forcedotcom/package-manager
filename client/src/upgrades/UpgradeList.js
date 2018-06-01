@@ -25,9 +25,7 @@ export default class extends React.Component {
             {Header: "Scheduled Start Time", id: "start_time", sortable: true, clickable: true, 
                 accessor: d => moment(d.start_time).format("lll")},
             {Header: "Created By", accessor: "created_by", sortable: true},
-            {Header: "Items", accessor: "item_count", sortable: true},
-            {Header: "State", id: "status", sortable: true,
-                accessor: u => u.inactive_item_count === u.item_count ? "Inactive" :  u.done_item_count !== u.item_count ? "Active" : "Done"}
+            {Header: "Status", accessor: "status", sortable: true}
         ];
         return (
             <DataTable id="UpgradeList" data={this.state.upgrades} onFilter={this.props.onFilter} onClick={this.linkHandler} columns={columns}/>

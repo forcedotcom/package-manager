@@ -28,11 +28,7 @@ export default class extends React.Component {
     };
 
     checkItemStatus() {
-        let u = this.state.upgrade;
-        let status = u.inactive_item_count === u.item_count ? "Inactive" :  u.done_item_count !== u.item_count ? "Active" : "Done";
-        let shouldPing = status === "Active";
-        this.setState({status}); 
-
+        let shouldPing = this.state.upgrade.status === "Active";
         if (!shouldPing)
             return; // All of our items are done, so don't bother pinging.
         
@@ -81,10 +77,10 @@ export default class extends React.Component {
     
         const itemActions = [
             {label: "Activate Selected", handler: this.activationHandler.bind(this),
-                disabled: this.state.status === "Closed" || this.state.selected.length === 0 || !userCanActivate,
+                disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0 || !userCanActivate,
                 detail: "Update the selected items to Pending state to proceed with upgrades"},
             {label: "Cancel Selected", handler: this.cancelationHandler.bind(this),
-                disabled: this.state.status === "Closed" || this.state.selected.length === 0}
+                disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0}
         ];
 
         let count = this.state.items.length, completed = 0, errors = 0;
@@ -102,12 +98,12 @@ export default class extends React.Component {
                 <RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
                     <HeaderField label="Created By" value={this.state.upgrade.created_by}/>
                     <HeaderField label="Scheduled Start Time" format="datetime" value={this.state.upgrade.start_time}/>
-                    <HeaderField label="State" value={this.state.status}/>
+                    <HeaderField label="Status" value={this.state.upgrade.status}/>
                 </RecordHeader>
                 <ProgressBar progress={completed / count} success={errors === 0}/>
                 <div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
                     <UpgradeItemCard upgrade={this.state.upgrade} actions={itemActions} notes={itemNotes}
-                                     onSelect={this.selectionHandler} items={this.state.items} status={this.state.status}/>
+                                     onSelect={this.selectionHandler} items={this.state.items} status={this.state.upgrade.status}/>
                 </div>
             </div>
         );
