@@ -124,7 +124,7 @@ function fetchVersions(orgIds, packageOrgIds) {
         [
             {
                 name: "Fetching invalid production orgs",
-                handler: (job) => orgpackageversions.fetchSubscribers(orgIds, packageOrgIds, job),
+                handler: (job) => orgpackageversions.fetchFromSubscribers(orgIds, packageOrgIds, job),
             }
         ]);
 }

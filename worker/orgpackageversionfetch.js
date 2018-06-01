@@ -9,7 +9,7 @@ const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.package_version_id
 
 let adminJob;
 
-async function fetchSubscribers(orgIds, packageOrgIds, job) {
+async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
     adminJob = job;
     
     if (!packageOrgIds) {
@@ -35,7 +35,7 @@ async function fetchSubscribers(orgIds, packageOrgIds, job) {
     }
 }
 
-async function fetch(fetchAll, job) {
+async function fetchFromLicenses(fetchAll, job) {
     adminJob = job;
     
     let sql = SELECT_ALL;
@@ -87,5 +87,5 @@ async function upsertBatch(recs) {
     }
 }
 
-exports.fetch = fetch;
-exports.fetchSubscribers = fetchSubscribers;
+exports.fetch = fetchFromLicenses;
+exports.fetchFromSubscribers = fetchFromSubscribers;
