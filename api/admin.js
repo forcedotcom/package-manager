@@ -212,7 +212,7 @@ function scheduleJobs() {
         let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
         setTimeout(() => setInterval(() => {uploadOrgsToSumo(interval).then(() => logger.info("Finished scheduled org upload"))}, interval), delay);
         let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-        logger.info(`Scheduled re-fetching of org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} days`)
+        logger.info(`Scheduled org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} hours`)
     }
 
     if (schedules.refetch_interval_days != null && schedules.refetch_interval_days !== -1) {
