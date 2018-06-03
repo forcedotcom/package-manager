@@ -67,6 +67,10 @@ export default class extends React.Component {
         this.state.socket.emit("fetch-all", {});
     };
     
+    uploadOrgsHandler = () => {
+        this.state.socket.emit("upload-orgs", {});
+    };
+    
     showAllHistoryHandler = () => {
         this.setState({showAllHistory: true});  
     };
@@ -140,6 +144,7 @@ export default class extends React.Component {
             {label: "Fetch Latest", handler: this.fetchHandler},
             {label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
             {label: "Re-Fetch All", handler: this.refetchAllHandler},
+            {label: "Upload Orgs To SumoLogic", handler: this.uploadOrgsHandler}
         ];
         return (
             <div>

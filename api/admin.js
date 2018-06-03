@@ -1,10 +1,13 @@
 'use strict';
 
 const moment = require("moment");
+const https = require("https");
+const url = require('url');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
-const orgs = require("../api/orgs");
-const orgpackageversions = require("../api/orgpackageversions");
+const orgs = require("./orgs");
+const sfdc = require("./sfdcconn");
+const db = require("../util/pghelper");
 
 const MAX_HISTORY = 100;
 
@@ -156,6 +159,9 @@ function connect(sock) {
         await fetchVersions(orgIds);
         socket.emit("refresh-versions", groupId);
     });
+    socket.on('upload-orgs', async function () {
+        await uploadOrgsToSumo();
+    });
 }
 
 function requestJobs(req, res) {
@@ -184,29 +190,38 @@ function cancelJobs(data) {
 }
 
 function scheduleJobs() {
+    const schedules = JSON.parse(process.env.JOB_SCHEDULES || {});
     // Define singleton fetch intervals.
-    if (process.env.FETCH_INTERVAL_MINUTES != null) {
-        let interval = process.env.FETCH_INTERVAL_MINUTES * 60 * 1000;
+    if (schedules.fetch_interval_minutes != null && schedules.fetch_interval_minutes !== -1) {
+        let interval = schedules.fetch_interval_minutes * 60 * 1000;
         setInterval(() => {fetchData(false, interval).then(() => logger.info("Finished scheduled fetch"))}, interval);
-        logger.info(`Scheduled fetching of latest data every ${process.env.FETCH_INTERVAL_MINUTES} minutes`)
+        logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
     }
 
-    if (process.env.FETCH_INVALID_INTERVAL_HOURS != null) {
+    if (schedules.fetch_invalid_interval_hours != null && schedules.fetch_invalid_interval_hours !== -1) {
         // Always start heavyweight tasks at the end of the day.
-        let interval = process.env.FETCH_INVALID_INTERVAL_HOURS * 60 * 60 * 1000;
+        let interval = schedules.fetch_invalid_interval_hours * 60 * 60 * 1000;
         let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
         setTimeout(() => setInterval(() => {fetchInvalidOrgs(interval).then(() => logger.info("Finished scheduled fetch invalid orgs"))}, interval), delay);
         let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-        logger.info(`Scheduled fetching of invalid orgs starting ${startTime} and recurring every ${process.env.FETCH_INVALID_INTERVAL_HOURS} hours`)
+        logger.info(`Scheduled fetching of invalid orgs starting ${startTime} and recurring every ${schedules.fetch_invalid_interval_hours} hours`)
     }
 
-    if (process.env.REFETCH_INTERVAL_DAYS != null) {
+    if (schedules.upload_orgs_interval_hours != null && schedules.upload_orgs_interval_hours !== -1) {
+        let interval = schedules.upload_orgs_interval_hours * 60 * 60 * 1000;
+        let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
+        setTimeout(() => setInterval(() => {uploadOrgsToSumo(interval).then(() => logger.info("Finished scheduled org upload"))}, interval), delay);
+        let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
+        logger.info(`Scheduled re-fetching of org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} days`)
+    }
+
+    if (schedules.refetch_interval_days != null && schedules.refetch_interval_days !== -1) {
         // Always start heavyweight at the end of the day.
-        let interval = process.env.REFETCH_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+        let interval = schedules.refetch_interval_days * 24 * 60 * 60 * 1000;
         let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
         setTimeout(() => setInterval(() => {fetchData(true, interval).then(() => logger.info("Finished scheduled fetch all"))}, interval), delay);
         let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-        logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${process.env.REFETCH_INTERVAL_DAYS} days`)
+        logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
     }
 }
 
@@ -226,6 +241,106 @@ async function fetchVersions(orgIds, packageOrgIds) {
     const job = fetch.fetchVersions(orgIds, packageOrgIds);
     await job.run();
 }
+
+async function uploadOrgsToSumo(interval) {
+    let job = new AdminJob("upload-orgs", "Upload org data to sumologic",
+        [
+            {
+                name: "Loading org data",
+                handler: async (job) => {
+                    job.orgs = await loadOrgsInSumoFormat(job);
+                }
+            },
+            {
+                name: "Uploading org data",
+                handler: async (job) => {
+                    await sendOrgsToSumo(job.orgs, job);
+                }
+            }
+        ]);
+    job.interval = interval;
+    await job.run();
+}
+
+async function loadOrgsInSumoFormat(job) {
+    let orgs = await db.query(
+        `SELECT o.org_id, a.account_name, CASE WHEN o.is_sandbox = true THEN 'Sandbox' ELSE 'Production' END AS type 
+        FROM org o
+        INNER JOIN account a on a.account_id = o.account_id
+        WHERE a.account_id NOT IN ($1, $2)`, [sfdc.INTERNAL_ID, sfdc.INVALID_ID]);
+    for (let i = 0; i < orgs.length; i++) {
+        // orgs[i].org_id = convertID(orgs[i].org_id).toLowerCase();
+        if (!orgs[i].type || orgs[i].type === "") {
+            throw new Error(JSON.stringify(orgs[i]));
+        }
+    }
+    job.postMessage("Loaded orgs for posting to Sumo");
+    return orgs;
+}
+
+const SUMO_URL = process.env.SUMO_URL;
+async function sendOrgsToSumo(orgs, job) {
+    return new Promise((resolve, reject) => {
+        if (!SUMO_URL) 
+            reject(new Error("SUMO_URL is required"));
+        if (orgs.length === 0)
+            reject(new Error("No orgs found to upload"));   
+        
+        let sumoUrl = url.parse(SUMO_URL);
+        let orgCSVs = orgs.map(o => `${o.org_id},"${o.account_name}",${o.type}`);
+        let postData = orgCSVs.join("\n");
+        let options = {
+            hostname: sumoUrl.hostname,
+            port: sumoUrl.port,
+            path: sumoUrl.pathname,
+            // headers: {
+            //     'Content-Type': 'text/csv'
+            //     'Content-Length': postData.length
+            // },
+            method: 'POST'
+        };
+
+        let req = https.request(options, (res) => {
+            resolve(res);
+        });
+
+        req.on('error', (e) => {
+            reject(e);
+        });
+
+        req.write(postData);
+        req.end();
+        job.postMessage(`Sending ${orgs.length} orgs to Sumo`);
+    });
+}
+
+function convertID(id) {
+    if (id.length === 18) return id;
+    if (id.length !== 15) throw new Error("Illegal argument length. 15 char string expected.");
+
+    let triplet = [id.substring(0, 5), id.substring(5, 10), id.substring(10, 15)];
+    triplet = triplet.map(v => {
+        let str = "";
+        for (let i = v.length - 1; i >= 0; i--) {
+            let code = v.charCodeAt(i);
+            str += (code > 64 && code < 91) // upper alpha (A-Z)
+                ? "1" : "0"
+        }
+        return BinaryIdLookup[str];
+    });
+    const suffix = triplet.join("");
+    return id + suffix;
+}
+
+const BinaryIdLookup = {
+    "00000":'A', "00001":'B', "00010":'C', "00011":'D', "00100":'E',
+    "00101":'F', "00110":'G', "00111":'H', "01000":'I', "01001":'J',
+    "01010":'K', "01011":'L', "01100":'M', "01101":'N', "01110":'O',
+    "01111":'P', "10000":'Q', "10001":'R', "10010":'S', "10011":'T',
+    "10100":'U', "10101":'V', "10110":'W', "10111":'X', "11000":'Y',
+    "11001":'Z', "11010":'0', "11011":'1', "11100":'2', "11101":'3',
+    "11110":'4', "11111":'5'
+};
 
 exports.connect = connect;
 exports.scheduleJobs = scheduleJobs;

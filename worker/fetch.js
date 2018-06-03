@@ -11,6 +11,23 @@ const admin = require('../api/admin');
 
 const packageorgs = require('../api/packageorgs');
 
+/**
+ * Old way:
+ * 1. Fetch all license records and derive unique set of org ids from it, both production and sandboxes.
+ * 2. Query production and sandbox blacktab to retrieve account ids for each org
+ * 3. Query org62 to retrieve account names for each orgs using org's account id
+ * 4. Populate org package versions from license data
+ * 
+ * 1. For each packaging org, fetch all subscribers.  Get both sandbox and production org ids, with link between them, along with org package version data.
+ * 2. Query org62 for all org ids to retrieve account ids and names for each.
+ * 3. Fill in account ids on sandbox org records using data from parent production org.
+ * 
+ * BLOCKING the new way: 
+ * 1. Need to query subscribers by last modified date, and the subscriber API in general cannot timeout
+ * 2. Subscriber API needs to expose Parent Org (aka Cloned From) field to link sandbox to production
+ */
+function newfetch(fetchAll) {}
+
 function fetch(fetchAll) {
     return new admin.AdminJob( 
         fetchAll ? "fetch-all" : "fetch-latest",
