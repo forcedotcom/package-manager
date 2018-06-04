@@ -69,6 +69,7 @@ app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
 
+app.get('/api/admin/settings', admin.requestSettings);
 app.get('/api/admin/jobs', admin.requestJobs);
 app.post('/api/admin/jobs/cancel', admin.requestCancel);
 

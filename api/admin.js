@@ -13,8 +13,13 @@ const MAX_HISTORY = 100;
 
 let jobQueue = [];
 let jobHistory = [];
-let socket = null;
 let activeJobs = new Map();
+let socket = null;
+let emit = (key, data) => {
+    if (socket === null)
+        logger.err("Called emit before web socket is initialized", {error: new Error("Socket is null").stack});
+    socket.emit(key, data);
+};
 
 class AdminJob {
     constructor(type, name, steps) {
@@ -35,7 +40,7 @@ class AdminJob {
         this.message = message;
         this.messages.push(message);
         this.modifiedDate = new Date();
-        socket.emit("jobs", Array.from(activeJobs.values()));
+        emit("jobs", Array.from(activeJobs.values()));
     }
     
     postProgress(message, stepIndex, e) {
@@ -47,13 +52,13 @@ class AdminJob {
         this.stepIndex = stepIndex;
         this.modifiedDate = new Date();
         logger.info(message, e ? {error: e.message} : {});
-        socket.emit("jobs", Array.from(activeJobs.values()));
+        emit("jobs", Array.from(activeJobs.values()));
     }
     
     async run() {
         if (activeJobs.has(this.type)) {
             jobQueue.push(this);
-            socket.emit("job-queue", jobQueue);
+            emit("job-queue", jobQueue);
             return;
         }
         try {
@@ -74,9 +79,9 @@ class AdminJob {
             if (jobHistory.length > MAX_HISTORY) {
                 jobHistory.shift();
             }
-            socket.emit("job-history", jobHistory);
+            emit("job-history", jobHistory);
             let nextJob = jobQueue.pop();
-            socket.emit("job-queue", jobQueue);
+            emit("job-queue", jobQueue);
             if(nextJob) {
                 await nextJob.run();
             }
@@ -157,10 +162,16 @@ function connect(sock) {
     socket.on('refresh-versions', async function (groupId) {
         let orgIds = (await orgs.findByGroup(groupId)).map(o => o.org_id);
         await fetchVersions(orgIds);
-        socket.emit("refresh-versions", groupId);
+        emit("refresh-versions", groupId);
     });
     socket.on('upload-orgs', async function () {
         await uploadOrgsToSumo();
+    });
+}
+
+function requestSettings(req, res) {
+    res.json({
+        HEROKU_APP_NAME: process.env.HEROKU_APP_NAME || null 
     });
 }
 
@@ -185,7 +196,7 @@ function cancelJobs(data) {
     if (jobIds.size > 0) {
         // Also look in queue
         jobQueue = jobQueue.filter(j => !jobIds.has(j.id));
-        socket.emit("job-queue", jobQueue);
+        emit("job-queue", jobQueue);
     }
 }
 
@@ -344,6 +355,7 @@ const BinaryIdLookup = {
 
 exports.connect = connect;
 exports.scheduleJobs = scheduleJobs;
+exports.requestSettings = requestSettings;
 exports.requestJobs = requestJobs;
 exports.requestCancel = requestCancel;
 exports.fetchVersions = fetchVersions;

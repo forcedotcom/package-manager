@@ -19,6 +19,7 @@ export default class extends React.Component {
         queue: [],
         history: [],
         socket: null,
+        settings: {},
         isMini: window.innerWidth < 1000
     };
 
@@ -40,9 +41,11 @@ export default class extends React.Component {
         socket.on('job-queue', function (data) {
             self.setState({queue: data || []});
         });
-        
-        adminService.requestJobs().then(res => {
-            this.setState({socket, jobs: res.jobs, queue: res.queue, history: res.history})
+
+        adminService.requestSettings().then(settings => {
+            adminService.requestJobs().then(res => {
+                this.setState({socket, settings, jobs: res.jobs, queue: res.queue, history: res.history})
+            });
         });
     }
 
@@ -69,6 +72,10 @@ export default class extends React.Component {
     
     uploadOrgsHandler = () => {
         this.state.socket.emit("upload-orgs", {});
+    };
+    
+    goToHerokuHandler = () => {
+        window.open(`https://dashboard.heroku.com/apps/${encodeURI(this.state.settings.HEROKU_APP_NAME)}`);
     };
     
     showAllHistoryHandler = () => {
@@ -146,6 +153,11 @@ export default class extends React.Component {
             {label: "Re-Fetch All", handler: this.refetchAllHandler},
             {label: "Upload Orgs To SumoLogic", handler: this.uploadOrgsHandler}
         ];
+        
+        if (this.state.settings.HEROKU_APP_NAME) {
+            actions.push({label: "Go to Heroku", handler: this.goToHerokuHandler, group: "heroku"});
+        }
+        
         return (
             <div>
                 <RecordHeader type="Admin" icon={ADMIN_ICON} title="Administration" actions={actions}/>
