@@ -275,17 +275,11 @@ async function uploadOrgsToSumo(interval) {
 
 async function loadOrgsInSumoFormat(job) {
     let orgs = await db.query(
-        `SELECT o.org_id, a.account_name, CASE WHEN o.is_sandbox = true THEN 'Sandbox' ELSE 'Production' END AS type 
+        `SELECT o.org_id, a.account_name, CASE WHEN o.is_sandbox = true THEN 'Sandbox' ELSE 'Production' END AS type, o.type as edition, o.instance
         FROM org o
         INNER JOIN account a on a.account_id = o.account_id
         WHERE a.account_id NOT IN ($1, $2)`, [sfdc.INTERNAL_ID, sfdc.INVALID_ID]);
-    for (let i = 0; i < orgs.length; i++) {
-        // orgs[i].org_id = convertID(orgs[i].org_id).toLowerCase();
-        if (!orgs[i].type || orgs[i].type === "") {
-            throw new Error(JSON.stringify(orgs[i]));
-        }
-    }
-    job.postMessage("Loaded orgs for posting to Sumo");
+    job.postMessage(`Loaded ${orgs.length} orgs for posting to Sumo`);
     return orgs;
 }
 
@@ -298,16 +292,12 @@ async function sendOrgsToSumo(orgs, job) {
             reject(new Error("No orgs found to upload"));   
         
         let sumoUrl = url.parse(SUMO_URL);
-        let orgCSVs = orgs.map(o => `${o.org_id},"${o.account_name}",${o.type}`);
+        let orgCSVs = orgs.map(o => `${o.org_id},"${o.account_name}",${o.type},${o.edition},${o.instance}`);
         let postData = orgCSVs.join("\n");
         let options = {
             hostname: sumoUrl.hostname,
             port: sumoUrl.port,
             path: sumoUrl.pathname,
-            // headers: {
-            //     'Content-Type': 'text/csv'
-            //     'Content-Length': postData.length
-            // },
             method: 'POST'
         };
 
