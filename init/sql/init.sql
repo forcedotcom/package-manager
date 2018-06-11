@@ -103,7 +103,7 @@ create table if not exists upgrade_item (
   id                 serial primary key,
   upgrade_id         integer,
   push_request_id    varchar(18),
-  parent__item_id    integer,
+  parent_item_id     integer,
   package_org_id     varchar(18),
   package_version_id varchar(18),
   status             varchar(40),
@@ -195,7 +195,10 @@ insert into account (account_name, account_id)
 values ('Internal', '000000000000000'), ('Unknown/Invalid', '000000000000001')
 on conflict do nothing;
 
--- Patch 1
+-- Patching
+alter table upgrade_item
+  drop column if exists parent__item_id;
+
 alter table org
   drop column if exists account_name;
 
