@@ -18,8 +18,19 @@ const GROUP_BY = `
     GROUP BY o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, 
     a.account_name`;
 
-const SELECT_WITH_LICENCE = SELECT_ALL + 
-    ` INNER JOIN license lc ON o.org_id = lc.org_id`;
+const SELECT_WITH_LICENCE = ` 
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
+    a.account_name,
+    STRING_AGG(g.name, ', ') as groups,
+    pv.version_number
+    FROM org o
+    INNER JOIN account a on a.account_id = o.account_id
+    LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
+    LEFT JOIN org_group AS g ON g.id = m.org_group_id
+    INNER JOIN license lc ON o.org_id = lc.org_id
+    INNER JOIN package_version pv ON lc.package_version_id = pv.sfid`;
+
+const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number`;
 
 async function requestAll(req, res, next) {
     try {
@@ -32,24 +43,28 @@ async function requestAll(req, res, next) {
 
 async function findAll(packageId, packageVersionId, orderByField, orderByDir) {
     let select = SELECT_ALL;
+    let groupBy = GROUP_BY;
     let whereParts = ["o.status is null"];
     let values = [];
 
-    if (packageId) {
+    if (packageId || packageVersionId) {
         select = SELECT_WITH_LICENCE;
-        values.push(packageId);
-        whereParts.push("lc.package_id = $" + values.length);
-    }
+        groupBy = GROUP_BY_WITH_LICENSE;
 
-    if (packageVersionId) {
-        select = SELECT_WITH_LICENCE;
-        values.push(packageVersionId);
-        whereParts.push("lc.package_version_id = $" + values.length);
+        if (packageId) {
+            values.push(packageId);
+            whereParts.push("lc.package_id = $" + values.length);
+        }
+
+        if (packageVersionId) {
+            values.push(packageVersionId);
+            whereParts.push("lc.package_version_id = $" + values.length);
+        }
     }
 
     let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
     let sort = ` ORDER BY ${orderByField || "account_name"} ${orderByDir || "asc"}`;
-    return await db.query(select + where + GROUP_BY + sort, values)
+    return await db.query(select + where + groupBy + sort, values)
 }
 
 function requestById(req, res, next) {

@@ -45,10 +45,6 @@ export default class extends React.Component {
         this.setState({addingToGroup: true});
     };
 
-    openGroupWindowAndMove = () => {
-        this.setState({addingToGroup: true, removeAfterAdd: true});
-    };
-    
     filterHandler = (filtered) => {
         this.setState({itemCount: filtered.length});
     };
@@ -59,6 +55,7 @@ export default class extends React.Component {
             {Header: "Account", accessor: "account_name", sortable: true, clickable: true},
             {Header: "Instance", accessor: "instance", sortable: true},
             {Header: "Groups", accessor: "groups", sortable: true},
+            {Header: "Version", accessor: "version_number", sortable: true},
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true}
         ];
         
