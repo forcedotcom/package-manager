@@ -9,11 +9,11 @@ const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress"
 const ActiveStatus = {Created: Status.Created, Pending: Status.Pending, InProgress: Status.InProgress, Activating: Status.Activating, Canceling: Status.Canceling};
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
-async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
+async function createPushRequest(conn, upgradeId, parentItemId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
     let pushReq = await conn.sobject("PackagePushRequest").create(body);
-    return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
+    return await upgrades.createUpgradeItem(upgradeId, pushReq.id, parentItemId, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
 }
 
 async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
@@ -152,7 +152,10 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
     for (let i = 0; i < versions.length; i++) {
         let version = versions[i];
         let conn = await sfdc.buildOrgConnection(version.package_org_id);
-        let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy);
+        
+        // TODO derive item parent id
+        let parentId = null;
+        let item = await createPushRequest(conn, upgrade.id, parentId, version.package_org_id, version.latest_version_id, scheduledDate, createdBy);
         await createPushJob(conn, upgrade.id, item.id, item.push_request_id, orgIds);
     }
     return upgrade;
@@ -210,9 +213,11 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
             }
         }
 
+        // TODO derive item parent id
+        let parentId = null;
         let reqKey = version.package_org_id + version.latest_version_id;
         let pushReq = pushReqs[reqKey] = pushReqs[reqKey] || // Initialized if not found
-            {item: await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy), conn: conn, orgIds: []};
+            {item: await createPushRequest(conn, upgrade.id, parentId, version.package_org_id, version.latest_version_id, scheduledDate, createdBy), conn: conn, orgIds: []};
 
         items.push(pushReq.item);
         // Add this particular org id to the batch

@@ -103,6 +103,7 @@ create table if not exists upgrade_item (
   id                 serial primary key,
   upgrade_id         integer,
   push_request_id    varchar(18),
+  parent__item_id    integer,
   package_org_id     varchar(18),
   package_version_id varchar(18),
   status             varchar(40),

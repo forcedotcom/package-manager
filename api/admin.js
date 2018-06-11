@@ -16,8 +16,11 @@ let jobHistory = [];
 let activeJobs = new Map();
 let socket = null;
 let emit = (key, data) => {
-    if (socket === null)
-        logger.error("Called emit before web socket is initialized", {error: new Error("Socket is null").stack});
+    if (socket === null) {
+        logger.debug("Called emit without web socket ", {stack: new Error("Socket is null").stack});
+        return;
+    }
+    
     socket.emit(key, data);
 };
 

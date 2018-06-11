@@ -38,7 +38,7 @@ const SELECT_ONE = `
     WHERE u.id = $1
     GROUP by u.id, u.start_time, u.created_by, u.description, status`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.parent_item_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id,
@@ -49,7 +49,7 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
         inner join package p on p.sfid = pv.package_id
         left join upgrade_job j on j.item_id = i.id`;
 
-const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.parent_item_id, i.package_org_id, i.start_time, i.status,
         u.description,
         pv.version_number, pv.version_id,
         p.name, p.sfid`;
@@ -59,7 +59,7 @@ const SELECT_ALL_ITEMS_BY_UPGRADE =
         where i.upgrade_id = $1
         ${GROUP_BY_ALL_ITEMS}`;
 
-const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
+const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.parent_item_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
         pv.version_number, pv.version_id,
         p.name package_name
@@ -89,12 +89,12 @@ async function createUpgrade(scheduledDate, createdBy, description) {
     return recs[0];
 }
 
-async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
+async function createUpgradeItem(upgradeId, requestId, parentItemId, packageOrgId, versionId, scheduledDate, status, createdBy) {
     let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
     let recs = await db.insert('INSERT INTO upgrade_item' +
-        ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status, created_by)' +
+        ' (upgrade_id, push_request_id, parent_item_id, package_org_id, package_version_id, start_time, status, created_by)' +
         ' VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy]);
+        [upgradeId, requestId, parentItemId, packageOrgId, versionId, isoTime, status, createdBy]);
     return recs[0];
 }
 
@@ -334,13 +334,26 @@ async function requestActivateUpgradeItems(req, res, next) {
                 return true;
             }
         });
+        
         if (items.length > 0) {
-            await push.updatePushRequests(items, push.Status.Pending, req.session.username);
+            let itemMap = new Map();
             for (let i = 0; i < items.length; i++) {
-                if (items[i].status !== push.Status.Pending) {
-                    items[i].status = push.Status.Activating;
-                }
+                itemMap.set(items[i].id, items[i]);
             }
+            
+            let itemsToActivate = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.status === push.Status.Pending) 
+                    continue;
+            
+                if (item.parent_item_id !== null) {
+                    let parentItem = itemMap.get(item.parent_item_id);
+                }
+                item.status = push.Status.Activating;
+                itemsToActivate.push(item);
+            }
+            await push.updatePushRequests(itemsToActivate, push.Status.Pending, req.session.username);
         }
         res.json(items);
     } catch (err) {
