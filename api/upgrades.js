@@ -163,20 +163,22 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
     }
 
     if (errored.length > 0) {
-        let errorJobIds = errored.map(j => j.job_id);
-        let pushErrors = await push.findErrorsByJobIds(errored[0].package_org_id, errorJobIds);
-        if (pushErrors.length !== errored.length) {
-            // Should never ever happen.
-            logger.error("Fail: pushErrors does not match errored", {
-                pusherrors: pushErrors.length,
-                errored: errored.length
-            });
-            return {};
+        const errorJobIds = errored.map(j => j.job_id);
+        const pushErrors = await push.findErrorsByJobIds(errored[0].package_org_id, errorJobIds);
+        const errorsByJobId = new Map();
+        for (let i = 0; i < pushErrors.length; i++) {
+            const pushError = pushErrors[i];
+            let errorMessages = errorsByJobId.get(pushError.PackagePushJobId);
+            if (!errorMessages) {
+                errorMessages = [];
+                errorsByJobId.set(pushError.PackagePushJobId.substring(0,15), errorMessages);
+            }
+            errorMessages.push(pushError.ErrorMessage);
         }
-
+        
         for (let i = 0; i < errored.length; i++) {
-            let err = pushErrors[i];
-            errored[i].message = err.ErrorMessage;
+            const errorMessages = errorsByJobId.get(errored[i].job_id);
+            errored[i].message = errorMessages ? JSON.stringify(errorMessages) : "Unknown failure. No error message given from push upgrade API.";
             errored[i].status = push.Status.Failed;
         }
     }

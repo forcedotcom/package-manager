@@ -16,12 +16,9 @@ let jobHistory = [];
 let activeJobs = new Map();
 let socket = null;
 let emit = (key, data) => {
-    if (socket === null) {
-        logger.debug("Called emit without web socket ", {stack: new Error("Socket is null").stack});
-        return;
+    if (socket != null) {
+        socket.emit(key, data);
     }
-    
-    socket.emit(key, data);
 };
 
 class AdminJob {
