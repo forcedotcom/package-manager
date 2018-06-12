@@ -21,8 +21,13 @@ export default class extends React.Component {
     };
     
     copyHandler = () => {
-        const messages = JSON.parse(this.props.message);
-        let messageBody = messages.length ?
+        let messages;
+        try {
+            messages = JSON.parse(this.props.message);
+        } catch (e) {
+            messages = this.props.message; 
+        }
+        let messageBody = messages.map ?
             messages.map((m, i) => `${String(i + 1)}. ${messages[i]}`).join("\n") : messages;
         let clippy = document.getElementById("clippy");
         clippy.value = messageBody;
@@ -33,9 +38,14 @@ export default class extends React.Component {
     };
 
     render() {
-        const messages = JSON.parse(this.props.message);
-        let messageBody = messages.length ? 
-            <ol className="slds-list_ordered">{messages.map((m, i) => <li key={`error-${i}`}><pre>{messages[i]}</pre></li>)}</ol> :
+        let messages;
+        try {
+            messages = JSON.parse(this.props.message);
+        } catch (e) {
+            messages = this.props.message;
+        }
+        let messageBody = messages.map ? 
+            <ol>{messages.map((m, i) => <li key={`error-${i}`}><pre>{messages[i]}</pre></li>)}</ol> :
             <p>{messages}</p>;
         
         return (
@@ -43,8 +53,7 @@ export default class extends React.Component {
                 <section className="slds-modal slds-fade-in-open slds-modal_prompt">
                     <div onClick={this.dontCloseHandler} className="slds-modal__container">
                         <header className="slds-modal__header slds-theme_error slds-theme_alert-texture">
-                            <button className="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
-                                    title="Close">
+                            <button className="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
                                 <svg className="slds-button__icon slds-button__icon_large">
                                     <use xmlnsXlink="http://www.w3.org/1999/xlink" xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
                                 </svg>

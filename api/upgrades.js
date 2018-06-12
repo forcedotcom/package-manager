@@ -3,6 +3,8 @@ const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
 
+const MAX_ERROR_COUNT = 20;
+
 const SELECT_ALL = `
     SELECT u.id, u.start_time, u.created_by, u.description,
     CASE
@@ -168,17 +170,25 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
         const errorsByJobId = new Map();
         for (let i = 0; i < pushErrors.length; i++) {
             const pushError = pushErrors[i];
-            let errorMessages = errorsByJobId.get(pushError.PackagePushJobId);
+            const pushJobId = pushError.PackagePushJobId.substring(0,15);
+            let errorMessages = errorsByJobId.get(pushJobId);
             if (!errorMessages) {
-                errorMessages = [];
-                errorsByJobId.set(pushError.PackagePushJobId.substring(0,15), errorMessages);
+                errorMessages = new Set();
+                errorsByJobId.set(pushJobId, errorMessages);
             }
-            errorMessages.push(pushError.ErrorMessage);
+            errorMessages.add(pushError.ErrorMessage);
         }
         
         for (let i = 0; i < errored.length; i++) {
-            const errorMessages = errorsByJobId.get(errored[i].job_id);
-            errored[i].message = errorMessages ? JSON.stringify(errorMessages) : "Unknown failure. No error message given from push upgrade API.";
+            let errorMessages = errorsByJobId.get(errored[i].job_id);
+            errorMessages = errorMessages ? Array.from(errorMessages.keys()) :
+                ["Unknown failure. No error message given from push upgrade API."];
+            if (errorMessages.length > MAX_ERROR_COUNT) {
+                const total = errorMessages.length;
+                errorMessages = errorMessages.slice(0, MAX_ERROR_COUNT);
+                errorMessages.push(`...and ${total - MAX_ERROR_COUNT} more.`)
+            }
+            errored[i].message = JSON.stringify(errorMessages);
             errored[i].status = push.Status.Failed;
         }
     }
