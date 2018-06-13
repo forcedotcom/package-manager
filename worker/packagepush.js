@@ -5,7 +5,7 @@ const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
 
-const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Activating: "Activating", Canceling: "Canceling", Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible"};
+const Status = {Created: "Created", Pending: "Pending", InProgress: "InProgress", Activating: "Activating", Canceling: "Canceling", Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible", Invalid: "Invalid"};
 const ActiveStatus = {Created: Status.Created, Pending: Status.Pending, InProgress: Status.InProgress, Activating: Status.Activating, Canceling: Status.Canceling};
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
@@ -288,17 +288,27 @@ async function findJobsByIds(packageOrgId, jobIds) {
     return res.records;
 }
 
-async function findErrorsByJobIds(packageOrgId, jobIds) {
+async function findErrorsByJobIds(packageOrgId, jobIds, limit = 200) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
     let params = jobIds.map(v => `'${v}'`);
     let soql = `SELECT Id,ErrorDetails,ErrorMessage,ErrorSeverity,ErrorTitle,ErrorType,PackagePushJobId 
         FROM PackagePushError
         WHERE PackagePushJobId IN (${params.join(",")})
-        ORDER BY PackagePushJobId`;
+        ORDER BY PackagePushJobId LIMIT ${limit}`;
 
-    let res = await conn.query(soql);
-    return res.records;
+    let result = await conn.query(soql);
+    let recs = result.records;
+    while(!result.done) {
+        try {
+            result = await conn.requestGet(result.nextRecordsUrl);
+            recs = recs.concat(result.records);
+        } catch (e) {
+            logger.error("Failed to retrieve error records", {packageOrgId, queryUrl: result.nextRecordsUrl, error: e.message || e});
+            return recs; // Bail.  This shouldn't happen, the platform is busted, whatever.
+        }
+    }
+    return recs;
 }
 
 async function findSubscribersByIds(packageOrgIds, orgIds) {

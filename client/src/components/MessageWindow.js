@@ -21,16 +21,8 @@ export default class extends React.Component {
     };
     
     copyHandler = () => {
-        let messages;
-        try {
-            messages = JSON.parse(this.props.message);
-        } catch (e) {
-            messages = this.props.message; 
-        }
-        let messageBody = messages.map ?
-            messages.map((m, i) => `${String(i + 1)}. ${messages[i]}`).join("\n") : messages;
         let clippy = document.getElementById("clippy");
-        clippy.value = messageBody;
+        clippy.value = this.props.message;
         clippy.select();
         document.execCommand("copy");
         NotificationManager.success("Copied message text to clipboard", "Done", 1000);
@@ -45,7 +37,17 @@ export default class extends React.Component {
             messages = this.props.message;
         }
         let messageBody = messages.map ? 
-            <ol>{messages.map((m, i) => <li key={`error-${i}`}><pre>{messages[i]}</pre></li>)}</ol> :
+            <ol className="slds-has-dividers_top-space">{messages.map((m, i) => {
+                if (typeof m === "object") {
+                    return <li className="slds-item" key={`error-${i}`}>
+                        <div className="slds-text-title_caps">{m.title}</div>
+                        <div className="slds-text-color_error">{m.details}</div>
+                        <pre>{m.message}</pre>
+                    </li>;
+                } else {
+                    return <li key={`error-${i}`}><pre>{m}</pre></li>
+                }
+            })}</ol> :
             <p>{messages}</p>;
         
         return (

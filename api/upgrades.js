@@ -107,7 +107,7 @@ async function handleUpgradeItemStatusChange(item, newStatus) {
             await db.update('UPDATE upgrade_item SET status = $1 WHERE id = $2', [item.status, item.id]);
             logger.debug(`Upgrade item status changed`, {id: item.id, status: item.status});
         } catch (error) {
-            logger.error("Failed to update upgrade item status", error);
+            logger.error("Failed to update upgrade item status", {error: error.message || error});
         }
     }
 }
@@ -122,9 +122,13 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
         return {};
     }
 
-    // Assumption: pushJobs is already ordered by Id
+    // Order by org id
+    pushJobs.sort(function (a, b) {
+        return a.SubscriberOrganizationKey > b.SubscriberOrganizationKey ? 1 : -1;
+    });
+    
     upgradeJobs.sort(function (a, b) {
-        return a.job_id > b.job_id ? 1 : -1;
+        return a.org_id > b.org_id ? 1 : -1;
     });
 
     let updated = [];
@@ -132,11 +136,21 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
     let errored = [];
     for (let u = 0, p = 0; u < upgradeJobs.length; u++) {
         let upgradeJob = upgradeJobs[u];
-        if (upgradeJob.status === push.Status.Ineligible)
-            continue; // Ignore the ineligible.
+        if (upgradeJob.job_id === null) {
+            if (upgradeJob.status !== push.Status.Invalid) {
+                // New status, so update our local copy.
+                upgradeJob.status = push.Status.Invalid;
+                upgradeJob.message = "No matching push upgrade job found.";
+                updated.push(upgradeJob);
+            }
+            continue; // Ignore the ineligible or otherwise invalid job
+        }
 
         const pushJob = pushJobs[p++]; // Increment push job counter here, and not before
 
+        if (pushJob.Id.substring(0,15) !== upgradeJob.job_id) {
+            throw Error("Something is very wrong. Push Jobs do not match Upgrade Jobs");
+        }
         if (pushJob.Status === push.Status.Succeeded) {
             // Our upgrade finished, we are told.
             if (upgradeJob.version_id !== upgradeJob.current_version_id) {
@@ -165,31 +179,16 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
     }
 
     if (errored.length > 0) {
-        const errorJobIds = errored.map(j => j.job_id);
-        const pushErrors = await push.findErrorsByJobIds(errored[0].package_org_id, errorJobIds);
-        const errorsByJobId = new Map();
-        for (let i = 0; i < pushErrors.length; i++) {
-            const pushError = pushErrors[i];
-            const pushJobId = pushError.PackagePushJobId.substring(0,15);
-            let errorMessages = errorsByJobId.get(pushJobId);
-            if (!errorMessages) {
-                errorMessages = new Set();
-                errorsByJobId.set(pushJobId, errorMessages);
-            }
-            errorMessages.add(pushError.ErrorMessage);
-        }
-        
         for (let i = 0; i < errored.length; i++) {
-            let errorMessages = errorsByJobId.get(errored[i].job_id);
-            errorMessages = errorMessages ? Array.from(errorMessages.keys()) :
-                ["Unknown failure. No error message given from push upgrade API."];
-            if (errorMessages.length > MAX_ERROR_COUNT) {
-                const total = errorMessages.length;
-                errorMessages = errorMessages.slice(0, MAX_ERROR_COUNT);
-                errorMessages.push(`...and ${total - MAX_ERROR_COUNT} more.`)
+            const erroredJob = errored[i];
+            const pushErrors = await push.findErrorsByJobIds(erroredJob.package_org_id, [erroredJob.job_id], MAX_ERROR_COUNT);
+            let errors = pushErrors.map(err => {return {title: err.ErrorTitle, details: err.ErrorDetails, message: err.ErrorMessage}});
+            if (errors.length === 0) {
+                errors.push({title: "Unknown failure", details: "", message: "Unknown failure. No error message given from push upgrade API."});
             }
-            errored[i].message = JSON.stringify(errorMessages);
-            errored[i].status = push.Status.Failed;
+            
+            erroredJob.message = JSON.stringify(errors);
+            erroredJob.status = push.Status.Failed;
         }
     }
 
@@ -279,7 +278,7 @@ async function requestAllJobs(req, res, next) {
             let pushJobs = await push.findJobsByRequestIds(upgradeJobs[0].package_org_id, [upgradeJobs[0].push_request_id]);
             handleUpgradeJobsStatusChange(pushJobs, upgradeJobs)
                 .then(({updated, succeeded, errored}) => logger.debug(`Upgrade job status changes`, {updated, succeeded, errored}))
-                .catch(error => logger.error('Failed to update upgrade item status', error));
+                .catch(error => logger.error('Failed to update upgrade item status', {error: error.message || error}));
         }
         
         return res.json(upgradeJobs);
