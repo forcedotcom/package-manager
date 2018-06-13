@@ -106,6 +106,10 @@ export default class extends React.Component {
         return this.state.selection.includes(key);
     };
 
+    pageSizeHandler = (pageSize) => {
+        this.setState({pageSize});
+    };
+    
     render() {
         const selectionProps = {
             selectAll: this.state.selectAll,
@@ -165,6 +169,7 @@ export default class extends React.Component {
                 data={this.state.data}
                 columns={this.props.columns}
                 pageSize={this.state.pageSize}
+                onPageSizeChange={this.pageSizeHandler}
                 filterable={this.props.filterable || this.state.data.length > this.state.pageSize}
                 showPagination={this.props.showPagination || this.state.data.length > this.state.pageSize}
                 minRows={this.state.minRows}
