@@ -273,9 +273,9 @@ async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
 
 async function requestAllJobs(req, res, next) {
     try {
-        let upgradeJobs = await findJobs(req.query.itemId, req.query.sort_field, req.query.sort_dir);
+        let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
         if (req.query.fetchStatus && upgradeJobs.length > 0) {
-            let pushJobs = await push.findJobsByRequestIds(upgradeJobs[0].package_org_id, [upgradeJobs[0].push_request_id]);
+            let pushJobs = await fetchJobStatus(upgradeJobs);
             handleUpgradeJobsStatusChange(pushJobs, upgradeJobs)
                 .then(({updated, succeeded, errored}) => logger.debug(`Upgrade job status changes`, {updated, succeeded, errored}))
                 .catch(error => logger.error('Failed to update upgrade item status', {error: error.message || error}));
@@ -287,10 +287,26 @@ async function requestAllJobs(req, res, next) {
     }
 }
 
-async function findJobs(itemId, sortField, sortDir) {
-    let where = itemId ? " WHERE j.item_id = $1" : "";
-    let orderBy = ` ORDER BY  ${sortField || "item_id"} ${sortDir || "asc"}`;
-    return await db.query(SELECT_ALL_JOBS + where + orderBy, [itemId])
+async function fetchJobStatus(upgradeJobs) {
+    const requestMap = new Map();
+    upgradeJobs.forEach(j => {
+        requestMap.set(j.push_request_id, {package_org_id: j.package_org_id, push_request_id: j.push_request_id});
+    });
+    const promisesArr = [];
+	Array.from(requestMap.values()).forEach(r => {
+		promisesArr.push(push.findJobsByRequestIds(r.package_org_id, r.push_request_id));
+	});
+    const promisesResults = await Promise.all(promisesArr);
+    let pushJobs = [];
+    promisesResults.forEach(arr => pushJobs = pushJobs.concat(arr));
+    return pushJobs;
+}
+
+async function findJobs(upgradeId, itemId, sortField, sortDir) {
+    let where = upgradeId ? " WHERE j.upgrade_id = $1" : itemId ? " WHERE j.item_id = $1" : "";
+    let values = [upgradeId || itemId];
+    let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
+    return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
 }
 
 function requestById(req, res, next) {

@@ -262,13 +262,11 @@ async function findJobsByStatus(packageOrgId, requestIds, status) {
     return res.records;
 }
 
-async function findJobsByRequestIds(packageOrgId, requestIds) {
+async function findJobsByRequestIds(packageOrgId, requestId) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
-
-    let params = requestIds.map(v => `'${v}'`);
     let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
         FROM PackagePushJob
-        WHERE PackagePushRequestId IN (${params.join(",")})
+        WHERE PackagePushRequestId = '${requestId}'
         ORDER BY Id`;
 
     let res = await conn.query(soql);
