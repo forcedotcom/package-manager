@@ -22,8 +22,8 @@ export default class extends React.Component {
         let columns = [
             {Header: "Number", accessor: "id", minWidth: 30, sortable: true, clickable: true},
             {Header: "Description", accessor: "description", minWidth: 300, clickable: true},
-            {Header: "Scheduled Start Time", id: "start_time", sortable: true, clickable: true, 
-                accessor: d => moment(d.start_time).format("lll")},
+            {Header: "Scheduled Start Time", id: "start_time", accessor: d => moment(d.start_time).format("YYYY-MM-DD [at] hh:mm:ss a"), sortable: true, clickable: true},
+            {Header: "When", id: "start_when", accessor: d => moment(d.start_time).fromNow(), clickable: true},
             {Header: "Created By", accessor: "created_by", sortable: true},
             {Header: "Status", accessor: "status", sortable: true}
         ];

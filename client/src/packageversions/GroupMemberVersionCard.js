@@ -47,7 +47,7 @@ export default class extends React.Component {
                 sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
             },
             {Header: "Status", accessor: "status", sortable: true},
-            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll")},
+            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false},
         ];
 
         return (

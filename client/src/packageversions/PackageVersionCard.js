@@ -27,7 +27,7 @@ export default class extends React.Component {
         let columns = [
             {Header: "Version Number", accessor: "version_number", sortable: true, clickable: true,
                 sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}},
-            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("ll"), sortable: false},
+            {Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false},
             {Header: "Version ID", accessor: "version_id", sortable: false},
             {Header: "Status", accessor: "status", sortable: true}
         ];
