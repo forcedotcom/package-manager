@@ -176,7 +176,7 @@ export default class extends React.Component {
 						}
 
 						let ends = filterVal.endsWith("$");
-						filterVal = starts ? filterVal.substring(0, filterVal.length - 1) : filterVal;
+						filterVal = ends ? filterVal.substring(0, filterVal.length - 1) : filterVal;
 						if (filterVal === "") {
 							return true; // No filter after all.
 						}
