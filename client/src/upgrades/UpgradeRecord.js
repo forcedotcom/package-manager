@@ -14,18 +14,18 @@ import Tabs from "../components/Tabs";
 import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
-    SORTAGE_KEY_ITEMS = "UpgradeItemCard";
+	SORTAGE_KEY_ITEMS = "UpgradeItemCard";
 	SORTAGE_KEY_JOBS = "UpgradeRecord.UpgradeJobCard";
 
-    state = {
-        selected: [],
-        upgrade: {},
-        sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "id", "asc"),
+	state = {
+		selected: [],
+		upgrade: {},
+		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "id", "asc"),
 		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc"),
 		items: []
-    };
+	};
 
-    componentDidMount() {
+	componentDidMount() {
 		upgradeService.requestById(this.props.match.params.upgradeId).then(upgrade => this.setState({upgrade}));
 		upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems, true).then(items => {
 			this.setState({items});
@@ -36,23 +36,23 @@ export default class extends React.Component {
 			this.checkJobStatus();
 		});
 	}
-	
-    checkItemStatus() {
-        let shouldPing = this.state.upgrade.status === "Active";
-        if (!shouldPing)
-            return; // All of our items are done, so don't bother pinging.
-        
-        const secondsDelay = 3;
-        console.log(`Checking upgrade item status again in ${secondsDelay} seconds`);
-        setTimeout(this.fetchItemStatus.bind(this), (secondsDelay) * 1000);
-    }
 
-    fetchItemStatus() {
-        upgradeItemService.findByUpgrade(this.state.upgrade.id, this.state.sortOrderItems, true).then(items => {
-            this.setState({items});
-            this.checkItemStatus();
-        });
-    }
+	checkItemStatus() {
+		let shouldPing = this.state.upgrade.status === "Active";
+		if (!shouldPing)
+			return; // All of our items are done, so don't bother pinging.
+
+		const secondsDelay = 3;
+		console.log(`Checking upgrade item status again in ${secondsDelay} seconds`);
+		setTimeout(this.fetchItemStatus.bind(this), (secondsDelay) * 1000);
+	}
+
+	fetchItemStatus() {
+		upgradeItemService.findByUpgrade(this.state.upgrade.id, this.state.sortOrderItems, true).then(items => {
+			this.setState({items});
+			this.checkItemStatus();
+		});
+	}
 
 	checkJobStatus() {
 		let shouldPing = this.state.upgrade.status === "Active";
@@ -87,76 +87,83 @@ export default class extends React.Component {
 			NotificationManager.error(e.message, "Fetch Failed");
 		});
 	};
-    
-    activationHandler = () => {
-        if (window.confirm(`Are you sure you want to activate ${this.state.selected.length} request(s)?`)) {
-            upgradeItemService.activateItems(this.state.selected).then(() => window.location.reload());
-        }
-    };
 
-    cancelationHandler = () => {
-        if (window.confirm(`Are you sure you want to cancel ${this.state.selected.length} request(s)?`)) {
-            upgradeItemService.cancelItems(this.state.selected).then(() => window.location.reload());
-        }
-    };
+	activationHandler = () => {
+		if (window.confirm(`Are you sure you want to activate ${this.state.selected.length} request(s)?`)) {
+			upgradeItemService.activateItems(this.state.selected).then(() => window.location.reload());
+		}
+	};
 
-    selectionHandler = (selected) => {
-        this.setState({selected});
-        console.log(JSON.stringify(selected));
-    };
+	cancelationHandler = () => {
+		if (window.confirm(`Are you sure you want to cancel ${this.state.selected.length} request(s)?`)) {
+			upgradeItemService.cancelItems(this.state.selected).then(() => window.location.reload());
+		}
+	};
 
-    render() {
-        let userCanActivate = true;
-        let user = JSON.parse(sessionStorage.getItem("user"));
-        if (user) {
-            userCanActivate = user.enforce_activation_policy === "false" || (this.state.upgrade.created_by != null && this.state.upgrade.created_by !== user.username);
-        }
-        
-        const itemNotes = [];
-        if (!userCanActivate) {
-            itemNotes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an upgrade cannot activate it.</HeaderNote>)
-        } else if (!user || user.enforce_activation_policy === "false") {
-            itemNotes.push(<HeaderNote key="activation_warning">Activation policy enforcement is disabled for testing purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
-        }
-    
-        const itemActions = [
-            {label: "Activate Selected", handler: this.activationHandler.bind(this),
-                disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0 || !userCanActivate,
-                detail: "Update the selected items to Pending state to proceed with upgrades"},
-            {label: "Cancel Selected", handler: this.cancelationHandler.bind(this),
-                disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0}
-        ];
+	selectionHandler = (selected) => {
+		this.setState({selected});
+		console.log(JSON.stringify(selected));
+	};
 
-        let count = this.state.items.length, completed = 0, errors = 0;
-        for (let i = 0; i < count; i++) {
-            let item = this.state.items[i];
-            if (isDoneStatus(item.status)) {
-                completed++;
-            }
-            if (item.status === Status.Failed) {
-                errors++;
-            }
-        }
-        return (
-            <div>
-                <RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
-                    <HeaderField label="Created By" value={this.state.upgrade.created_by}/>
-                    <HeaderField label="Scheduled Start Time" format="datetime" value={this.state.upgrade.start_time}/>
-                    <HeaderField label="Status" value={this.state.upgrade.status}/>
-                </RecordHeader>
-                <ProgressBar progress={completed / count} success={errors === 0}/>
-                <div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
+	render() {
+		let userCanActivate = true;
+		let user = JSON.parse(sessionStorage.getItem("user"));
+		if (user) {
+			userCanActivate = user.enforce_activation_policy === "false" || (this.state.upgrade.created_by != null && this.state.upgrade.created_by !== user.username);
+		}
+
+		const itemNotes = [];
+		if (!userCanActivate) {
+			itemNotes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an
+				upgrade cannot activate it.</HeaderNote>)
+		} else if (!user || user.enforce_activation_policy === "false") {
+			itemNotes.push(<HeaderNote key="activation_warning">Activation policy enforcement is disabled for testing
+				purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
+		}
+
+		const itemActions = [
+			{
+				label: "Activate Selected", handler: this.activationHandler.bind(this),
+				disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0 || !userCanActivate,
+				detail: "Update the selected items to Pending state to proceed with upgrades"
+			},
+			{
+				label: "Cancel Selected", handler: this.cancelationHandler.bind(this),
+				disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0
+			}
+		];
+
+		let count = this.state.items.length, completed = 0, errors = 0;
+		for (let i = 0; i < count; i++) {
+			let item = this.state.items[i];
+			if (isDoneStatus(item.status)) {
+				completed++;
+			}
+			if (item.status === Status.Failed) {
+				errors++;
+			}
+		}
+		return (
+			<div>
+				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
+					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
+					<HeaderField label="Scheduled Start Time" format="datetime" value={this.state.upgrade.start_time}/>
+					<HeaderField label="Status" value={this.state.upgrade.status}/>
+				</RecordHeader>
+				<ProgressBar progress={completed / count} success={errors === 0}/>
+				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Requests">
-                            <UpgradeItemCard upgrade={this.state.upgrade} actions={itemActions} notes={itemNotes}
-                                             onSelect={this.selectionHandler} items={this.state.items} status={this.state.upgrade.status}/>
-                        </div>
+							<UpgradeItemCard upgrade={this.state.upgrade} actions={itemActions} notes={itemNotes}
+											 onSelect={this.selectionHandler} items={this.state.items}
+											 status={this.state.upgrade.status}/>
+						</div>
 						<div label="Jobs">
 							<UpgradeJobCard jobs={this.state.jobs}/>
-                        </div>
-                    </Tabs>
-                </div>
-            </div>
-        );
-    }
+						</div>
+					</Tabs>
+				</div>
+			</div>
+		);
+	}
 }

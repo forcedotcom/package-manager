@@ -8,56 +8,71 @@ import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
 
 export default class extends React.Component {
-    SORTAGE_KEY = "OrgGroupList";
+	SORTAGE_KEY = "OrgGroupList";
 
-    state = {sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"), orggroups: [], selected: [], itemCount: "..."};
+	state = {
+		sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"),
+		orggroups: [],
+		selected: [],
+		itemCount: "..."
+	};
 
-    componentDidMount() {
-        orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
-    }
+	componentDidMount() {
+		orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({
+			orggroups,
+			itemCount: orggroups.length
+		}));
+	}
 
-    filterHandler = (filtered) => {
-        this.setState({itemCount: filtered.length});
-    };
-    
-    newHandler = () => {
-        this.setState({addingOrgGroup: true});
-    };
+	filterHandler = (filtered) => {
+		this.setState({itemCount: filtered.length});
+	};
 
-    saveHandler = (orggroup) => {
-        orgGroupService.requestCreate(orggroup).then((orggroup) => {
-            window.location = `/orggroup/${orggroup.id}`;
-        });
-    };
+	newHandler = () => {
+		this.setState({addingOrgGroup: true});
+	};
 
-    cancelHandler = () => {
-        this.setState({addingOrgGroup: false});
-    };
+	saveHandler = (orggroup) => {
+		orgGroupService.requestCreate(orggroup).then((orggroup) => {
+			window.location = `/orggroup/${orggroup.id}`;
+		});
+	};
 
-    selectionHandler = (selected) => {
-        this.setState({selected});
-    };
-    
-    deleteHandler = () => {
-        orgGroupService.requestDelete(this.state.selected).then(() => {
-            orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups}));
-        });
-    };
-    
-    render() {
-        const actions = [
-            {label: "New", handler: this.newHandler, detail: "Create new org group"},
-            {label: "Delete", disabled: this.state.selected.length === 0, handler: this.deleteHandler, detail: "Delete the selected groups"}
-        ];
-        return (
-            <div>
-                <HomeHeader type="org groups"
-                            title="Org Groups"
-                            itemCount={this.state.itemCount}
-                            actions={actions}/>
-                <OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
-                {this.state.addingOrgGroup ?  <GroupFormWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
-            </div>
-        );
-    }
+	cancelHandler = () => {
+		this.setState({addingOrgGroup: false});
+	};
+
+	selectionHandler = (selected) => {
+		this.setState({selected});
+	};
+
+	deleteHandler = () => {
+		orgGroupService.requestDelete(this.state.selected).then(() => {
+			orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups}));
+		});
+	};
+
+	render() {
+		const actions = [
+			{label: "New", handler: this.newHandler, detail: "Create new org group"},
+			{
+				label: "Delete",
+				disabled: this.state.selected.length === 0,
+				handler: this.deleteHandler,
+				detail: "Delete the selected groups"
+			}
+		];
+		return (
+			<div>
+				<HomeHeader type="org groups"
+							title="Org Groups"
+							itemCount={this.state.itemCount}
+							actions={actions}/>
+				<OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler}
+							  onSelect={this.selectionHandler}/>
+				{this.state.addingOrgGroup ?
+					<GroupFormWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+			</div>
+		);
+	}
 }

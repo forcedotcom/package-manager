@@ -1,12 +1,12 @@
 /* Overrides/requires react-datepicker/dist/react-datepicker.css */
 
 .react-datepicker {
-  font-family: "Salesforce Sans", Arial, sans-serif;
-  font-size: 0.8rem;
-  background-color: #fff;
-  color: #000;
-  border: 1px solid #aeaeae;
-  border-radius: 0.3rem;
-  display: inline-block;
-  position: relative;
+	font-family: "Salesforce Sans", Arial, sans-serif;
+	font-size: 0.8rem;
+	background-color: #fff;
+	color: #000;
+	border: 1px solid #aeaeae;
+	border-radius: 0.3rem;
+	display: inline-block;
+	position: relative;
 }
