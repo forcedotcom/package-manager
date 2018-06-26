@@ -15,41 +15,45 @@ const SELECT_ALL = `SELECT
     INNER JOIN package as p on pv.package_id = p.sfid`;
 
 function requestAll(req, res, next) {
-    let orgId = req.query.org_id;
+	let orgId = req.query.org_id;
 
-    findAll(orgId, req.query.status, req.query.sort_field, req.query.sort_dir)
-        .then((recs) => {return res.send(JSON.stringify(recs))})
-        .catch(next);
+	findAll(orgId, req.query.status, req.query.sort_field, req.query.sort_dir)
+		.then((recs) => {
+			return res.send(JSON.stringify(recs))
+		})
+		.catch(next);
 }
 
 async function findAll(orgId, status, orderByField, orderByDir) {
-    let whereParts = ["o.instance IS NOT NULL"],
-        values = [];
+	let whereParts = ["o.instance IS NOT NULL"],
+		values = [];
 
-    if (orgId) {
-        values.push(orgId);
-        whereParts.push("o.org_id = $" + values.length);
-    }
+	if (orgId) {
+		values.push(orgId);
+		whereParts.push("o.org_id = $" + values.length);
+	}
 
-    if (status) {
-        values.push(status);
-        whereParts.push(`l.status = $${values.length}`)
-    } 
-    
-    let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-    let sort = ` ORDER BY ${orderByField || "name"} ${orderByDir || "asc"}`;
+	if (status) {
+		values.push(status);
+		whereParts.push(`l.status = $${values.length}`)
+	}
 
-    return db.query(SELECT_ALL + where + sort, values);
+	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
+	let sort = ` ORDER BY ${orderByField || "name"} ${orderByDir || "asc"}`;
+
+	return db.query(SELECT_ALL + where + sort, values);
 }
 
 function requestById(req, res, next) {
-    let id = req.params.id;
+	let id = req.params.id;
 
-    let where = " WHERE l.sfid = $1";
+	let where = " WHERE l.sfid = $1";
 
-    db.query(SELECT_ALL + where, [id])
-        .then((recs) => {return res.json(recs[0])})
-        .catch(next);
+	db.query(SELECT_ALL + where, [id])
+		.then((recs) => {
+			return res.json(recs[0])
+		})
+		.catch(next);
 }
 
 exports.requestAll = requestAll;

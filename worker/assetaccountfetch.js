@@ -59,7 +59,7 @@ async function upsert(recs, batchSize) {
 		logger.info("No new account records found");
 		return; // nothing to see here
 	}
-	
+
 	let accountMap = new Map();
 	for (let i = 0; i < recs.length; i++) {
 		const rec = recs[i];
@@ -67,7 +67,7 @@ async function upsert(recs, batchSize) {
 	}
 	recs = Array.from(accountMap.values());
 	count = recs.length;
-	
+
 	logger.info(`New account records found`, {count});
 	for (let start = 0; start < count && !adminJob.cancelled;) {
 		await upsertBatch(recs.slice(start, start += batchSize));

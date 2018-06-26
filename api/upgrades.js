@@ -56,8 +56,8 @@ const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.p
         pv.version_number, pv.version_id,
         p.name, p.sfid`;
 
-const SELECT_ALL_ITEMS_BY_UPGRADE = 
-        `${SELECT_ALL_ITEMS}
+const SELECT_ALL_ITEMS_BY_UPGRADE =
+	`${SELECT_ALL_ITEMS}
         where i.upgrade_id = $1
         ${GROUP_BY_ALL_ITEMS}`;
 
@@ -86,314 +86,327 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN account a ON a.account_id = o.account_id`;
 
 async function createUpgrade(scheduledDate, createdBy, description) {
-    let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description) VALUES ($1,$2,$3)', [isoTime,createdBy,description]);
-    return recs[0];
+	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
+	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description) VALUES ($1,$2,$3)', [isoTime, createdBy, description]);
+	return recs[0];
 }
 
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
-    let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-    let recs = await db.insert('INSERT INTO upgrade_item' +
-        ' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status, created_by)' +
-        ' VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy]);
-    return recs[0];
+	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
+	let recs = await db.insert('INSERT INTO upgrade_item' +
+		' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status, created_by)' +
+		' VALUES ($1,$2,$3,$4,$5,$6,$7)',
+		[upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy]);
+	return recs[0];
 }
 
 async function handleUpgradeItemStatusChange(item, newStatus) {
-    if (item.status !== newStatus) {
-        item.status = newStatus;
-        try {
-            await db.update('UPDATE upgrade_item SET status = $1 WHERE id = $2', [item.status, item.id]);
-            logger.debug(`Upgrade item status changed`, {id: item.id, status: item.status});
-        } catch (error) {
-            logger.error("Failed to update upgrade item status", {error: error.message || error});
-        }
-    }
+	if (item.status !== newStatus) {
+		item.status = newStatus;
+		try {
+			await db.update('UPDATE upgrade_item SET status = $1 WHERE id = $2', [item.status, item.id]);
+			logger.debug(`Upgrade item status changed`, {id: item.id, status: item.status});
+		} catch (error) {
+			logger.error("Failed to update upgrade item status", {error: error.message || error});
+		}
+	}
 }
 
 async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
-    if (pushJobs.length > upgradeJobs.length) {
-        // Should never ever happen.
-        logger.error("Fail: pushJobs does not match upgradeJobs", {
-            pushjobs: pushJobs.length,
-            upgradejobs: upgradeJobs.length
-        });
-        return {};
-    }
+	if (pushJobs.length > upgradeJobs.length) {
+		// Should never ever happen.
+		logger.error("Fail: pushJobs does not match upgradeJobs", {
+			pushjobs: pushJobs.length,
+			upgradejobs: upgradeJobs.length
+		});
+		return {};
+	}
 
-    // Order by org id
-    pushJobs.sort(function (a, b) {
-        return a.SubscriberOrganizationKey > b.SubscriberOrganizationKey ? 1 : -1;
-    });
-    
-    upgradeJobs.sort(function (a, b) {
-        return a.org_id > b.org_id ? 1 : -1;
-    });
+	// Order by org id
+	pushJobs.sort(function (a, b) {
+		return a.SubscriberOrganizationKey > b.SubscriberOrganizationKey ? 1 : -1;
+	});
 
-    let updated = [];
-    let upgraded = [];
-    let errored = [];
-    for (let u = 0, p = 0; u < upgradeJobs.length; u++) {
-        let upgradeJob = upgradeJobs[u];
-        if (upgradeJob.job_id === null) {
-            if (upgradeJob.status !== push.Status.Invalid) {
-                // New status, so update our local copy.
-                upgradeJob.status = push.Status.Invalid;
-                upgradeJob.message = "No matching push upgrade job found.";
-                updated.push(upgradeJob);
-            }
-            continue; // Ignore the ineligible or otherwise invalid job
-        }
+	upgradeJobs.sort(function (a, b) {
+		return a.org_id > b.org_id ? 1 : -1;
+	});
 
-        const pushJob = pushJobs[p++]; // Increment push job counter here, and not before
+	let updated = [];
+	let upgraded = [];
+	let errored = [];
+	for (let u = 0, p = 0; u < upgradeJobs.length; u++) {
+		let upgradeJob = upgradeJobs[u];
+		if (upgradeJob.job_id === null) {
+			if (upgradeJob.status !== push.Status.Invalid) {
+				// New status, so update our local copy.
+				upgradeJob.status = push.Status.Invalid;
+				upgradeJob.message = "No matching push upgrade job found.";
+				updated.push(upgradeJob);
+			}
+			continue; // Ignore the ineligible or otherwise invalid job
+		}
 
-        if (pushJob.Id.substring(0,15) !== upgradeJob.job_id) {
-            throw Error("Something is very wrong. Push Jobs do not match Upgrade Jobs");
-        }
-        if (pushJob.Status === push.Status.Succeeded) {
-            // Our upgrade finished, we are told.
-            if (upgradeJob.version_id !== upgradeJob.current_version_id) {
-                // ...but our local version information does not yet match.  Fetch it.
-                upgraded.push(upgradeJob);
-            }
-        } 
+		const pushJob = pushJobs[p++]; // Increment push job counter here, and not before
 
-        // Check if our local status matches the remote status. If so, we can skip.
-        if (pushJob.Status === upgradeJob.status)
-            continue; 
+		if (pushJob.Id.substring(0, 15) !== upgradeJob.job_id) {
+			throw Error("Something is very wrong. Push Jobs do not match Upgrade Jobs");
+		}
+		if (pushJob.Status === push.Status.Succeeded) {
+			// Our upgrade finished, we are told.
+			if (upgradeJob.version_id !== upgradeJob.current_version_id) {
+				// ...but our local version information does not yet match.  Fetch it.
+				upgraded.push(upgradeJob);
+			}
+		}
 
-        // New status, so update our local copy.
-        updated.push(upgradeJob);
-        
-        if (pushJob.Status === push.Status.Failed) {
-            // Special handling for errored later.  Don't set the status in updateJob object yet.
-            errored.push(upgradeJob);
-            continue;
-        } 
-        
-        if (pushJob.Status === push.Status.Succeeded) {
-            upgraded.push(upgradeJob);
-        }
-        upgradeJob.status = pushJob.Status;
-    }
+		// Check if our local status matches the remote status. If so, we can skip.
+		if (pushJob.Status === upgradeJob.status)
+			continue;
 
-    if (errored.length > 0) {
-        for (let i = 0; i < errored.length; i++) {
-            const erroredJob = errored[i];
-            const pushErrors = await push.findErrorsByJobIds(erroredJob.package_org_id, [erroredJob.job_id], MAX_ERROR_COUNT);
-            let errors = pushErrors.map(err => {return {title: err.ErrorTitle, details: err.ErrorDetails, message: err.ErrorMessage}});
-            if (errors.length === 0) {
-                errors.push({title: "Unknown failure", details: "", message: "Unknown failure. No error message given from push upgrade API."});
-            }
-            
-            erroredJob.message = JSON.stringify(errors);
-            erroredJob.status = push.Status.Failed;
-        }
-    }
+		// New status, so update our local copy.
+		updated.push(upgradeJob);
 
-    if (updated.length > 0) {
-        await upsertUpgradeJobs(null, null, null, updated);
-    }
+		if (pushJob.Status === push.Status.Failed) {
+			// Special handling for errored later.  Don't set the status in updateJob object yet.
+			errored.push(upgradeJob);
+			continue;
+		}
 
-    if (upgraded.length > 0) {
-        await admin.fetchVersions(upgraded.map(j => j.org_id), [upgraded[0].package_org_id]);
-    }
-    
-    return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};
+		if (pushJob.Status === push.Status.Succeeded) {
+			upgraded.push(upgradeJob);
+		}
+		upgradeJob.status = pushJob.Status;
+	}
+
+	if (errored.length > 0) {
+		for (let i = 0; i < errored.length; i++) {
+			const erroredJob = errored[i];
+			const pushErrors = await push.findErrorsByJobIds(erroredJob.package_org_id, [erroredJob.job_id], MAX_ERROR_COUNT);
+			let errors = pushErrors.map(err => {
+				return {title: err.ErrorTitle, details: err.ErrorDetails, message: err.ErrorMessage}
+			});
+			if (errors.length === 0) {
+				errors.push({
+					title: "Unknown failure",
+					details: "",
+					message: "Unknown failure. No error message given from push upgrade API."
+				});
+			}
+
+			erroredJob.message = JSON.stringify(errors);
+			erroredJob.status = push.Status.Failed;
+		}
+	}
+
+	if (updated.length > 0) {
+		await upsertUpgradeJobs(null, null, null, updated);
+	}
+
+	if (upgraded.length > 0) {
+		await admin.fetchVersions(upgraded.map(j => j.org_id), [upgraded[0].package_org_id]);
+	}
+
+	return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};
 }
 
 async function upsertUpgradeJobs(upgradeId, itemId, requestId, jobs) {
-    let sql = `INSERT INTO upgrade_job (upgrade_id, item_id, push_request_id, job_id, org_id, status, message) VALUES`;
-    let values = [upgradeId, itemId, requestId]; 
-    for (let i = 0, n = 1 + values.length; i < jobs.length; i++) {
-        const job = jobs[i];
-        if (i > 0) {
-            sql += ','
-        }
-        sql += `($1,$2,$3,$${n++},$${n++},$${n++},$${n++})`;
-        values.push(job.job_id, job.org_id, job.status, job.message);
-    }
+	let sql = `INSERT INTO upgrade_job (upgrade_id, item_id, push_request_id, job_id, org_id, status, message) VALUES`;
+	let values = [upgradeId, itemId, requestId];
+	for (let i = 0, n = 1 + values.length; i < jobs.length; i++) {
+		const job = jobs[i];
+		if (i > 0) {
+			sql += ','
+		}
+		sql += `($1,$2,$3,$${n++},$${n++},$${n++},$${n++})`;
+		values.push(job.job_id, job.org_id, job.status, job.message);
+	}
 
-    sql += `on conflict (job_id) do update set status = excluded.status, message = excluded.message`;
-    await db.insert(sql, values);
+	sql += `on conflict (job_id) do update set status = excluded.status, message = excluded.message`;
+	await db.insert(sql, values);
 }
 
 async function requestAll(req, res, next) {
-    try {
-        let upgrades = await findAll(req.query.sort_field, req.query.sort_dir);
-        return res.json(upgrades);
-    } catch (err) {
-        next(err);
-    }
+	try {
+		let upgrades = await findAll(req.query.sort_field, req.query.sort_dir);
+		return res.json(upgrades);
+	} catch (err) {
+		next(err);
+	}
 }
 
 async function findAll(sortField, sortDir) {
-    let orderBy = ` ORDER BY ${sortField || "start_time"} ${sortDir || "asc"}`;
-    return await db.query(SELECT_ALL + orderBy, [])
+	let orderBy = ` ORDER BY ${sortField || "start_time"} ${sortDir || "asc"}`;
+	return await db.query(SELECT_ALL + orderBy, [])
 }
 
 async function requestItemsByUpgrade(req, res, next) {
-    try {
-        let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
-        if (req.query.fetchStatus) {
-            for (let i = 0; i < items.length; i++) {
-                let item = items[i];
-                let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-                await handleUpgradeItemStatusChange(item, pushReqs[0].Status);
-            }
-        }
+	try {
+		let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
+		if (req.query.fetchStatus) {
+			for (let i = 0; i < items.length; i++) {
+				let item = items[i];
+				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
+				await handleUpgradeItemStatusChange(item, pushReqs[0].Status);
+			}
+		}
 
-        return res.json(items);
-    } catch (err) {
-        next(err);
-    }
+		return res.json(items);
+	} catch (err) {
+		next(err);
+	}
 }
 
 async function findItemsByIds(itemIds) {
-    let whereParts = [];
-    let values = [];
-    if (itemIds) {
-        let params = [];
-        for(let i = 1; i <= itemIds.length; i++) {
-            params.push('$' + i);
-        }
-        whereParts.push(`i.id IN (${params.join(",")})`);
-        values = values.concat(itemIds);
-    }
-    
-    let where = ` WHERE ${whereParts.join(" AND" )}`;
-    return await db.query(SELECT_ALL_ITEMS + where + GROUP_BY_ALL_ITEMS, values)
+	let whereParts = [];
+	let values = [];
+	if (itemIds) {
+		let params = [];
+		for (let i = 1; i <= itemIds.length; i++) {
+			params.push('$' + i);
+		}
+		whereParts.push(`i.id IN (${params.join(",")})`);
+		values = values.concat(itemIds);
+	}
+
+	let where = ` WHERE ${whereParts.join(" AND")}`;
+	return await db.query(SELECT_ALL_ITEMS + where + GROUP_BY_ALL_ITEMS, values)
 }
 
 async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
-    let orderBy = ` ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
-    return await db.query(SELECT_ALL_ITEMS_BY_UPGRADE + orderBy, [upgradeId])
+	let orderBy = ` ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
+	return await db.query(SELECT_ALL_ITEMS_BY_UPGRADE + orderBy, [upgradeId])
 }
 
 async function requestAllJobs(req, res, next) {
-    try {
-        let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
-        if (req.query.fetchStatus && upgradeJobs.length > 0) {
-            let pushJobs = await fetchJobStatus(upgradeJobs);
-            handleUpgradeJobsStatusChange(pushJobs, upgradeJobs)
-                .then(({updated, succeeded, errored}) => logger.debug(`Upgrade job status changes`, {updated, succeeded, errored}))
-                .catch(error => logger.error('Failed to update upgrade item status', {error: error.message || error}));
-        }
-        
-        return res.json(upgradeJobs);
-    } catch (err) {
-        next(err);
-    }
+	try {
+		let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
+		if (req.query.fetchStatus && upgradeJobs.length > 0) {
+			let pushJobs = await fetchJobStatus(upgradeJobs);
+			handleUpgradeJobsStatusChange(pushJobs, upgradeJobs)
+				.then(({updated, succeeded, errored}) => logger.debug(`Upgrade job status changes`, {
+					updated,
+					succeeded,
+					errored
+				}))
+				.catch(error => logger.error('Failed to update upgrade item status', {error: error.message || error}));
+		}
+
+		return res.json(upgradeJobs);
+	} catch (err) {
+		next(err);
+	}
 }
 
 async function fetchJobStatus(upgradeJobs) {
-    const requestMap = new Map();
-    upgradeJobs.forEach(j => {
-        requestMap.set(j.push_request_id, {package_org_id: j.package_org_id, push_request_id: j.push_request_id});
-    });
-    const promisesArr = [];
+	const requestMap = new Map();
+	upgradeJobs.forEach(j => {
+		requestMap.set(j.push_request_id, {package_org_id: j.package_org_id, push_request_id: j.push_request_id});
+	});
+	const promisesArr = [];
 	Array.from(requestMap.values()).forEach(r => {
 		promisesArr.push(push.findJobsByRequestIds(r.package_org_id, r.push_request_id));
 	});
-    const promisesResults = await Promise.all(promisesArr);
-    let pushJobs = [];
-    promisesResults.forEach(arr => pushJobs = pushJobs.concat(arr));
-    return pushJobs;
+	const promisesResults = await Promise.all(promisesArr);
+	let pushJobs = [];
+	promisesResults.forEach(arr => pushJobs = pushJobs.concat(arr));
+	return pushJobs;
 }
 
 async function findJobs(upgradeId, itemId, sortField, sortDir) {
-    let where = upgradeId ? " WHERE j.upgrade_id = $1" : itemId ? " WHERE j.item_id = $1" : "";
-    let values = [upgradeId || itemId];
-    let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
-    return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
+	let where = upgradeId ? " WHERE j.upgrade_id = $1" : itemId ? " WHERE j.item_id = $1" : "";
+	let values = [upgradeId || itemId];
+	let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
+	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
 }
 
 function requestById(req, res, next) {
-    let id = req.params.id;
-    retrieveById(id).then(rec => res.json(rec))
-        .catch(next);
+	let id = req.params.id;
+	retrieveById(id).then(rec => res.json(rec))
+		.catch(next);
 }
 
 async function retrieveById(id) {
-    let recs = await db.query(SELECT_ONE, [id]);
-    return recs[0];
+	let recs = await db.query(SELECT_ONE, [id]);
+	return recs[0];
 }
 
 function requestItemById(req, res, next) {
-    let id = req.params.id;
-    retrieveItemById(id)
-        .then(async item => {
-            if (req.query.fetchStatus) {
-                let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-                await handleUpgradeItemStatusChange(item, pushReqs[0].Status);
-            }
-            res.json(item)
-        })
-        .catch(next);
+	let id = req.params.id;
+	retrieveItemById(id)
+		.then(async item => {
+			if (req.query.fetchStatus) {
+				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
+				await handleUpgradeItemStatusChange(item, pushReqs[0].Status);
+			}
+			res.json(item)
+		})
+		.catch(next);
 }
 
 async function retrieveItemById(id) {
-    let where = " WHERE i.id = $1";
-    let recs = await db.query(SELECT_ONE_ITEM + where, [id]);
-    return recs[0];
+	let where = " WHERE i.id = $1";
+	let recs = await db.query(SELECT_ONE_ITEM + where, [id]);
+	return recs[0];
 }
 
 function requestJobById(req, res, next) {
-    let id = req.params.id;
-    let where = " WHERE j.id = $1";
-    db.query(SELECT_ALL_JOBS + where, [id])
-        .then(function (recs) {
-            return res.json(recs[0]);
-        })
-        .catch(next);
+	let id = req.params.id;
+	let where = " WHERE j.id = $1";
+	db.query(SELECT_ALL_JOBS + where, [id])
+		.then(function (recs) {
+			return res.json(recs[0]);
+		})
+		.catch(next);
 }
 
 async function requestActivateUpgradeItems(req, res, next) {
-    const ids = req.body.items;
-    try {
-        let items = await findItemsByIds(ids);
-        items = items.filter(i => {
-            if (i.eligible_job_count === "0") {
-                logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id});
-                return false;
-            } else {
-                return true;
-            }
-        });
-        if (items.length > 0) {
-            await push.updatePushRequests(items, push.Status.Pending, req.session.username);
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].status !== push.Status.Pending) {
-                    items[i].status = push.Status.Activating;
-                }
-            }
-        }
-        res.json(items);
-    } catch (err) {
-        next(err);
-    }
+	const ids = req.body.items;
+	try {
+		let items = await findItemsByIds(ids);
+		items = items.filter(i => {
+			if (i.eligible_job_count === "0") {
+				logger.warn("Cannot activate an upgrade item with no eligible jobs", {
+					id: i.id,
+					push_request_id: i.push_request_id
+				});
+				return false;
+			} else {
+				return true;
+			}
+		});
+		if (items.length > 0) {
+			await push.updatePushRequests(items, push.Status.Pending, req.session.username);
+			for (let i = 0; i < items.length; i++) {
+				if (items[i].status !== push.Status.Pending) {
+					items[i].status = push.Status.Activating;
+				}
+			}
+		}
+		res.json(items);
+	} catch (err) {
+		next(err);
+	}
 }
 
 async function requestCancelUpgradeItems(req, res, next) {
-    const ids = req.body.items;
-    try {
-        let items = await findItemsByIds(ids);
-        await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].status !== push.Status.Canceled) {
-                items[i].status = push.Status.Canceling;
-            }
-        }
-        res.json(items);
-    } catch (err) {
-        next(err);
-    }
+	const ids = req.body.items;
+	try {
+		let items = await findItemsByIds(ids);
+		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
+		for (let i = 0; i < items.length; i++) {
+			if (items[i].status !== push.Status.Canceled) {
+				items[i].status = push.Status.Canceling;
+			}
+		}
+		res.json(items);
+	} catch (err) {
+		next(err);
+	}
 }
 
 async function cancelAllRequests() {
-    let orgs = await db.query(`SELECT org_id FROM package_org WHERE namespace is not null`);
-    await push.clearRequests(orgs.map(o => o.org_id));
+	let orgs = await db.query(`SELECT org_id FROM package_org WHERE namespace is not null`);
+	await push.clearRequests(orgs.map(o => o.org_id));
 }
 
 exports.cancelAllRequests = cancelAllRequests;

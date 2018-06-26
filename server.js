@@ -1,29 +1,29 @@
 const fs = require('fs');
 if (fs.existsSync(__dirname + '/.env')) {
-    require('dotenv').config();
-    console.log(`Achtung. Running with local .env file.  Use for development purposes only.`);
+	require('dotenv').config();
+	console.log(`Achtung. Running with local .env file.  Use for development purposes only.`);
 }
 
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const SESSION_TIMEOUT_HOURS = process.env.SESSION_TIMEOUT_HOURS || 2;
 
 const express = require('express'),
-    enforce = require('express-sslify'),
-    path = require('path'),
-    bodyParser = require('body-parser'),
-    cookieSession = require('cookie-session'),
-    compression = require('compression'),
-    orgs = require('./api/orgs'),
-    orggroups = require('./api/orggroups'),
-    packages = require('./api/packages'),
-    packageorgs = require('./api/packageorgs'),
-    packageversions = require('./api/packageversions'),
-    upgrades = require('./api/upgrades'),
-    licenses = require('./api/licenses'),
-    auth = require('./api/auth'),
-    admin = require('./api/admin'),
-    sqlinit = require('./init/sqlinit'),
-    logger = require('./util/logger').logger;
+	enforce = require('express-sslify'),
+	path = require('path'),
+	bodyParser = require('body-parser'),
+	cookieSession = require('cookie-session'),
+	compression = require('compression'),
+	orgs = require('./api/orgs'),
+	orggroups = require('./api/orggroups'),
+	packages = require('./api/packages'),
+	packageorgs = require('./api/packageorgs'),
+	packageversions = require('./api/packageversions'),
+	upgrades = require('./api/upgrades'),
+	licenses = require('./api/licenses'),
+	auth = require('./api/auth'),
+	admin = require('./api/admin'),
+	sqlinit = require('./init/sqlinit'),
+	logger = require('./util/logger').logger;
 
 const http = require('http');
 const socketIo = require('socket.io');
@@ -37,30 +37,31 @@ const app = express();
 const server = http.Server(app);
 
 if (process.env.FORCE_HTTPS === "true") {
-    app.use(enforce.HTTPS({trustProtoHeader: true}));
+	app.use(enforce.HTTPS({trustProtoHeader: true}));
 }
 
 app.set('port', process.env.PORT || 5000);
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: false}));
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(compression());
 app.use(cookieSession({
-    name: 'session',
-    maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS, 
-    keys: [CLIENT_SECRET]}));
+	name: 'session',
+	maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS,
+	keys: [CLIENT_SECRET]
+}));
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.use(function (req, res, next) {
-    if (process.env.ENFORCE_AUTH !== "false" && req.path.startsWith('/api') && !req.session.access_token) {
-        res.status(401).send();
-        return;
-    } 
-    // Update a value in the cookie so that the set-cookie will be sent.
-    // Only changes every minute so that it's not sent with every request.
-    req.session.nowInMinutes = Math.floor(Date.now() / 60e3);
-    next();
+	if (process.env.ENFORCE_AUTH !== "false" && req.path.startsWith('/api') && !req.session.access_token) {
+		res.status(401).send();
+		return;
+	}
+	// Update a value in the cookie so that the set-cookie will be sent.
+	// Only changes every minute so that it's not sent with every request.
+	req.session.nowInMinutes = Math.floor(Date.now() / 60e3);
+	next();
 });
 
 app.get('/oauth2/user', auth.requestUser);
@@ -117,17 +118,17 @@ app.get('/api/upgradejobs/:id', upgrades.requestJobById);
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
 app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+	res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
 server.listen(app.get('port'), function () {
-    logger.info('Express initialized', {port: app.get('port')});
+	logger.info('Express initialized', {port: app.get('port')});
 });
 
 // Kick off socket.io
 const io = socketIo.listen(server);
 io.on('connection', function (socket) {
-    admin.connect(socket);
+	admin.connect(socket);
 });
 
 // Set job intervals
