@@ -56,7 +56,8 @@ export default class extends React.Component {
             {Header: "Instance", accessor: "instance", sortable: true},
             {Header: "Groups", accessor: "groups", sortable: true},
             {Header: "Version", accessor: "version_number", sortable: true},
-            {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true}
+            {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
+            {Header: "Features", accessor: "features", sortable: true}
         ];
         
         const actions = [ 

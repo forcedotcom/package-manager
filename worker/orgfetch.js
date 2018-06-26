@@ -2,7 +2,7 @@ const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 
-const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate FROM AllOrganization`;
+const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,PermissionsCpq,PermissionsCpqProvisioned FROM AllOrganization`;
 
 const Status = {NotFound: 'Not Found'};
 const QUERY_BATCH_SIZE = 500;
@@ -60,6 +60,7 @@ async function fetchBatch(conn, orgs) {
             org.type = rec.OrganizationType;
             org.account_id = rec.Account;
             org.modified_date = new Date(rec.LastModifiedDate).toISOString();
+            org.features = extractFeatures(rec);
             updated.push(org);
         })
         .on("end", async () => {
@@ -70,6 +71,14 @@ async function fetchBatch(conn, orgs) {
         });
     
     await query.run({autoFetch: true, maxFetch: 100000});
+}
+
+function extractFeatures(rec) {
+	let features = [];
+	if (rec.PermissionsCpq === true || rec.PermissionsCpqProvisioned === true) {
+	    features.push("cpq");
+    }
+    return features.join(",");
 }
 
 async function upsert(recs, batchSize) {
@@ -86,17 +95,17 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
     let values = [];
-    let sql = "INSERT INTO org (org_id, name, type, modified_date, account_id, status) VALUES";
+    let sql = "INSERT INTO org (org_id, name, type, modified_date, account_id, features, status) VALUES";
     for (let i = 0, n = 1; i < recs.length; i++) {
         let rec = recs[i];
         if (i > 0) {
             sql += ','
         }
-        sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, null)`;
-        values.push(rec.org_id, rec.name, rec.type, rec.modified_date, rec.account_id);
+        sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, null)`;
+        values.push(rec.org_id, rec.name, rec.type, rec.modified_date, rec.account_id, rec.features);
     }
     sql += ` on conflict (org_id) do update set name = excluded.name, type = excluded.type, modified_date = excluded.modified_date, 
-            account_id = excluded.account_id, status = null`;
+            account_id = excluded.account_id, features = excluded.features, status = null`;
     await db.insert(sql, values);
 }
 

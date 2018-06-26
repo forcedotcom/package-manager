@@ -147,24 +147,73 @@ export default class extends React.Component {
             }
         };
         
+        // AB, CD, EF
+        
+        // ABC
+        // DEF
+        // XYZ
+        
+        // RESULT: 
+        // ABC, DEF
         let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable; 
         return (
             <TableImpl
                 defaultFilterMethod={(filter, row) => {
-                    let neg = filter.value.startsWith("!");
-                    let filterVal = neg ? filter.value.substring(1) : filter.value;
-                    if (filterVal === "")
-                        return true; // No filter after all.
-                    
-                    let fieldVal = row[filter.id];
-                    if (!fieldVal) 
-                        return false;
-                    if (neg) {
-                        return fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) === -1;
-                    } else {
-                        return fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) !== -1;
-                    }
-                }}
+					let fieldVal = row[filter.id];
+					const filters = filter.value.split(",");
+					for (let i = 0; i < filters.length; i++) {
+						let filterVal = filters[i].trim();
+						let neg = filterVal.startsWith("!");
+						filterVal = neg ? filterVal.substring(1) : filterVal;
+						if (filterVal === "") {
+							return true; // No filter after all.
+						}
+
+						let starts = filterVal.startsWith("^");
+						filterVal = starts ? filterVal.substring(1) : filterVal;
+						if (filterVal === "") {
+							return true; // No filter after all.
+						}
+						
+						let ends = filterVal.endsWith("$");
+						filterVal = starts ? filterVal.substring(0,filterVal.length - 1) : filterVal;
+						if (filterVal === "") {
+							return true; // No filter after all.
+						}
+
+						let whole = (filterVal.charAt(0) === "'" || filterVal.charAt(0) === '"') 
+                            && (filterVal.charAt(filterVal.length - 1) === "'" || filterVal.charAt(filterVal.length - 1) === '"');
+						filterVal = whole ? filterVal.substring(1,filterVal.length - 1) : filterVal;
+						if (filterVal === "") {
+							return true; // No filter after all.
+						}
+
+						// Special case: we have a negative filter and no field val, which means Eureka
+						if (!fieldVal || fieldVal === '')
+							return neg;
+
+						let found = 
+                            starts ? 
+                                fieldVal.toLowerCase().startsWith(filterVal.toLowerCase()) : 
+                            ends ? 
+                                fieldVal.toLowerCase().endsWith(filterVal.toLowerCase()) :
+                            whole ?
+                                fieldVal.toLowerCase() === filterVal.toLowerCase() :
+                                fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) !== -1;
+						
+						if (found) {
+                            // Yay found, but only return true if we aren't negative
+						    if (!neg) {
+						        return true;
+                            }
+						} else {
+						    // Boo not found, but return true if we are negative
+						    if (neg) {
+						        return true;
+                            }
+                        }
+					}
+				}}
                 ref={r => (this.checkboxTable = r)}
                 data={this.state.data}
                 columns={this.props.columns}

@@ -6,7 +6,7 @@ const packageorgs = require('../api/packageorgs');
 const orgpackageversions = require('../api/orgpackageversions');
 
 const SELECT_ALL = `
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, o.features,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups
     FROM org o
@@ -19,7 +19,7 @@ const GROUP_BY = `
     a.account_name`;
 
 const SELECT_WITH_LICENCE = ` 
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, o.features,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups,
     pv.version_number

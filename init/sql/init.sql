@@ -50,7 +50,8 @@ create table if not exists org
   account_id    varchar(18),
   is_sandbox    boolean,
   status        varchar(20),
-  type          varchar(100)
+  type          varchar(100),
+  features      text null
 );
 
 
@@ -199,7 +200,8 @@ alter table upgrade_item
   drop column if exists parent__item_id;
 
 alter table org
-  drop column if exists account_name;
+  drop column if exists account_name,
+  add if not exists features text null;
 
 alter table package
   add if not exists modified_date timestamp with time zone;

@@ -14,6 +14,7 @@ export default class extends React.Component {
             {Header: "Instance", accessor: "instance", sortable: true},
             {Header: "Edition", accessor: "type", sortable: true},
             {Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
+            {Header: "Features", accessor: "features", sortable: true},
             {Header: "Groups", accessor: "groups", sortable: true}
         ];
         return (
