@@ -61,22 +61,27 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
 
 	if (licensedOrgIds) {
 		select = SELECT_ALL_IN_ORG;
-
+		values.push("Suspended");
+		values.push("Uninstalled");
+		whereParts.push(`op.license_status NOT IN ($${values.length-1}, $${values.length})`);
+		
 		let params = [];
 		for (let i = 1; i <= licensedOrgIds.length; i++) {
 			params.push('$' + (values.length + i));
 		}
 		whereParts.push(`op.org_id IN (${params.join(",")})`);
 		values = values.concat(licensedOrgIds);
-	}
-
-	if (orgGroupIds) {
+	} 
+	else if (orgGroupIds) {
 		select = SELECT_ALL_IN_ORG_GROUP;
+		values.push("Suspended");
+		values.push("Uninstalled");
+		whereParts.push(`op.license_status NOT IN ($${values.length-1}, $${values.length})`);
+
 		let params = [];
 		for (let i = 1; i <= orgGroupIds.length; i++) {
 			params.push('$' + (values.length + i));
 		}
-
 		whereParts.push(`gm.org_group_id IN (${params.join(",")})`);
 		values = values.concat(orgGroupIds);
 	}

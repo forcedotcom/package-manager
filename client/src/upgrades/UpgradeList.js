@@ -26,7 +26,7 @@ export default class extends React.Component {
 				Header: "Scheduled Start Time",
 				maxWidth: 200,
 				id: "start_time",
-				accessor: d => moment(d.start_time).format("YYYY-MM-DD [at] HH:mm:ss"),
+				accessor: d => moment(d.start_time).format("YYYY-MM-DD HH:mm:ss A"),
 				sortable: true,
 				clickable: true
 			},

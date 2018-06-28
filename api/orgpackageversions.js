@@ -13,13 +13,14 @@ async function insertOrgPackageVersionsFromSubscribers(recs) {
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		let pv = versionMap[rec.MetadataPackageVersionId];
-		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++})`);
-		values.push(rec.OrgKey.substring(0, 15), pv.package_id, pv.sfid, "None", new Date().toISOString());
+		params.push(`($${n++},$${n++},$${n++},$${n++},NOW())`);
+		values.push(rec.OrgKey.substring(0, 15), pv.package_id, pv.sfid, "Active");
 	}
 
 	let sql = `INSERT INTO org_package_version (org_id, package_id, package_version_id, license_status, modified_date) 
                        VALUES ${params.join(",")}
-                       on conflict (org_id, package_id) do update set package_version_id = excluded.package_version_id`;
+                       on conflict (org_id, package_id) do update set package_version_id = excluded.package_version_id,
+                       license_status = excluded.license_status`;
 	return db.insert(sql, values);
 }
 

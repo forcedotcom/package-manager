@@ -1,5 +1,6 @@
 import React from 'react';
 import {NotificationManager} from 'react-notifications';
+import {CSVDownload} from 'react-csv';
 
 import * as orgService from '../services/OrgService';
 import * as orgGroupService from '../services/OrgGroupService';
@@ -17,7 +18,7 @@ export default class extends React.Component {
 		view: "grid",
 		sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "account_name", "asc"),
 		orgs: [],
-		selected: []
+		selected: [],
 	};
 
 	componentDidMount() {
@@ -38,7 +39,7 @@ export default class extends React.Component {
 	};
 
 	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+		this.setState({filtered, itemCount: filtered.length});
 	};
 
 	saveHandler = (orgIds) => {
@@ -71,6 +72,13 @@ export default class extends React.Component {
 		this.setState({addingToGroup: true});
 	};
 
+
+	exportHandler = () => {
+		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.state.orgs;
+		this.setState({isExporting: true, exportable});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
+	};
+	
 	render() {
 		const actions = [
 			{
@@ -79,7 +87,8 @@ export default class extends React.Component {
 				disabled: this.state.selected.length === 0,
 				handler: this.addingToGroupHandler
 			},
-			{label: "Import", handler: this.addingHandler}
+			{label: "Import", handler: this.addingHandler},
+			{label: "Export", handler: this.exportHandler}
 		];
 
 		return (
@@ -90,6 +99,7 @@ export default class extends React.Component {
 				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroup.bind(this)}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 			</div>
 		);
 	}

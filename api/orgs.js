@@ -123,8 +123,8 @@ async function insertOrgsFromSubscribers(recs) {
 	let params = [], values = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`);
-		values.push(rec.OrgKey.substring(0, 15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID, new Date().toISOString());
+		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},NOW())`);
+		values.push(rec.OrgKey.substring(0, 15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID);
 	}
 
 	let sql = `INSERT INTO org (org_id, name, type, instance, account_id, modified_date) 

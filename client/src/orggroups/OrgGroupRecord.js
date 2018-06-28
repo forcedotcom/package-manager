@@ -13,6 +13,7 @@ import OrgGroupView from "./OrgGroupView";
 import GroupFormWindow from "./GroupFormWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
 import SelectGroupWindow from "../orgs/SelectGroupWindow";
+import moment from "moment";
 
 export default class extends React.Component {
 	SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
@@ -196,7 +197,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
-					<HeaderField label="" value={this.state.orggroup.description}/>
+					<HeaderField label="Description" value={this.state.orggroup.description}/>
+					<HeaderField label="Created" value={moment(this.state.orggroup.created_date).format("lll")}/>
 				</RecordHeader>
 				<OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members}
 							  onSelect={this.selectionHandler} memberActions={memberActions}

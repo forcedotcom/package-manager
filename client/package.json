@@ -7,6 +7,7 @@
     "lodash.debounce": "^4.0.8",
     "moment": "^2.22.0",
     "react": "^16.3.0",
+    "react-csv": "^1.0.14",
     "react-datepicker": "^1.4.0",
     "react-dom": "^16.3.0",
     "react-notifications": "^1.4.3",

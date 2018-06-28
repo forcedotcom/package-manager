@@ -125,8 +125,8 @@ function parseNameFromMyUrl(instanceUrl) {
 async function updateAccessToken(org_id, access_token) {
 	let encrypto = {access_token: access_token};
 	await crypt.passwordEncryptObjects(CRYPT_KEY, [encrypto]);
-	await db.update(`UPDATE package_org set access_token = $1, status = $2, refreshed_date = $3 WHERE org_id = $4`,
-		[encrypto.access_token, Status.Connected, new Date().toISOString(), org_id]);
+	await db.update(`UPDATE package_org set access_token = $1, status = $2, refreshed_date = NOW() WHERE org_id = $4`,
+		[encrypto.access_token, Status.Connected, org_id]);
 }
 
 async function requestDelete(req, res, next) {

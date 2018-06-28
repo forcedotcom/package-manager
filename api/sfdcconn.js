@@ -56,7 +56,8 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 			},
 			instanceUrl: instanceUrl,
 			accessToken: accessToken,
-			refreshToken: refreshToken
+			refreshToken: refreshToken,
+			logLevel: process.env.LOG_LEVEL || "WARN"
 		}
 	);
 }

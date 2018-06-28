@@ -2,9 +2,8 @@ const db = require('../util/pghelper');
 const orgs = require('./orgs');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
-const orgpackageversions = require('../api/orgpackageversions');
 
-const SELECT_ALL = "SELECT id, name, description FROM org_group";
+const SELECT_ALL = "SELECT id, name, description, created_date FROM org_group";
 
 async function requestAll(req, res, next) {
 	let whereParts = [],
@@ -75,8 +74,7 @@ async function requestRemoveMembers(req, res, next) {
 async function requestCreate(req, res, next) {
 	try {
 		let og = req.body;
-		let rows = await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [og.name, og.description || '']);
-
+		let rows = await db.insert('INSERT INTO org_group (name, description, created_date) VALUES ($1, $2, NOW())', [og.name, og.description || '']);
 		if (og.orgIds && og.orgIds.length > 0) {
 			await insertOrgMembers(rows[0].id, rows[0].name, og.orgIds);
 		}

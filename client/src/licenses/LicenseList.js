@@ -34,7 +34,7 @@ export default class extends React.Component {
 			{
 				Header: "Last Modified",
 				id: "modified_date",
-				accessor: d => moment(d.modified_date).format("YYYY-MM-DD [at] HH:mm:ss a"),
+				accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"),
 				sortable: true
 			},
 			{
