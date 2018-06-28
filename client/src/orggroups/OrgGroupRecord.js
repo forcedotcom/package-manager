@@ -198,7 +198,7 @@ export default class extends React.Component {
 			<div>
 				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
 					<HeaderField label="Description" value={this.state.orggroup.description}/>
-					<HeaderField label="Created" value={moment(this.state.orggroup.created_date).format("lll")}/>
+					{this.state.orggroup.created_date ? <HeaderField label="Created" value={moment(this.state.orggroup.created_date).format("lll")}/> : ""}
 				</RecordHeader>
 				<OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members}
 							  onSelect={this.selectionHandler} memberActions={memberActions}
