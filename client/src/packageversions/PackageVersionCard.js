@@ -7,14 +7,14 @@ import {PACKAGE_VERSION_ICON} from "../Constants";
 import * as sortage from "../services/sortage";
 
 export default class extends React.Component {
-	state = {itemCount: "..."};
+	state = {itemCount: null};
 
 	linkHandler = (e, column, rowInfo) => {
 		window.location = "/packageversion/" + rowInfo.original.version_id;
 	};
 
 	componentWillReceiveProps(props) {
-		if (props.packageVersions) {
+		if (props.items && this.state.itemCount === null) {
 			this.setState({itemCount: props.packageVersions.length});
 		}
 	}

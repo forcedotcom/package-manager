@@ -6,7 +6,7 @@ import {UPGRADE_JOB_ICON} from "../Constants";
 import MessageWindow from "../components/MessageWindow";
 
 export default class extends React.Component {
-	state = {done: false, itemCount: "..."};
+	state = {done: false, itemCount: null};
 
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
@@ -26,7 +26,7 @@ export default class extends React.Component {
 	};
 
 	componentWillReceiveProps(props) {
-		if (props.jobs) {
+		if (props.jobs && this.state.itemCount === null) {
 			this.setState({itemCount: props.jobs.length});
 		}
 	}

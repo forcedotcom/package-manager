@@ -8,12 +8,12 @@ import SelectGroupWindow from "./SelectGroupWindow";
 
 export default class extends React.Component {
 	state = {
-		selected: [], itemCount: "..."
+		selected: [], itemCount: null
 	};
 
 
 	componentWillReceiveProps(props) {
-		if (props.orgs) {
+		if (props.items && this.state.itemCount === null) {
 			this.setState({itemCount: props.orgs.length});
 		}
 	};

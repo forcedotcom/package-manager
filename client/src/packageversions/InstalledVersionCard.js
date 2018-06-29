@@ -7,7 +7,7 @@ import {PACKAGE_VERSION_ICON} from "../Constants";
 import * as sortage from "../services/sortage";
 
 export default class extends React.Component {
-	state = {packageVersions: [], itemCount: "..."};
+	state = {packageVersions: [], itemCount: null};
 
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {

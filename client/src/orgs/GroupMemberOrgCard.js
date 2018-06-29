@@ -5,10 +5,10 @@ import {CardHeader} from "../components/PageHeader";
 import {ORG_ICON} from "../Constants";
 
 export default class extends React.Component {
-	state = {itemCount: "..."};
+	state = {itemCount: null};
 
 	componentWillReceiveProps(props) {
-		if (props.orgs) {
+		if (props.items && this.state.itemCount === null) {
 			this.setState({itemCount: props.orgs.length});
 		}
 	};
