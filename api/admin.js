@@ -243,6 +243,14 @@ function scheduleJobs() {
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
 	}
+
+	if (schedules.fetch_account_orgs_interval_days != null && schedules.fetch_account_orgs_interval_days !== -1) {
+		let interval = schedules.refetch_interval_days * 24 * 60 * 60 * 1000;
+		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
+		setTimeout(() => setInterval(() => {fetchAccountOrgs(false, interval).then(() => logger.info("Finished scheduled fetch account orgs"))}, interval), delay);
+		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
+		logger.info(`Scheduled fetching of account orgs starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
+	}
 }
 
 async function fetchAccountOrgs(fetchAll, interval) {
