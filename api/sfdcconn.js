@@ -2,6 +2,7 @@
 
 const jsforce = require('jsforce');
 const packageorgs = require('./packageorgs');
+const logger = require("../util/logger").logger;
 
 const OrgTypes = {
 	AllProductionOrgs: "All Production Orgs",
@@ -47,8 +48,10 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const INTERNAL_ID = '000000000000000';
 const INVALID_ID = '000000000000001';
 
+const TRACE_FUNCTIONS = ["query", "sobject", "retrieve", "insert", "update", "upsert"];
+
 function buildConnection(accessToken, refreshToken, instanceUrl) {
-	return new jsforce.Connection({
+	const target = new jsforce.Connection({
 			oauth2: {
 				clientId: CLIENT_ID,
 				clientSecret: CLIENT_SECRET,
@@ -60,6 +63,21 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 			logLevel: process.env.LOG_LEVEL || "WARN"
 		}
 	);
+	// Support advanced debug tracing for specific functions
+	return (process.env.LOG_LEVEL && process.env.LOG_LEVEL.toLowerCase() === "debug") ?
+		new Proxy(target, {
+			get(target, propKey, receiver) {
+				const targetValue = Reflect.get(target, propKey, receiver);
+				if (typeof targetValue === 'function' && TRACE_FUNCTIONS.indexOf(propKey) !== -1) {
+					return function (...args) {
+						logger.debug(`[SFDC::${propKey}]`, {instanceUrl, ...args});
+						return targetValue.apply(this, args);
+					}
+				} else {
+					return targetValue;
+				}
+			}
+		}) : target;
 }
 
 async function buildOrgConnection(packageOrgId) {
