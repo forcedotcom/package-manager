@@ -150,6 +150,12 @@ class AdminJob {
 
 function connect(sock) {
 	socket = sock;
+	socket.on('fetch-account-orgs', function () {
+		fetchAccountOrgs().then(() => {});
+	});
+	socket.on('fetch-all-account-orgs', function () {
+		fetchAccountOrgs(true).then(() => {});
+	});
 	socket.on('fetch', function () {
 		fetchData().then(() => {});
 	});
@@ -237,6 +243,12 @@ function scheduleJobs() {
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
 	}
+}
+
+async function fetchAccountOrgs(fetchAll, interval) {
+	const job = fetch.fetchAccountOrgs(fetchAll);
+	job.interval = interval;
+	await job.run();
 }
 
 async function fetchData(fetchAll, interval) {

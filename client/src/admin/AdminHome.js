@@ -166,11 +166,13 @@ export default class extends React.Component {
 			{label: "Fetch Latest", handler: this.fetchHandler},
 			{label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
 			{label: "Re-Fetch All", handler: this.refetchAllHandler},
-			{label: "Upload Orgs To SumoLogic", handler: this.uploadOrgsHandler}
+			{label: "Fetch Account Orgs", group: "accounts", handler: () => this.state.socket.emit("fetch-account-orgs", {})},
+			{label: "Fetch All Account Orgs", group: "accounts", handler: () => this.state.socket.emit("fetch-all-account-orgs", {})},
+			{label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler}
 		];
 
 		if (this.state.settings.HEROKU_APP_NAME) {
-			actions.push({label: "Go to Heroku", handler: this.goToHerokuHandler, group: "heroku"});
+			actions.push({label: "Open Heroku", handler: this.goToHerokuHandler, group: "external"});
 		}
 
 		return (
