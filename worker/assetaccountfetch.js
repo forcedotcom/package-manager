@@ -5,7 +5,8 @@ const logger = require('../util/logger').logger;
 const SELECT_ALL = `SELECT Apttus_Config2__AccountId__c, Apttus_Config2__AccountId__r.Name,
 						Apttus_Config2__AccountId__r.OrgId, Apttus_Config2__AccountId__r.LastModifiedDate 
 					FROM Apttus_Config2__AssetLineItem__c 
-					WHERE Name LIKE '%CPQ%'`;
+					WHERE Name LIKE '%CPQ%' AND Apttus_Config2__StartDate__c <= TODAY AND Apttus_Config2__EndDate__c >= TODAY
+					AND apttus_config2__isinactive__c = false`;
 
 let adminJob;
 

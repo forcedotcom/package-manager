@@ -166,8 +166,7 @@ export default class extends React.Component {
 			{label: "Fetch Latest", handler: this.fetchHandler},
 			{label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
 			{label: "Re-Fetch All", handler: this.refetchAllHandler},
-			{label: "Fetch Account Orgs", group: "accounts", handler: () => this.state.socket.emit("fetch-account-orgs", {})},
-			{label: "Fetch All Account Orgs", group: "accounts", handler: () => this.state.socket.emit("fetch-all-account-orgs", {})},
+			{label: "Fetch Account Orgs", group: "accounts", handler: () => this.state.socket.emit("fetch-all-account-orgs", {})},
 			{label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler}
 		];
 
