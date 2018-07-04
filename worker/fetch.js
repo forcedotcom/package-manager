@@ -205,7 +205,7 @@ function fetchVersions(orgIds, packageOrgIds) {
 	return new admin.AdminJob("refresh-versions", "Fetch package versions installed on orgs",
 		[
 			{
-				name: "Fetching invalid production orgs",
+				name: "Fetching package versions from subscribers",
 				handler: (job) => orgpackageversions.fetchFromSubscribers(orgIds, packageOrgIds, job),
 			}
 		]);

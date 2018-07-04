@@ -42,8 +42,8 @@ async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
 		opvs.push({version_id: null, org_id: value, license_status: "Not Found"});
 	});
 	if (opvs.length > 0) {
-		let opvs = await orgpackageversions.insertOrgPackageVersions(opvs);
-		job.postMessage(`Updated ${opvs.length} org package versions`);
+		let res = await orgpackageversions.insertOrgPackageVersions(opvs);
+		job.postMessage(`Updated ${res.length} org package versions`);
 	}
 }
 
