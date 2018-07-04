@@ -116,7 +116,15 @@ async function addOrgsByIds(orgIds) {
 	}
 
 	await insertOrgsFromSubscribers(uniqueRecs);
-	await orgpackageversions.insertOrgPackageVersionsFromSubscribers(recs);
+
+	const opvs = recs.map(rec => {
+		return {
+			org_id: rec.OrgKey.substring(0, 15),
+			version_id: rec.MetadataPackageVersionId,
+			license_status: "Active"
+		}
+	});
+	await orgpackageversions.insertOrgPackageVersions(opvs);
 }
 
 async function insertOrgsFromSubscribers(recs) {

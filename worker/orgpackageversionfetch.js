@@ -21,16 +21,28 @@ async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
                              INNER JOIN org_package_version opv on opv.package_id = p.sfid
                              WHERE opv.org_id IN (${params.join(",")})`, orgIds)).map(p => p.package_org_id);
 	}
-
+	const missingOrgIds = new Set(orgIds);
+	
 	job.postMessage(`Querying ${packageOrgIds.length} package orgs`);
 	let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
-	let subs = [];
+	let opvs = [];
 	for (let i = 0; i < arrs.length; i++) {
-		subs = subs.concat(arrs[i]);
+		opvs = opvs.concat(arrs[i].map(rec => {
+			const orgId = rec.OrgKey.substring(0, 15);
+			missingOrgIds.delete(orgId); // not missing, is it?
+			return {
+				org_id: orgId,
+				version_id: rec.MetadataPackageVersionId,
+				license_status: "Active"
+			}
+		}));
 	}
-	job.postMessage(`Fetched ${subs.length} package subscribers`);
-	if (subs.length > 0) {
-		let opvs = await orgpackageversions.insertOrgPackageVersionsFromSubscribers(subs);
+	job.postMessage(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
+	missingOrgIds.forEach((value) => {
+		opvs.push({version_id: null, org_id: value, license_status: "Not Found"});
+	});
+	if (opvs.length > 0) {
+		let opvs = await orgpackageversions.insertOrgPackageVersions(opvs);
 		job.postMessage(`Updated ${opvs.length} org package versions`);
 	}
 }

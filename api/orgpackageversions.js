@@ -1,7 +1,7 @@
 const db = require('../util/pghelper');
 
-async function insertOrgPackageVersionsFromSubscribers(recs) {
-	let versionIds = recs.map(r => r.MetadataPackageVersionId);
+async function insertOrgPackageVersions(opvs) {
+	let versionIds = opvs.map(r => r.version_id);
 	let versions = await db.query(`SELECT sfid, package_id, version_id FROM package_version WHERE version_id IN ('${versionIds.join("','")}')`);
 	let versionMap = {};
 	for (let i = 0; i < versions.length; i++) {
@@ -10,11 +10,11 @@ async function insertOrgPackageVersionsFromSubscribers(recs) {
 	}
 
 	let params = [], values = [];
-	for (let i = 0, n = 1; i < recs.length; i++) {
-		let rec = recs[i];
-		let pv = versionMap[rec.MetadataPackageVersionId];
+	for (let i = 0, n = 1; i < opvs.length; i++) {
+		let opv = opvs[i];
+		let pv = versionMap[opv.version_id];
 		params.push(`($${n++},$${n++},$${n++},$${n++},NOW())`);
-		values.push(rec.OrgKey.substring(0, 15), pv.package_id, pv.sfid, "Active");
+		values.push(opv.org_id, pv.package_id, pv.sfid, opv.license_status);
 	}
 
 	let sql = `INSERT INTO org_package_version (org_id, package_id, package_version_id, license_status, modified_date) 
@@ -24,4 +24,4 @@ async function insertOrgPackageVersionsFromSubscribers(recs) {
 	return db.insert(sql, values);
 }
 
-exports.insertOrgPackageVersionsFromSubscribers = insertOrgPackageVersionsFromSubscribers;
+exports.insertOrgPackageVersions = insertOrgPackageVersions;
