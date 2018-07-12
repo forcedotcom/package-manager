@@ -47,7 +47,7 @@ export default class extends React.Component {
 				id: "version_number",
 				accessor: d => d.version_number === d.latest_version_number ? d.version_number :
 					<span style={{borderRadius: "4px", margin: 0, fontWeight: "bold", padding: "2px 4px 2px 4px"}}
-						  className="slds-theme--success">{d.version_number}&nbsp;&nbsp;=&gt;&nbsp;&nbsp;{d.latest_version_number}</span>,
+						  className="slds-theme--success">{d.version_number} =&gt; {d.latest_version_number}</span>,
 				sortable: true,
 				clickable: true,
 				sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
