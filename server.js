@@ -106,11 +106,13 @@ app.post('/api/packageorgs/delete', packageorgs.requestDelete);
 
 app.get('/api/upgrades', upgrades.requestAll);
 app.get('/api/upgrades/:id', upgrades.requestById);
+app.post('/api/upgrades/activate/:id', upgrades.requestActivateUpgrade);
+app.post('/api/upgrades/cancel/:id', upgrades.requestCancelUpgrade);
 
 app.get('/api/upgradeitems', upgrades.requestItemsByUpgrade);
 app.get('/api/upgradeitems/:id', upgrades.requestItemById);
-app.post('/api/upgradeitems/activate', upgrades.requestActivateUpgradeItems);
-app.post('/api/upgradeitems/cancel', upgrades.requestCancelUpgradeItems);
+app.post('/api/upgradeitems/activate/:id', upgrades.requestActivateUpgradeItem);
+app.post('/api/upgradeitems/cancel/:id', upgrades.requestCancelUpgradeItem);
 
 app.get('/api/upgradejobs', upgrades.requestAllJobs);
 app.get('/api/upgradejobs/:id', upgrades.requestJobById);

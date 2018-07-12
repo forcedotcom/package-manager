@@ -3,6 +3,16 @@ const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
 
+const State = {
+	Ready: "Ready",
+	Blocked: "Blocked",
+	Running: "Running",
+	Partial: "Partial",
+	Complete: "Complete"
+};
+
+const UPGRADE_MONITOR_FREQUENCY = (process.env.UPGRADE_MONITOR_FREQUENCY_SECONDS || 10) * 1000;
+
 const MAX_ERROR_COUNT = 20;
 
 const SELECT_ALL = `
@@ -38,12 +48,12 @@ const SELECT_ONE = `
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id
     WHERE u.id = $1
-    GROUP by u.id, u.start_time, u.created_by, u.description, status`;
+    GROUP by u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
         pv.version_number, pv.version_id,
-        p.name package_name, p.sfid package_id,
+        p.name package_name, p.sfid package_id, p.dependency_tier,
         count(j.*) job_count, count(NULLIF(j.status, 'Ineligible')) eligible_job_count
         FROM upgrade_item i
         inner join upgrade u on u.id = i.upgrade_id
@@ -64,7 +74,7 @@ const SELECT_ALL_ITEMS_BY_UPGRADE =
 const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
         pv.version_number, pv.version_id,
-        p.name package_name
+        p.name package_name, p.dependency_tier
         FROM upgrade_item i
         INNER JOIN upgrade u on u.id = i.upgrade_id
         INNER JOIN package_version pv on pv.version_id = i.package_version_id
@@ -74,7 +84,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         i.start_time, i.created_by,
         pv.version_number, pv.version_id,
         pvc.version_number current_version_number, pvc.version_id current_version_id,
-        p.name package_name, p.sfid package_id, p.package_org_id,
+        p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
         a.account_name
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
@@ -100,15 +110,15 @@ async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, 
 	return recs[0];
 }
 
-async function handleUpgradeItemStatusChange(item, newStatus) {
-	if (item.status !== newStatus) {
-		item.status = newStatus;
-		try {
-			await db.update('UPDATE upgrade_item SET status = $1 WHERE id = $2', [item.status, item.id]);
-			logger.debug(`Upgrade item status changed`, {id: item.id, status: item.status});
-		} catch (error) {
-			logger.error("Failed to update upgrade item status", {error: error.message || error});
+async function changeUpgradeItemStatus(items, status) {
+	try {
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			item.status = status || item.status;
+			await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
 		}
+	} catch (error) {
+		logger.error("Failed to update upgrade items", {status, error: error.message || error});
 	}
 }
 
@@ -246,7 +256,7 @@ async function requestItemsByUpgrade(req, res, next) {
 			for (let i = 0; i < items.length; i++) {
 				let item = items[i];
 				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				await handleUpgradeItemStatusChange(item, pushReqs[0].Status);
+				await changeUpgradeItemStatus([item], pushReqs[0].Status);
 			}
 		}
 
@@ -268,8 +278,9 @@ async function findItemsByIds(itemIds) {
 		values = values.concat(itemIds);
 	}
 
-	let where = ` WHERE ${whereParts.join(" AND")}`;
-	return await db.query(SELECT_ALL_ITEMS + where + GROUP_BY_ALL_ITEMS, values)
+	const where = ` WHERE ${whereParts.join(" AND")}`;
+	const order = ` ORDER BY dependency_tier`;
+	return await db.query(SELECT_ALL_ITEMS + where + GROUP_BY_ALL_ITEMS + order, values)
 }
 
 async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
@@ -336,7 +347,7 @@ function requestItemById(req, res, next) {
 		.then(async item => {
 			if (req.query.fetchStatus) {
 				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				await handleUpgradeItemStatusChange(item, pushReqs[0].Status);
+				await changeUpgradeItemStatus([item], pushReqs[0].Status);
 			}
 			res.json(item)
 		})
@@ -359,11 +370,173 @@ function requestJobById(req, res, next) {
 		.catch(next);
 }
 
-async function requestActivateUpgradeItems(req, res, next) {
-	const ids = req.body.items;
+async function requestActivateUpgrade(req, res, next) {
+	let id = req.params.id;
 	try {
-		let items = await findItemsByIds(ids);
-		items = items.filter(i => {
+		const items = await activateUpgrade(id, req.session.username);
+		startUpgradeMonitor(id, req.session.username);
+		res.json(items);
+	} catch (err) {
+		next(err);
+	}
+}
+
+async function activateUpgrade(id, username, job = {postMessage: msg => logger.info(msg)}) {
+	let items = await findItemsByUpgrade(id, "dependency_tier", "asc");
+	items = items.filter(i => {
+		if (i.eligible_job_count === "0") {
+			logger.warn("Cannot activate an upgrade item with no eligible jobs", {
+				id: i.id,
+				push_request_id: i.push_request_id
+			});
+			return false;
+		} else {
+			return true;
+		}
+	});
+
+	if (items.length === 0) {
+		// Nothing to do, leave now.
+		return items;
+	}
+	
+	// Build our buckets based on tiers (or biers if that is your thing)
+	const buckets = [];
+	let bucket = {};
+	let tier = null;
+	for (let i = 0; i < items.length; i++) {
+		const item = items[i];
+		if (item.dependency_tier == null) {
+			// No dependencies, just activate and be done (if not already activated)
+			if (item.status === push.Status.Created) {
+				await push.updatePushRequests([item], push.Status.Pending, username);
+				await changeUpgradeItemStatus([item], push.Status.Pending);
+				job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
+			}
+			continue;
+		}
+
+		// If this item is in a new tier, add a new bucket.
+		if (tier !== item.dependency_tier) {
+			tier = item.dependency_tier;
+			bucket = {state: State.Ready, items: []};
+			buckets.push(bucket);
+		}
+		// ...and add the item to its new bucket, or the old bucket if it was in the same tier as the prior
+		bucket.items.push(item);
+
+		// Now, check the item and set the status for the whole bucket
+		switch (item.status) {
+			case push.Status.Succeeded:
+				bucket.state = State.Complete;
+				break;
+			case push.Status.Failed:
+				bucket.state = State.Complete; // TODO State.Blocked if over failure threshold
+				break;
+			case push.Status.Pending:
+			case push.Status.InProgress:
+				bucket.state = State.Running;
+				break;
+			case push.Status.Canceled:
+				bucket.state = State.Blocked;
+				break;
+			default:
+				break;
+		}
+	}
+
+	// Now we know our tier buckets with their collective status, so loop through them and activate any that are ready.
+	for (let b = 0; b < buckets.length; b++) {
+		const items = buckets[b].items;
+		
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			let activate = false;
+			if (b === 0) {
+				// First tier, so no parent to wait for.
+				activate = true;
+			} else {
+				// We are not the first tier, so we have to check our previous tier before activating.
+				const parentBucket = buckets[b - 1];
+				if (parentBucket.state === State.Complete) {
+					// Yay! Parent is done so we can start.
+					activate = true;
+				}
+			}
+
+			if (activate && item.status === push.Status.Created) {
+				// Ready to activate!
+				item.status = push.Status.Pending;
+				await push.updatePushRequests([item], push.Status.Pending, username);
+				job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
+			}
+		}
+		
+		// Always update the local status
+		await changeUpgradeItemStatus(items);
+	}
+	return items;
+}
+
+function startUpgradeMonitor(id, username) {
+	const job = new admin.AdminJob("upgrade", "Run and monitor an active upgrade",
+		[
+			{
+				name: "Activate and monitor requests in upgrade",
+				handler: async (job) => activateAndMonitorUpgrade(id, username, job)
+			}
+		]);
+	job.run().then(() => {});
+}
+
+async function activateAndMonitorUpgrade(id, username, job) {
+	return new Promise((resolve, reject) => {
+		const repeatAsNeeded = () => {
+			// Keep activating the upgrade until the items are done.
+			activateUpgrade(id, username, job).then((items) => {
+				logger.info("Finished upgrade activation run");
+				let active = false;
+				for (let i = 0; i < items.length; i++) {
+					if (push.isActiveStatus(items[i].status)) {
+						// If one request is still active, we're still active.
+						active = true;
+					}
+				}
+
+				if (!active) {
+					resolve(items);
+				} else {
+					setTimeout(repeatAsNeeded, UPGRADE_MONITOR_FREQUENCY);
+				}
+			}).catch(reject);
+		};
+		repeatAsNeeded();
+	});
+}
+
+
+async function requestCancelUpgrade(req, res, next) {
+	const id = req.params.id;
+	try {
+		let items = await findItemsByUpgrade(id);
+		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
+		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
+		for (let i = 0; i < items.length; i++) {
+			if (items[i].status !== push.Status.Canceled) {
+				items[i].status = push.Status.Canceling;
+			}
+		}
+		res.json(items);
+	} catch (err) {
+		next(err);
+	}
+}
+
+async function requestActivateUpgradeItem(req, res, next) {
+	const id = req.params.id;
+	try {
+		const items = await findItemsByIds([id]);
+		const eligibleItems = items.filter(i => {
 			if (i.eligible_job_count === "0") {
 				logger.warn("Cannot activate an upgrade item with no eligible jobs", {
 					id: i.id,
@@ -374,31 +547,27 @@ async function requestActivateUpgradeItems(req, res, next) {
 				return true;
 			}
 		});
-		if (items.length > 0) {
-			await push.updatePushRequests(items, push.Status.Pending, req.session.username);
-			for (let i = 0; i < items.length; i++) {
-				if (items[i].status !== push.Status.Pending) {
-					items[i].status = push.Status.Activating;
-				}
-			}
+		if (eligibleItems.length > 0) {
+			await push.updatePushRequests(eligibleItems, push.Status.Pending, req.session.username);
+			await changeUpgradeItemStatus(eligibleItems, push.Status.Pending);
 		}
-		res.json(items);
+		res.json(items.length > 0 ? items[0] : {});
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function requestCancelUpgradeItems(req, res, next) {
-	const ids = req.body.items;
+async function requestCancelUpgradeItem(req, res, next) {
+	const id = req.params.id;
 	try {
-		let items = await findItemsByIds(ids);
+		let items = await findItemsByIds([id]);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		for (let i = 0; i < items.length; i++) {
 			if (items[i].status !== push.Status.Canceled) {
 				items[i].status = push.Status.Canceling;
 			}
 		}
-		res.json(items);
+		res.json(items.length > 0 ? items[0] : {});
 	} catch (err) {
 		next(err);
 	}
@@ -419,6 +588,8 @@ exports.requestAllJobs = requestAllJobs;
 exports.createUpgrade = createUpgrade;
 exports.createUpgradeItem = createUpgradeItem;
 exports.createUpgradeJobs = upsertUpgradeJobs;
-exports.requestActivateUpgradeItems = requestActivateUpgradeItems;
-exports.requestCancelUpgradeItems = requestCancelUpgradeItems;
+exports.requestActivateUpgrade = requestActivateUpgrade;
+exports.requestCancelUpgrade = requestCancelUpgrade;
+exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
+exports.requestCancelUpgradeItem = requestCancelUpgradeItem;
 exports.findItemsByIds = findItemsByIds;

@@ -8,8 +8,8 @@ const logger = require('../util/logger').logger;
 const Status = {
 	Created: "Created",
 	Pending: "Pending",
-	InProgress: "InProgress",
 	Activating: "Activating",
+	InProgress: "InProgress",
 	Canceling: "Canceling",
 	Succeeded: "Succeeded",
 	Failed: "Failed",
@@ -104,10 +104,10 @@ async function clearRequests(packageOrgIds) {
 }
 
 async function updatePushRequests(items, status, currentUser) {
-	let conns = {};
+	let conns = new Map();
 	for (let i = 0; i < items.length; i++) {
 		let item = items[i];
-		if (status === Status.Pending && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
+		if (currentUser && status === Status.Pending && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
 			if (item.created_by === null) {
 				throw new Error(`Cannot activate upgrade item ${item.id} without knowing who created it`);
 			}
@@ -116,11 +116,11 @@ async function updatePushRequests(items, status, currentUser) {
 			}
 		}
 
-		let conn = conns[item.package_org_id];
+		let conn = conns.get(item.package_org_id);
 		if (!conn) {
 			try {
 				conn = await sfdc.buildOrgConnection(item.package_org_id);
-				conns[item.package_org_id] = conn;
+				conns.set(item.package_org_id, conn);
 			} catch (e) {
 				logger.error("No valid package org found for upgrade item", {
 					id: item.id,
@@ -189,7 +189,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 }
 
 async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description) {
-	let conns = {}, pushReqs = {};
+	let conns = new Map(), pushReqs = new Map();
 
 	let versions = await packageversions.findLatestByGroupIds(versionIds, orgGroupIds);
 
@@ -229,11 +229,11 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	for (let i = 0; i < versions.length; i++) {
 		let version = versions[i];
 
-		let conn = conns[version.package_org_id];
+		let conn = conns.get(version.package_org_id);
 		if (!conn) {
 			try {
 				conn = await sfdc.buildOrgConnection(version.package_org_id);
-				conns[version.package_org_id] = conn;
+				conns.set(version.package_org_id, conn);
 			} catch (e) {
 				logger.error("No valid package org found for version", {
 					id: version.version_id,
@@ -246,22 +246,28 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		}
 
 		let reqKey = version.package_org_id + version.latest_version_id;
-		let pushReq = pushReqs[reqKey] = pushReqs[reqKey] || // Initialized if not found
-			{
+		
+		let pushReq = pushReqs.get(reqKey);
+		if (!pushReq) {
+			pushReq = {
 				item: await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy),
 				conn: conn,
 				orgIds: []
 			};
+			pushReqs.set(reqKey, pushReq);
+		}
 
 		items.push(pushReq.item);
 		// Add this particular org id to the batch
 		pushReq.orgIds.push(version.org_id);
 	}
 
-	// Now, create the jobs 
-	Object.entries(pushReqs).forEach(async ([key, pushReq]) => {
+	// Now, create the jobs
+	let reqs = Array.from(pushReqs.values());
+	for (let i = 0; i < reqs.length; i++) {
+		let pushReq = reqs[i];
 		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.push_request_id, pushReq.orgIds);
-	});
+	}
 
 	return upgrade;
 }
@@ -391,7 +397,7 @@ function bulkFindSubscribersByIds(packageOrgIds, orgIds) {
 				});
 			});
 		});
-		queries.push(p);
+		queries.push(p.catch(error => error));
 	}
 	return Promise.all(queries);
 }

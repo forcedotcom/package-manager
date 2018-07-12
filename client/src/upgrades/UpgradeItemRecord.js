@@ -93,7 +93,7 @@ export default class extends React.Component {
 	handleActivation = () => {
 		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
 			this.setState({isActivating: true});
-			upgradeItemService.activateItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]))
+			upgradeItemService.activate(this.state.item.id).then(item => this.loadItemJobs(item))
 			.catch(e => {
 				this.setState({isActivating: true});
 				NotificationManager.error(e.message, "Activation Failed");
@@ -104,7 +104,7 @@ export default class extends React.Component {
 	handleCancellation = () => {
 		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
 			this.setState({isCancelling: true});
-			upgradeItemService.cancelItems([this.state.item.id]).then(items => this.loadItemJobs(items[0]))
+			upgradeItemService.cancel(this.state.item.id).then(item => this.loadItemJobs(item))
 			.catch(e => {
 				this.setState({isCancelling: true});
 				NotificationManager.error(e.message, "Cancellation Failed");

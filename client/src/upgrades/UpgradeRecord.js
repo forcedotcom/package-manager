@@ -12,6 +12,7 @@ import ProgressBar from "../components/ProgressBar";
 import UpgradeJobCard from "./UpgradeJobCard";
 import Tabs from "../components/Tabs";
 import {NotificationManager} from "react-notifications";
+import moment from "moment";
 
 export default class extends React.Component {
 	SORTAGE_KEY_ITEMS = "UpgradeItemCard";
@@ -89,14 +90,14 @@ export default class extends React.Component {
 	};
 
 	activationHandler = () => {
-		if (window.confirm(`Are you sure you want to activate ${this.state.selected.length} request(s)?`)) {
-			upgradeItemService.activateItems(this.state.selected).then(() => window.location.reload());
+		if (window.confirm(`Are you sure you want to activate this upgrade?`)) {
+			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload());
 		}
 	};
 
 	cancelationHandler = () => {
-		if (window.confirm(`Are you sure you want to cancel ${this.state.selected.length} request(s)?`)) {
-			upgradeItemService.cancelItems(this.state.selected).then(() => window.location.reload());
+		if (window.confirm(`Are you sure you want to cancel this upgrade?  All ${this.state.items.length} request(s) will be cancelled.`)) {
+			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload());
 		}
 	};
 
@@ -121,15 +122,15 @@ export default class extends React.Component {
 				purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
 		}
 
-		const itemActions = [
+		const actions = [
 			{
-				label: "Activate Selected", handler: this.activationHandler.bind(this),
-				disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0 || !userCanActivate,
-				detail: "Update the selected items to Pending state to proceed with upgrades"
+				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
+				disabled: this.state.upgrade.status === "Closed" || !userCanActivate,
+				detail: "Update items in this upgrade to Pending state"
 			},
 			{
-				label: "Cancel Selected", handler: this.cancelationHandler.bind(this),
-				disabled: this.state.upgrade.status === "Closed" || this.state.selected.length === 0
+				label: "Cancel Upgrade", handler: this.cancelationHandler.bind(this),
+				disabled: this.state.upgrade.status === "Closed"
 			}
 		];
 
@@ -145,16 +146,16 @@ export default class extends React.Component {
 		}
 		return (
 			<div>
-				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description}>
+				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description} actions={actions}>
 					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
-					<HeaderField label="Scheduled Start Time" format="datetime" value={this.state.upgrade.start_time}/>
+					<HeaderField label="Scheduled Start Time" value={`${moment(this.state.upgrade.start_time).format('lll')} (${moment(this.state.upgrade.start_time).fromNow()})`}/>
 					<HeaderField label="Status" value={this.state.upgrade.status}/>
 				</RecordHeader>
 				<ProgressBar progress={completed / count} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Requests">
-							<UpgradeItemCard upgrade={this.state.upgrade} actions={itemActions} notes={itemNotes}
+							<UpgradeItemCard upgrade={this.state.upgrade} notes={itemNotes}
 											 onSelect={this.selectionHandler} items={this.state.items}
 											 status={this.state.upgrade.status}/>
 						</div>

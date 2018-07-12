@@ -27,7 +27,14 @@ async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
 	let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
 	let opvs = [];
 	for (let i = 0; i < arrs.length; i++) {
-		opvs = opvs.concat(arrs[i].map(rec => {
+		const arr = arrs[i];
+		if (!Array.isArray(arr)) {
+			// Error!
+			job.postMessage(`Error: ${arr}`);
+			continue;
+		}
+		
+		opvs = opvs.concat(arr.map(rec => {
 			const orgId = rec.OrgKey.substring(0, 15);
 			missingOrgIds.delete(orgId); // not missing, is it?
 			return {

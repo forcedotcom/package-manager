@@ -129,13 +129,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS
 -- sb62 data
 create table if not exists package
 (
-  id             serial      not null,
-  sfid           varchar(18) not null
+  id              serial      not null,
+  sfid            varchar(18) not null
     constraint package_sfid_pk primary key,
-  name           varchar(255),
-  package_id     varchar(18),
-  package_org_id varchar(18),
-  modified_date  timestamp with time zone
+  name            varchar(255),
+  package_id      varchar(18),
+  package_org_id  varchar(18),
+  dependency_tier integer,
+  modified_date   timestamp with time zone
 );
 
 create table if not exists package_version
@@ -204,7 +205,8 @@ alter table org
   add if not exists features text null;
 
 alter table package
-  add if not exists modified_date timestamp with time zone;
+  add if not exists modified_date timestamp with time zone,
+  add if not exists dependency_tier integer;
 
 alter table package_org
   add if not exists type varchar(80) null,

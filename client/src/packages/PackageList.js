@@ -23,6 +23,7 @@ export default class extends React.Component {
 			{Header: "ID", accessor: "sfid", sortable: true, clickable: true},
 			{Header: "Packaging Org ID", accessor: "package_org_id", clickable: true},
 			{Header: "Packaging ID", accessor: "package_id"},
+			{Header: "Tier", accessor: "dependency_tier"}
 		];
 
 		return (
