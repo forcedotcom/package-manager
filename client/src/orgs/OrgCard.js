@@ -13,7 +13,7 @@ export default class extends React.Component {
 
 
 	componentWillReceiveProps(props) {
-		if (props.items && this.state.itemCount === null) {
+		if (props.orgs && this.state.itemCount === null) {
 			this.setState({itemCount: props.orgs.length});
 		}
 	};

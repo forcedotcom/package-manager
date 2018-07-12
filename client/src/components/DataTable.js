@@ -112,10 +112,22 @@ export default class extends React.Component {
 
 	defaultFilterMethod = (filter, row) => {
 		let fieldElem = row[filter.id];
-		let fieldVal = typeof fieldElem === 'string' ? fieldElem : fieldElem.props.children.join("");
+		let fieldVal = fieldElem == null || typeof fieldElem === 'string' ? fieldElem : fieldElem.props.children.join("");
 		const filters = filter.value.split(",");
 		for (let i = 0; i < filters.length; i++) {
-			let filterVal = filters[i].trim();
+			let filterVal = filters[i];
+			let blank = filterVal === "!!";
+			if (blank) {
+				// Special handler for emptiness
+				return fieldVal == null || fieldVal === "";
+			}
+
+			let notblank = filterVal === "?" || filterVal === "??";
+			if (notblank) {
+				// Special handler for non-emptiness
+				return fieldVal != null && fieldVal !== "";
+			}
+			
 			let neg = filterVal.startsWith("!");
 			filterVal = neg ? filterVal.substring(1) : filterVal;
 			if (filterVal === "") {
