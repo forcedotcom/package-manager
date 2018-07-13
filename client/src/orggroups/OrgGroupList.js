@@ -3,10 +3,6 @@ import DataTable from "../components/DataTable";
 import moment from "moment";
 
 export default class extends React.Component {
-	state = {
-		selected: []
-	};
-
 	linkHandler = (e, column, rowInfo) => {
 		window.location = "/orggroup/" + rowInfo.original.id;
 	};

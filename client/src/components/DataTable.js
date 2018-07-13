@@ -12,7 +12,7 @@ const CheckboxTable = checkboxHOC(ReactTable);
 export default class extends React.Component {
 	state = {
 		data: [],
-		selection: [],
+		selection: this.props.selection || new Map(),
 		selectAll: false,
 		pageSize: this.props.pageSize || 20,
 		minRows: this.props.minRows || 3,
@@ -24,30 +24,14 @@ export default class extends React.Component {
 	}
 
 	handleSelection = (key, shift, row) => {
-		/*
-		  Implementation of how to manage the selection state is up to the developer.
-		  This implementation uses an array stored in the component state.
-		  Other implementations could use object keys, a Javascript Set, or Redux... etc.
-		*/
-		// start off with the existing state
-		let selection = [...this.state.selection];
-		const keyIndex = selection.indexOf(key);
-		// check to see if the key exists
-		if (keyIndex >= 0) {
-			// it does exist so we will remove it using destructing
-			selection = [
-				...selection.slice(0, keyIndex),
-				...selection.slice(keyIndex + 1)
-			];
+		if (!this.state.selection.has(key)) {
+			this.state.selection.set(key, row);
 		} else {
-			// it does not exist so add it
-			selection.push(key);
+			this.state.selection.delete(key);
 		}
-		// update the state
-		this.setState({selection});
-
+		this.setState({selection: this.state.selection});
 		if (this.props.onSelect) {
-			this.props.onSelect(selection);
+			this.props.onSelect(this.state.selection);
 		}
 	};
 
@@ -71,7 +55,7 @@ export default class extends React.Component {
 		  the selection state.
 		*/
 		const selectAll = !this.state.selectAll;
-		const selection = [];
+		let selection = this.state.selection;
 		if (selectAll) {
 			// we need to get at the internals of ReactTable
 			const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
@@ -79,11 +63,12 @@ export default class extends React.Component {
 			const currentRecords = wrappedInstance.getResolvedState().sortedData;
 			// we just push all the IDs onto the selection array
 			currentRecords.forEach(item => {
-				selection.push(item._original[this.state.keyField]);
+				selection.set(item._original[this.state.keyField], item._original);
 			});
+		} else {
+			selection.clear();
 		}
 		this.setState({selectAll, selection});
-
 		if (this.props.onSelect) {
 			this.props.onSelect(selection);
 		}
@@ -103,7 +88,7 @@ export default class extends React.Component {
 		  callback and detect the selection state ourselves. This allows any implementation
 		  for selection (either an array, object keys, or even a Javascript Set object).
 		*/
-		return this.state.selection.includes(key);
+		return this.state.selection.has(key);
 	};
 
 	pageSizeHandler = (pageSize) => {

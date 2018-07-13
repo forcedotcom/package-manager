@@ -9,11 +9,14 @@ import * as io from "socket.io-client";
 
 import {ORG_GROUP_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
-import OrgGroupView from "./OrgGroupView";
 import GroupFormWindow from "./GroupFormWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
 import SelectGroupWindow from "../orgs/SelectGroupWindow";
 import moment from "moment";
+import Tabs from "../components/Tabs";
+import GroupMemberVersionCard from "../packageversions/GroupMemberVersionCard";
+import GroupMemberOrgCard from "../orgs/GroupMemberOrgCard";
+
 
 export default class extends React.Component {
 	SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
@@ -22,7 +25,8 @@ export default class extends React.Component {
 		isEditing: false,
 		orggroup: {},
 		sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc"),
-		selected: [],
+		selected: new Map(),
+		showSelected: false
 	};
 
 	componentDidMount() {
@@ -119,11 +123,11 @@ export default class extends React.Component {
 	};
 
 	removeMembersHandler = (skipConfirmation) => {
-		if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.length} member(s)?`)) {
-			orgGroupService.requestRemoveMembers(this.state.orggroup.id, this.state.selected).then(members => {
+		if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.size} member(s)?`)) {
+			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(members => {
 				packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
 					let validVersions = this.stripVersions(versions);
-					this.setState({members, versions, validVersions, selected: []});
+					this.setState({members, versions, validVersions, selected: new Map()});
 				});
 			}).catch(e => NotificationManager.error(e.message, "Removal Failed"));
 			return true;
@@ -132,22 +136,22 @@ export default class extends React.Component {
 	};
 
 	addToGroupHandler = (groupId, groupName, removeAfterAdd) => {
-		if (removeAfterAdd && !window.confirm(`Are you sure you want to move ${this.state.selected.length} member(s) to ${groupName}?`)) {
+		if (removeAfterAdd && !window.confirm(`Are you sure you want to move ${this.state.selected.size} member(s) to ${groupName}?`)) {
 			this.setState({addingToGroup: false, removeAfterAdd: false});
 			return;
 		}
 		this.setState({addingToGroup: false});
-		orgGroupService.requestAddMembers(groupId, groupName, this.state.selected).then((orggroup) => {
+		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
 			let moved = false;
 			if (removeAfterAdd) {
 				moved = this.removeMembersHandler(true);
 			}
 			if (moved) {
-				NotificationManager.success(`Moved ${this.state.selected.length} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+				NotificationManager.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			} else {
-				NotificationManager.success(`Added ${this.state.selected.length} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+				NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			}
-			this.setState({selected: [], removeAfterAdd: false});
+			this.setState({selected: new Map(), removeAfterAdd: false});
 		}).catch(e => NotificationManager.error(e.message, "Addition Failed"));
 	};
 
@@ -166,7 +170,15 @@ export default class extends React.Component {
 	selectionHandler = (selected) => {
 		this.setState({selected});
 	};
-
+	
+	handleShowSelected = () => {
+		this.setState({showSelected: !this.state.showSelected});
+	};
+	
+	selectVersionsFromSelected = (selectedMap) => {
+		return this.state.versions.filter(v => selectedMap.has(v.org_id));
+	};
+	
 	render() {
 		let actions = [
 			{
@@ -183,15 +195,17 @@ export default class extends React.Component {
 			},
 			{handler: this.editHandler, label: "Edit"},
 			{handler: this.deleteHandler, label: "Delete"}];
-
+			
 		let memberActions = [
-			{label: "Copy To Group", handler: this.addingToGroupHandler, disabled: this.state.selected.length === 0},
-			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.length === 0},
+			{label: `${this.state.selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: this.state.selected.size === 0,
+				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
+			{label: "Copy To Group", handler: this.addingToGroupHandler, disabled: this.state.selected.size === 0},
+			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.size === 0},
 			{
 				label: "Remove From Group",
 				group: "remove",
 				handler: this.removeMembersHandler,
-				disabled: this.state.selected.length === 0
+				disabled: this.state.selected.size === 0
 			}];
 
 		return (
@@ -200,9 +214,22 @@ export default class extends React.Component {
 					<HeaderField label="Description" value={this.state.orggroup.description}/>
 					{this.state.orggroup.created_date ? <HeaderField label="Created" value={moment(this.state.orggroup.created_date).format("lll")}/> : ""}
 				</RecordHeader>
-				<OrgGroupView orggroup={this.state.orggroup} versions={this.state.versions} members={this.state.members}
-							  onSelect={this.selectionHandler} memberActions={memberActions}
-							  selected={this.state.selected}/>;
+
+				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
+					<Tabs id="OrgGroupView">
+						<div label="Members">
+							<GroupMemberOrgCard orggroup={this.state.orggroup} orgs={this.state.showSelected ? Array.from(this.state.selected.values()) : this.state.members}
+												onSelect={this.selectionHandler} actions={memberActions}
+												selected={this.state.selected}/>
+						</div>
+						<div label="Versions">
+							<GroupMemberVersionCard orggroup={this.state.orggroup} packageVersions={this.state.showSelected ? this.selectVersionsFromSelected(this.state.selected) : this.state.versions}
+													onSelect={this.selectionHandler} actions={memberActions}
+													selected={this.state.selected}/>
+						</div>
+					</Tabs>
+				</div>
+				
 				{this.state.isEditing ? <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler}
 														 onCancel={this.cancelHandler}/> : ""}
 				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow versions={this.state.validVersions}

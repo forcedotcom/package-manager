@@ -35,7 +35,7 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title="Members" icon={ORG_ICON} actions={this.props.actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable keyField="org_id" id="OrgCard" data={this.props.orgs} columns={columns}
+					<DataTable selection={this.props.selected} keyField="org_id" id="OrgCard" data={this.props.orgs} columns={columns}
 							   onClick={this.linkHandler} onFilter={this.filterHandler} onSelect={this.props.onSelect}/>
 				</div>
 				<footer className="slds-card__footer"/>

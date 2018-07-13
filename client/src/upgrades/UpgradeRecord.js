@@ -146,7 +146,7 @@ export default class extends React.Component {
 				</RecordHeader>
 				<ProgressBar progress={completed / count} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<Tabs id="OrgGroupView">
+					<Tabs id="UpgradeRecord">
 						<div label="Requests">
 							<UpgradeItemCard upgrade={this.state.upgrade} notes={itemNotes}
 											 items={this.state.items}

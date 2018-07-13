@@ -11,7 +11,7 @@ export default class extends React.Component {
 	SORTAGE_KEY = "PackageOrgList";
 
 
-	state = {packageorgs: [], sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"), selected: []};
+	state = {packageorgs: [], sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"), selected: new Map()};
 
 	componentDidMount() {
 		packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs}));
@@ -36,13 +36,13 @@ export default class extends React.Component {
 		let packageorgs = this.state.packageorgs;
 		for (let i = 0; i < packageorgs.length; i++) {
 			let porg = packageorgs[i];
-			if (this.state.selected.indexOf(porg.org_id) !== -1) {
+			if (this.state.selected.has(porg.org_id)) {
 				porg.status = null;
 			}
 		}
 		this.setState({isRefreshing: true, packageorgs});
 
-		packageOrgService.requestRefresh(this.state.selected).then(() => {
+		packageOrgService.requestRefresh(Array.from(this.state.selected.keys())).then(() => {
 			packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({
 				packageorgs,
 				isRefreshing: false
@@ -51,8 +51,8 @@ export default class extends React.Component {
 	};
 
 	deleteHandler = () => {
-		if (window.confirm(`Are you sure you want to remove ${this.state.selected.length} packaging org(s)?`)) {
-			packageOrgService.requestDelete(this.state.selected).then(() => {
+		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
+			packageOrgService.requestDelete(Array.from(this.state.selected.keys())).then(() => {
 				packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs}));
 			});
 		}
@@ -69,14 +69,14 @@ export default class extends React.Component {
 			{
 				label: "Refresh",
 				handler: this.refreshHandler,
-				disabled: this.state.selected.length === 0,
+				disabled: this.state.selected.size === 0,
 				spinning: this.state.isRefreshing,
 				detail: "Refresh the access token of the selected org"
 			},
 			{
 				label: "Delete",
 				handler: this.deleteHandler,
-				disabled: this.state.selected.length === 0,
+				disabled: this.state.selected.size === 0,
 				detail: "Remove the selected org"
 			}
 		];

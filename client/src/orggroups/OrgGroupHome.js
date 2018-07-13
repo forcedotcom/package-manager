@@ -13,7 +13,7 @@ export default class extends React.Component {
 	state = {
 		sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"),
 		orggroups: [],
-		selected: [],
+		selected: new Map(),
 		itemCount: "..."
 	};
 
@@ -47,7 +47,7 @@ export default class extends React.Component {
 	};
 
 	deleteHandler = () => {
-		orgGroupService.requestDelete(this.state.selected).then(() => {
+		orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => {
 			orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups}));
 		});
 	};
@@ -57,7 +57,7 @@ export default class extends React.Component {
 			{label: "New", handler: this.newHandler, detail: "Create new org group"},
 			{
 				label: "Delete",
-				disabled: this.state.selected.length === 0,
+				disabled: this.state.selected.size === 0,
 				handler: this.deleteHandler,
 				detail: "Delete the selected groups"
 			}

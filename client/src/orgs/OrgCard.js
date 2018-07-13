@@ -8,7 +8,7 @@ import SelectGroupWindow from "./SelectGroupWindow";
 
 export default class extends React.Component {
 	state = {
-		selected: [], itemCount: null
+		selected: new Map(), itemCount: null
 	};
 
 
@@ -27,12 +27,12 @@ export default class extends React.Component {
 	};
 
 	removeMembersHandler = () => {
-		this.props.onRemove(this.state.selected);
+		this.props.onRemove(Array.from(this.state.selected.keys()));
 	};
 
 	addToGroupHandler = (groupId, groupName) => {
 		this.setState({addingToGroup: false});
-		orgGroupService.requestAddMembers(groupId, groupName, this.state.selected).then((orggroup) => {
+		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
 			window.location = `/orggroup/${orggroup.id}`;
 		});
 	};
@@ -62,13 +62,13 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			{label: "Add To Group", handler: this.openGroupWindow, disabled: this.state.selected.length === 0}
+			{label: "Add To Group", handler: this.openGroupWindow, disabled: this.state.selected.size === 0}
 		];
 		if (this.props.onRemove) {
 			actions.push({
 				label: "Remove Selected Member Orgs",
 				handler: this.removeMembersHandler,
-				disabled: this.state.selected.length === 0
+				disabled: this.state.selected.size === 0
 			});
 		}
 

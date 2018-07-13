@@ -61,25 +61,27 @@ export class RecordHeader extends React.Component {
 	};
 
 	render() {
-		let actions = this.props.actions ? this.props.actions : [];
+		let actions = this.props.actions || [];
 		let groups = [];
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
-			let btn =
-				<button data-tip={currentAction.detail} key={currentAction.label}
-						disabled={currentAction.disabled || currentAction.spinning}
-						className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-					{currentAction.spinning ?
-						<div style={{width: "3em"}}>&nbsp;
-							<div role="status" className="slds-spinner slds-spinner_x-small">
-								<div className="slds-spinner__dot-a"/>
-								<div className="slds-spinner__dot-b"/>
-							</div>
-						</div> : currentAction.label}
-					{currentAction.detail ?
-						<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
-				</button>;
+			const btn =
+				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<button data-tip={currentAction.detail} key={currentAction.label}
+							disabled={currentAction.disabled || currentAction.spinning}
+							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+						{currentAction.spinning ?
+							<div style={{width: "3em"}}>&nbsp;
+								<div role="status" className="slds-spinner slds-spinner_x-small">
+									<div className="slds-spinner__dot-a"/>
+									<div className="slds-spinner__dot-b"/>
+								</div>
+							</div> : currentAction.label}
+						{currentAction.detail ?
+							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
+					</button>;
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
 				currentGroup = {key: currentAction.group, actions: [btn]};
 				groups.push(currentGroup);
@@ -98,8 +100,7 @@ export class RecordHeader extends React.Component {
 					<div className="slds-col slds-has-flexi-truncate">
 						<div className="slds-media">
 							<div className="slds-media__figure">
-								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category}
-											size="large"/>
+								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
 							</div>
 							<div className="slds-media__body">
 								<p className="slds-text-heading--label">{this.props.type}</p>
@@ -138,20 +139,22 @@ export class CardHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
-			let btn =
-				<button data-tip={currentAction.detail} key={currentAction.label}
-						disabled={currentAction.disabled || currentAction.spinning}
-						className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-					{currentAction.spinning ?
-						<div style={{width: "3em"}}>&nbsp;
-							<div role="status" className="slds-spinner slds-spinner_x-small">
-								<div className="slds-spinner__dot-a"/>
-								<div className="slds-spinner__dot-b"/>
-							</div>
-						</div> : currentAction.label}
-					{currentAction.detail ?
-						<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
-				</button>;
+			const btn =
+				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<button data-tip={currentAction.detail} key={currentAction.label}
+							disabled={currentAction.disabled || currentAction.spinning}
+							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+						{currentAction.spinning ?
+							<div style={{width: "3em"}}>&nbsp;
+								<div role="status" className="slds-spinner slds-spinner_x-small">
+									<div className="slds-spinner__dot-a"/>
+									<div className="slds-spinner__dot-b"/>
+								</div>
+							</div> : currentAction.label}
+						{currentAction.detail ?
+							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
+					</button>;
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
 				currentGroup = {key: currentAction.group, actions: [btn]};
 				groups.push(currentGroup);
@@ -202,20 +205,22 @@ export class FormHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
-			let btn =
-				<button data-tip={currentAction.detail} key={currentAction.label}
-						disabled={currentAction.disabled || currentAction.spinning}
-						className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-					{currentAction.spinning ?
-						<div style={{width: "3em"}}>&nbsp;
-							<div role="status" className="slds-spinner slds-spinner_x-small">
-								<div className="slds-spinner__dot-a"/>
-								<div className="slds-spinner__dot-b"/>
-							</div>
-						</div> : currentAction.label}
-					{currentAction.detail ?
-						<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
-				</button>;
+			const btn =
+				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<button data-tip={currentAction.detail} key={currentAction.label}
+							disabled={currentAction.disabled || currentAction.spinning}
+							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+						{currentAction.spinning ?
+							<div style={{width: "3em"}}>&nbsp;
+								<div role="status" className="slds-spinner slds-spinner_x-small">
+									<div className="slds-spinner__dot-a"/>
+									<div className="slds-spinner__dot-b"/>
+								</div>
+							</div> : currentAction.label}
+						{currentAction.detail ?
+							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
+					</button>;
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
 				currentGroup = {key: currentAction.group, actions: [btn]};
 				groups.push(currentGroup);
@@ -287,20 +292,22 @@ export class HomeHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
-			let btn =
-				<button data-tip={currentAction.detail} key={currentAction.label}
-						disabled={currentAction.disabled || currentAction.spinning}
-						className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-					{currentAction.spinning ?
-						<div style={{width: "3em"}}>&nbsp;
-							<div role="status" className="slds-spinner slds-spinner_x-small">
-								<div className="slds-spinner__dot-a"/>
-								<div className="slds-spinner__dot-b"/>
-							</div>
-						</div> : currentAction.label}
-					{currentAction.detail ?
-						<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
-				</button>;
+			const btn =
+				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<button data-tip={currentAction.detail} key={currentAction.label}
+							disabled={currentAction.disabled || currentAction.spinning}
+							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+						{currentAction.spinning ?
+							<div style={{width: "3em"}}>&nbsp;
+								<div role="status" className="slds-spinner slds-spinner_x-small">
+									<div className="slds-spinner__dot-a"/>
+									<div className="slds-spinner__dot-b"/>
+								</div>
+							</div> : currentAction.label}
+						{currentAction.detail ?
+							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
+					</button>;
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
 				currentGroup = {key: currentAction.group, actions: [btn]};
 				groups.push(currentGroup);
@@ -346,6 +353,26 @@ export class HomeHeader extends React.Component {
 				{this.props.children ?
 					<div className="slds-grid slds-page-header__detail-row">{this.props.children}</div> : ""}
 			</div>
+		);
+	}
+}
+
+export class ToggleButton extends React.Component {
+	render() {
+		return (
+			<button data-tip={this.props.detail} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
+					onClick={this.props.handler}>
+  				<span className="slds-text-not-selected">
+					<svg className="slds-button__icon_stateful slds-button__icon_left">
+					  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#add"/>
+					</svg>{this.props.label}</span>
+				<span className="slds-text-selected">
+					<svg className="slds-button__icon_stateful slds-button__icon_left">
+					  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#check"/>
+					</svg>{this.props.label}</span>
+				{this.props.detail ?
+					<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
+			</button>
 		);
 	}
 }
