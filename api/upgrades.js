@@ -110,13 +110,27 @@ async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, 
 	return recs[0];
 }
 
-async function changeUpgradeItemStatus(items, status) {
+async function changeUpgradeItemStatus(item, status) {
 	try {
-		for (let i = 0; i < items.length; i++) {
-			const item = items[i];
-			item.status = status || item.status;
-			await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
+		item.status = status || item.status;
+		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
+	} catch (error) {
+		logger.error("Failed to update upgrade item", {itemId: item.id, status, error: error.message || error});
+	}
+}
+
+async function changeUpgradeItemAndJobStatus(items, status) {
+	try {
+		const values = [status];
+		const params = [];
+		for (let i = 0, p = values.length+1; i < items.length; i++) {
+			items[i].status = status;
+			values.push(items[i].id);
+			params.push(`$${p++}`);
 		}
+		
+		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
+		await db.update(`UPDATE upgrade_job SET status = $1 WHERE item_id IN (${params.join(",")})`, values);
 	} catch (error) {
 		logger.error("Failed to update upgrade items", {status, error: error.message || error});
 	}
@@ -256,7 +270,7 @@ async function requestItemsByUpgrade(req, res, next) {
 			for (let i = 0; i < items.length; i++) {
 				let item = items[i];
 				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				await changeUpgradeItemStatus([item], pushReqs[0].Status);
+				await changeUpgradeItemStatus(item, pushReqs[0].Status);
 			}
 		}
 
@@ -347,7 +361,7 @@ function requestItemById(req, res, next) {
 		.then(async item => {
 			if (req.query.fetchStatus) {
 				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				await changeUpgradeItemStatus([item], pushReqs[0].Status);
+				await changeUpgradeItemStatus(item, pushReqs[0].Status);
 			}
 			res.json(item)
 		})
@@ -410,7 +424,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 			// No dependencies, just activate and be done (if not already activated)
 			if (item.status === push.Status.Created) {
 				await push.updatePushRequests([item], push.Status.Pending, username);
-				await changeUpgradeItemStatus([item], push.Status.Pending);
+				await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
 				job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
 			}
 			continue;
@@ -466,14 +480,11 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 
 			if (activate && item.status === push.Status.Created) {
 				// Ready to activate!
-				item.status = push.Status.Pending;
 				await push.updatePushRequests([item], push.Status.Pending, username);
+				await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
 				job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
 			}
 		}
-		
-		// Always update the local status
-		await changeUpgradeItemStatus(items);
 	}
 	return items;
 }
@@ -520,12 +531,7 @@ async function requestCancelUpgrade(req, res, next) {
 	try {
 		let items = await findItemsByUpgrade(id);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
-		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
-		for (let i = 0; i < items.length; i++) {
-			if (items[i].status !== push.Status.Canceled) {
-				items[i].status = push.Status.Canceling;
-			}
-		}
+		await changeUpgradeItemAndJobStatus(items, push.Status.Canceled);
 		res.json(items);
 	} catch (err) {
 		next(err);
@@ -535,23 +541,14 @@ async function requestCancelUpgrade(req, res, next) {
 async function requestActivateUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
-		const items = await findItemsByIds([id]);
-		const eligibleItems = items.filter(i => {
-			if (i.eligible_job_count === "0") {
-				logger.warn("Cannot activate an upgrade item with no eligible jobs", {
-					id: i.id,
-					push_request_id: i.push_request_id
-				});
-				return false;
-			} else {
-				return true;
-			}
-		});
-		if (eligibleItems.length > 0) {
-			await push.updatePushRequests(eligibleItems, push.Status.Pending, req.session.username);
-			await changeUpgradeItemStatus(eligibleItems, push.Status.Pending);
+		const item = (await findItemsByIds([id]))[0];
+		if (item.eligible_job_count === "0") {
+			logger.warn("Cannot activate an upgrade item with no eligible jobs", {itemId: item.id});
+			return res.json({});
 		}
-		res.json(items.length > 0 ? items[0] : {});
+		await push.updatePushRequests([item], push.Status.Pending, req.session.username);
+		await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
+		res.json(item);
 	} catch (err) {
 		next(err);
 	}
@@ -560,14 +557,10 @@ async function requestActivateUpgradeItem(req, res, next) {
 async function requestCancelUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
-		let items = await findItemsByIds([id]);
-		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
-		for (let i = 0; i < items.length; i++) {
-			if (items[i].status !== push.Status.Canceled) {
-				items[i].status = push.Status.Canceling;
-			}
-		}
-		res.json(items.length > 0 ? items[0] : {});
+		let item = (await findItemsByIds([id]))[0];
+		await push.updatePushRequests([item], push.Status.Canceled, req.session.username);
+		await changeUpgradeItemAndJobStatus([item], push.Status.Canceled);
+		res.json(item);
 	} catch (err) {
 		next(err);
 	}

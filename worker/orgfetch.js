@@ -2,7 +2,9 @@ const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 
-const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,PermissionsCpq,PermissionsCpqProvisioned FROM AllOrganization`;
+const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,
+					PermissionsCpq,PermissionsCpqProvisioned,PreferencesOrdersEnabled 
+					FROM AllOrganization`;
 
 const Status = {NotFound: 'Not Found'};
 const QUERY_BATCH_SIZE = 500;
@@ -77,6 +79,9 @@ function extractFeatures(rec) {
 	let features = [];
 	if (rec.PermissionsCpq === true || rec.PermissionsCpqProvisioned === true) {
 		features.push("CPQ");
+	}
+	if (rec.PreferencesOrdersEnabled === true) {
+		features.push("Orders");
 	}
 	return features.join(",");
 }

@@ -19,7 +19,6 @@ export default class extends React.Component {
 	SORTAGE_KEY_JOBS = "UpgradeRecord.UpgradeJobCard";
 
 	state = {
-		selected: [],
 		upgrade: {},
 		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "id", "asc"),
 		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc"),
@@ -95,15 +94,10 @@ export default class extends React.Component {
 		}
 	};
 
-	cancelationHandler = () => {
+	cancellationHandler = () => {
 		if (window.confirm(`Are you sure you want to cancel this upgrade?  All ${this.state.items.length} request(s) will be cancelled.`)) {
 			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload());
 		}
-	};
-
-	selectionHandler = (selected) => {
-		this.setState({selected});
-		console.log(JSON.stringify(selected));
 	};
 
 	render() {
@@ -129,7 +123,7 @@ export default class extends React.Component {
 				detail: "Update items in this upgrade to Pending state"
 			},
 			{
-				label: "Cancel Upgrade", handler: this.cancelationHandler.bind(this),
+				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
 				disabled: this.state.upgrade.status === "Closed"
 			}
 		];
@@ -156,7 +150,7 @@ export default class extends React.Component {
 					<Tabs id="OrgGroupView">
 						<div label="Requests">
 							<UpgradeItemCard upgrade={this.state.upgrade} notes={itemNotes}
-											 onSelect={this.selectionHandler} items={this.state.items}
+											 items={this.state.items}
 											 status={this.state.upgrade.status}/>
 						</div>
 						<div label="Jobs">
