@@ -21,8 +21,7 @@ export default class extends React.Component {
 	state = {
 		upgrade: {},
 		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "id", "asc"),
-		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc"),
-		items: []
+		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc")
 	};
 
 	componentDidMount() {
@@ -128,7 +127,7 @@ export default class extends React.Component {
 			}
 		];
 
-		let count = this.state.items.length, completed = 0, errors = 0;
+		let count = this.state.items ? this.state.items.length : 0, completed = 0, errors = 0;
 		for (let i = 0; i < count; i++) {
 			let item = this.state.items[i];
 			if (isDoneStatus(item.status)) {
