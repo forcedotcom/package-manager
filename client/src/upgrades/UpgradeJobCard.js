@@ -4,6 +4,7 @@ import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {UPGRADE_JOB_ICON} from "../Constants";
 import MessageWindow from "../components/MessageWindow";
+import {CSVDownload} from 'react-csv';
 
 export default class extends React.Component {
 	state = {done: false, itemCount: null};
@@ -32,7 +33,7 @@ export default class extends React.Component {
 	}
 
 	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+		this.setState({filtered, itemCount: filtered.length});
 	};
 
 	openMessageWindow = (event) => {
@@ -45,8 +46,14 @@ export default class extends React.Component {
 
 	closeMessageWindow = () => this.setState({showMessage: null});
 
+	exportHandler = () => {
+		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.jobs;
+		this.setState({isExporting: true, exportable});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
+	};
+
 	render() {
-		let columns = [
+		const columns = [
 			{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
 			{
 				Header: "Account",
@@ -99,9 +106,13 @@ export default class extends React.Component {
 			}
 		];
 
+		const actions = [
+			{label: "Export Results", handler: this.exportHandler}
+		];
+
 		return (
 			<div className="slds-card">
-				<CardHeader title="Upgrade Jobs" icon={UPGRADE_JOB_ICON} count={this.state.itemCount}/>
+				<CardHeader title="Upgrade Jobs" icon={UPGRADE_JOB_ICON} count={this.state.itemCount} actions={actions}/>
 				<section className="slds-card__body">
 					<DataTable id="UpgradeJobCard" minRows="1" data={this.props.jobs} onFilter={this.filterHandler}
 							   onClick={this.linkHandler} columns={columns}/>
@@ -110,6 +121,7 @@ export default class extends React.Component {
 				{this.state.showMessage ?
 					<MessageWindow subject={this.state.messageSubject} message={this.state.messageDetail}
 								   onClose={this.closeMessageWindow}/> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 			</div>
 		);
 	}
