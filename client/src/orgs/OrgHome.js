@@ -62,19 +62,24 @@ export default class extends React.Component {
 	};
 
 	addToGroup = (groupId, groupName) => {
-		this.setState({addingToGroup: false});
+		this.setState({showAddToGroup: false, addingToGroup: true});
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
 			NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
-			this.setState({selected: new Map()});
+			orgService.requestAll(this.state.sortOrder)
+			.then(orgs => {
+				this.state.selected.clear(); 
+				this.setState({showSelected: false, addingToGroup: false, orgs, itemCount: orgs.length});
+			})
+			.catch(err => console.error(err))
 		});
 	};
 
 	cancelAddingToGroupHandler = () => {
-		this.setState({addingToGroup: false});
+		this.setState({showAddToGroup: false});
 	};
 
 	addingToGroupHandler = () => {
-		this.setState({addingToGroup: true});
+		this.setState({showAddToGroup: true});
 	};
 
 
@@ -88,7 +93,7 @@ export default class extends React.Component {
 		const actions = [
 			{label: `${this.state.selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: this.state.selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Add To Group", group: "selectable", disabled: this.state.selected.size === 0, handler: this.addingToGroupHandler},
+			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: this.state.selected.size === 0, handler: this.addingToGroupHandler},
 			{label: "Import", handler: this.addingHandler},
 			{label: "Export", handler: this.exportHandler}
 		];
@@ -96,8 +101,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
-				<OrgList orgs={this.state.showSelected ? Array.from(this.state.selected.values()) : this.state.orgs} onSort={this.sortHandler} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
-				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroup.bind(this)}
+				<OrgList selected={this.state.selected} orgs={this.state.showSelected ? Array.from(this.state.selected.values()) : this.state.orgs} onSort={this.sortHandler} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
+				{this.state.showAddToGroup ? <SelectGroupWindow onAdd={this.addToGroup.bind(this)}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}

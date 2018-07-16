@@ -18,7 +18,7 @@ export default class extends React.Component {
 			{Header: "Groups", accessor: "groups", sortable: true}
 		];
 		return (
-			<DataTable keyField="org_id" id="OrgList" data={this.props.orgs} onFilter={this.props.onFilter}
+			<DataTable selection={this.props.selected} keyField="org_id" id="OrgList" data={this.props.orgs} onFilter={this.props.onFilter}
 					   onClick={this.linkHandler} onSelect={this.props.onSelect} columns={columns}/>
 		);
 	}

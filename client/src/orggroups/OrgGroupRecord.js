@@ -126,8 +126,9 @@ export default class extends React.Component {
 		if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.size} member(s)?`)) {
 			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(members => {
 				packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
+					this.state.selected.clear();
 					let validVersions = this.stripVersions(versions);
-					this.setState({members, versions, validVersions, selected: new Map()});
+					this.setState({showSelected: false, members, versions, validVersions});
 				});
 			}).catch(e => NotificationManager.error(e.message, "Removal Failed"));
 			return true;
@@ -151,7 +152,8 @@ export default class extends React.Component {
 			} else {
 				NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			}
-			this.setState({selected: new Map(), removeAfterAdd: false});
+			this.state.selected.clear();
+			this.setState({showSelected: false, removeAfterAdd: false});
 		}).catch(e => NotificationManager.error(e.message, "Addition Failed"));
 	};
 
