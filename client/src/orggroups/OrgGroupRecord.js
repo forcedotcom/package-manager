@@ -5,7 +5,7 @@ import * as packageVersionService from "../services/PackageVersionService";
 import * as sortage from "../services/sortage";
 import {NotificationManager} from 'react-notifications';
 import * as io from "socket.io-client";
-
+import {CSVDownload} from 'react-csv';
 
 import {ORG_GROUP_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
@@ -178,7 +178,12 @@ export default class extends React.Component {
 	selectVersionsFromSelected = (selectedMap) => {
 		return this.state.versions.filter(v => selectedMap.has(v.org_id));
 	};
-	
+
+	exportHandler = () => {
+		this.setState({isExporting: true, exportable: this.state.members});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
+	};
+
 	render() {
 		let actions = [
 			{
@@ -201,13 +206,10 @@ export default class extends React.Component {
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Copy To Group", handler: this.addingToGroupHandler, disabled: this.state.selected.size === 0},
 			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.size === 0},
-			{
-				label: "Remove From Group",
-				group: "remove",
-				handler: this.removeMembersHandler,
-				disabled: this.state.selected.size === 0
-			}];
-
+			{label: "Remove From Group", group: "remove", handler: this.removeMembersHandler, disabled: this.state.selected.size === 0},
+			{label: "Export Members", handler: this.exportHandler}
+			];
+		
 		return (
 			<div>
 				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
@@ -240,6 +242,7 @@ export default class extends React.Component {
 					<SelectGroupWindow excludeId={this.state.orggroup.id} removeAfterAdd={this.state.removeAfterAdd}
 									   onAdd={this.addToGroupHandler.bind(this)}
 									   onCancel={this.closeGroupWindow}/> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 			</div>
 		);
 	}
