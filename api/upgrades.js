@@ -54,7 +54,11 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
         u.description,
         pv.version_number, pv.version_id,
         p.name package_name, p.sfid package_id, p.dependency_tier,
-        count(j.*) job_count, count(NULLIF(j.status, 'Ineligible')) eligible_job_count
+        count(j.*) job_count, 
+        count(NULLIF(j.status, 'Ineligible')) eligible_job_count,
+	  	count(CASE
+			WHEN j.status = 'Failed' THEN 1
+			ELSE NULL END) failed_job_count
         FROM upgrade_item i
         inner join upgrade u on u.id = i.upgrade_id
         inner join package_version pv on pv.version_id = i.package_version_id
@@ -337,9 +341,14 @@ async function fetchJobStatus(upgradeJobs) {
 	return pushJobs;
 }
 
-async function findJobs(upgradeId, itemId, sortField, sortDir) {
+async function findJobs(upgradeId, itemId, sortField, sortDir, status) {
 	let where = upgradeId ? " WHERE j.upgrade_id = $1" : itemId ? " WHERE j.item_id = $1" : "";
 	let values = [upgradeId || itemId];
+	if (status) {
+		values.push(status);
+		where += ` AND j.status = $${values.length}`;
+		
+	}
 	let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
 	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
 }
@@ -392,6 +401,22 @@ async function requestActivateUpgrade(req, res, next) {
 		res.json(items);
 	} catch (err) {
 		next(err);
+	}
+}
+
+async function requestRetryFailedUpgrade(req, res, next) {
+	let id = req.params.id;
+	try {
+		const upgrade = await push.retryFailedUpgrade(id, req.session.username);
+		if (upgrade == null) {
+			return next("No failed jobs found to retry");
+		}
+		
+		await activateUpgrade(upgrade.id, null); // Skip passing the username to skip the activation validation check
+		return res.json(upgrade);
+	} catch(e) {
+		logger.error("Failed to rescheduled upgrade", {id, error: e.message || e});
+		next(e);
 	}
 }
 
@@ -573,6 +598,7 @@ async function cancelAllRequests() {
 
 exports.cancelAllRequests = cancelAllRequests;
 exports.requestById = requestById;
+exports.retrieveById = retrieveById;
 exports.requestItemById = requestItemById;
 exports.requestJobById = requestJobById;
 exports.requestAll = requestAll;
@@ -583,6 +609,8 @@ exports.createUpgradeItem = createUpgradeItem;
 exports.createUpgradeJobs = upsertUpgradeJobs;
 exports.requestActivateUpgrade = requestActivateUpgrade;
 exports.requestCancelUpgrade = requestCancelUpgrade;
+exports.requestRetryFailedUpgrade = requestRetryFailedUpgrade;
 exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
 exports.requestCancelUpgradeItem = requestCancelUpgradeItem;
 exports.findItemsByIds = findItemsByIds;
+exports.findJobs = findJobs;

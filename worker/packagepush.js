@@ -34,44 +34,49 @@ async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId
 }
 
 async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
-	let pushJobs = [];
-	for (let i = 0; i < orgIds.length; i++) {
-		pushJobs.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
-	}
+	return new Promise((resolve, reject) => {
+		let pushJobs = [];
+		for (let i = 0; i < orgIds.length; i++) {
+			pushJobs.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
+		}
 
-	// Create job and batch, and execute it
-	let job = conn.bulk.createJob("PackagePushJob", "insert");
-	let batch = job.createBatch();
-	batch.execute(pushJobs);
+		// Create job and batch, and execute it
+		let job = conn.bulk.createJob("PackagePushJob", "insert");
+		let batch = job.createBatch();
+		batch.execute(pushJobs);
 
-	// listen for events
-	batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
-		logger.error('Failed to batch load PushUpgradeJob records', {...batchInfo});
-	});
-	batch.on("queue", function (batchInfo) { // fired when batch request is queued in server.
-		logger.debug('Queued batch of PushUpgradeJob records', {...batchInfo});
-		batch.poll(1000 /* interval(ms) */, 20000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
-	});
-	batch.on("response", async function (results) { // fired when batch finished and result retrieved
-		let jobs = [];
-		for (let i = 0; i < results.length; i++) {
-			let res = results[i];
-			let orgId = orgIds[i];
-			jobs.push({
-				org_id: orgId,
-				job_id: res.id,
-				status: res.success ? Status.Created : Status.Ineligible,
-				message: res.success ? null : res.errors.join(", ")
-			});
-			if (!res.success) {
-				logger.error("Failed to schedule push upgrade job", {org_id: orgId, error: res.errors.join(", ")})
+		// listen for events
+		batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
+			logger.error('Failed to batch load PushUpgradeJob records', {...batchInfo});
+			reject(`Failed to batch load PushUpgradeJob records: ${{...batchInfo}}`);
+		});
+		batch.on("queue", function (batchInfo) { // fired when batch request is queued in server.
+			logger.debug('Queued batch of PushUpgradeJob records', {...batchInfo});
+			batch.poll(1000 /* interval(ms) */, 20000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
+		});
+		batch.on("response", async function (results) { // fired when batch finished and result retrieved
+			let jobs = [];
+			for (let i = 0; i < results.length; i++) {
+				let res = results[i];
+				let orgId = orgIds[i];
+				jobs.push({
+					org_id: orgId,
+					job_id: res.id,
+					status: res.success ? Status.Created : Status.Ineligible,
+					message: res.success ? null : res.errors.join(", ")
+				});
+				if (!res.success) {
+					logger.error("Failed to schedule push upgrade job", {org_id: orgId, error: res.errors.join(", ")})
+				}
 			}
-		}
-		try {
-			await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs)
-		} catch (e) {
-			logger.error("Failed to create upgrade jobs", {item: itemId, jobs: jobs.length, error: e.message || e})
-		}
+			try {
+				const recs = await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
+				resolve(recs);
+			} catch (e) {
+				logger.error("Failed to create upgrade jobs", {item: itemId, jobs: jobs.length, error: e.message || e});
+				reject(e);
+			}
+		});
 	});
 }
 
@@ -272,6 +277,64 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	return upgrade;
 }
 
+async function retryFailedUpgrade(id, createdBy) {
+	let conns = new Map(), pushReqs = new Map();
+
+	const failedUpgrade = await upgrades.retrieveById(id);
+	const failedJobs = await upgrades.findJobs(id, null, null, null, Status.Failed);
+	
+	if (failedJobs.length === 0) {
+		logger.info("No failed jobs found.  Nothing to retry.", {id})
+		return null;
+	}
+
+	let items = [];
+	const scheduledDate = new Date();
+	const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`);
+	for (let i = 0; i < failedJobs.length; i++) {
+		let job = failedJobs[i];
+		let conn = conns.get(job.package_org_id);
+		if (!conn) {
+			try {
+				conn = await sfdc.buildOrgConnection(job.package_org_id);
+				conns.set(job.package_org_id, conn);
+			} catch (e) {
+				logger.error("No valid package org found for job", {
+					id: job.id,
+					package_org_id: job.package_org_id,
+					error: e.message || e
+				});
+				continue;
+			}
+		}
+
+		let reqKey = job.package_org_id + job.version_id;
+		
+		let pushReq = pushReqs.get(reqKey);
+		if (!pushReq) {
+			pushReq = {
+				item: await createPushRequest(conn, upgrade.id, job.package_org_id, job.version_id, scheduledDate, createdBy),
+				conn: conn,
+				orgIds: []
+			};
+			pushReqs.set(reqKey, pushReq);
+		}
+
+		items.push(pushReq.item);
+		// Add this particular org id to the batch
+		pushReq.orgIds.push(job.org_id);
+	}
+
+	// Now, create the jobs
+	let reqs = Array.from(pushReqs.values());
+	for (let i = 0; i < reqs.length; i++) {
+		let pushReq = reqs[i];
+		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.push_request_id, pushReq.orgIds);
+	}
+
+	return upgrade;
+}
+
 async function findRequestsByStatus(packageOrgId, status) {
 	let conn = await sfdc.buildOrgConnection(packageOrgId);
 
@@ -414,6 +477,7 @@ exports.updatePushRequests = updatePushRequests;
 exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroups = upgradeOrgGroups;
+exports.retryFailedUpgrade = retryFailedUpgrade;
 exports.Status = Status;
 exports.isActiveStatus = isActiveStatus;
 exports.bulkFindSubscribersByIds = bulkFindSubscribersByIds;

@@ -37,6 +37,9 @@ export default class extends React.Component {
 	}
 
 	checkItemStatus() {
+		let failedItems = this.state.items.filter(i => i.failed_job_count != 0);
+		this.setState({hasFailedJobs: failedItems.length > 0});
+		
 		let shouldPing = this.state.upgrade.status === "Active";
 		if (!shouldPing)
 			return; // All of our items are done, so don't bother pinging.
@@ -99,6 +102,17 @@ export default class extends React.Component {
 		}
 	};
 
+	retryHandler = () => {
+		if (window.confirm(`Are you sure you want to retry this upgrade?  Only failed jobs will be rescheduled.`)) {
+			this.setState({isRetrying: true});
+			upgradeService.retry(this.state.upgrade.id).then((upgrade) => window.location = `/upgrade/${upgrade.id}`)
+			.catch((e) => {
+				this.setState({isRetrying: false});
+				NotificationManager.error(e.message, "Retry Failed");
+			});
+		}
+	};
+
 	render() {
 		let userCanActivate = true;
 		let user = JSON.parse(sessionStorage.getItem("user"));
@@ -118,12 +132,16 @@ export default class extends React.Component {
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
-				disabled: this.state.upgrade.status === "Closed" || !userCanActivate,
+				disabled: this.state.upgrade.status === "Done" || !userCanActivate,
 				detail: "Update items in this upgrade to Pending state"
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
-				disabled: this.state.upgrade.status === "Closed"
+				disabled: this.state.upgrade.status === "Done"
+			},
+			{
+				label: "Retry Upgrade", handler: this.retryHandler.bind(this),
+				disabled: !this.state.hasFailedJobs, spinning: this.state.isRetrying
 			}
 		];
 
