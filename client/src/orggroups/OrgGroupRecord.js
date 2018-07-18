@@ -55,7 +55,7 @@ export default class extends React.Component {
 	};
 
 	upgradeHandler = (versions, startDate, description) => {
-		orgGroupService.requestUpgrade(this.state.orggroup.id, versions.map(v => v.latest_version_id), startDate, description).then((res) => {
+		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
 			this.setState({schedulingUpgrade: false});
 			if (res.message) {
 				NotificationManager.error(res.message, "Upgrade failed");

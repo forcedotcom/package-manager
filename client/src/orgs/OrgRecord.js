@@ -15,7 +15,7 @@ export default class extends React.Component {
 	state = {org: {}};
 
 	upgradeHandler = (versions, startDate, description) => {
-		orgService.requestUpgrade(this.state.org.org_id, versions.map(v => v.latest_version_id), startDate, description).then((res) => {
+		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
 			if (res.message) {
 				NotificationManager.error(res.message, "Upgrade failed");
 			} else {

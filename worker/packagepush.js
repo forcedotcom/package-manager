@@ -1,6 +1,7 @@
 'use strict';
 
 const sfdc = require('../api/sfdcconn');
+const db = require('../util/pghelper');
 const packageversions = require('../api/packageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
@@ -33,7 +34,7 @@ async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId
 	return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
 }
 
-async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
+async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
 	return new Promise((resolve, reject) => {
 		let pushJobs = [];
 		for (let i = 0; i < orgIds.length; i++) {
@@ -56,14 +57,24 @@ async function createPushJob(conn, upgradeId, itemId, pushReqId, orgIds) {
 		});
 		batch.on("response", async function (results) { // fired when batch finished and result retrieved
 			let jobs = [];
+
+			const opvValues = [versionId, ...orgIds];
+			const opvParams = orgIds.map((v,i) => `$${i+2}`);
+			const opvs = await db.query(
+				`SELECT opv.package_version_id, opv.org_id FROM org_package_version opv, package_version pv
+				 WHERE pv.version_id = $1 AND pv.package_id = opv.package_id AND opv.org_id IN (${opvParams.join(",")})`, opvValues);
+            const opvMap = new Map();
+            opvs.forEach(v => opvMap.set(v.org_id, v));
+            
 			for (let i = 0; i < results.length; i++) {
-				let res = results[i];
-				let orgId = orgIds[i];
+				const res = results[i];
+				const opv = opvMap.get(orgIds[i]);
 				jobs.push({
-					org_id: orgId,
+					org_id: opv.org_id,
 					job_id: res.id,
 					status: res.success ? Status.Created : Status.Ineligible,
-					message: res.success ? null : res.errors.join(", ")
+					message: res.success ? null : res.errors.join(", "),
+					original_version_id: opv.package_version_id
 				});
 				if (!res.success) {
 					logger.error("Failed to schedule push upgrade job", {org_id: orgId, error: res.errors.join(", ")})
@@ -188,7 +199,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 		let version = versions[i];
 		let conn = await sfdc.buildOrgConnection(version.package_org_id);
 		let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy);
-		await createPushJob(conn, upgrade.id, item.id, item.push_request_id, orgIds);
+		await createPushJob(conn, upgrade.id, item.id, item.package_version_id, item.push_request_id, orgIds);
 	}
 	return upgrade;
 }
@@ -271,7 +282,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	let reqs = Array.from(pushReqs.values());
 	for (let i = 0; i < reqs.length; i++) {
 		let pushReq = reqs[i];
-		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.push_request_id, pushReq.orgIds);
+		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
 	}
 
 	return upgrade;
@@ -329,7 +340,7 @@ async function retryFailedUpgrade(id, createdBy) {
 	let reqs = Array.from(pushReqs.values());
 	for (let i = 0; i < reqs.length; i++) {
 		let pushReq = reqs[i];
-		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.push_request_id, pushReq.orgIds);
+		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
 	}
 
 	return upgrade;

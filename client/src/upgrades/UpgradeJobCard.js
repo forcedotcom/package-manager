@@ -18,6 +18,12 @@ export default class extends React.Component {
 			case "package_name":
 				window.location = "/package/" + rowInfo.original.package_id;
 				break;
+			case "original_version_number":
+				window.location = "/packageversion/" + rowInfo.original.original_version_id;
+				break;
+			case "current_version_number":
+				window.location = "/packageversion/" + rowInfo.original.current_version_id;
+				break;
 			case "version_number":
 				window.location = "/packageversion/" + rowInfo.original.version_id;
 				break;
@@ -54,55 +60,69 @@ export default class extends React.Component {
 
 	render() {
 		const columns = [
-			{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
-			{
-				Header: "Account",
-				accessor: "account_name",
-				sortable: true,
-				clickable: true,
-				minWidth: 250,
-				filterable: true
+			{Header: "Org Information", columns: [
+				{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
+				{
+					Header: "Account",
+					accessor: "account_name",
+					sortable: true,
+					clickable: true,
+					minWidth: 250,
+					filterable: true
+				}]
 			},
-			{
-				Header: "Package Name",
-				accessor: "package_name",
-				sortable: true,
-				clickable: true,
-				minWidth: 200,
-				filterable: true
+			{Header: "Version Information", columns: [
+				{
+					Header: "Package Name",
+					accessor: "package_name",
+					sortable: true,
+					clickable: true,
+					maxWidth: 200,
+					filterable: true
+				},
+				{
+					Header: "Original",
+					accessor: "original_version_number",
+					sortable: true,
+					clickable: true,
+					maxWidth: 100,
+					filterable: true
+				},
+				{
+					Header: "Current",
+					accessor: "current_version_number",
+					sortable: true,
+					clickable: true,
+					maxWidth: 100,
+					filterable: true
+				},
+				{
+					Header: "Target",
+					accessor: "version_number",
+					sortable: true,
+					clickable: true,
+					maxWidth: 100,
+					filterable: true
+				}]
 			},
-			{
-				Header: "Current Version",
-				accessor: "current_version_number",
-				sortable: true,
-				clickable: true,
-				minWidth: 100,
-				filterable: true
-			},
-			{
-				Header: "Upgrade Version",
-				accessor: "version_number",
-				sortable: true,
-				clickable: true,
-				minWidth: 100,
-				filterable: true
-			},
-			{
-				Header: "Status", accessor: "status", sortable: true, filterable: true,
-				Cell: row => (
-					<div>
-                        <span data-subject={row.value} data-message={row.original.message}
-							  onClick={this.openMessageWindow} style={{
-							padding: "2px 10px 2px 10px",
-							backgroundColor: row.original.message ? "#C00" : "inherit",
-							cursor: row.original.message ? "pointer" : "inherit",
-							color: row.original.message ? "white" : "inherit",
-							borderRadius: '10px',
-							transition: 'all .3s ease-in'
-						}}>
-                            {row.value ? row.value : "Retrieving Status..."}</span>
-					</div>
-				)
+			{Header: "Upgrade Status", columns: [
+				{
+					accessor: "status", sortable: true, filterable: true,
+					Cell: row => (
+						<div>
+							<span data-subject={row.value} data-message={row.original.message}
+								  onClick={this.openMessageWindow} style={{
+								padding: "2px 10px 2px 10px",
+								backgroundColor: row.original.message ? "#C00" : "inherit",
+								cursor: row.original.message ? "pointer" : "inherit",
+								color: row.original.message ? "white" : "inherit",
+								borderRadius: '10px',
+								transition: 'all .3s ease-in'
+							}}>
+								{row.value ? row.value : "Retrieving Status..."}</span>
+						</div>
+					)
+				}]
 			}
 		];
 

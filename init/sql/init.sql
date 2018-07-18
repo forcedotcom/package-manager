@@ -112,14 +112,15 @@ create table if not exists upgrade_item (
 );
 
 create table if not exists upgrade_job (
-  id              serial primary key,
-  upgrade_id      integer,
-  item_id         integer,
-  push_request_id varchar(18),
-  job_id          varchar(18),
-  org_id          varchar(18),
-  status          varchar(40),
-  message         text
+  id                  serial primary key,
+  upgrade_id          integer,
+  item_id             integer,
+  push_request_id     varchar(18),
+  job_id              varchar(18),
+  org_id              varchar(18),
+  original_version_id varchar(18),
+  status              varchar(40),
+  message             text
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS
@@ -225,4 +226,5 @@ alter table package_version
   drop column if exists real_version_number;
 
 alter table upgrade_job
-  add if not exists message text null;
+  add if not exists message text null,
+  add if not exists original_version_id varchar(18) null;

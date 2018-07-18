@@ -16,7 +16,7 @@ export default class extends React.Component {
 	render() {
 		return (
 			<div>
-				<RecordHeader type="Package Version" icon={PACKAGE_VERSION_ICON} title={this.state.packageVersion.name}>
+				<RecordHeader type="Package Version" icon={PACKAGE_VERSION_ICON} title={`${this.state.packageVersion.package_name} ${this.state.packageVersion.version_number} (${this.state.packageVersion.name})`}>
 					<HeaderField label="Package" value={this.state.packageVersion.package_name}/>
 					<HeaderField label="Number" value={this.state.packageVersion.version_number}/>
 					<HeaderField label="Name" value={this.state.packageVersion.name}/>

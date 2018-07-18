@@ -88,6 +88,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         i.start_time, i.created_by,
         pv.version_number, pv.version_id,
         pvc.version_number current_version_number, pvc.version_id current_version_id,
+        pvo.version_number original_version_number, pvo.version_id original_version_id,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
         a.account_name
         FROM upgrade_job j
@@ -95,6 +96,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN package_version pv on pv.version_id = i.package_version_id
         INNER JOIN org_package_version opv on opv.package_id = pv.package_id AND opv.org_id = j.org_id
         INNER JOIN package_version pvc on pvc.sfid = opv.package_version_id
+        INNER JOIN package_version pvo on pvo.sfid = j.original_version_id
         INNER JOIN package p on p.sfid = pv.package_id
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;
@@ -238,15 +240,15 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
 }
 
 async function upsertUpgradeJobs(upgradeId, itemId, requestId, jobs) {
-	let sql = `INSERT INTO upgrade_job (upgrade_id, item_id, push_request_id, job_id, org_id, status, message) VALUES`;
+	let sql = `INSERT INTO upgrade_job (upgrade_id, item_id, push_request_id, job_id, org_id, status, message, original_version_id) VALUES`;
 	let values = [upgradeId, itemId, requestId];
 	for (let i = 0, n = 1 + values.length; i < jobs.length; i++) {
 		const job = jobs[i];
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($1,$2,$3,$${n++},$${n++},$${n++},$${n++})`;
-		values.push(job.job_id, job.org_id, job.status, job.message);
+		sql += `($1,$2,$3,$${n++},$${n++},$${n++},$${n++},$${n++})`;
+		values.push(job.job_id, job.org_id, job.status, job.message, job.original_version_id);
 	}
 
 	sql += `on conflict (job_id) do update set status = excluded.status, message = excluded.message`;

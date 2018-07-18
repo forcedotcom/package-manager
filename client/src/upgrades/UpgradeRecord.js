@@ -37,7 +37,7 @@ export default class extends React.Component {
 	}
 
 	checkItemStatus() {
-		let failedItems = this.state.items.filter(i => i.failed_job_count != 0);
+		let failedItems = this.state.items.filter(i => i.failed_job_count !== "0");
 		this.setState({hasFailedJobs: failedItems.length > 0});
 		
 		let shouldPing = this.state.upgrade.status === "Active";
@@ -141,7 +141,7 @@ export default class extends React.Component {
 			},
 			{
 				label: "Retry Upgrade", handler: this.retryHandler.bind(this),
-				disabled: !this.state.hasFailedJobs, spinning: this.state.isRetrying
+				disabled: !(this.state.upgrade.status === "Done" && this.state.hasFailedJobs), spinning: this.state.isRetrying
 			}
 		];
 

@@ -4,13 +4,38 @@ import moment from 'moment';
 
 import 'react-datepicker/dist/react-datepicker.css';
 import '../components/datepicker.css';
-import {HeaderIcon} from "../components/Icons";
+import * as packageVersionService from "../services/PackageVersionService";
 
 export default class extends React.Component {
 	state = {
-		versions: this.props.versions,
 		startDate: moment().add(15, 'minutes'),
 		description: this.props.description || ""
+	};
+
+	componentDidMount() {
+		const packageIds = new Set();
+		this.props.versions.forEach(v => packageIds.add(v.package_id));
+		packageVersionService.requestAllValid(Array.from(packageIds)).then(validVersions => {
+			const packageMap = new Map();
+			validVersions.forEach(v => {
+				let p = packageMap.get(v.package_id);
+				if (!p) {
+					p = {id: v.package_id, name: v.package_name, selectedVersion: null, versions: []};
+					packageMap.set(p.id, p);
+				}
+				if (p.selectedVersion == null && v.status === "Verified") {
+					p.selectedVersion = v.version_id;
+				}
+				p.versions.push(v);
+			});
+			this.setState({packageMap});
+		});
+	}
+
+	handleVersionChange = (packageId, selectedVersion) => {
+		let p = this.state.packageMap.get(packageId);
+		p.selectedVersion = selectedVersion;
+		this.setState({packageMap: this.state.packageMap});
 	};
 
 	handleDateChange = (startDate) => {
@@ -33,18 +58,20 @@ export default class extends React.Component {
 		if (!valid)
 			return;
 
+		const versions = Array.from(this.state.packageMap.values()).map(p => p.selectedVersion).filter(versionId => !versionId.startsWith("[[NONE]]"));
+		
 		this.setState({isScheduling: true});
-		this.props.onUpgrade(this.state.versions, this.state.startDate, this.state.description);
-	};
-
-	handleVersionChange = (versions) => {
-		this.setState({versions});
+		this.props.onUpgrade(versions, this.state.startDate, this.state.description);
 	};
 
 	render() {
+		const versionFields = this.state.packageMap ? this.props.versions.map(v =>
+			<VersionField key={v.package_id} package={this.state.packageMap.get(v.package_id)} onSelect={this.handleVersionChange}/> 
+		) : [];
+		
 		return (
 			<div>
-				<div aria-hidden="false" role="dialog" className="slds-modal slds-fade-in-open">
+				<div className="slds-modal slds-fade-in-open">
 					<div className="slds-modal__container">
 						<div className="slds-modal__header">
 							<h2 className="slds-text-heading--medium">Schedule Upgrade</h2>
@@ -55,8 +82,11 @@ export default class extends React.Component {
 								<span className="slds-assistive-text">Close</span>
 							</button>
 						</div>
-						<div style={{height: 350}} className="slds-modal__content slds-p-around_medium">
+						<div className="slds-modal__content slds-p-around_medium">
 							<div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
+								<div className="slds-form-element">
+									<label className="slds-text-heading_small slds-m-bottom--x-small">Details</label>
+								</div>
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="text-input-id-1">Start
 										Date</label>
@@ -82,10 +112,9 @@ export default class extends React.Component {
 										<span className="slds-form-element__help" id="form-error-01">Description is required</span> : ""}
 								</div>
 								<div className="slds-form-element">
-									<label className="slds-form-element__label">Selected Versions</label>
-									{this.props.versions ? <VersionPills versions={this.props.versions}
-																		 onUpdateVersions={this.handleVersionChange.bind(this)}/> : ""}
+									<label className="slds-text-heading_small">Package Upgrade Versions</label>
 								</div>
+								{versionFields}
 							</div>
 						</div>
 
@@ -111,58 +140,32 @@ export default class extends React.Component {
 	}
 }
 
-class VersionPills extends React.Component {
-	state = {versions: this.props.versions};
-
-	handleRemove = (version) => {
-		let newVersions = [];
-		for (let i = 0; i < this.state.versions.length; i++) {
-			if (this.state.versions[i].id !== version.id) {
-				newVersions.push(this.state.versions[i]);
-			}
-		}
-		this.setState({versions: newVersions});
-		this.props.onUpdateVersions(newVersions);
+class VersionField extends React.Component {
+	versionChangeHandler = (e) => {
+		this.props.onSelect(this.props.package.id, e.target.value);
 	};
 
 	render() {
-		let pills = this.props.versions.map(v =>
-			<VersionPill key={v.id} version={v}
-						 onRemove={this.state.versions.length > 1 ? this.handleRemove : undefined}/>
-		);
+		const p = this.props.package;
+		const availableVersions = p.versions.concat([{version_number: "NONE", version_id: "[[NONE]]" + p.id}]);
+		let options = availableVersions.map(v => 
+			<span key={v.version_id} className="slds-button slds-radio_button">
+				<input checked={v.version_id === this.props.package.selectedVersion} type="radio" name={p.id} id={v.version_id} value={v.version_id}
+					onChange={this.versionChangeHandler}/>
+				<label className="slds-radio_button__label" htmlFor={v.version_id}>
+					<span className="slds-radio_faux">{v.version_number}</span>
+				</label>
+			</span>);
+		
 		return (
-			<div>{pills}</div>);
-	}
-}
-
-class VersionPill extends React.Component {
-	state = {version: this.props.version};
-
-	handleRemove = () => {
-		this.props.onRemove(this.props.version);
-		delete this.state.version;
-	};
-
-	render() {
-		return !this.state.version ? (<span/>) : (
-			<span className="slds-pill slds-pill_link slds-m-right--xxx-small">
-              <span className="slds-pill__icon_container">
-                <HeaderIcon name="thanks" category="standard"/>
-              </span>
-              <div className="slds-pill__action"
-				   title={this.state.version.package_name + ' ' + this.state.version.latest_version_number}>
-                <span className="slds-pill__label">{this.state.version.package_name}</span>
-              </div>
-              <button disabled={!this.props.onRemove}
-					  className="slds-button slds-button_icon slds-button_icon slds-pill__remove" title="Remove"
-					  onClick={this.handleRemove}>
-                  <svg className="slds-button__icon" aria-hidden="true">
-                    <use xmlnsXlink="http://www.w3.org/1999/xlink"
-						 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
-                  </svg>
-                  <span className="slds-assistive-text">Remove</span>
-              </button>
-            </span>
+			<div className="slds-form-element">
+				<fieldset className="slds-form-element">
+					<legend className="slds-form-element__legend slds-form-element__label">{p.name}</legend>
+					<div className="slds-form-element__control">
+						<div className="slds-radio_button-group">{options}</div>
+					</div>
+				</fieldset>
+			</div>
 		);
 	}
 }

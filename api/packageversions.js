@@ -32,31 +32,37 @@ async function requestAll(req, res, next) {
 			req.query.sort_field,
 			req.query.sort_dir,
 			req.query.status,
-			req.query.packageId,
-			req.query.packageOrgId,
-			req.query.licensedOrgId ? [req.query.licensedOrgId] : null,
-			req.query.orgGroupId ? [req.query.orgGroupId] : null);
+			req.query.packageIds,
+			req.query.packageOrgIds,
+			req.query.licensedOrgIds,
+			req.query.orgGroupIds);
 		return res.send(JSON.stringify(recs));
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function findAll(sortField, sortDir, status, packageId, packageOrgId, licensedOrgIds, orgGroupIds) {
+async function findAll(sortField, sortDir, status, packageIds, packageOrgIds, licensedOrgIds, orgGroupIds) {
 	let whereParts = [], values = [], select = SELECT_ALL;
 	if (status && status !== "All") {
-		values.push(status);
-		whereParts.push("pv.status = $" + values.length);
+		status = status.split(",");
+		let params = status.map((v,i) => '$' + (values.length + i + 1));
+		whereParts.push(`pv.status IN (${params.join(",")})`);
+		values = values.concat(status);
 	}
 
-	if (packageId) {
-		values.push(packageId);
-		whereParts.push("pv.package_id = $" + values.length);
+	if (packageIds) {
+		packageIds = packageIds.split(",");
+		let params = packageIds.map((v,i) => '$' + (values.length + i + 1));
+		whereParts.push(`pv.package_id IN (${params.join(",")})`);
+		values = values.concat(packageIds);
 	}
 
-	if (packageOrgId) {
-		values.push(packageOrgId);
-		whereParts.push("p.package_org_id = $" + values.length);
+	if (packageOrgIds) {
+		packageOrgIds = packageOrgIds.split(",");
+		let params = packageOrgIds.map((v,i) => '$' + (values.length + i + 1));
+		whereParts.push(`p.package_org_id IN (${params.join(",")})`);
+		values = values.concat(packageOrgIds);
 	}
 
 	if (licensedOrgIds) {
@@ -64,11 +70,9 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
 		values.push("Suspended");
 		values.push("Uninstalled");
 		whereParts.push(`op.license_status NOT IN ($${values.length-1}, $${values.length})`);
-		
-		let params = [];
-		for (let i = 1; i <= licensedOrgIds.length; i++) {
-			params.push('$' + (values.length + i));
-		}
+
+		licensedOrgIds = licensedOrgIds.split(",");
+		let params = licensedOrgIds.map((v,i) => '$' + (values.length + i + 1));
 		whereParts.push(`op.org_id IN (${params.join(",")})`);
 		values = values.concat(licensedOrgIds);
 	} 
@@ -78,10 +82,8 @@ async function findAll(sortField, sortDir, status, packageId, packageOrgId, lice
 		values.push("Uninstalled");
 		whereParts.push(`op.license_status NOT IN ($${values.length-1}, $${values.length})`);
 
-		let params = [];
-		for (let i = 1; i <= orgGroupIds.length; i++) {
-			params.push('$' + (values.length + i));
-		}
+		orgGroupIds = orgGroupIds.split(",");
+		let params = orgGroupIds.map((v,i) => '$' + (values.length + i + 1));
 		whereParts.push(`gm.org_group_id IN (${params.join(",")})`);
 		values = values.concat(orgGroupIds);
 	}
