@@ -259,8 +259,8 @@ async function requestAll(req, res, next) {
 	try {
 		let upgrades = await findAll(req.query.sort_field, req.query.sort_dir);
 		return res.json(upgrades);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -281,8 +281,8 @@ async function requestItemsByUpgrade(req, res, next) {
 		}
 
 		return res.json(items);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -323,8 +323,8 @@ async function requestAllJobs(req, res, next) {
 		}
 
 		return res.json(upgradeJobs);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -401,8 +401,8 @@ async function requestActivateUpgrade(req, res, next) {
 		const items = await activateUpgrade(id, req.session.username);
 		startUpgradeMonitor(id, req.session.username);
 		res.json(items);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -560,8 +560,8 @@ async function requestCancelUpgrade(req, res, next) {
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		await changeUpgradeItemAndJobStatus(items, push.Status.Canceled);
 		res.json(items);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -576,8 +576,8 @@ async function requestActivateUpgradeItem(req, res, next) {
 		await push.updatePushRequests([item], push.Status.Pending, req.session.username);
 		await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
 		res.json(item);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -588,8 +588,8 @@ async function requestCancelUpgradeItem(req, res, next) {
 		await push.updatePushRequests([item], push.Status.Canceled, req.session.username);
 		await changeUpgradeItemAndJobStatus([item], push.Status.Canceled);
 		res.json(item);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 

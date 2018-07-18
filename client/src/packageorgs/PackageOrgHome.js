@@ -6,6 +6,7 @@ import {HeaderNote, HomeHeader} from '../components/PageHeader';
 import PackageOrgList from './PackageOrgList';
 import * as authService from "../services/AuthService";
 import * as sortage from "../services/sortage";
+import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "PackageOrgList";
@@ -47,6 +48,9 @@ export default class extends React.Component {
 				packageorgs,
 				isRefreshing: false
 			}));
+		}).catch(e => {
+			this.setState({isRefreshing: false});
+			NotificationManager.error(e, "Refresh Failed");
 		});
 	};
 

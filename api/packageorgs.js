@@ -29,7 +29,7 @@ async function requestAll(req, res, next) {
 
 		return res.send(JSON.stringify(recs));
 	} catch (err) {
-		next(err);
+		return res.status(500).send(err.message || err);
 	}
 }
 
@@ -41,7 +41,7 @@ async function requestById(req, res, next) {
 		await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
 		return res.json(recs[0]);
 	} catch (err) {
-		next(err);
+		return res.status(500).send(err.message || err);
 	}
 }
 
@@ -137,7 +137,7 @@ async function requestDelete(req, res, next) {
 		await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
 		return res.send({result: 'ok'});
 	} catch (err) {
-		return next(err);
+		return res.status(500).send(err.message || err);
 	}
 }
 
@@ -149,7 +149,7 @@ async function requestUpdate(req, res, next) {
 		let orgs = await db.update(`UPDATE package_org SET description = $1, type = $2 WHERE org_id = $3`, [description, type, orgId]);
 		return res.json(orgs[0]);
 	} catch (err) {
-		return next(err);
+		return res.status(500).send(err.message || err);
 	}
 }
 
@@ -166,7 +166,7 @@ async function requestRefresh(req, res, next) {
 		await crypt.passwordDecryptObjects(CRYPT_KEY, orgs, ['access_token', 'refresh_token']);
 		return res.json(orgs);
 	} catch (err) {
-		return next(err);
+		return res.status(500).send(err.message || err);
 	}
 }
 

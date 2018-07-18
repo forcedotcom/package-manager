@@ -28,8 +28,8 @@ async function requestAll(req, res, next) {
 	try {
 		let recs = await db.query(SELECT_ALL + where + sort + limit, values);
 		return res.json(recs);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -39,8 +39,8 @@ async function requestById(req, res, next) {
 	try {
 		let rows = await db.query(SELECT_ALL + where, [req.params.id]);
 		return res.json(rows[0]);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -48,8 +48,8 @@ async function requestMembers(req, res, next) {
 	try {
 		let recs = await orgs.findByGroup(req.params.id);
 		return res.json(recs);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -57,8 +57,8 @@ async function requestAddMembers(req, res, next) {
 	try {
 		let results = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
 		return res.json(results);
-	} catch (err) {
-		return next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -66,8 +66,8 @@ async function requestRemoveMembers(req, res, next) {
 	try {
 		await deleteOrgMembers(req.params.id, req.body.orgIds);
 		return requestMembers(req, res, next);
-	} catch (err) {
-		return next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -79,8 +79,8 @@ async function requestCreate(req, res, next) {
 			await insertOrgMembers(rows[0].id, rows[0].name, og.orgIds);
 		}
 		return res.json(rows[0]);
-	} catch (err) {
-		return next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -93,8 +93,8 @@ async function requestUpdate(req, res, next) {
 			await insertOrgMembers(og.id, og.name, og.orgIds);
 		}
 		return res.send({result: 'ok'});
-	} catch (err) {
-		return next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -106,8 +106,8 @@ async function requestDelete(req, res, next) {
 		await db.delete(`DELETE FROM org_group_member WHERE org_group_id IN (${params.join(",")})`, ids);
 		await db.delete(`DELETE FROM org_group WHERE id IN (${params.join(",")})`, ids);
 		return res.send({result: 'ok'});
-	} catch (err) {
-		return next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -118,7 +118,7 @@ function requestUpgrade(req, res, next) {
 		})
 		.catch((e) => {
 			logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e});
-			next(e);
+			return res.status(500).send(e.message || e);
 		});
 }
 
