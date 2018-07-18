@@ -3,14 +3,14 @@ const db = require('../util/pghelper');
 const SELECT_ALL =
 	`SELECT 
         pv.id, pv.sfid, pv.name, pv.version_number, pv.version_sort, pv.package_id, pv.release_date, pv.status, pv.version_id, 
-        p.package_org_id, p.name as package_name 
+        p.package_org_id, p.name as package_name, p.dependency_tier
     FROM package_version pv 
     INNER JOIN package p on p.sfid = pv.package_id`;
 
 const SELECT_ALL_IN_ORG =
 	`SELECT
         pv.id, pv.sfid, pv.name, pv.version_number, pv.version_sort, pv.package_id, pv.release_date, pv.status, pv.version_id,
-        p.package_org_id, p.name as package_name, 
+        p.package_org_id, p.name as package_name, p.dependency_tier,
         pvl.version_number latest_version_number, pvl.version_id latest_version_id,
         op.org_id, op.license_status,
         o.instance,
@@ -37,8 +37,8 @@ async function requestAll(req, res, next) {
 			req.query.licensedOrgIds,
 			req.query.orgGroupIds);
 		return res.send(JSON.stringify(recs));
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 
@@ -97,8 +97,8 @@ async function requestById(req, res, next) {
 	try {
 		let recs = await findByIds([req.params.id]);
 		return res.json(recs[0]);
-	} catch (err) {
-		next(err);
+	} catch (e) {
+		return res.status(500).send(e.message || e);
 	}
 }
 

@@ -51,6 +51,9 @@ export default class extends React.Component {
 		}
 		const validVersions = [];
 		Object.entries(validSet).forEach(([key, val]) => {validVersions.push(val)});
+		validVersions.sort(function (a, b) {
+			return a.dependency_tier > b.dependency_tier ? 1 : -1;
+		});
 		return validVersions.length > 0 ? validVersions : null;
 	};
 
@@ -127,7 +130,7 @@ export default class extends React.Component {
 			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(members => {
 				packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
 					this.state.selected.clear();
-					let validVersions = this.stripVersions(versions);
+					const validVersions = this.stripVersions(versions);
 					this.setState({showSelected: false, members, versions, validVersions});
 				});
 			}).catch(e => NotificationManager.error(e.message, "Removal Failed"));
