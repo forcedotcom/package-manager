@@ -23,8 +23,11 @@ const Events = {
 	FETCH_INVALID: "fetch-invalid",
 	CANCEL_JOBS: "cancel-jobs",
 	UPLOAD_ORGS: "upload-orgs",
-	REFRESH_GROUP: "refresh-group",
-	REFRESH_VERSIONS: "refresh-versions"
+	GROUP: "group",
+	ORG_VERSIONS: "org-versions",
+	REFRESH_ORG_VERSIONS: "refresh-org-versions",
+	GROUP_VERSIONS: "group-versions",
+	REFRESH_GROUP_VERSIONS: "refresh-group-versions"
 };
 
 let jobQueue = [];
@@ -182,10 +185,14 @@ function connect(sock) {
 	socket.on(Events.CANCEL_JOBS, function (jobIds) {
 		cancelJobs(jobIds);
 	});
-	socket.on(Events.REFRESH_VERSIONS, async function (groupId) {
+	socket.on(Events.REFRESH_ORG_VERSIONS, async function (orgId) {
+		await fetchVersions([orgId]);
+		emit(Events.ORG_VERSIONS, orgId);
+	});
+	socket.on(Events.REFRESH_GROUP_VERSIONS, async function (groupId) {
 		let orgIds = (await orgs.findByGroup(groupId)).map(o => o.org_id);
 		await fetchVersions(orgIds);
-		emit(Events.REFRESH_VERSIONS, groupId);
+		emit(Events.GROUP_VERSIONS, groupId);
 	});
 	socket.on(Events.UPLOAD_ORGS, async function () {
 		await uploadOrgsToSumo();

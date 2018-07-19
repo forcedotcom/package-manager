@@ -10,34 +10,25 @@ import {ORG_ICON} from "../Constants";
 import * as orgGroupService from "../services/OrgGroupService";
 import SelectGroupWindow from "./SelectGroupWindow";
 import InstalledVersionCard from "../packageversions/InstalledVersionCard";
+import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
 	state = {org: {}};
 
-	upgradeHandler = (versions, startDate, description) => {
-		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
-			if (res.message) {
-				NotificationManager.error(res.message, "Upgrade failed");
-			} else {
-				window.location = `/upgrade/${res.id}`;
-			}
-		});
-	};
-
-	closeSchedulerWindow = () => {
-		this.setState({schedulingUpgrade: false});
-	};
-
-	openSchedulerWindow = () => {
-		this.setState({schedulingUpgrade: true});
-	};
-
 	componentDidMount() {
+		notifier.on('org-versions', this.versionsRefreshed);
+
 		orgService.requestById(this.props.match.params.orgId).then(org => this.setState({org}));
 		packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
 			let validVersions = this.stripInvalidVersions(versions);
 			this.setState({versions, validVersions});
+		}).catch(e => {
+			notifier.error(e.message || e || "What happened?", "Catastrophic Failure");
 		});
+	}
+
+	componentWillUnmount() {
+		notifier.remove('org-versions', this.versionsRefreshed);
 	}
 
 	stripInvalidVersions = (versions) => {
@@ -50,6 +41,42 @@ export default class extends React.Component {
 			}
 		}
 		return valid.length > 0 ? valid : null;
+	};
+	
+	upgradeHandler = (versions, startDate, description) => {
+		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
+			if (res.message) {
+				NotificationManager.error(res.message, "Upgrade failed");
+			} else {
+				window.location = `/upgrade/${res.id}`;
+			}
+		});
+	};
+
+	refreshHandler = () => {
+		this.setState({isRefreshing: true});
+		notifier.emit("refresh-org-versions", this.state.org.id);
+	};
+
+	versionsRefreshed = (orgId) => {
+		if (this.state.org.id === orgId) {
+			// Reload our versions because they may have changed
+			packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
+				let validVersions = this.stripInvalidVersions(versions);
+				this.setState({isRefreshing: false, versions, validVersions});
+			}).catch(e => {
+				this.setState({isRefreshing: false});
+				notifier.error(e.message, "Refresh Failed");
+			});
+		}
+	};
+	
+	closeSchedulerWindow = () => {
+		this.setState({schedulingUpgrade: false});
+	};
+
+	openSchedulerWindow = () => {
+		this.setState({schedulingUpgrade: true});
 	};
 
 	addToGroupHandler = (groupId, groupName) => {
@@ -70,13 +97,19 @@ export default class extends React.Component {
 
 	render() {
 		const actions = [
-			{label: "Add To Group", handler: this.openGroupWindow},
 			{
 				label: "Upgrade Packages",
 				group: "upgrade",
 				disabled: !this.state.validVersions,
 				handler: this.openSchedulerWindow
-			}
+			},
+			{label: "Add To Group", handler: this.openGroupWindow},
+			{
+				handler: this.refreshHandler,
+				label: "Refresh Versions",
+				spinning: this.state.isRefreshing,
+				detail: "Fetch latest installed package version information for this org."
+			},
 		];
 		return (
 			<div>

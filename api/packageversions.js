@@ -95,90 +95,27 @@ async function findAll(sortField, sortDir, status, packageIds, packageOrgIds, li
 
 async function requestById(req, res, next) {
 	try {
-		let recs = await findByIds([req.params.id]);
+		let recs = await findByVersionIds([req.params.id]);
 		return res.json(recs[0]);
 	} catch (e) {
 		return res.status(500).send(e.message || e);
 	}
 }
 
-async function findByIds(versionIds) {
-	let whereParts = [], values = [], select = SELECT_ALL;
-
-	if (versionIds) {
-		let params = [];
-		for (let i = 1; i <= versionIds.length; i++) {
-			params.push('$' + i);
-		}
-		whereParts.push(`pv.version_id IN (${params.join(",")})`);
-		values = values.concat(versionIds);
-	}
-
-	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-	return db.query(select + where, values);
+async function findByVersionIds(versionIds) {
+	const select = SELECT_ALL;
+	const params = versionIds.map((v,i) => '$' + (i + 1));
+	const where = ` WHERE pv.version_id IN (${params.join(",")})`;
+	return db.query(select + where, versionIds);
 }
 
-async function findLatestByOrgIds(versionIds, orgIds) {
-	let whereParts = [], values = [], select = SELECT_ALL_IN_ORG;
-
-	if (versionIds) {
-		let params = [];
-		for (let i = 1; i <= versionIds.length; i++) {
-			params.push('$' + i);
-		}
-		whereParts.push(`pvl.version_id IN (${params.join(",")})`);
-		values = values.concat(versionIds);
-	}
-
-	if (orgIds) {
-		let params = [];
-		for (let i = 1; i <= orgIds.length; i++) {
-			params.push('$' + (values.length + i));
-		}
-
-		whereParts.push(`op.org_id IN (${params.join(",")})`);
-		values = values.concat(orgIds);
-
-		// Filter out orgs already on the latest version
-		whereParts.push(`op.package_version_id != pvl.sfid`);
-	}
-
-	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-	return db.query(select + where, values);
+async function findNewerVersions(packageId, versionSort) {
+	const select = SELECT_ALL;
+	const where = ` WHERE pv.package_id = $1 AND version_sort >= $2`;
+	return db.query(select + where, [packageId, versionSort]);
 }
 
-async function findLatestByGroupIds(versionIds, orgGroupIds) {
-	let whereParts = [], values = [], select = SELECT_ALL;
-
-	if (versionIds) {
-		let params = [];
-		for (let i = 1; i <= versionIds.length; i++) {
-			params.push('$' + (values.length + i));
-		}
-		whereParts.push(`pvl.version_id IN (${params.join(",")})`);
-		values = values.concat(versionIds);
-	}
-
-
-	if (orgGroupIds) {
-		select = SELECT_ALL_IN_ORG_GROUP;
-		let params = [];
-		for (let i = 1; i <= orgGroupIds.length; i++) {
-			params.push('$' + (values.length + i));
-		}
-
-		whereParts.push(`gm.org_group_id IN (${params.join(",")})`);
-		values = values.concat(orgGroupIds);
-
-		// Filter out orgs already on the latest version
-		whereParts.push(`op.package_version_id != pvl.sfid`);
-	}
-
-	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-	return db.query(select + where, values);
-}
-
-exports.findLatestByOrgIds = findLatestByOrgIds;
-exports.findLatestByGroupIds = findLatestByGroupIds;
 exports.requestAll = requestAll;
 exports.requestById = requestById;
+exports.findByVersionIds = findByVersionIds;
+exports.findNewerVersions = findNewerVersions;

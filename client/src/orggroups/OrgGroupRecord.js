@@ -29,8 +29,8 @@ export default class extends React.Component {
 	};
 
 	componentDidMount() {
-		notifier.on('refresh-versions', this.versionsRefreshed);
-		notifier.on('refresh-group', this.groupRefreshed);
+		notifier.on('group-versions', this.versionsRefreshed);
+		notifier.on('group', this.groupRefreshed);
 
 		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => {
 			orgGroupService.requestMembers(orggroup.id).then(members => {
@@ -44,8 +44,8 @@ export default class extends React.Component {
 	}
 	
 	componentWillUnmount() {
-		notifier.remove('refresh-versions', this.versionsRefreshed);
-		notifier.remove('refresh-group', this.groupRefreshed);
+		notifier.remove('group-versions', this.versionsRefreshed);
+		notifier.remove('group', this.groupRefreshed);
 	}
 
 	stripVersions = (versions) => {
@@ -93,7 +93,7 @@ export default class extends React.Component {
 
 	refreshHandler = () => {
 		this.setState({isRefreshing: true});
-		notifier.emit("refresh-versions", this.state.orggroup.id);
+		notifier.emit("refresh-group-versions", this.state.orggroup.id);
 	};
 
 	versionsRefreshed = (groupId) => {

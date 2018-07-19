@@ -3,6 +3,7 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const packageversions = require('../api/packageversions');
+const orgpackageversions = require('../api/orgpackageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
 
@@ -27,8 +28,8 @@ const ActiveStatus = {
 };
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
-const ALLOWED_ORGS = process.env.ALLOWED_ORGS ? JSON.parse(process.env.ALLOWED_ORGS).map(id => id.substring(0,15)) : null; 
-const DENIED_ORGS = process.env.DENIED_ORGS ? JSON.parse(process.env.DENIED_ORGS).map(id => id.substring(0,15)) : null; 
+const ALLOWED_ORGS = process.env.ALLOWED_ORGS ? new Set(JSON.parse(process.env.ALLOWED_ORGS).map(id => id.substring(0,15))) : null; 
+const DENIED_ORGS = process.env.DENIED_ORGS ? new Set(JSON.parse(process.env.DENIED_ORGS).map(id => id.substring(0,15))) : null; 
 
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
@@ -167,8 +168,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 	if (ALLOWED_ORGS) {
 		// Whitelisting enforced.
 		orgIds = orgIds.filter(orgId => {
-			let allowed = ALLOWED_ORGS.indexOf(orgId) !== -1;
-			if (!allowed) {
+			if (!ALLOWED_ORGS.has(orgId)) {
 				logger.warn("Skipping disallowed org", {org_id: orgId});
 				return false;
 			} else {
@@ -180,8 +180,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 	if (DENIED_ORGS) {
 		// Blacklisting enforced.
 		orgIds = orgIds.filter(orgId => {
-			let denied = DENIED_ORGS.indexOf(orgId) !== -1;
-			if (denied) {
+			if (DENIED_ORGS.has(orgId)) {
 				logger.warn("Skipping denied org", {org_id: orgId});
 				return false;
 			} else {
@@ -196,28 +195,43 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 	}
 
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
-
-	let versions = await packageversions.findLatestByOrgIds(versionIds, orgIds);
+	
+	let versions = await packageversions.findByVersionIds(versionIds);
 	for (let i = 0; i < versions.length; i++) {
 		let version = versions[i];
 		let conn = await sfdc.buildOrgConnection(version.package_org_id);
-		let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy);
+		let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.version_id, scheduledDate, createdBy);
 		await createPushJob(conn, upgrade.id, item.id, item.package_version_id, item.push_request_id, orgIds);
 	}
 	return upgrade;
 }
 
+async function findCurrentAndNewerVersions(versions) {
+	let newer = [];
+	for (let i = 0; i < versions.length; i++) {
+		const v = versions[i];
+		newer = newer.concat(await packageversions.findNewerVersions(v.package_id, v.version_sort));
+	}
+	return newer;
+}
+
 async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description) {
-	let conns = new Map(), pushReqs = new Map();
+	const conns = new Map(), pushReqs = new Map();
 
-	let versions = await packageversions.findLatestByGroupIds(versionIds, orgGroupIds);
-
+	const versions = await packageversions.findByVersionIds(versionIds);
+	
+	const upgradeVersionsByPackage = new Map();
+	versions.forEach(v => upgradeVersionsByPackage.set(v.package_id, v));
+	
+	const currentAndNewer = await findCurrentAndNewerVersions(versions);
+	
+	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), orgGroupIds, currentAndNewer.map(v => v.version_id));
+	
 	if (ALLOWED_ORGS) {
 		// Whitelisting enforced.
-		versions = versions.filter(version => {
-			let allowed = ALLOWED_ORGS.indexOf(version.org_id) !== -1;
-			if (!allowed) {
-				logger.warn("Skipping disallowed org", {org_id: version.org_id});
+		opvs = opvs.filter(opv => {
+			if (!ALLOWED_ORGS.has(opv.org_id)) {
+				logger.warn("Skipping disallowed org", {org_id: opv.org_id});
 				return false;
 			} else {
 				return true;
@@ -227,10 +241,9 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 	if (DENIED_ORGS) {
 		// Blacklisting enforced.
-		versions = versions.filter(version => {
-			let denied = DENIED_ORGS.indexOf(version.org_id) !== -1;
-			if (denied) {
-				logger.warn("Skipping denied org", {org_id: version.org_id});
+		opvs = opvs.filter(opv => {
+			if (DENIED_ORGS.has(opv.org_id)) {
+				logger.warn("Skipping denied org", {org_id: opv.org_id});
 				return false;
 			} else {
 				return true;
@@ -238,47 +251,45 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		});
 	}
 
-	if (versions.length === 0) {
+	if (opvs.length === 0) {
 		// Orgs were stripped above, nothing to do 
 		return {message: "None of your orgs were allowed to be upgraded"};
 	}
 
-	let items = [];
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
-	for (let i = 0; i < versions.length; i++) {
-		let version = versions[i];
-
-		let conn = conns.get(version.package_org_id);
+	for (let i = 0; i < opvs.length; i++) {
+		let opv = opvs[i];
+		let conn = conns.get(opv.package_org_id);
 		if (!conn) {
 			try {
-				conn = await sfdc.buildOrgConnection(version.package_org_id);
-				conns.set(version.package_org_id, conn);
+				conn = await sfdc.buildOrgConnection(opv.package_org_id);
+				conns.set(opv.package_org_id, conn);
 			} catch (e) {
 				logger.error("No valid package org found for version", {
-					id: version.version_id,
-					package_org_id: version.package_org_id,
-					org_id: version.org_id,
+					id: opv.version_id,
+					package_org_id: opv.package_org_id,
+					org_id: opv.org_id,
 					error: e.message || e
 				});
 				continue;
 			}
 		}
 
-		let reqKey = version.package_org_id + version.latest_version_id;
+		const upgradeVersion = upgradeVersionsByPackage.get(opv.package_id);
+		let reqKey = opv.package_org_id + upgradeVersion.version_id;
 		
 		let pushReq = pushReqs.get(reqKey);
 		if (!pushReq) {
 			pushReq = {
-				item: await createPushRequest(conn, upgrade.id, version.package_org_id, version.latest_version_id, scheduledDate, createdBy),
+				item: await createPushRequest(conn, upgrade.id, opv.package_org_id, upgradeVersion.version_id, scheduledDate, createdBy),
 				conn: conn,
 				orgIds: []
 			};
 			pushReqs.set(reqKey, pushReq);
 		}
 
-		items.push(pushReq.item);
 		// Add this particular org id to the batch
-		pushReq.orgIds.push(version.org_id);
+		pushReq.orgIds.push(opv.org_id);
 	}
 
 	// Now, create the jobs

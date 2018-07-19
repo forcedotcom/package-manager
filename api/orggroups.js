@@ -93,7 +93,7 @@ async function requestUpdate(req, res, next) {
 		if (og.orgIds && og.orgIds.length > 0) {
 			insertOrgMembers(og.id, og.name, og.orgIds)
 			.then(() => {
-				emit(Events.REFRESH_GROUP, og.id);
+				emit(Events.GROUP, og.id);
 			})
 			.catch(e => {
 				emit(Events.FAIL, {subject: "Org Import Failed", message: e.message});

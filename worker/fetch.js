@@ -202,7 +202,7 @@ function fetchInvalid() {
 }
 
 function fetchVersions(orgIds, packageOrgIds) {
-	return new admin.AdminJob("refresh-versions", "Fetch package versions installed on orgs",
+	return new admin.AdminJob(admin.Events.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
 		[
 			{
 				name: "Fetching package versions from subscribers",
