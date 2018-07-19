@@ -1,19 +1,23 @@
 import React from 'react';
 import * as authService from "../services/AuthService";
-
-const WELCOMONING = [
-	"Welcome to the machine.",
-	"Do not make me regret this.",
-	"Look both ways before crossing.",
-	"Mind the gap.",
-	"It only takes one drink.",
-	"Do you know where your children are?",
-];
+import moment from "moment";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		sessionStorage.removeItem('user');
+
+		const WELCOMONING = [
+			"Welcome to the machine.",
+			"Do not make me regret this.",
+			"Look both ways before crossing.",
+			"Mind the gap.",
+			"It only takes one drink.",
+			"Loose lips sink ships.",
+			"Think twice, Tweet none times.  None more tweets.",
+			`It is after ${moment().format('h a')}. Do you know where your children are?`,
+			`${moment().format('h:mm a')} is not Miller Time`
+		];
 
 		this.state = {
 			message: WELCOMONING[Math.floor(Math.random() * WELCOMONING.length)]

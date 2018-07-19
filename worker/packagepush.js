@@ -27,6 +27,9 @@ const ActiveStatus = {
 };
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
+const ALLOWED_ORGS = process.env.ALLOWED_ORGS ? JSON.parse(process.env.ALLOWED_ORGS).map(id => id.substring(0,15)) : null; 
+const DENIED_ORGS = process.env.DENIED_ORGS ? JSON.parse(process.env.DENIED_ORGS).map(id => id.substring(0,15)) : null; 
+
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
@@ -161,10 +164,10 @@ async function updatePushRequests(items, status, currentUser) {
 }
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
-	if (process.env.ALLOWED_ORGS) {
+	if (ALLOWED_ORGS) {
 		// Whitelisting enforced.
 		orgIds = orgIds.filter(orgId => {
-			let allowed = process.env.ALLOWED_ORGS.indexOf(orgId) !== -1;
+			let allowed = ALLOWED_ORGS.indexOf(orgId) !== -1;
 			if (!allowed) {
 				logger.warn("Skipping disallowed org", {org_id: orgId});
 				return false;
@@ -174,10 +177,10 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 		});
 	}
 
-	if (process.env.DENIED_ORGS) {
+	if (DENIED_ORGS) {
 		// Blacklisting enforced.
 		orgIds = orgIds.filter(orgId => {
-			let denied = process.env.DENIED_ORGS.indexOf(orgId) !== -1;
+			let denied = DENIED_ORGS.indexOf(orgId) !== -1;
 			if (denied) {
 				logger.warn("Skipping denied org", {org_id: orgId});
 				return false;
@@ -209,10 +212,10 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 	let versions = await packageversions.findLatestByGroupIds(versionIds, orgGroupIds);
 
-	if (process.env.ALLOWED_ORGS) {
+	if (ALLOWED_ORGS) {
 		// Whitelisting enforced.
 		versions = versions.filter(version => {
-			let allowed = process.env.ALLOWED_ORGS.indexOf(version.org_id) !== -1;
+			let allowed = ALLOWED_ORGS.indexOf(version.org_id) !== -1;
 			if (!allowed) {
 				logger.warn("Skipping disallowed org", {org_id: version.org_id});
 				return false;
@@ -222,10 +225,10 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		});
 	}
 
-	if (process.env.DENIED_ORGS) {
+	if (DENIED_ORGS) {
 		// Blacklisting enforced.
 		versions = versions.filter(version => {
-			let denied = process.env.DENIED_ORGS.indexOf(version.org_id) !== -1;
+			let denied = DENIED_ORGS.indexOf(version.org_id) !== -1;
 			if (denied) {
 				logger.warn("Skipping denied org", {org_id: version.org_id});
 				return false;
