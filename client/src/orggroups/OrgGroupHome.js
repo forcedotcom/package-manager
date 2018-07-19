@@ -18,12 +18,12 @@ export default class extends React.Component {
 	};
 
 	componentDidMount() {
-		orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({
-			orggroups,
-			itemCount: orggroups.length
-		}));
+		orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
 	}
-
+	
+	componentWillUnmount() {
+	}
+	
 	filterHandler = (filtered) => {
 		this.setState({itemCount: filtered.length});
 	};

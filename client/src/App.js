@@ -32,6 +32,7 @@ import Login from "./auth/Login";
 import Logout from "./auth/Logout";
 
 import * as authService from "./services/AuthService";
+import "./services/notifications";
 
 import {
 	ADMIN_ICON,

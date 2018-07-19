@@ -24,10 +24,15 @@ export default class extends React.Component {
 
 	componentDidMount() {
 		orgService.requestAll(this.state.sortOrder)
-		.then(orgs => {this.setState({orgs, itemCount: orgs.length})})
+		.then(orgs => {
+			this.setState({orgs, itemCount: orgs.length});
+		})
 		.catch(err => console.error(err));
 	}
 
+	componentWillUnmount() {
+	}
+	
 	sortHandler = (field) => {
 		let sortOrder = sortage.changeSortOrder(this.SORTAGE_KEY, field);
 		orgService.requestAll(sortOrder).then(orgs => {

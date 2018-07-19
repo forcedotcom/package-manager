@@ -11,15 +11,26 @@ const db = require("../util/pghelper");
 
 const MAX_HISTORY = 100;
 
+const Events = {
+	FAIL: "fail",
+	JOBS: "jobs",
+	JOB_QUEUE: "job-queue",
+	JOB_HISTORY: "job-history",
+	FETCH: "fetch",
+	FETCH_ALL: "fetch-all",
+	FETCH_ACCOUNT_ORGS: "fetch-account-orgs",
+	FETCH_ALL_ACCOUNT_ORGS: "fetch-all-account-orgs",
+	FETCH_INVALID: "fetch-invalid",
+	CANCEL_JOBS: "cancel-jobs",
+	UPLOAD_ORGS: "upload-orgs",
+	REFRESH_GROUP: "refresh-group",
+	REFRESH_VERSIONS: "refresh-versions"
+};
+
 let jobQueue = [];
 let jobHistory = [];
 let activeJobs = new Map();
 let socket = null;
-let emit = (key, data) => {
-	if (socket != null) {
-		socket.emit(key, data);
-	}
-};
 
 class AdminJob {
 	constructor(type, name, steps) {
@@ -40,7 +51,7 @@ class AdminJob {
 		this.message = message;
 		this.messages.push(message);
 		this.modifiedDate = new Date();
-		emit("jobs", Array.from(activeJobs.values()));
+		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
 	postProgress(message, stepIndex, e) {
@@ -52,13 +63,13 @@ class AdminJob {
 		this.stepIndex = stepIndex;
 		this.modifiedDate = new Date();
 		logger.info(message, e ? {error: e.message} : {});
-		emit("jobs", Array.from(activeJobs.values()));
+		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
 	async run() {
 		if (activeJobs.has(this.type)) {
 			jobQueue.push(this);
-			emit("job-queue", jobQueue);
+			emit(Events.JOB_QUEUE, jobQueue);
 			return;
 		}
 		try {
@@ -82,9 +93,9 @@ class AdminJob {
 			if (jobHistory.length > MAX_HISTORY) {
 				jobHistory.shift();
 			}
-			emit("job-history", jobHistory);
+			emit(Events.JOB_HISTORY, jobHistory);
 			let nextJob = jobQueue.pop();
-			emit("job-queue", jobQueue);
+			emit(Events.JOB_QUEUE, jobQueue);
 			if (nextJob) {
 				await nextJob.run();
 			}
@@ -150,32 +161,41 @@ class AdminJob {
 
 function connect(sock) {
 	socket = sock;
-	socket.on('fetch-account-orgs', function () {
+
+	setInterval(() => socket.emit("heartbeat", `Server socket is alive and well at ${new Date().toTimeString()}`), 20*1000);
+
+	socket.on(Events.FETCH_ACCOUNT_ORGS, function () {
 		fetchAccountOrgs().then(() => {});
 	});
-	socket.on('fetch-all-account-orgs', function () {
+	socket.on(Events.FETCH_ALL_ACCOUNT_ORGS, function () {
 		fetchAccountOrgs(true).then(() => {});
 	});
-	socket.on('fetch', function () {
+	socket.on(Events.FETCH, function () {
 		fetchData().then(() => {});
 	});
-	socket.on('fetch-all', function () {
+	socket.on(Events.FETCH_ALL, function () {
 		fetchData(true).then(() => {});
 	});
-	socket.on('fetch-invalid', function () {
+	socket.on(Events.FETCH_INVALID, function () {
 		fetchInvalidOrgs().then(() => {});
 	});
-	socket.on('cancel-jobs', function (jobIds) {
+	socket.on(Events.CANCEL_JOBS, function (jobIds) {
 		cancelJobs(jobIds);
 	});
-	socket.on('refresh-versions', async function (groupId) {
+	socket.on(Events.REFRESH_VERSIONS, async function (groupId) {
 		let orgIds = (await orgs.findByGroup(groupId)).map(o => o.org_id);
 		await fetchVersions(orgIds);
-		emit("refresh-versions", groupId);
+		emit(Events.REFRESH_VERSIONS, groupId);
 	});
-	socket.on('upload-orgs', async function () {
+	socket.on(Events.UPLOAD_ORGS, async function () {
 		await uploadOrgsToSumo();
 	});
+}
+
+function emit(key, data) {
+	if (socket != null) {
+		socket.emit(key, data);
+	}
 }
 
 function requestSettings(req, res) {
@@ -205,7 +225,7 @@ function cancelJobs(data) {
 	if (jobIds.size > 0) {
 		// Also look in queue
 		jobQueue = jobQueue.filter(j => !jobIds.has(j.id));
-		emit("job-queue", jobQueue);
+		emit(Events.JOB_QUEUE, jobQueue);
 	}
 }
 
@@ -367,7 +387,9 @@ const BinaryIdLookup = {
 	"11110": '4', "11111": '5'
 };
 
+exports.Events = Events;
 exports.connect = connect;
+exports.emit = emit;
 exports.scheduleJobs = scheduleJobs;
 exports.requestSettings = requestSettings;
 exports.requestJobs = requestJobs;

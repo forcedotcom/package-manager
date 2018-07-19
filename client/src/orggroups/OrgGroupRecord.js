@@ -3,8 +3,7 @@ import React from 'react';
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as sortage from "../services/sortage";
-import {NotificationManager} from 'react-notifications';
-import * as io from "socket.io-client";
+import * as notifier from "../services/notifications";
 import {CSVDownload} from 'react-csv';
 
 import {ORG_GROUP_ICON} from "../Constants";
@@ -30,14 +29,23 @@ export default class extends React.Component {
 	};
 
 	componentDidMount() {
-		this.setState({socket: io.connect()});
+		notifier.on('refresh-versions', this.versionsRefreshed);
+		notifier.on('refresh-group', this.groupRefreshed);
+
 		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => {
-			orgGroupService.requestMembers(orggroup.id).then(members => this.setState({orggroup, members}));
+			orgGroupService.requestMembers(orggroup.id).then(members => {
+				this.setState({orggroup, members});
+			});
 		});
 		packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId, this.state.sortOrderVersions).then(versions => {
 			let validVersions = this.stripVersions(versions);
 			this.setState({versions, validVersions});
 		});
+	}
+	
+	componentWillUnmount() {
+		notifier.remove('refresh-versions', this.versionsRefreshed);
+		notifier.remove('refresh-group', this.groupRefreshed);
 	}
 
 	stripVersions = (versions) => {
@@ -61,7 +69,7 @@ export default class extends React.Component {
 		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
 			this.setState({schedulingUpgrade: false});
 			if (res.message) {
-				NotificationManager.error(res.message, "Upgrade failed");
+				notifier.error(res.message, "Upgrade failed");
 			} else {
 				window.location = `/upgrade/${res.id}`;
 			}
@@ -79,23 +87,13 @@ export default class extends React.Component {
 
 	saveHandler = (orggroup) => {
 		orgGroupService.requestUpdate(orggroup).then(() => {
-			this.setState({orggroup, isEditing: false});
-			if (orggroup.orgIds.length !== 0) {
-				// Reload our kids because our membership may have changed
-				orgGroupService.requestMembers(orggroup.id).then(members => this.setState({members}));
-				packageVersionService.findByOrgGroupId(orggroup.id, this.state.sortOrderVersions).then(versions => {
-					let validVersions = this.stripVersions(versions);
-					this.setState({versions, validVersions});
-				});
-
-			}
+			this.setState({orggroup});
 		}).catch(e => console.error(e));
 	};
 
 	refreshHandler = () => {
 		this.setState({isRefreshing: true});
-		this.state.socket.emit("refresh-versions", this.state.orggroup.id);
-		this.state.socket.on('refresh-versions', this.versionsRefreshed);
+		notifier.emit("refresh-versions", this.state.orggroup.id);
 	};
 
 	versionsRefreshed = (groupId) => {
@@ -106,7 +104,19 @@ export default class extends React.Component {
 				this.setState({versions, validVersions, isRefreshing: false});
 			}).catch(e => {
 				this.setState({isRefreshing: false});
-				NotificationManager.error(e.message, "Refresh Failed");
+				notifier.error(e.message, "Refresh Failed");
+			});
+		}
+	};
+
+	groupRefreshed = (groupId) => {
+		if (this.state.orggroup.id === groupId) {
+			this.versionsRefreshed(groupId);
+			orgGroupService.requestMembers(groupId)
+			.then(members => this.setState({members, isEditing: false}))
+			.catch(e => {
+				this.setState({isEditing: false});
+				notifier.error(e.message, "Refresh Failed");
 			});
 		}
 	};
@@ -122,7 +132,7 @@ export default class extends React.Component {
 	deleteHandler = () => {
 		orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
 			window.location = '/orggroups';
-		}).catch(e => NotificationManager.error(e.message, "Delete Failed"));
+		}).catch(e => notifier.error(e.message, "Delete Failed"));
 	};
 
 	removeMembersHandler = (skipConfirmation) => {
@@ -133,7 +143,7 @@ export default class extends React.Component {
 					const validVersions = this.stripVersions(versions);
 					this.setState({showSelected: false, members, versions, validVersions});
 				});
-			}).catch(e => NotificationManager.error(e.message, "Removal Failed"));
+			}).catch(e => notifier.error(e.message, "Removal Failed"));
 			return true;
 		}
 		return false;
@@ -151,13 +161,13 @@ export default class extends React.Component {
 				moved = this.removeMembersHandler(true);
 			}
 			if (moved) {
-				NotificationManager.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+				notifier.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			} else {
-				NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+				notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			}
 			this.state.selected.clear();
 			this.setState({showSelected: false, removeAfterAdd: false});
-		}).catch(e => NotificationManager.error(e.message, "Addition Failed"));
+		}).catch(e => notifier.error(e.message, "Addition Failed"));
 	};
 
 	closeGroupWindow = () => {

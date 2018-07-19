@@ -1,5 +1,6 @@
 const db = require('../util/pghelper');
 const orgs = require('./orgs');
+const {emit, Events} = require('./admin');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
 
@@ -90,7 +91,13 @@ async function requestUpdate(req, res, next) {
 		await db.update('UPDATE org_group SET name=$1, description=$2 WHERE id=$3', [og.name, og.description, og.id]);
 
 		if (og.orgIds && og.orgIds.length > 0) {
-			await insertOrgMembers(og.id, og.name, og.orgIds);
+			insertOrgMembers(og.id, og.name, og.orgIds)
+			.then(() => {
+				emit(Events.REFRESH_GROUP, og.id);
+			})
+			.catch(e => {
+				emit(Events.FAIL, {subject: "Org Import Failed", message: e.message});
+			});
 		}
 		return res.send({result: 'ok'});
 	} catch (e) {

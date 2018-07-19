@@ -2,10 +2,10 @@ import React from 'react';
 import moment from "moment";
 import debounce from 'lodash.debounce';
 
+import * as notifier from "../services/notifications";
 import * as adminService from '../services/AdminService';
 
 import {ADMIN_ICON} from "../Constants";
-import * as io from "socket.io-client";
 import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
@@ -13,12 +13,10 @@ import {RecordHeader} from "../components/PageHeader";
 const DEFAULT_HISTORY_LIMIT = 10;
 
 export default class extends React.Component {
-
 	state = {
 		jobs: [],
 		queue: [],
 		history: [],
-		socket: null,
 		settings: {},
 		isMini: window.innerWidth < 1000
 	};
@@ -27,30 +25,38 @@ export default class extends React.Component {
 		this.setState({isMini: window.innerWidth < 1000})
 	}, 200);
 
+	onJobs = (data) => {
+		this.setState({jobs: data || []});
+	};
+	
+	onHistory = (data) => {
+		this.setState({history: data || []});
+	};
+	
+	onQueue = (data) => {
+		this.setState({queue: data || []});
+	};
+	
 	componentDidMount() {
 		window.addEventListener('resize', this.handleWindowResize);
 
-		let socket = io.connect();
-		let self = this;
-		socket.on('jobs', function (data) {
-			self.setState({jobs: data || []});
-		});
-		socket.on('job-history', function (data) {
-			self.setState({history: data || []});
-		});
-		socket.on('job-queue', function (data) {
-			self.setState({queue: data || []});
-		});
+		notifier.on('jobs', this.onJobs);
+		notifier.on('job-history', this.onHistory);
+		notifier.on('job-queue', this.onQueue);
 
 		adminService.requestSettings().then(settings => {
 			adminService.requestJobs().then(res => {
-				this.setState({socket, settings, jobs: res.jobs, queue: res.queue, history: res.history})
+				this.setState({settings, jobs: res.jobs, queue: res.queue, history: res.history})
 			});
 		});
 	}
 
 	componentWillUnmount() {
 		window.removeEventListener('resize', this.handleWindowResize);
+		
+		notifier.remove('jobs', this.onJobs);
+		notifier.remove('job-history', this.onHistory);
+		notifier.remove('job-queue', this.onQueue);
 	}
 
 	cancellationHandler = (job) => {
@@ -63,19 +69,19 @@ export default class extends React.Component {
 	};
 
 	fetchHandler = () => {
-		this.state.socket.emit("fetch", {});
+		notifier.emit("fetch", {});
 	};
 
 	refetchInvalidHandler = () => {
-		this.state.socket.emit("fetch-invalid", {});
+		notifier.emit("fetch-invalid", {});
 	};
 
 	refetchAllHandler = () => {
-		this.state.socket.emit("fetch-all", {});
+		notifier.emit("fetch-all", {});
 	};
 
 	uploadOrgsHandler = () => {
-		this.state.socket.emit("upload-orgs", {});
+		notifier.emit("upload-orgs", {});
 	};
 
 	goToHerokuHandler = () => {
@@ -166,7 +172,7 @@ export default class extends React.Component {
 			{label: "Fetch Latest", handler: this.fetchHandler},
 			{label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
 			{label: "Re-Fetch All", handler: this.refetchAllHandler},
-			{label: "Fetch Account Orgs", group: "accounts", handler: () => this.state.socket.emit("fetch-all-account-orgs", {})},
+			{label: "Fetch Account Orgs", group: "accounts", handler: () => notifier.emit("fetch-all-account-orgs", {})},
 			{label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler}
 		];
 
