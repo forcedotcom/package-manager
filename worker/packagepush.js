@@ -81,7 +81,7 @@ async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgI
 					original_version_id: opv.package_version_id
 				});
 				if (!res.success) {
-					logger.error("Failed to schedule push upgrade job", {org_id: orgId, error: res.errors.join(", ")})
+					logger.error("Failed to schedule push upgrade job", {org_id: opv.org_id, error: res.errors.join(", ")})
 				}
 			}
 			try {
