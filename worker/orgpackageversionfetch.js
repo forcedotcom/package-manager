@@ -1,5 +1,6 @@
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const orgsapi = require('../api/orgs');
 const orgpackageversions = require('../api/orgpackageversions');
 const push = require('./packagepush');
 
@@ -73,6 +74,22 @@ async function fetchFromLicenses(fetchAll, job) {
 	return upsert(recs, 2000);
 }
 
+async function updateOrgStatus(job) {
+	adminJob = job;
+
+	// Flip orgs MISSING versions to status Not Installed
+	await db.update(`UPDATE org SET status = '${orgsapi.Status.NotInstalled}' WHERE status = '${orgsapi.Status.Installed}' AND org_id IN
+		  (SELECT o.org_id FROM org o 
+			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ('Active', 'Trial')
+			GROUP BY o.org_id HAVING COUNT(opv.id) = 0)`);
+
+	// Flip orgs WITH versions to status Installed
+	await db.update(`UPDATE org SET status = '${orgsapi.Status.Installed}' WHERE status = '${orgsapi.Status.NotInstalled}' AND org_id IN
+		  (SELECT o.org_id FROM org o 
+			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ('Active', 'Trial')
+			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`);
+}
+
 async function upsert(recs, batchSize) {
 	let count = recs.length;
 	if (count === 0) {
@@ -108,3 +125,4 @@ async function upsertBatch(recs) {
 
 exports.fetch = fetchFromLicenses;
 exports.fetchFromSubscribers = fetchFromSubscribers;
+exports.updateOrgStatus = updateOrgStatus;

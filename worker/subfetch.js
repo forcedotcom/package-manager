@@ -1,11 +1,11 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const orgsapi = require('../api/orgs');
 
 const SELECT_ALL = `SELECT Id,OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey 
                     FROM PackageSubscriber`;
 
-const Status = {NotFound: 'Not Found'};
 
 async function fetch(fetchAll, packageOrgId, batchSize = 100) {
 	return await queryAndStore(packageOrgId, fetchAll, false, batchSize, false);
@@ -22,7 +22,7 @@ async function queryAndStore(packageOrgId, fetchAll, fetchInvalid, batchSize) {
 	let fromDate = null;
 	let sql = `select org_id, modified_date from org`;
 	if (fetchInvalid) {
-		sql += ` where status = '${Status.NotFound}'`
+		sql += ` where status = '${orgsapi.Status.NotFound}'`
 	} else if (!fetchAll) {
 		sql += ` where account_id is null order by modified_date desc`
 	}

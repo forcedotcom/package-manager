@@ -15,7 +15,8 @@ export default class extends React.Component {
 			{Header: "Edition", accessor: "type", sortable: true},
 			{Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
 			{Header: "Features", accessor: "features", sortable: true},
-			{Header: "Groups", accessor: "groups", sortable: true}
+			{Header: "Groups", accessor: "groups", sortable: true},
+			{Header: "Status", accessor: "status", sortable: true}
 		];
 		return (
 			<DataTable selection={this.props.selected} keyField="org_id" id="OrgList" data={this.props.orgs} onFilter={this.props.onFilter}

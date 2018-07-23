@@ -130,6 +130,10 @@ function fetch(fetchAll) {
 					{
 						name: "Deriving org package versions from licenses",
 						handler: (job) => orgpackageversions.fetch(fetchAll, job)
+					},
+					{
+						name: "Updating orgs with version counts",
+						handler: (job) => orgpackageversions.updateOrgStatus(job)
 					}]
 			},
 			{

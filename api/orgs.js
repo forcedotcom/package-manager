@@ -5,6 +5,12 @@ const sfdc = require('../api/sfdcconn');
 const packageorgs = require('../api/packageorgs');
 const orgpackageversions = require('../api/orgpackageversions');
 
+const Status = {
+	NotFound: 'Not Found', 
+	Installed: 'Installed', 
+	NotInstalled: 'Not Installed'
+};
+
 const SELECT_ALL = `
     SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, o.features,
     a.account_name,
@@ -44,7 +50,7 @@ async function requestAll(req, res, next) {
 async function findAll(packageId, packageVersionId, orderByField, orderByDir) {
 	let select = SELECT_ALL;
 	let groupBy = GROUP_BY;
-	let whereParts = ["o.status is null"];
+	let whereParts = [`o.status != '${Status.NotFound}'`];
 	let values = [];
 
 	if (packageId || packageVersionId) {
@@ -137,7 +143,8 @@ async function insertOrgsFromSubscribers(recs) {
 
 	let sql = `INSERT INTO org (org_id, name, type, instance, account_id, modified_date) 
                        VALUES ${params.join(",")}
-                       on conflict (org_id) do update set status = null, account_id = excluded.account_id where org.status = 'Not Found'`;
+                       on conflict (org_id) do update set status = '${Status.Installed}', 
+                       account_id = excluded.account_id where org.status = '${Status.NotFound}'`;
 	return db.insert(sql, values);
 }
 
@@ -154,6 +161,7 @@ async function findByIds(orgIds) {
 }
 
 
+exports.Status = Status;
 exports.requestAll = requestAll;
 exports.requestAdd = requestAdd;
 exports.requestById = requestById;

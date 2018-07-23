@@ -1,12 +1,13 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const orgsapi = require('../api/orgs');
+
 
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,
 					PermissionsCpq,PermissionsCpqProvisioned,PreferencesOrdersEnabled 
 					FROM AllOrganization`;
 
-const Status = {NotFound: 'Not Found'};
 const QUERY_BATCH_SIZE = 500;
 
 let adminJob;
@@ -25,7 +26,7 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
 	let conn = await sfdc.buildOrgConnection(btOrgId);
 	let sql = `select org_id, modified_date from org`;
 	if (fetchInvalid) {
-		sql += ` where status = '${Status.NotFound}'`
+		sql += ` where status = '${orgsapi.Status.NotFound}'`
 	} else if (!fetchAll) {
 		sql += ` where account_id is null order by modified_date desc`
 	}
@@ -106,16 +107,16 @@ async function upsertBatch(recs) {
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, null)`;
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, '${orgsapi.Status.Installed}')`;
 		values.push(rec.org_id, rec.name, rec.type, rec.modified_date, rec.account_id, rec.features);
 	}
 	sql += ` on conflict (org_id) do update set name = excluded.name, type = excluded.type, modified_date = excluded.modified_date, 
-            account_id = excluded.account_id, features = excluded.features, status = null`;
+            account_id = excluded.account_id, features = excluded.features, status = '${orgsapi.Status.Installed}'`;
 	await db.insert(sql, values);
 }
 
 async function mark(isSandbox) {
-	let sql = `update org set account_id = $1, status = '${Status.NotFound}', modified_date = now() where account_id is null
+	let sql = `update org set account_id = $1, status = '${orgsapi.Status.NotFound}', modified_date = now() where account_id is null
                 and is_sandbox = $2`;
 	let res = await db.update(sql, [sfdc.INVALID_ID, isSandbox]);
 	if (res.length > 0) {

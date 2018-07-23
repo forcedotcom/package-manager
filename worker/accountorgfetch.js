@@ -1,10 +1,10 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const orgsapi = require('../api/orgs');
 
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,PermissionsCpq,PermissionsCpqProvisioned FROM AllOrganization`;
 
-const Status = {NotFound: 'Not Found'};
 const QUERY_BATCH_SIZE = 500;
 
 let adminJob;
@@ -24,7 +24,7 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
 	let sql = `SELECT account_id, org_id, modified_date FROM account
 			   WHERE org_id is not null`;
 	if (fetchInvalid) {
-		sql += ` AND status = '${Status.NotFound}'`
+		sql += ` AND status = '${orgsapi.Status.NotFound}'`
 	}
 	let accounts = await db.query(sql);
 	let count = accounts.length;
