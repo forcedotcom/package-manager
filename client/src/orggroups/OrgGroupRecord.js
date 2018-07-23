@@ -183,7 +183,11 @@ export default class extends React.Component {
 	};
 
 	selectionHandler = (selected) => {
-		this.setState({selected});
+		let showSelected = this.state.showSelected;
+		if (selected.size === 0) {
+			showSelected = false;
+		}
+		this.setState({selected, showSelected});
 	};
 	
 	handleShowSelected = () => {

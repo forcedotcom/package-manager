@@ -41,7 +41,11 @@ export default class extends React.Component {
 	};
 
 	selectionHandler = (selected) => {
-		this.setState({selected});
+		let showSelected = this.state.showSelected;
+		if (selected.size === 0) { 
+			showSelected = false;
+		}
+		this.setState({selected, showSelected});
 	};
 
 	handleShowSelected = () => {
@@ -54,7 +58,7 @@ export default class extends React.Component {
 
 	saveHandler = (orgIds) => {
 		orgService.requestAdd(orgIds).then((orgs) => {
-			this.setState({isAdding: false, orgs, itemCount: orgs.length});
+			this.setState({isAdding: false, showSelected: false, orgs, itemCount: orgs.length});
 		}).catch(e => console.error(e));
 	};
 
