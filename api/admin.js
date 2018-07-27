@@ -53,6 +53,7 @@ class AdminJob {
 		this.errors = [];
 		this.cancelled = false;
 		this.singleton = false;
+		this.shouldRun = () => true;
 	}
 
 	postMessage(message) {
@@ -75,6 +76,10 @@ class AdminJob {
 	}
 
 	async run() {
+		const f = await this.shouldRun();
+		if (!f) 
+			return; // Just don't do it
+		
 		if (activeJobs.has(this.type)) {
 			if (!this.singleton) {
 				jobQueue.push(this);
@@ -250,13 +255,13 @@ function scheduleJobs() {
 	const schedules = JSON.parse(process.env.JOB_SCHEDULES || {});
 	if (schedules.upgrade_monitor_interval_seconds != null && schedules.upgrade_monitor_interval_seconds !== -1) {
 		let interval = schedules.upgrade_monitor_interval_seconds * 1000;
-		setInterval(() => {monitorUpgrades(interval).then(() => logger.info("Finished scheduled monitor"))}, interval);
+		setInterval(() => {monitorUpgrades(interval).then(() => {})}, interval);
 		logger.info(`Scheduled upgrade monitor for every ${schedules.upgrade_monitor_interval_seconds} seconds`)
 	}
 
 	if (schedules.fetch_interval_minutes != null && schedules.fetch_interval_minutes !== -1) {
 		let interval = schedules.fetch_interval_minutes * 60 * 1000;
-		setInterval(() => {fetchData(false, interval).then(() => logger.info("Finished scheduled fetch"))}, interval);
+		setInterval(() => {fetchData(false, interval).then(() => {})}, interval);
 		logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
 	}
 	
@@ -265,7 +270,7 @@ function scheduleJobs() {
 		// Always start heavyweight tasks at the end of the day.
 		let interval = schedules.fetch_invalid_interval_hours * 60 * 60 * 1000;
 		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {fetchInvalidOrgs(interval).then(() => logger.info("Finished scheduled fetch invalid orgs"))}, interval), delay);
+		setTimeout(() => setInterval(() => {fetchInvalidOrgs(interval).then(() => {})}, interval), delay);
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled fetching of invalid orgs starting ${startTime} and recurring every ${schedules.fetch_invalid_interval_hours} hours`)
 	}
@@ -273,7 +278,7 @@ function scheduleJobs() {
 	if (schedules.upload_orgs_interval_hours != null && schedules.upload_orgs_interval_hours !== -1) {
 		let interval = schedules.upload_orgs_interval_hours * 60 * 60 * 1000;
 		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {uploadOrgsToSumo(interval).then(() => logger.info("Finished scheduled org upload"))}, interval), delay);
+		setTimeout(() => setInterval(() => {uploadOrgsToSumo(interval).then(() => {})}, interval), delay);
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} hours`)
 	}
@@ -282,7 +287,7 @@ function scheduleJobs() {
 		// Always start heavyweight at the end of the day.
 		let interval = schedules.refetch_interval_days * 24 * 60 * 60 * 1000;
 		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {fetchData(true, interval).then(() => logger.info("Finished scheduled fetch all"))}, interval), delay);
+		setTimeout(() => setInterval(() => {fetchData(true, interval).then(() => {})}, interval), delay);
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
 	}
@@ -290,7 +295,7 @@ function scheduleJobs() {
 	if (schedules.fetch_account_orgs_interval_days != null && schedules.fetch_account_orgs_interval_days !== -1) {
 		let interval = schedules.refetch_interval_days * 24 * 60 * 60 * 1000;
 		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {fetchAccountOrgs(false, interval).then(() => logger.info("Finished scheduled fetch account orgs"))}, interval), delay);
+		setTimeout(() => setInterval(() => {fetchAccountOrgs(false, interval).then(() => {})}, interval), delay);
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled fetching of account orgs starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
 	}

@@ -532,7 +532,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 }
 
 function monitorUpgrades() {
-	const job = new admin.AdminJob("upgrade", "Run and monitor an active upgrade",
+	const job = new admin.AdminJob("upgrade", "Run and monitor active upgrades",
 		[
 			{
 				name: "Monitor active upgrades",
@@ -544,11 +544,19 @@ function monitorUpgrades() {
 			}
 		]);
 	job.singleton = true; // Don't queue us up
+	job.shouldRun = async () => {
+		const upgrades = await retrieveActiveUpgrades();
+		return upgrades.length > 0
+	};
 	return job;
 }
 
+async function retrieveActiveUpgrades() {
+	return db.query(`SELECT id FROM upgrade WHERE status = $1`, [UpgradeStatus.Active]);
+}
+
 async function monitorActiveUpgrades(job) {
-	const activeUpgrades = await db.query(`SELECT id FROM upgrade WHERE status = $1`, [UpgradeStatus.Active]);
+	const activeUpgrades = await retrieveActiveUpgrades();
 	for (let i = 0; i < activeUpgrades.length; i++) {
 		const upgrade = activeUpgrades[i];
 		const items = await activateAvailableUpgradeItems(upgrade.id, job);
