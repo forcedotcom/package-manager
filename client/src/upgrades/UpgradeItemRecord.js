@@ -131,7 +131,7 @@ export default class extends React.Component {
 								 className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={this.state.item.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={completed / count} success={errors === 0}/>
+				<ProgressBar progress={(completed +1)/(count+1)} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard jobs={this.state.jobs}/>
 				</div>

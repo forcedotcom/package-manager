@@ -116,32 +116,36 @@ export default class extends React.Component {
 				purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
 		}
 
+		let done = true;
+		let count = this.state.jobs ? this.state.jobs.length : 0, completed = 0, errors = 0;
+		for (let i = 0; i < count; i++) {
+			let job = this.state.jobs[i];
+			if (isDoneStatus(job.status)) {
+				completed++;
+				if (job.status === Status.Failed) {
+					errors++;
+				}
+			} else {
+				done = false;
+			}
+		}
+		
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
-				disabled: this.state.upgrade.item_status === "Done" || !userCanActivate,
+				disabled: done || !userCanActivate,
 				detail: "Update items in this upgrade to Pending state"
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
-				disabled: this.state.upgrade.item_status === "Done"
+				disabled: done
 			},
 			{
 				label: "Retry Upgrade", handler: this.retryHandler.bind(this),
-				disabled: !(this.state.upgrade.item_status === "Done" && this.state.hasFailedJobs), spinning: this.state.isRetrying
+				disabled: !done || errors === 0, spinning: this.state.isRetrying
 			}
 		];
 
-		let count = this.state.items ? this.state.items.length : 0, completed = 0, errors = 0;
-		for (let i = 0; i < count; i++) {
-			let item = this.state.items[i];
-			if (isDoneStatus(item.status)) {
-				completed++;
-			}
-			if (item.status === Status.Failed) {
-				errors++;
-			}
-		}
 		return (
 			<div>
 				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description} actions={actions}>
@@ -149,7 +153,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={this.state.upgrade.status}/>
 					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={completed / count} success={errors === 0}/>
+				<ProgressBar progress={(completed + 1) / (count + 1)} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">

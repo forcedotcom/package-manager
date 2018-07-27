@@ -41,8 +41,8 @@ const SELECT_ALL = `
 			WHEN i.status = 'Canceled' THEN 1
 			ELSE NULL END) canceled_item_count
     FROM upgrade u
-    INNER JOIN upgrade_item i ON i.upgrade_id = u.id
-    GROUP BY u.id, u.start_time, u.created_by, u.description`;
+    INNER JOIN upgrade_item i ON i.upgrade_id = u.id`;
+const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ONE = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description,
@@ -83,12 +83,12 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
         inner join package p on p.sfid = pv.package_id
         left join upgrade_job j on j.item_id = i.id`;
 
-const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+const GROUP_BY_ALL_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         u.description,
         pv.version_number, pv.version_id,
         p.name, p.sfid`;
 
-const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} where i.upgrade_id = $1 ${GROUP_BY_ALL_ITEMS}`;
+const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} WHERE i.upgrade_id = $1 ${GROUP_BY_ALL_ITEMS}`;
 
 const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
@@ -260,17 +260,13 @@ async function requestAll(req, res, next) {
 }
 
 async function findAll(sortField, sortDir) {
-	let orderBy = ` ORDER BY ${sortField || "start_time"} ${sortDir || "asc"}`;
-	return await db.query(SELECT_ALL + orderBy, [])
+	let orderBy = `ORDER BY ${sortField || "start_time"} ${sortDir || "asc"}`;
+	return await db.query(`${SELECT_ALL} ${GROUP_BY_ALL} ${orderBy}`, [])
 }
 
 async function requestItemsByUpgrade(req, res, next) {
 	try {
 		let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
-		if (req.query.fetchStatus) {
-			// await fetchStatus(items.filter(i => push.isActiveStatus(i.status)));
-		}
-
 		return res.json(items);
 	} catch (e) {
 		return res.status(500).send(e.message || e);
@@ -289,23 +285,19 @@ async function findItemsByIds(itemIds) {
 		values = values.concat(itemIds);
 	}
 
-	const where = ` WHERE ${whereParts.join(" AND")}`;
-	const order = ` ORDER BY dependency_tier`;
-	return await db.query(SELECT_ALL_ITEMS + where + GROUP_BY_ALL_ITEMS + order, values)
+	const where = `WHERE ${whereParts.join(" AND")}`;
+	const order = `ORDER BY dependency_tier`;
+	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ALL_ITEMS} ${order}`, values)
 }
 
 async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
-	let orderBy = ` ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
-	return await db.query(SELECT_ALL_ITEMS_BY_UPGRADE + orderBy, [upgradeId])
+	let orderBy = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
+	return await db.query(`${SELECT_ALL_ITEMS_BY_UPGRADE} ${orderBy}`, [upgradeId])
 }
 
 async function requestAllJobs(req, res, next) {
 	try {
 		let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
-		if (req.query.fetchStatus) {
-			// await fetchJobStatus(upgradeJobs);
-		}
-
 		return res.json(upgradeJobs);
 	} catch (e) {
 		return res.status(500).send(e.message || e);
@@ -367,10 +359,6 @@ function requestItemById(req, res, next) {
 	let id = req.params.id;
 	retrieveItemById(id)
 		.then(async item => {
-			if (req.query.fetchStatus) {
-				// let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				// await changeUpgradeItemStatus(item, pushReqs[0].Status);
-			}
 			res.json(item)
 		})
 		.catch(next);
@@ -552,7 +540,7 @@ function monitorUpgrades() {
 }
 
 async function retrieveActiveUpgrades() {
-	return db.query(`SELECT id FROM upgrade WHERE status = $1`, [UpgradeStatus.Active]);
+	return db.query(`${SELECT_ALL} WHERE u.status = $1 ${GROUP_BY_ALL}`, [UpgradeStatus.Active]);
 }
 
 async function monitorActiveUpgrades(job) {
