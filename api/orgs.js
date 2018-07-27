@@ -137,11 +137,11 @@ async function insertOrgsFromSubscribers(recs) {
 	let params = [], values = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},NOW())`);
-		values.push(rec.OrgKey.substring(0, 15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID);
+		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},NOW())`);
+		values.push(rec.OrgKey.substring(0, 15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID, Status.Installed);
 	}
 
-	let sql = `INSERT INTO org (org_id, name, type, instance, account_id, modified_date) 
+	let sql = `INSERT INTO org (org_id, name, type, instance, account_id, status, modified_date) 
                        VALUES ${params.join(",")}
                        on conflict (org_id) do update set status = '${Status.Installed}', 
                        account_id = excluded.account_id where org.status = '${Status.NotFound}'`;
