@@ -97,6 +97,7 @@ create table if not exists upgrade (
   id          serial primary key,
   start_time  timestamp with time zone,
   description text,
+  status      varchar(40),
   created_by  varchar(255)
 );
 
@@ -216,6 +217,7 @@ alter table package_org
   add if not exists refreshed_date timestamp with time zone;
 
 alter table upgrade
+  add if not exists status varchar(80) null,
   add if not exists created_by varchar(255) null;
 
 alter table upgrade_item

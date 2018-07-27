@@ -6,6 +6,7 @@ const url = require('url');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
 const orgs = require("./orgs");
+const upgrades = require("./upgrades");
 const sfdc = require("./sfdcconn");
 const db = require("../util/pghelper");
 
@@ -27,7 +28,10 @@ const Events = {
 	ORG_VERSIONS: "org-versions",
 	REFRESH_ORG_VERSIONS: "refresh-org-versions",
 	GROUP_VERSIONS: "group-versions",
-	REFRESH_GROUP_VERSIONS: "refresh-group-versions"
+	REFRESH_GROUP_VERSIONS: "refresh-group-versions",
+	UPGRADE: "upgrade",
+	UPGRADE_ITEMS: "upgrade-items",
+	UPGRADE_JOBS: "upgrade-jobs"
 };
 
 let jobQueue = [];
@@ -48,6 +52,7 @@ class AdminJob {
 		this.messages = [];
 		this.errors = [];
 		this.cancelled = false;
+		this.singleton = false;
 	}
 
 	postMessage(message) {
@@ -71,8 +76,10 @@ class AdminJob {
 
 	async run() {
 		if (activeJobs.has(this.type)) {
-			jobQueue.push(this);
-			emit(Events.JOB_QUEUE, jobQueue);
+			if (!this.singleton) {
+				jobQueue.push(this);
+				emit(Events.JOB_QUEUE, jobQueue);
+			}
 			return;
 		}
 		try {
@@ -238,12 +245,18 @@ function cancelJobs(data) {
 
 function scheduleJobs() {
 	const schedules = JSON.parse(process.env.JOB_SCHEDULES || {});
-	// Define singleton fetch intervals.
+	if (schedules.upgrade_monitor_interval_seconds != null && schedules.upgrade_monitor_interval_seconds !== -1) {
+		let interval = schedules.upgrade_monitor_interval_seconds * 1000;
+		setInterval(() => {monitorUpgrades(interval).then(() => logger.info("Finished scheduled monitor"))}, interval);
+		logger.info(`Scheduled upgrade monitor for every ${schedules.upgrade_monitor_interval_seconds} seconds`)
+	}
+
 	if (schedules.fetch_interval_minutes != null && schedules.fetch_interval_minutes !== -1) {
 		let interval = schedules.fetch_interval_minutes * 60 * 1000;
 		setInterval(() => {fetchData(false, interval).then(() => logger.info("Finished scheduled fetch"))}, interval);
 		logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
 	}
+	
 
 	if (schedules.fetch_invalid_interval_hours != null && schedules.fetch_invalid_interval_hours !== -1) {
 		// Always start heavyweight tasks at the end of the day.
@@ -278,6 +291,12 @@ function scheduleJobs() {
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled fetching of account orgs starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
 	}
+}
+
+async function monitorUpgrades(interval) {
+	const job = upgrades.monitorUpgrades();
+	job.interval = interval;
+	await job.run();
 }
 
 async function fetchAccountOrgs(fetchAll, interval) {
@@ -368,7 +387,7 @@ async function sendOrgsToSumo(orgs, job) {
 
 function convertID(id) {
 	if (id.length === 18) return id;
-	if (id.length !== 15) throw new Error("Illegal argument length. 15 char string expected.");
+	if (id.length !== 15) throw "Illegal argument length. 15 char string expected.";
 
 	let triplet = [id.substring(0, 5), id.substring(5, 10), id.substring(10, 15)];
 	triplet = triplet.map(v => {

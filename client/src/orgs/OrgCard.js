@@ -1,6 +1,7 @@
 import React from 'react';
 
 import * as orgGroupService from '../services/OrgGroupService';
+import {CSVDownload} from 'react-csv';
 
 import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
@@ -46,7 +47,13 @@ export default class extends React.Component {
 	};
 
 	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+		this.setState({filtered, itemCount: filtered.length});
+	};
+
+	exportHandler = () => {
+		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.orgs;
+		this.setState({isExporting: true, exportable});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	};
 
 	render() {
@@ -62,7 +69,8 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			{label: "Add To Group", handler: this.openGroupWindow, disabled: this.state.selected.size === 0}
+			{label: "Add To Group", handler: this.openGroupWindow, disabled: this.state.selected.size === 0},
+			{label: "Export", handler: this.exportHandler}
 		];
 		if (this.props.onRemove) {
 			actions.push({
@@ -82,6 +90,8 @@ export default class extends React.Component {
 				<footer className="slds-card__footer"/>
 				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)}
 															   onCancel={this.closeGroupWindow}/> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
+
 			</article>
 		);
 	}

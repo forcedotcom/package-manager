@@ -129,10 +129,10 @@ async function updatePushRequests(items, status, currentUser) {
 		let item = items[i];
 		if (currentUser && status === Status.Pending && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
 			if (item.created_by === null) {
-				throw new Error(`Cannot activate upgrade item ${item.id} without knowing who created it`);
+				throw `Cannot activate upgrade item ${item.id} without knowing who created it`;
 			}
 			if (item.created_by === currentUser) {
-				throw new Error(`Cannot activate upgrade item ${item.id} by the same user ${currentUser} who created it`);
+				throw `Cannot activate upgrade item ${item.id} by the same user ${currentUser} who created it`;
 			}
 		}
 

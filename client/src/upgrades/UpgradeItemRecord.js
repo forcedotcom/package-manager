@@ -5,12 +5,12 @@ import * as upgradeItemService from '../services/UpgradeItemService';
 import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
 import * as sortage from "../services/sortage";
 import * as upgradeJobService from "../services/UpgradeJobService";
-import * as Constants from "../Constants";
 import {isDoneStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
 import {NotificationManager} from "react-notifications";
+import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
 	SORTAGE_KEY_JOBS = "UpgradeJobCard";
@@ -23,72 +23,40 @@ export default class extends React.Component {
 	};
 
 	componentDidMount() {
-		// Here we pass in true to query for the request status the first time.
-		upgradeItemService.requestById(this.props.match.params.itemId, true).then(item => {
+		notifier.on('upgrade-items', this.upgradeItemsUpdated);
+		notifier.on('upgrade-jobs', this.upgradeJobsUpdated);
+		upgradeItemService.requestById(this.props.match.params.itemId).then(item => {
 			this.loadItemJobs(item);
-			this.checkStatus(item);
 		});
 	};
 
+	componentWillUnmount() {
+		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
+		notifier.remove('upgrade-jobs', this.upgradeJobsUpdated);
+	}
+
+	upgradeItemsUpdated = (items) => {
+		const mine = items.filter(i => i.id === this.state.item.id);
+		if (mine.length > 0) {
+			this.setState({item: items[0]});
+		}
+	};
+
+	upgradeJobsUpdated = (jobs) => {
+		const mine = jobs.filter(j => j.item_id === this.state.item.id);
+		if (mine.length > 0) {
+			// At least one of these is from our item, so just reload all of them
+			upgradeItemService.requestById(this.props.match.params.itemId).then(item => {
+				this.loadItemJobs(item);
+			});
+		}
+	};
+	
 	loadItemJobs(item) {
-		// Note that we don't perform the (expensive) job here.  Only later from checkJobStatus.
 		upgradeJobService.requestAllJobs(item.id, this.state.sortOrderJobs).then(jobs => {
 			this.setState({item, jobs, isCanceling: false, isActivating: false});
-			this.checkJobStatus();
 		});
 	}
-
-	checkStatus(item) {
-		let doneOrNotStarted = isDoneStatus(item.status) || item.status === Status.Created;
-		if (doneOrNotStarted)
-			return; // Don't keep pinging until we know we are activated
-
-		const secondsDelay = 3;
-		console.log(`Checking upgrade status again in ${secondsDelay} seconds`);
-		setTimeout(this.fetchStatus.bind(this), (secondsDelay) * 1000);
-	}
-
-	fetchStatus() {
-		upgradeItemService.requestById(this.state.item.id, true).then(item => {
-			this.setState({item});
-			this.checkStatus(item);
-		}).catch(e => NotificationManager.error(e.message, "Fetch Failed"));
-	}
-
-	checkJobStatus() {
-		let item = this.state.item;
-		let notStarted = item.status === Status.Created;
-		if (notStarted)
-			return; // Don't start pinging until we know we are activated
-
-		let foundOne = false;
-		for (let i = 0; i < this.state.jobs.length && !foundOne; i++) {
-			const job = this.state.jobs[i];
-			if (!isDoneStatus(job.status))
-				foundOne = true;
-			else if (job.status === Status.Succeeded && job.current_version_number !== job.version_number)
-				foundOne = true;
-		}
-
-		if (!foundOne)
-			return; // All of our jobs are done, so don't bother pinging.
-
-		// Use a simpleton variable delay based on number of jobs
-		const secondsDelay = 5 + this.state.jobs.length / 100;
-		console.log(`Checking job status again in ${secondsDelay} seconds`);
-		setTimeout(this.fetchJobStatus.bind(this), (secondsDelay) * 1000);
-	}
-
-	fetchJobStatus = () => {
-		this.setState({isFetchingStatus: true});
-		upgradeJobService.requestAllJobs(this.state.item.id, this.state.sortOrderJobs, true).then(jobs => {
-			this.setState({jobs, isFetchingStatus: false});
-			this.checkJobStatus();
-		}).catch(e => {
-			this.setState({isFetchingStatus: false});
-			NotificationManager.error(e.message, "Fetch Failed");
-		});
-	};
 
 	handleActivation = () => {
 		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
@@ -128,13 +96,6 @@ export default class extends React.Component {
 		}
 
 		let actions = [
-			{
-				label: "Fetch Status",
-				handler: this.fetchJobStatus,
-				spinning: this.state.isFetchingStatus,
-				disabled: !Constants.isDoneStatus(this.state.item.status),
-				detail: "Click to refresh the upgrade status and org installed version information.  Only allowed after the upgrade request is marked as complete."
-			},
 			{
 				label: "Activate Request",
 				handler: this.handleActivation,

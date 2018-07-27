@@ -83,10 +83,10 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 async function buildOrgConnection(packageOrgId) {
 	let packageOrg = await packageorgs.retrieveByOrgId(packageOrgId);
 	if (!packageOrg) {
-		throw new Error(`No such package org with id ${packageOrgId}`);
+		throw `No such package org with id ${packageOrgId}`;
 	}
 	if (!packageOrg.refresh_token) {
-		throw new Error(`Package Org ${packageOrgId} cannot be refreshed without a prior connection.`);
+		throw `Package Org ${packageOrgId} cannot be refreshed without a prior connection.`;
 	}
 	let conn = buildConnection(packageOrg.access_token, packageOrg.refresh_token, packageOrg.instance_url);
 	conn.on("refresh", async (accessToken, res) => {

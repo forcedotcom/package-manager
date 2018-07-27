@@ -13,6 +13,7 @@ import UpgradeJobCard from "./UpgradeJobCard";
 import Tabs from "../components/Tabs";
 import {NotificationManager} from "react-notifications";
 import moment from "moment";
+import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
 	SORTAGE_KEY_ITEMS = "UpgradeItemCard";
@@ -20,76 +21,56 @@ export default class extends React.Component {
 
 	state = {
 		upgrade: {},
-		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "id", "asc"),
+		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "p.dependency_tier", "asc"),
 		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc")
 	};
 
 	componentDidMount() {
+		notifier.on('upgrade', this.upgradeUpdated);
+		notifier.on('upgrade-items', this.upgradeItemsUpdated);
+		notifier.on('upgrade-jobs', this.upgradeJobsUpdated);
+
 		upgradeService.requestById(this.props.match.params.upgradeId).then(upgrade => this.setState({upgrade}));
-		upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems, true).then(items => {
+		upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems).then(items => {
 			this.setState({items});
-			this.checkItemStatus();
 		});
 		upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId, this.state.sortOrderJobs).then(jobs => {
 			this.setState({jobs});
-			this.checkJobStatus();
 		});
 	}
 
-	checkItemStatus() {
-		let failedItems = this.state.items.filter(i => i.failed_job_count !== "0");
-		this.setState({hasFailedJobs: failedItems.length > 0});
-		
-		let shouldPing = this.state.upgrade.status === "Active";
-		if (!shouldPing)
-			return; // All of our items are done, so don't bother pinging.
-
-		const secondsDelay = 3;
-		console.log(`Checking upgrade item status again in ${secondsDelay} seconds`);
-		setTimeout(this.fetchItemStatus.bind(this), (secondsDelay) * 1000);
+	componentWillUnmount() {
+		notifier.remove('upgrade', this.upgradeUpdated);
+		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
+		notifier.remove('upgrade-jobs', this.upgradeJobsUpdated);
 	}
 
-	fetchItemStatus() {
-		upgradeItemService.findByUpgrade(this.state.upgrade.id, this.state.sortOrderItems, true).then(items => {
-			this.setState({items});
-			this.checkItemStatus();
-		});
-	}
-
-	checkJobStatus() {
-		let shouldPing = this.state.upgrade.status === "Active";
-		if (!shouldPing)
-			return; // All of our items are done, so don't bother pinging.
-
-		let foundOne = false;
-		for (let i = 0; i < this.state.jobs.length && !foundOne; i++) {
-			const job = this.state.jobs[i];
-			if (!isDoneStatus(job.status))
-				foundOne = true;
-			else if (job.status === Status.Succeeded && job.current_version_number !== job.version_number)
-				foundOne = true;
+	upgradeUpdated = (upgrade) => {
+		if (this.state.upgrade.id === upgrade.id) {
+			this.setState({upgrade});
 		}
-
-		if (!foundOne)
-			return; // All of our jobs are done, so don't bother pinging.
-
-		// Use a simpleton variable delay based on number of jobs
-		const secondsDelay = 5 + this.state.jobs.length / 100;
-		console.log(`Checking job status again in ${secondsDelay} seconds`);
-		setTimeout(this.fetchJobStatus.bind(this), (secondsDelay) * 1000);
-	}
-
-	fetchJobStatus = () => {
-		this.setState({isFetchingStatus: true});
-		upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId, this.state.sortOrderJobs, true).then(jobs => {
-			this.setState({jobs, isFetchingStatus: false});
-			this.checkJobStatus();
-		}).catch(e => {
-			this.setState({isFetchingStatus: false});
-			NotificationManager.error(e.message, "Fetch Failed");
-		});
 	};
-
+	
+	upgradeItemsUpdated = (items) => {
+		const mine = items.filter(i => i.upgrade_id === this.state.upgrade.id);
+		if (mine.length > 0) {
+			// At least one of these is from our upgrade, so just reload all of them
+			upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems).then(items => {
+				this.setState({items});
+			});
+		}
+	};
+	
+	upgradeJobsUpdated = (jobs) => {
+		const mine = jobs.filter(j => j.upgrade_id === this.state.upgrade.id);
+		if (mine.length > 0) {
+			// At least one of these is from our upgrade, so just reload all of them
+			upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId, this.state.sortOrderJobs).then(jobs => {
+				this.setState({jobs});
+			});
+		}
+	};
+	
 	activationHandler = () => {
 		if (window.confirm(`Are you sure you want to activate this upgrade?`)) {
 			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload());
@@ -132,16 +113,16 @@ export default class extends React.Component {
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
-				disabled: this.state.upgrade.status === "Done" || !userCanActivate,
+				disabled: this.state.upgrade.item_status === "Done" || !userCanActivate,
 				detail: "Update items in this upgrade to Pending state"
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
-				disabled: this.state.upgrade.status === "Done"
+				disabled: this.state.upgrade.item_status === "Done"
 			},
 			{
 				label: "Retry Upgrade", handler: this.retryHandler.bind(this),
-				disabled: !(this.state.upgrade.status === "Done" && this.state.hasFailedJobs), spinning: this.state.isRetrying
+				disabled: !(this.state.upgrade.item_status === "Done" && this.state.hasFailedJobs), spinning: this.state.isRetrying
 			}
 		];
 
@@ -166,9 +147,7 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
-							<UpgradeItemCard upgrade={this.state.upgrade} notes={itemNotes}
-											 items={this.state.items}
-											 status={this.state.upgrade.status}/>
+							<UpgradeItemCard upgrade={this.state.upgrade} notes={itemNotes} items={this.state.items}/>
 						</div>
 						<div label="Jobs">
 							<UpgradeJobCard jobs={this.state.jobs}/>

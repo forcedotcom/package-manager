@@ -7,4 +7,10 @@ const Logger = require('heroku-logger').Logger;
     prefix: String,    // Defaults to `''`.
     readable: Boolean, // Defaults to `true` only if `NODE=ENV != 'production'`.
 }*/
-exports.logger = new Logger({});
+const LOG = new Logger({});
+exports.logger = {
+	debug: LOG.debug,
+	info: LOG.info,
+	warn: LOG.warn,
+	error: (e, data) => LOG.error(e.message || e, {stack: e.stack || null, ...data})
+};

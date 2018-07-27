@@ -2,6 +2,8 @@ const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
+const orgpackageversions = require('./orgpackageversions');
+const {emit, Events} = require('./admin');
 
 const State = {
 	Ready: "Ready",
@@ -11,12 +13,16 @@ const State = {
 	Complete: "Complete"
 };
 
-const UPGRADE_MONITOR_FREQUENCY = (process.env.UPGRADE_MONITOR_FREQUENCY_SECONDS || 10) * 1000;
+const UpgradeStatus = {
+	Ready: "Ready",
+	Active: "Active",
+	Done: "Done"
+};
 
 const MAX_ERROR_COUNT = 20;
 
 const SELECT_ALL = `
-    SELECT u.id, u.start_time, u.created_by, u.description,
+    SELECT u.id, u.status, u.start_time, u.created_by, u.description,
     CASE
     WHEN count(CASE
              WHEN i.status = 'Created' THEN 1
@@ -27,13 +33,19 @@ const SELECT_ALL = `
              WHEN i.status = 'Canceled' THEN 1
              WHEN i.status = 'Ineligible' THEN 1
              ELSE NULL END) != count(i.*) THEN 'Active'
-    ELSE 'Done' END status
+    ELSE 'Done' END item_status,
+    count(CASE
+			WHEN i.status = 'Failed' THEN 1
+			ELSE NULL END) failed_item_count,
+    count(CASE
+			WHEN i.status = 'Canceled' THEN 1
+			ELSE NULL END) canceled_item_count
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id
     GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ONE = `
-    SELECT u.id, u.start_time, u.created_by, u.description,
+    SELECT u.id, u.status, u.start_time, u.created_by, u.description,
     CASE
     WHEN count(CASE
              WHEN i.status = 'Created' THEN 1
@@ -44,7 +56,13 @@ const SELECT_ONE = `
              WHEN i.status = 'Canceled' THEN 1
              WHEN i.status = 'Ineligible' THEN 1
              ELSE NULL END) != count(i.*) THEN 'Active'
-    ELSE 'Done' END status
+    ELSE 'Done' END item_status,
+    count(CASE
+			WHEN i.status = 'Failed' THEN 1
+			ELSE NULL END) failed_item_count,
+    count(CASE
+			WHEN i.status = 'Canceled' THEN 1
+			ELSE NULL END) canceled_item_count
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id
     WHERE u.id = $1
@@ -70,10 +88,7 @@ const GROUP_BY_ALL_ITEMS = ` group by i.id, i.upgrade_id, i.push_request_id, i.p
         pv.version_number, pv.version_id,
         p.name, p.sfid`;
 
-const SELECT_ALL_ITEMS_BY_UPGRADE =
-	`${SELECT_ALL_ITEMS}
-        where i.upgrade_id = $1
-        ${GROUP_BY_ALL_ITEMS}`;
+const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} where i.upgrade_id = $1 ${GROUP_BY_ALL_ITEMS}`;
 
 const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
@@ -86,7 +101,7 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
 
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status, j.message,
         i.start_time, i.created_by,
-        pv.version_number, pv.version_id,
+        pv.sfid package_version_id, pv.version_number, pv.version_id,
         pvc.version_number current_version_number, pvc.version_id current_version_id,
         pvo.version_number original_version_number, pvo.version_id original_version_id,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
@@ -103,7 +118,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
 
 async function createUpgrade(scheduledDate, createdBy, description) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description) VALUES ($1,$2,$3)', [isoTime, createdBy, description]);
+	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status) VALUES ($1,$2,$3,$4)', [isoTime, createdBy, description, UpgradeStatus.Ready]);
 	return recs[0];
 }
 
@@ -120,6 +135,7 @@ async function changeUpgradeItemStatus(item, status) {
 	try {
 		item.status = status || item.status;
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
+		emit(Events.UPGRADE_ITEMS, [item]);
 	} catch (error) {
 		logger.error("Failed to update upgrade item", {itemId: item.id, status, error: error.message || error});
 	}
@@ -137,34 +153,17 @@ async function changeUpgradeItemAndJobStatus(items, status) {
 		
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
 		await db.update(`UPDATE upgrade_job SET status = $1 WHERE item_id IN (${params.join(",")})`, values);
+		emit(Events.UPGRADE_ITEMS, items);
 	} catch (error) {
 		logger.error("Failed to update upgrade items", {status, error: error.message || error});
 	}
 }
 
-async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
-	if (pushJobs.length > upgradeJobs.length) {
-		// Should never ever happen.
-		logger.error("Fail: pushJobs does not match upgradeJobs", {
-			pushjobs: pushJobs.length,
-			upgradejobs: upgradeJobs.length
-		});
-		return {};
-	}
-
-	// Order by org id
-	pushJobs.sort(function (a, b) {
-		return a.SubscriberOrganizationKey > b.SubscriberOrganizationKey ? 1 : -1;
-	});
-
-	upgradeJobs.sort(function (a, b) {
-		return a.org_id > b.org_id ? 1 : -1;
-	});
-
+async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 	let updated = [];
 	let upgraded = [];
 	let errored = [];
-	for (let u = 0, p = 0; u < upgradeJobs.length; u++) {
+	for (let u = 0; u < upgradeJobs.length; u++) {
 		let upgradeJob = upgradeJobs[u];
 		if (upgradeJob.job_id === null) {
 			if (upgradeJob.status !== push.Status.Invalid) {
@@ -176,17 +175,10 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
 			continue; // Ignore the ineligible or otherwise invalid job
 		}
 
-		const pushJob = pushJobs[p++]; // Increment push job counter here, and not before
+		const pushJob = pushJobsById.get(upgradeJob.job_id);
 
 		if (pushJob.Id.substring(0, 15) !== upgradeJob.job_id) {
-			throw Error("Something is very wrong. Push Jobs do not match Upgrade Jobs");
-		}
-		if (pushJob.Status === push.Status.Succeeded) {
-			// Our upgrade finished, we are told.
-			if (upgradeJob.version_id !== upgradeJob.current_version_id) {
-				// ...but our local version information does not yet match.  Fetch it.
-				upgraded.push(upgradeJob);
-			}
+			throw Error("Something is very wrong. Push Job is missing missing: " + upgradeJob.job_id);
 		}
 
 		// Check if our local status matches the remote status. If so, we can skip.
@@ -227,13 +219,14 @@ async function handleUpgradeJobsStatusChange(pushJobs, upgradeJobs) {
 			erroredJob.status = push.Status.Failed;
 		}
 	}
+	
+	if (upgraded.length > 0) {
+		await orgpackageversions.updateOrgPackageVersions(upgraded);
+	}
 
 	if (updated.length > 0) {
 		await upsertUpgradeJobs(null, null, null, updated);
-	}
-
-	if (upgraded.length > 0) {
-		await admin.fetchVersions(upgraded.map(j => j.org_id), [upgraded[0].package_org_id]);
+		emit(Events.UPGRADE_JOBS, updated);
 	}
 
 	return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};
@@ -273,11 +266,7 @@ async function requestItemsByUpgrade(req, res, next) {
 	try {
 		let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
 		if (req.query.fetchStatus) {
-			for (let i = 0; i < items.length; i++) {
-				let item = items[i];
-				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				await changeUpgradeItemStatus(item, pushReqs[0].Status);
-			}
+			// await fetchStatus(items.filter(i => push.isActiveStatus(i.status)));
 		}
 
 		return res.json(items);
@@ -311,15 +300,8 @@ async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
 async function requestAllJobs(req, res, next) {
 	try {
 		let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
-		if (req.query.fetchStatus && upgradeJobs.length > 0) {
-			let pushJobs = await fetchJobStatus(upgradeJobs);
-			handleUpgradeJobsStatusChange(pushJobs, upgradeJobs)
-				.then(({updated, succeeded, errored}) => logger.debug(`Upgrade job status changes`, {
-					updated,
-					succeeded,
-					errored
-				}))
-				.catch(error => logger.error('Failed to update upgrade item status', {error: error.message || error}));
+		if (req.query.fetchStatus) {
+			// await fetchJobStatus(upgradeJobs);
 		}
 
 		return res.json(upgradeJobs);
@@ -328,19 +310,32 @@ async function requestAllJobs(req, res, next) {
 	}
 }
 
+async function fetchStatus(items) {
+	for (let i = 0; i < items.length; i++) {
+		let item = items[i];
+		let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
+		await changeUpgradeItemStatus(item, pushReqs[0].Status);
+	}
+}
+
 async function fetchJobStatus(upgradeJobs) {
-	const requestMap = new Map();
-	upgradeJobs.forEach(j => {
-		requestMap.set(j.push_request_id, {package_org_id: j.package_org_id, push_request_id: j.push_request_id});
+	const requests = new Map();
+	const activeJobs = upgradeJobs.filter(j => push.isActiveStatus(j.status));
+	if (activeJobs.length === 0) 
+		return; // Bail fast
+	
+	activeJobs.forEach(j => {
+		requests.set(j.push_request_id, {package_org_id: j.package_org_id, push_request_id: j.push_request_id});
 	});
 	const promisesArr = [];
-	Array.from(requestMap.values()).forEach(r => {
+	requests.forEach(r => {
 		promisesArr.push(push.findJobsByRequestIds(r.package_org_id, r.push_request_id));
 	});
+	
+	let pushJobsById = new Map();
 	const promisesResults = await Promise.all(promisesArr);
-	let pushJobs = [];
-	promisesResults.forEach(arr => pushJobs = pushJobs.concat(arr));
-	return pushJobs;
+	promisesResults.forEach(arr => arr.forEach(pj => pushJobsById.set(pj.Id.substring(0,15), pj)));
+	await changeUpgradeJobsStatus(activeJobs, pushJobsById);
 }
 
 async function findJobs(upgradeId, itemId, sortField, sortDir, status) {
@@ -371,8 +366,8 @@ function requestItemById(req, res, next) {
 	retrieveItemById(id)
 		.then(async item => {
 			if (req.query.fetchStatus) {
-				let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-				await changeUpgradeItemStatus(item, pushReqs[0].Status);
+				// let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
+				// await changeUpgradeItemStatus(item, pushReqs[0].Status);
 			}
 			res.json(item)
 		})
@@ -398,9 +393,8 @@ function requestJobById(req, res, next) {
 async function requestActivateUpgrade(req, res, next) {
 	let id = req.params.id;
 	try {
-		const items = await activateUpgrade(id, req.session.username);
-		startUpgradeMonitor(id, req.session.username);
-		res.json(items);
+		await activateUpgrade(id, req.session.username);
+		return res.send({result: 'ok'});
 	} catch (e) {
 		return res.status(500).send(e.message || e);
 	}
@@ -423,6 +417,25 @@ async function requestRetryFailedUpgrade(req, res, next) {
 }
 
 async function activateUpgrade(id, username, job = {postMessage: msg => logger.info(msg)}) {
+	const upgrade = await retrieveById(id);
+	if (upgrade.status !== UpgradeStatus.Ready) {
+		throw `Cannot activate an upgrade (${id}) that is not ready`;
+	} 
+	if (username && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
+		if (upgrade.created_by === null) {
+			throw `Cannot activate upgrade ${id} without knowing who created it`;
+		}
+		if (upgrade.created_by === username) {
+			throw `Cannot activate upgrade ${id} by the same user ${username} who created it`;
+		}
+	}
+	
+	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Active, id]);
+	emit(Events.UPGRADE, upgrade);
+	await activateAvailableUpgradeItems(id, username, job);
+}
+
+async function activateAvailableUpgradeItems(id, username, job = {postMessage: msg => logger.info(msg)}) {
 	let items = await findItemsByUpgrade(id, "dependency_tier", "asc");
 	items = items.filter(i => {
 		if (i.eligible_job_count === "0") {
@@ -516,42 +529,58 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	return items;
 }
 
-function startUpgradeMonitor(id, username) {
+function monitorUpgrades() {
 	const job = new admin.AdminJob("upgrade", "Run and monitor an active upgrade",
 		[
 			{
-				name: "Activate and monitor requests in upgrade",
-				handler: async (job) => activateAndMonitorUpgrade(id, username, job)
+				name: "Monitor active upgrades",
+				handler: job => monitorActiveUpgrades(job)
+			},
+			{
+				name: "Monitor active upgrade items",
+				handler: job => monitorActiveUpgradeItems(job)
 			}
 		]);
-	job.run().then(() => {});
+	job.singleton = true; // Don't queue us up
+	return job;
 }
 
-async function activateAndMonitorUpgrade(id, username, job) {
-	return new Promise((resolve, reject) => {
-		const repeatAsNeeded = () => {
-			// Keep activating the upgrade until the items are done.
-			activateUpgrade(id, username, job).then((items) => {
-				logger.info("Finished upgrade activation run");
-				let active = false;
-				for (let i = 0; i < items.length; i++) {
-					if (push.isActiveStatus(items[i].status)) {
-						// If one request is still active, we're still active.
-						active = true;
-					}
-				}
-
-				if (!active) {
-					resolve(items);
-				} else {
-					setTimeout(repeatAsNeeded, UPGRADE_MONITOR_FREQUENCY);
-				}
-			}).catch(reject);
-		};
-		repeatAsNeeded();
-	});
+async function monitorActiveUpgrades(job) {
+	const activeUpgrades = await db.query(`SELECT id FROM upgrade WHERE status = $1`, [UpgradeStatus.Active]);
+	for (let i = 0; i < activeUpgrades.length; i++) {
+		const upgrade = activeUpgrades[i];
+		const items = await activateAvailableUpgradeItems(upgrade.id, job);
+		
+		const activeItems = items.filter(i => push.isActiveStatus(i.status));
+		if (activeItems.length === 0) {
+			// Only here do we mark our upgrades as complete, yo.
+			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Done, upgrade.id]);
+			emit(Events.UPGRADE, upgrade);
+		}
+	}
 }
 
+async function monitorActiveUpgradeItems(job) {
+	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($1,$2) ${GROUP_BY_ALL_ITEMS}`, [push.Status.Pending, push.Status.InProgress]);
+	if (activeItems.length === 0) {
+		return; // Nothing to do
+	}
+	
+	await fetchStatus(activeItems);
+
+	let params = activeItems.map((v,i) => `$${i+1}`);
+	let where = ` WHERE item_id IN (${params.join(",")})`;
+	const upgradeJobs = await db.query(`${SELECT_ALL_JOBS} ${where}`, activeItems.map(i => i.id));
+	await fetchJobStatus(upgradeJobs);
+}
+
+// async function monitorUpgradedOrgVersions(job) {
+// 	let where = `WHERE j.status = $1 AND pv.version_id != pvc.version_id`;
+// 	const upgraded = await db.query(`${SELECT_ALL_JOBS} ${where}`, [push.Status.Succeeded]);
+// 	const orgIds = upgraded.map(j => j.org_id);
+// 	const packageOrgIds = Array.from(new Set(upgraded.map(j => j.package_org_id)));
+// 	await opvfetch.fetchFromSubscribers(orgIds, packageOrgIds, job);
+// }
 
 async function requestCancelUpgrade(req, res, next) {
 	const id = req.params.id;
@@ -616,3 +645,4 @@ exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
 exports.requestCancelUpgradeItem = requestCancelUpgradeItem;
 exports.findItemsByIds = findItemsByIds;
 exports.findJobs = findJobs;
+exports.monitorUpgrades = monitorUpgrades;
