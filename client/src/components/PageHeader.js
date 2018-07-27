@@ -43,8 +43,7 @@ export class HeaderField extends React.Component {
 			<div className="slds-col--padded">
 				<dl>
 					<dt>
-						<p className="slds-text-heading--label slds-truncate" style={style}
-						   title="{this.props.label}">{this.props.label}</p>
+						<p className="slds-text-heading--label slds-truncate" style={style}>{this.props.label}</p>
 					</dt>
 					<dd>
 						<p className="slds-text-body--regular slds-truncate" style={style} title={value}>{value}</p>
