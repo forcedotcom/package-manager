@@ -103,7 +103,7 @@ export class RecordHeader extends React.Component {
 								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
 							</div>
 							<div className="slds-media__body">
-								<p className="slds-text-heading--label">{this.props.type}</p>
+								<p className="slds-text-heading--label">{this.props.parent ? <Breadcrumb target={this.props.parent}/> : ""}{this.props.type}</p>
 								<div className="slds-grid">
 									<h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle"
 										title={this.props.title}>{this.props.title}</h1>
@@ -125,6 +125,12 @@ export class RecordHeader extends React.Component {
 					</div> : ""}
 			</div>
 		);
+	}
+}
+
+class Breadcrumb extends React.Component {
+	render() { 
+		return <span><a href={this.props.target.location}>{this.props.target.label}</a> <span className="slds-text-heading--small">::</span> </span> 
 	}
 }
 

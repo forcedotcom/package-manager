@@ -135,6 +135,7 @@ async function changeUpgradeItemStatus(item, status) {
 	try {
 		item.status = status || item.status;
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
+		emit(Events.UPGRADE, await retrieveById(item.upgrade_id));
 		emit(Events.UPGRADE_ITEMS, [item]);
 	} catch (error) {
 		logger.error("Failed to update upgrade item", {itemId: item.id, status, error: error.message || error});
@@ -153,6 +154,7 @@ async function changeUpgradeItemAndJobStatus(items, status) {
 		
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
 		await db.update(`UPDATE upgrade_job SET status = $1 WHERE item_id IN (${params.join(",")})`, values);
+		emit(Events.UPGRADE, await retrieveById(items[0].upgrade_id));
 		emit(Events.UPGRADE_ITEMS, items);
 	} catch (error) {
 		logger.error("Failed to update upgrade items", {status, error: error.message || error});

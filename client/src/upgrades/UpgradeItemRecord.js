@@ -54,7 +54,7 @@ export default class extends React.Component {
 	
 	loadItemJobs(item) {
 		upgradeJobService.requestAllJobs(item.id, this.state.sortOrderJobs).then(jobs => {
-			this.setState({item, jobs, isCanceling: false, isActivating: false});
+			this.setState({item, jobs, isCancelling: false, isActivating: false});
 		});
 	}
 
@@ -72,11 +72,12 @@ export default class extends React.Component {
 	handleCancellation = () => {
 		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
 			this.setState({isCancelling: true});
-			upgradeItemService.cancel(this.state.item.id).then(item => this.loadItemJobs(item))
-			.catch(e => {
-				this.setState({isCancelling: true});
-				NotificationManager.error(e.message, "Cancellation Failed");
-			});
+			upgradeItemService.cancel(this.state.item.id)
+				.then(item => this.loadItemJobs(item))
+				.catch(e => {
+					this.setState({isCancelling: false});
+					NotificationManager.error(e.message, "Cancellation Failed");
+				});
 		}
 	};
 
@@ -124,8 +125,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.description}
-							  actions={actions} notes={notes}>
-					<HeaderField label="Start Time" format="datetime" value={this.state.item.start_time}/>
+							  actions={actions} notes={notes} parent={{label: "Upgrade", location: `/upgrade/${this.state.item.upgrade_id}`}}>
+					<HeaderField label="Scheduled Start Time" value={`${moment(this.state.item.start_time).format('lll')} (${moment(this.state.item.start_time).fromNow()})`}/>
 					<HeaderField label="Status" value={this.state.item.status}
 								 className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={this.state.item.created_by}/>

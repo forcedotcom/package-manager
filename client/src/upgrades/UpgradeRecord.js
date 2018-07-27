@@ -139,9 +139,9 @@ export default class extends React.Component {
 		return (
 			<div>
 				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description} actions={actions}>
-					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
 					<HeaderField label="Scheduled Start Time" value={`${moment(this.state.upgrade.start_time).format('lll')} (${moment(this.state.upgrade.start_time).fromNow()})`}/>
 					<HeaderField label="Status" value={this.state.upgrade.status}/>
+					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
 				</RecordHeader>
 				<ProgressBar progress={completed / count} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">

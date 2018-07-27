@@ -1,7 +1,7 @@
 import {NotificationManager} from 'react-notifications';
-import * as io from "socket.io-client";
+import socketIOClient from "socket.io-client";
 
-const socket = io.connect();
+const socket = socketIOClient();
 	
 socket.on("heartbeat", e => console.log(e));
 socket.on("alert", e => info(e.message, e.subject));

@@ -212,6 +212,11 @@ function emit(key, data) {
 	}
 }
 
+function requestEmit(req, res, next) {
+	emit(req.params.key);
+	res.json({result: "ok"});
+}
+
 function requestSettings(req, res) {
 	res.json({
 		HEROKU_APP_NAME: process.env.HEROKU_APP_NAME || null
@@ -416,6 +421,7 @@ const BinaryIdLookup = {
 exports.Events = Events;
 exports.connect = connect;
 exports.emit = emit;
+exports.requestEmit = requestEmit;
 exports.scheduleJobs = scheduleJobs;
 exports.requestSettings = requestSettings;
 exports.requestJobs = requestJobs;

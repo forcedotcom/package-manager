@@ -118,6 +118,8 @@ app.post('/api/upgradeitems/cancel/:id', upgrades.requestCancelUpgradeItem);
 app.get('/api/upgradejobs', upgrades.requestAllJobs);
 app.get('/api/upgradejobs/:id', upgrades.requestJobById);
 
+app.get('/api/emit/:key', admin.requestEmit);
+
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
 app.get('/*', (req, res) => {
@@ -129,7 +131,7 @@ server.listen(app.get('port'), function () {
 });
 
 // Kick off socket.io
-const io = socketIo.listen(server);
+const io = socketIo(server);
 io.on('connection', function (socket) {
 	admin.connect(socket);
 });
