@@ -3,7 +3,6 @@ import socketIOClient from "socket.io-client";
 
 const socket = socketIOClient();
 	
-socket.on("heartbeat", e => console.log(e));
 socket.on("alert", e => info(e.message, e.subject));
 socket.on("fail", e => error(e.message, e.subject));
 

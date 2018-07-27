@@ -46,12 +46,15 @@ export default class extends React.Component {
 	}
 
 	upgradeUpdated = (upgrade) => {
-		if (this.state.upgrade.id === upgrade.id) {
+		if (upgrade && this.state.upgrade.id === upgrade.id) {
 			this.setState({upgrade});
 		}
 	};
 	
 	upgradeItemsUpdated = (items) => {
+		if (!items || !items.filter)
+			return;
+		
 		const mine = items.filter(i => i.upgrade_id === this.state.upgrade.id);
 		if (mine.length > 0) {
 			// At least one of these is from our upgrade, so just reload all of them
@@ -62,6 +65,9 @@ export default class extends React.Component {
 	};
 	
 	upgradeJobsUpdated = (jobs) => {
+		if (!jobs || !jobs.filter)
+			return;
+		
 		const mine = jobs.filter(j => j.upgrade_id === this.state.upgrade.id);
 		if (mine.length > 0) {
 			// At least one of these is from our upgrade, so just reload all of them

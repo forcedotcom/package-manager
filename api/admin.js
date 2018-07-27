@@ -172,8 +172,6 @@ class AdminJob {
 function connect(sock) {
 	socket = sock;
 
-	setInterval(() => socket.emit("heartbeat", `Server socket is alive and well at ${new Date().toTimeString()}`), 20*1000);
-
 	socket.on(Events.FETCH_ACCOUNT_ORGS, function () {
 		fetchAccountOrgs().then(() => {});
 	});
