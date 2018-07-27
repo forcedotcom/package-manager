@@ -20,4 +20,10 @@ export const DoneStatus = {
 	Canceled: Status.Canceled,
 	Ineligible: Status.Ineligible
 };
+
+export const NotStartedStatus = {
+	Created: Status.Created,
+	Pending: Status.Pending
+};
 export let isDoneStatus = (status) => typeof DoneStatus[status] !== "undefined";
+export let isNotStartedStatus = (status) => typeof NotStartedStatus[status] !== "undefined";

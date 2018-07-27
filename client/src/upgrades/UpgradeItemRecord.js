@@ -5,7 +5,7 @@ import * as upgradeItemService from '../services/UpgradeItemService';
 import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
 import * as sortage from "../services/sortage";
 import * as upgradeJobService from "../services/UpgradeJobService";
-import {isDoneStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
+import {isDoneStatus, isNotStartedStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
@@ -112,9 +112,12 @@ export default class extends React.Component {
 			}
 		];
 
-		let count = this.state.jobs.length, completed = 0, errors = 0;
+		let count = this.state.jobs.length, started = 0, completed = 0, errors = 0;
 		for (let i = 0; i < count; i++) {
 			let job = this.state.jobs[i];
+			if (!isNotStartedStatus(job.status)) {
+				started++;
+			}
 			if (isDoneStatus(job.status)) {
 				completed++;
 			}
@@ -131,7 +134,7 @@ export default class extends React.Component {
 								 className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={this.state.item.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={(completed +1)/(count+1)} success={errors === 0}/>
+				<ProgressBar progress={(started+completed)/(count*2)} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard jobs={this.state.jobs}/>
 				</div>

@@ -6,7 +6,7 @@ import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
 import * as upgradeItemService from "../services/UpgradeItemService";
 import * as upgradeJobService from "../services/UpgradeJobService";
 import * as sortage from "../services/sortage";
-import {isDoneStatus, Status, UPGRADE_ICON} from "../Constants";
+import {isDoneStatus, isNotStartedStatus, Status, UPGRADE_ICON} from "../Constants";
 import UpgradeItemCard from "./UpgradeItemCard";
 import ProgressBar from "../components/ProgressBar";
 import UpgradeJobCard from "./UpgradeJobCard";
@@ -117,16 +117,19 @@ export default class extends React.Component {
 		}
 
 		let done = true;
-		let count = this.state.jobs ? this.state.jobs.length : 0, completed = 0, errors = 0;
+		let count = this.state.jobs ? this.state.jobs.length : 0, started = 0, completed = 0, errors = 0;
 		for (let i = 0; i < count; i++) {
 			let job = this.state.jobs[i];
+			if (!isNotStartedStatus(job.status)) {
+				started++;
+			}
 			if (isDoneStatus(job.status)) {
 				completed++;
-				if (job.status === Status.Failed) {
-					errors++;
-				}
 			} else {
 				done = false;
+			}
+			if (job.status === Status.Failed) {
+				errors++;
 			}
 		}
 		
@@ -153,7 +156,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={this.state.upgrade.status}/>
 					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={(completed + 1) / (count + 1)} success={errors === 0}/>
+				<ProgressBar progress={(started+completed)/(count*2)} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
