@@ -119,7 +119,7 @@ export default class extends React.Component {
 								borderRadius: '10px',
 								transition: 'all .3s ease-in'
 							}}>
-								{row.value ? row.value : "Retrieving Status..."}</span>
+								{row.original.message ? "Failed" : row.value}</span>
 						</div>
 					)
 				}]
