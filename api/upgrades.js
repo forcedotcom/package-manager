@@ -171,7 +171,7 @@ async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 			if (upgradeJob.status !== push.Status.Invalid) {
 				// New status, so update our local copy.
 				upgradeJob.status = push.Status.Invalid;
-				upgradeJob.message = "No matching push upgrade job found.";
+				upgradeJob.message = "No matching push upgrade job found. Most likely cause is the org is not eligible to receive this upgrade. It may not have the package installed, or it may have a beta version installed.";
 				updated.push(upgradeJob);
 			}
 			continue; // Ignore the ineligible or otherwise invalid job
@@ -227,14 +227,14 @@ async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 	}
 
 	if (updated.length > 0) {
-		await upsertUpgradeJobs(null, null, null, updated);
+		await updateUpgradeJobsStatus(updated);
 		emit(Events.UPGRADE_JOBS, updated);
 	}
 
 	return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};
 }
 
-async function upsertUpgradeJobs(upgradeId, itemId, requestId, jobs) {
+async function createUpgradeJobs(upgradeId, itemId, requestId, jobs) {
 	let sql = `INSERT INTO upgrade_job (upgrade_id, item_id, push_request_id, job_id, org_id, status, message, original_version_id) VALUES`;
 	let values = [upgradeId, itemId, requestId];
 	for (let i = 0, n = 1 + values.length; i < jobs.length; i++) {
@@ -246,8 +246,22 @@ async function upsertUpgradeJobs(upgradeId, itemId, requestId, jobs) {
 		values.push(job.job_id, job.org_id, job.status, job.message, job.original_version_id);
 	}
 
-	sql += `on conflict (job_id) do update set status = excluded.status, message = excluded.message`;
 	await db.insert(sql, values);
+}
+
+async function updateUpgradeJobsStatus(jobs) {
+	let n = 0;
+	let params = [];
+	let values = [];
+	jobs.forEach(j => {
+		params.push(`($${++n}::INTEGER,$${++n},$${++n})`);
+		values.push(j.id, j.status, j.message);
+	});
+	let sql = `UPDATE upgrade_job as t 
+			SET status = j.status, message = j.message
+			FROM ( VALUES ${params.join(",")} ) as j(id, status, message)
+			WHERE j.id = t.id`;
+	await db.update(sql, values);
 }
 
 async function requestAll(req, res, next) {
@@ -342,12 +356,6 @@ async function findJobs(upgradeId, itemId, sortField, sortDir, status) {
 	}
 	let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
 	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
-}
-
-async function findActiveUpgradeJobs(upgradeId) {
-	let i = 0;
-	return await db.query(`${SELECT_ALL_JOBS} WHERE j.upgrade_id = $${++i} AND j.status IN ($${++i}, $${++i}, $${++i})`, 
-							[upgradeId, push.Status.Created, push.Status.Pending, push.Status.InProgress])
 }
 
 function requestById(req, res, next) {
@@ -535,29 +543,31 @@ function monitorUpgrades() {
 			{
 				name: "Monitor active upgrade items",
 				handler: job => monitorActiveUpgradeItems(job)
+			},
+			{
+				name: "Monitor active upgrade jobs",
+				handler: job => monitorActiveUpgradeJobs(job)
 			}
 		]);
 	job.singleton = true; // Don't queue us up
-	job.shouldRun = async () => {
-		const upgrades = await retrieveActiveUpgrades();
-		return upgrades.length > 0
-	};
+	job.shouldRun = async () => await areAnyJobsActive();
 	return job;
 }
 
 async function retrieveActiveUpgrades() {
-	return db.query(`${SELECT_ALL} WHERE u.status = $1 ${GROUP_BY_ALL}`, [UpgradeStatus.Active]);
+	let i = 0;
+	return db.query(`${SELECT_ALL} WHERE u.status IN ($${++i}) AND u.start_time <= NOW() ${GROUP_BY_ALL}`, 
+		[UpgradeStatus.Active]);
 }
 
 async function monitorActiveUpgrades(job) {
 	const activeUpgrades = await retrieveActiveUpgrades();
 	for (let i = 0; i < activeUpgrades.length; i++) {
 		const upgrade = activeUpgrades[i];
-		const items = await activateAvailableUpgradeItems(upgrade.id, job);
+		await activateAvailableUpgradeItems(upgrade.id, job);
 		
-		const activeJobs = await findActiveUpgradeJobs(upgrade.id);
-		if (activeJobs.length === 0) {
-			// Only here do we mark our upgrades as complete, yo.
+		if (await areJobsCompleteForUpgrade(upgrade.id)) {
+			// An upgrade is complete only when all of its jobs are marked as complete
 			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Done, upgrade.id]);
 			emit(Events.UPGRADE, upgrade);
 		}
@@ -565,19 +575,39 @@ async function monitorActiveUpgrades(job) {
 }
 
 async function monitorActiveUpgradeItems(job) {
-	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($1,$2) ${GROUP_BY_ALL_ITEMS}`, [push.Status.Pending, push.Status.InProgress]);
+	let i = 0;
+	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($${++i},$${++i}) AND i.start_time <= NOW() ${GROUP_BY_ALL_ITEMS}`, 
+		[push.Status.Pending, push.Status.InProgress]);
 	if (activeItems.length === 0) {
 		return; // Nothing to do
 	}
 	
-
-	let params = activeItems.map((v,i) => `$${i+1}`);
-	let where = ` WHERE item_id IN (${params.join(",")})`;
-	const upgradeJobs = await db.query(`${SELECT_ALL_JOBS} ${where}`, activeItems.map(i => i.id));
-	await fetchJobStatus(upgradeJobs);
-	
-	// Fetch latest item status AFTER jobs, to be sure we get the latest job status if the items are done.
 	await fetchStatus(activeItems);
+}
+
+async function monitorActiveUpgradeJobs(job) {
+	let i = 0;
+	const activeJobs = await db.query(`${SELECT_ALL_JOBS} WHERE j.status IN ($${++i},$${++i}) AND i.start_time <= NOW()`,
+		[push.Status.Pending, push.Status.InProgress]);
+	await fetchJobStatus(activeJobs);
+}
+
+
+async function areAnyJobsActive() {
+	let i = 0;
+	const activeJobs = await db.query(`SELECT j.id FROM upgrade_job j 
+										INNER JOIN upgrade_item i on i.id = j.item_id
+										WHERE j.status IN ($${++i},$${++i}) AND i.start_time <= NOW() LIMIT 1`,
+		[push.Status.Pending, push.Status.InProgress]);
+	return activeJobs.length === 1;
+}
+
+async function areJobsCompleteForUpgrade(upgradeId) {
+	let i = 0;
+	const jobs = await db.query(`SELECT id FROM upgrade_job j WHERE j.upgrade_id = $${++i} 
+								AND j.status IN ($${++i}, $${++i}, $${++i}) LIMIT 1`,
+		[upgradeId, push.Status.Created, push.Status.Pending, push.Status.InProgress]);
+	return jobs.length === 0;
 }
 
 // async function monitorUpgradedOrgVersions(job) {
@@ -643,7 +673,7 @@ exports.requestItemsByUpgrade = requestItemsByUpgrade;
 exports.requestAllJobs = requestAllJobs;
 exports.createUpgrade = createUpgrade;
 exports.createUpgradeItem = createUpgradeItem;
-exports.createUpgradeJobs = upsertUpgradeJobs;
+exports.createUpgradeJobs = createUpgradeJobs;
 exports.requestActivateUpgrade = requestActivateUpgrade;
 exports.requestCancelUpgrade = requestCancelUpgrade;
 exports.requestRetryFailedUpgrade = requestRetryFailedUpgrade;

@@ -84,19 +84,20 @@ async function insertOrgPackageVersions(opvs) {
 }
 
 async function updateOrgPackageVersions(opvs) {
-	let params = [], values = [];
-	for (let i = 0, n = 1; i < opvs.length; i++) {
-		let opv = opvs[i];
-		params.push(`($${n++},$${n++},$${n++})`);
-		values.push(opv.org_id, opv.package_id, opv.package_version_id);
-	}
-
-	let sql = `INSERT INTO org_package_version (org_id, package_id, package_version_id) 
-			   VALUES ${params.join(",")}
-			   ON CONFLICT (org_id, package_id) 
-			   DO UPDATE SET package_version_id = excluded.package_version_id`;
-	return db.insert(sql, values);
+	let n = 0;
+	let params = [];
+	let values = [];
+	opvs.forEach(v => {
+		params.push(`($${++n},$${++n},$${++n})`);
+		values.push(v.package_id,v.package_version_id,v.org_id);
+	});
+	let sql = `UPDATE org_package_version as t 
+			SET package_version_id = v.package_version_id
+			FROM ( VALUES ${params.join(",")} ) as v(package_id, package_version_id, org_id)
+			WHERE v.org_id = t.org_id AND v.package_id = t.package_id`;
+	await db.update(sql, values);
 }
+
 
 exports.findAll = findAll;
 exports.insertOrgPackageVersions = insertOrgPackageVersions;

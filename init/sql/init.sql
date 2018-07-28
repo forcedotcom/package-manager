@@ -59,6 +59,7 @@ create table if not exists org_group (
   id           serial primary key,
   master_id    integer,
   name         varchar(100),
+  type         varchar(80),
   description  text,
   created_date timestamp with time zone
 );
@@ -206,6 +207,9 @@ alter table org
   drop column if exists account_name,
   add if not exists features text null;
 
+alter table org_group
+  add if not exists type varchar(80) null;
+
 alter table package
   add if not exists modified_date timestamp with time zone,
   add if not exists dependency_tier integer;
@@ -230,3 +234,15 @@ alter table package_version
 alter table upgrade_job
   add if not exists message text null,
   add if not exists original_version_id varchar(18) null;
+
+-- Data fixes
+
+-- Added status field to upgrade.  Marking all null status as Active means the system will re-check the status of
+-- all upgrades by querying its jobs, and set the status appropriately.
+update upgrade set status = 'Active' where status is null;
+
+-- Changed default status from null to Installed
+update org set status = 'Installed' where status is null;
+
+-- Added type field to group with default of Upgrade Group
+update org_group set type = 'Upgrade Group' where type is null;
