@@ -344,6 +344,12 @@ async function findJobs(upgradeId, itemId, sortField, sortDir, status) {
 	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
 }
 
+async function findActiveUpgradeJobs(upgradeId) {
+	let i = 0;
+	return await db.query(`${SELECT_ALL_JOBS} WHERE j.upgrade_id = $${++i} AND j.status IN ($${++i}, $${++i}, $${++i})`, 
+							[upgradeId, push.Status.Created, push.Status.Pending, push.Status.InProgress])
+}
+
 function requestById(req, res, next) {
 	let id = req.params.id;
 	retrieveById(id).then(rec => res.json(rec))
@@ -549,8 +555,8 @@ async function monitorActiveUpgrades(job) {
 		const upgrade = activeUpgrades[i];
 		const items = await activateAvailableUpgradeItems(upgrade.id, job);
 		
-		const activeItems = items.filter(i => push.isActiveStatus(i.status));
-		if (activeItems.length === 0) {
+		const activeJobs = await findActiveUpgradeJobs(upgrade.id);
+		if (activeJobs.length === 0) {
 			// Only here do we mark our upgrades as complete, yo.
 			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Done, upgrade.id]);
 			emit(Events.UPGRADE, upgrade);
