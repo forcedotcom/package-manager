@@ -570,12 +570,14 @@ async function monitorActiveUpgradeItems(job) {
 		return; // Nothing to do
 	}
 	
-	await fetchStatus(activeItems);
 
 	let params = activeItems.map((v,i) => `$${i+1}`);
 	let where = ` WHERE item_id IN (${params.join(",")})`;
 	const upgradeJobs = await db.query(`${SELECT_ALL_JOBS} ${where}`, activeItems.map(i => i.id));
 	await fetchJobStatus(upgradeJobs);
+	
+	// Fetch latest item status AFTER jobs, to be sure we get the latest job status if the items are done.
+	await fetchStatus(activeItems);
 }
 
 // async function monitorUpgradedOrgVersions(job) {
