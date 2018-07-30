@@ -1,11 +1,12 @@
 import React from 'react';
 import {FormHeader} from "../components/PageHeader";
 import {ORG_GROUP_ICON} from "../Constants";
+import PickList from "../components/PickList";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		let orggroup = props.orggroup || {id: "", name: "", description: ""};
+		let orggroup = props.orggroup || {id: "", name: "", description: "", type: props.type && props.type !== "All" ? props.type : "Upgrade Group"};
 		this.state = {
 			...orggroup, orgIds: [], orgs: ""
 		};
@@ -24,6 +25,10 @@ export default class extends React.Component {
 		this.setState({description: event.target.value});
 	};
 
+	typeChangeHandler = (value) => {
+		this.setState({type: value});
+	};
+	
 	orgsChangeHandler = (event) => {
 		this.setState({orgs: event.target.value});
 	};
@@ -44,7 +49,7 @@ export default class extends React.Component {
 			<div>
 				<div className="slds-modal slds-fade-in-open">
 					<div className="slds-modal__container">
-						<FormHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.name} actions={actions}/>
+						<FormHeader type={this.state.type} icon={ORG_GROUP_ICON} title={this.state.name} actions={actions}/>
 						<div className="slds-modal__content slds-p-around_medium">
 
 							<div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
@@ -55,6 +60,14 @@ export default class extends React.Component {
 											   onChange={this.nameChangeHandler}/>
 									</div>
 								</div>
+								<div className="slds-form-element">
+									<label className="slds-form-element__label" htmlFor="type">Type</label>
+									<div className="slds-form-element__control">
+										<PickList value={this.state.type} onChange={this.typeChangeHandler}
+												  items={this.props.types}/>
+									</div>
+								</div>
+
 								<div className="slds-form-element">
 									<label className="slds-form-element__label"
 										   htmlFor="description">Description</label>

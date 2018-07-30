@@ -4,7 +4,14 @@ const {emit, Events} = require('./admin');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
 
-const SELECT_ALL = "SELECT id, name, description, created_date FROM org_group";
+const SELECT_ALL = "SELECT id, name, type, description, created_date FROM org_group";
+
+const GroupType = {
+	UpgradeGroup: "Upgrade Group",
+	Blacklist: "Blacklist",
+	Whitelist: "Whitelist",
+	Inactive: "Inactive"
+};
 
 async function requestAll(req, res, next) {
 	let whereParts = [],
@@ -21,6 +28,11 @@ async function requestAll(req, res, next) {
 	if (req.query.excludeId) {
 		values.push(req.query.excludeId);
 		whereParts.push(`id != $${values.length}`)
+	}
+
+	if (req.query.type && req.query.type !== "All") {
+		values.push(req.query.type);
+		whereParts.push(`type = $${values.length}`)
 	}
 
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
@@ -75,7 +87,8 @@ async function requestRemoveMembers(req, res, next) {
 async function requestCreate(req, res, next) {
 	try {
 		let og = req.body;
-		let rows = await db.insert('INSERT INTO org_group (name, description, created_date) VALUES ($1, $2, NOW())', [og.name, og.description || '']);
+		let i = 0;
+		let rows = await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++i}, $${++i}, $${++i}, NOW())`, [og.name, og.type || GroupType.UpgradeGroup, og.description || '']);
 		if (og.orgIds && og.orgIds.length > 0) {
 			await insertOrgMembers(rows[0].id, rows[0].name, og.orgIds);
 		}
@@ -88,7 +101,8 @@ async function requestCreate(req, res, next) {
 async function requestUpdate(req, res, next) {
 	try {
 		let og = req.body;
-		await db.update('UPDATE org_group SET name=$1, description=$2 WHERE id=$3', [og.name, og.description, og.id]);
+		let i = 0;
+		await db.update(`UPDATE org_group SET name=$${++i}, type=$${++i}, description=$${++i} WHERE id=$${++i}`, [og.name, og.type, og.description, og.id]);
 
 		if (og.orgIds && og.orgIds.length > 0) {
 			insertOrgMembers(og.id, og.name, og.orgIds)
@@ -133,7 +147,8 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	let orggroup;
 	if (groupId === "-1" && groupName && groupName !== "") {
 		// First, create our new group.
-		orggroup = (await db.insert('INSERT INTO org_group (name, description) VALUES ($1, $2)', [groupName, '']))[0];
+		let n = 0;
+		orggroup = (await db.insert(`INSERT INTO org_group (name, type, description) VALUES ($${++n},$${++n},$${++n})`, [groupName, GroupType.UpgradeGroup, '']))[0];
 	} else {
 		orggroup = (await db.query(SELECT_ALL + " WHERE id = $1", [groupId]))[0];
 	}
@@ -144,10 +159,11 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
         FROM (VALUES ${orgIdParams.join(",")}) AS t (org_id) 
         LEFT JOIN org ON t.org_id = org.org_id
         WHERE org.org_id IS NULL`, orgIds);
-
+	
+	let message = null;
 	if (missingOrgs.length > 0) {
-		logger.debug(`Adding missing orgs`, {count: missingOrgs.length});
-		await orgs.addOrgsByIds(missingOrgs.map(o => o.org_id));
+		message = `${missingOrgs.length} org(s) were not found. We'll search for them and add them if possible. <p>(${missingOrgs.map(o => o.org_id).join(", ")})</p>`;
+		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {}).catch(e => emit(Events.FAIL, e));
 	}
 
 	let n = 2;
@@ -156,7 +172,7 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
 	await db.insert(sql, values);
-	return orggroup;
+	return {message, ...orggroup};
 }
 
 async function deleteOrgMembers(groupId, orgIds) {
@@ -165,6 +181,25 @@ async function deleteOrgMembers(groupId, orgIds) {
 	let values = [groupId].concat(orgIds);
 	let sql = `DELETE FROM org_group_member WHERE org_group_id = $1 AND org_id IN (${params.join(",")})`;
 	return await db.delete(sql, values);
+}
+
+
+async function loadBlacklist() {
+	return await loadOrgsOfType(GroupType.Blacklist, process.env.DENIED_ORGS)
+}
+
+async function loadWhitelist() {
+	return await loadOrgsOfType(GroupType.Whitelist, process.env.ALLOWED_ORGS)
+}
+
+async function loadOrgsOfType(type, defaultsJSON) {
+	const defaults = defaultsJSON ? JSON.parse(defaultsJSON).map(id => id.substring(0,15)) : [];
+	const sql = `
+		SELECT m.org_id FROM org_group_member m
+		INNER JOIN org_group AS g ON g.id = m.org_group_id
+		WHERE g.type = $1`;
+	const l = await db.query(sql, [type]);
+	return new Set(l.map(r => r.org_id).concat(defaults));
 }
 
 exports.requestAll = requestAll;
@@ -176,3 +211,5 @@ exports.requestCreate = requestCreate;
 exports.requestUpdate = requestUpdate;
 exports.requestDelete = requestDelete;
 exports.requestUpgrade = requestUpgrade;
+exports.loadBlacklist = loadBlacklist;
+exports.loadWhitelist = loadWhitelist;

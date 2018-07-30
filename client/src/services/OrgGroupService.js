@@ -2,7 +2,7 @@ import * as h from './h';
 
 let url = "/api/orggroups";
 
-export let requestAll = sort => h.get(url, {sort_field: sort.field, sort_dir: sort.direction});
+export let requestAll = (type, sort) => h.get(url, {type, sort_field: sort.field, sort_dir: sort.direction});
 export let requestByTextSearch = (text, excludeId) => h.get(url, {text, excludeId});
 export let requestById = id => h.get(url + "/" + id);
 
@@ -14,10 +14,4 @@ export let requestUpdate = orggroup => h.put(url, orggroup);
 export let requestCreate = orggroup => h.post(url, orggroup);
 export let requestDelete = orggroupIds => h.post(url + "/delete", {orggroupIds});
 
-export let requestUpgrade = (id, versions, scheduled_date, description) => h.post(url + "/" + id + "/upgrade", {
-	versions,
-	scheduled_date,
-	description
-});
-
-export let requestRefreshPackageVersions = (id) => h.post(url + "/refresh", {id});
+export let requestUpgrade = (id, versions, scheduled_date, description) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description});

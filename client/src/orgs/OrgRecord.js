@@ -1,5 +1,4 @@
 import React from 'react';
-import {NotificationManager} from 'react-notifications';
 
 import * as orgService from '../services/OrgService';
 import * as packageVersionService from "../services/PackageVersionService";
@@ -45,8 +44,9 @@ export default class extends React.Component {
 	
 	upgradeHandler = (versions, startDate, description) => {
 		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
+			this.setState({schedulingUpgrade: false});
 			if (res.message) {
-				NotificationManager.error(res.message, "Upgrade failed");
+				notifier.error(res.message, "Upgrade failed");
 			} else {
 				window.location = `/upgrade/${res.id}`;
 			}
@@ -82,7 +82,7 @@ export default class extends React.Component {
 	addToGroupHandler = (groupId, groupName) => {
 		this.setState({addingToGroup: false});
 		orgGroupService.requestAddMembers(groupId, groupName, [this.state.org.org_id]).then((orggroup) => {
-			NotificationManager.success(`Added org to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			notifier.success(`Added org to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			orgService.requestById(this.state.org.org_id).then(org => this.setState({org}));
 		});
 	};

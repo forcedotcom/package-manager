@@ -66,6 +66,7 @@ export class RecordHeader extends React.Component {
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
 			const btn =
+				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
@@ -81,8 +82,9 @@ export class RecordHeader extends React.Component {
 						{currentAction.detail ?
 							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
-			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
-				currentGroup = {key: currentAction.group, actions: [btn]};
+			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
+			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
+				currentGroup = {key: currentActionGroup, actions: [btn]};
 				groups.push(currentGroup);
 			} else {
 				currentGroup.actions.push(btn);
@@ -145,6 +147,7 @@ export class CardHeader extends React.Component {
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
 			const btn =
+				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
@@ -160,8 +163,9 @@ export class CardHeader extends React.Component {
 						{currentAction.detail ?
 							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
-			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
-				currentGroup = {key: currentAction.group, actions: [btn]};
+			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
+			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
+				currentGroup = {key: currentActionGroup, actions: [btn]};
 				groups.push(currentGroup);
 			} else {
 				currentGroup.actions.push(btn);
@@ -211,6 +215,7 @@ export class FormHeader extends React.Component {
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
 			const btn =
+				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
@@ -226,8 +231,9 @@ export class FormHeader extends React.Component {
 						{currentAction.detail ?
 							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
-			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
-				currentGroup = {key: currentAction.group, actions: [btn]};
+			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
+			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
+				currentGroup = {key: currentActionGroup, actions: [btn]};
 				groups.push(currentGroup);
 			} else {
 				currentGroup.actions.push(btn);
@@ -298,6 +304,7 @@ export class HomeHeader extends React.Component {
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
 			const btn =
+				currentAction.props ? currentAction : // Bad test for whether this is a react component :(  
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
@@ -313,8 +320,9 @@ export class HomeHeader extends React.Component {
 						{currentAction.detail ?
 							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
-			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentAction.group) {
-				currentGroup = {key: currentAction.group, actions: [btn]};
+			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
+			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
+				currentGroup = {key: currentActionGroup, actions: [btn]};
 				groups.push(currentGroup);
 			} else {
 				currentGroup.actions.push(btn);

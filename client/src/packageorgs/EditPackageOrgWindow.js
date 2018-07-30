@@ -39,7 +39,7 @@ export default class extends React.Component {
 
 							<div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
 								<div className="slds-form-element">
-									<label className="slds-form-element__label" htmlFor="description">Type</label>
+									<label className="slds-form-element__label" htmlFor="type">Type</label>
 									<div className="slds-form-element__control">
 										<PickList value={this.state.type} onChange={this.typeChangeHandler}
 												  items={["Package", "Licenses", "Accounts", "All Production Orgs", "All Sandbox Orgs"]}/>

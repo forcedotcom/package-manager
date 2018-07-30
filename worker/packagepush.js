@@ -3,6 +3,7 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const packageversions = require('../api/packageversions');
+const orggroups = require('../api/orggroups');
 const orgpackageversions = require('../api/orgpackageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
@@ -165,11 +166,11 @@ async function updatePushRequests(items, status, currentUser) {
 }
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
-	if (ALLOWED_ORGS) {
-		// Whitelisting enforced.
+	const whitelist = await orggroups.loadWhitelist();
+	if (whitelist) {
 		orgIds = orgIds.filter(orgId => {
-			if (!ALLOWED_ORGS.has(orgId)) {
-				logger.warn("Skipping disallowed org", {org_id: orgId});
+			if (!whitelist.has(orgId)) {
+				logger.warn("Skipping org missing from whitelist", {org_id: orgId});
 				return false;
 			} else {
 				return true;
@@ -177,11 +178,11 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 		});
 	}
 
-	if (DENIED_ORGS) {
-		// Blacklisting enforced.
+	const blacklist = await orggroups.loadBlacklist();
+	if (blacklist) {
 		orgIds = orgIds.filter(orgId => {
-			if (DENIED_ORGS.has(orgId)) {
-				logger.warn("Skipping denied org", {org_id: orgId});
+			if (blacklist.has(orgId)) {
+				logger.warn("Skipping blacklisted org", {org_id: orgId});
 				return false;
 			} else {
 				return true;
@@ -191,7 +192,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 
 	if (orgIds.length === 0) {
 		// Orgs were stripped above, nothing to do 
-		return {message: "None of your orgs were allowed to be upgraded"};
+		return {message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
@@ -226,12 +227,12 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	const currentAndNewer = await findCurrentAndNewerVersions(versions);
 	
 	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), orgGroupIds, currentAndNewer.map(v => v.version_id));
-	
-	if (ALLOWED_ORGS) {
-		// Whitelisting enforced.
+
+	const whitelist = await orggroups.loadWhitelist();
+	if (whitelist.size > 0) {
 		opvs = opvs.filter(opv => {
-			if (!ALLOWED_ORGS.has(opv.org_id)) {
-				logger.warn("Skipping disallowed org", {org_id: opv.org_id});
+			if (!whitelist.has(opv.org_id)) {
+				logger.warn("Skipping org missing from whitelist", {org_id: opv.org_id});
 				return false;
 			} else {
 				return true;
@@ -239,11 +240,11 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		});
 	}
 
-	if (DENIED_ORGS) {
-		// Blacklisting enforced.
+	const blacklist = await orggroups.loadBlacklist();
+	if (blacklist) {
 		opvs = opvs.filter(opv => {
-			if (DENIED_ORGS.has(opv.org_id)) {
-				logger.warn("Skipping denied org", {org_id: opv.org_id});
+			if (blacklist.has(opv.org_id)) {
+				logger.warn("Skipping blacklisted org", {org_id: opv.org_id});
 				return false;
 			} else {
 				return true;

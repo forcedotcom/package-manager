@@ -6,19 +6,28 @@ import * as sortage from '../services/sortage';
 import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
+import moment from "moment";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgGroupList";
+	
+	groupTypes = [
+		{name:"Upgrade Group", label:"Upgrade Groups"},
+		{name:"Blacklist", label:"Blacklists"},
+		{name:"Whitelist", label:"Whitelists"},
+		{name:"All", label:"All"}];
+	groupTypeMap = new Map(this.groupTypes.map(t => [t.name,t]));
 
 	state = {
 		sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"),
 		orggroups: [],
 		selected: new Map(),
-		itemCount: "..."
+		itemCount: "...",
+		selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY, "Upgrade Group"))
 	};
 
 	componentDidMount() {
-		orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
+		orgGroupService.requestAll('Upgrade Group', this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
 	}
 	
 	componentWillUnmount() {
@@ -45,15 +54,28 @@ export default class extends React.Component {
 	selectionHandler = (selected) => {
 		this.setState({selected});
 	};
+	
+	typeSelectionHandler = (selectedType) => {
+		sortage.setSelectedName(this.SORTAGE_KEY, selectedType.name);
+		orgGroupService.requestAll(selectedType.name, this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
+		this.setState({selectedType})
+	};
 
 	deleteHandler = () => {
-		orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => {
-			orgGroupService.requestAll(this.state.sortOrder).then(orggroups => this.setState({orggroups}));
-		});
+		const msg = this.state.selected.size === 1 ?
+			`Are you sure you want to delete this group?` :
+			`Are you sure you want to delete these ${this.state.selected.size} groups?`
+		if (window.confirm(msg)) {
+			orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => {
+				orgGroupService.requestAll('Upgrade Group', this.state.sortOrder).then(orggroups => this.setState({orggroups}));
+			});
+		}
 	};
 
 	render() {
 		const actions = [
+			<div key="show" group="types" className="slds-text-title_caps slds-m-right--x-small slds-align_absolute-center">Show:</div>,
+			<TypeSelect group="types" key="types" types={this.groupTypes} selected={this.state.selectedType} onSelect={this.typeSelectionHandler}/>,
 			{label: "New", handler: this.newHandler, detail: "Create new org group"},
 			{
 				label: "Delete",
@@ -64,15 +86,32 @@ export default class extends React.Component {
 		];
 		return (
 			<div>
-				<HomeHeader type="org groups"
-							title="Org Groups"
-							itemCount={this.state.itemCount}
-							actions={actions}/>
+				<HomeHeader type="org groups" title="Org Groups" itemCount={this.state.itemCount} actions={actions}/>
 				<OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler}
-							  onSelect={this.selectionHandler}/>
+							  onSelect={this.selectionHandler} type={this.state.selectedType.name}/>
 				{this.state.addingOrgGroup ?
-					<GroupFormWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+					<GroupFormWindow types={this.groupTypes.map(t => t.name).filter(name => name !== "All")} type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>
+		);
+	}
+}
+
+class TypeSelect extends React.Component {
+	typeChangeHandler = (e) => {
+		this.props.onSelect({name: e.target.id, label: e.target.value});
+	};
+
+	render() {
+		let options = this.props.types.map(t =>
+			<span key={t.name} className="slds-button slds-radio_button">
+				<input checked={t.name === this.props.selected.name} type="radio" name="type" id={t.name} value={t.label} onChange={this.typeChangeHandler}/>
+				<label className="slds-radio_button__label" htmlFor={t.name}>
+					<span className="slds-radio_faux">{t.label}</span>
+				</label>
+			</span>);
+
+		return (
+			<div className="slds-m-right--small slds-radio_button-group">{options}</div>
 		);
 	}
 }

@@ -5,7 +5,7 @@ const pool = new Pool({
 	connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres"
 });
 
-const MAX_SQL_DEBUG_LENGTH = 1000;
+const MAX_SQL_DEBUG_LENGTH = 10000;
 
 /**
  * Utility function to execute a long init script against a Postgres database

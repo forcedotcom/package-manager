@@ -1,5 +1,6 @@
 const PREFIX = "__sortage";
 const TABS_PREFIX = PREFIX + "__tabs";
+const SELECTED_NAME_PREFIX = PREFIX + "__selname";
 
 export let getSortOrder = (contextKey, defaultField, defaultDirection) => {
 	let orderJson = window.localStorage.getItem(PREFIX + contextKey);
@@ -35,6 +36,24 @@ export let getTabIndex = (contextKey, defIndex = 0) => {
 export let setTabIndex = (contextKey, index) => {
 	if (contextKey) {
 		window.localStorage.setItem(TABS_PREFIX + contextKey, index);
+	}
+};
+
+export let getSelectedName = (contextKey, defName) => {
+	if (!contextKey)
+		return defName;
+
+	let str = window.localStorage.getItem(SELECTED_NAME_PREFIX + contextKey);
+	try {
+		return str ? str : defName;
+	} catch (e) {
+		return defName;
+	}
+};
+
+export let setSelectedName = (contextKey, name) => {
+	if (contextKey) {
+		window.localStorage.setItem(SELECTED_NAME_PREFIX + contextKey, name);
 	}
 };
 

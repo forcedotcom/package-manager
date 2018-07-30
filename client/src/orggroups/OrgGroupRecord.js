@@ -86,8 +86,11 @@ export default class extends React.Component {
 
 
 	saveHandler = (orggroup) => {
-		orgGroupService.requestUpdate(orggroup).then(() => {
-			this.setState({orggroup});
+		orgGroupService.requestUpdate(orggroup).then((orggroup) => {
+			this.setState({orggroup, isEditing: false});
+			if (orggroup.message) {
+				notifier.info(orggroup.message, "Note");
+			}
 		}).catch(e => console.error(e));
 	};
 
@@ -130,9 +133,11 @@ export default class extends React.Component {
 	};
 
 	deleteHandler = () => {
-		orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
-			window.location = '/orggroups';
-		}).catch(e => notifier.error(e.message, "Delete Failed"));
+		if (window.confirm(`Are you sure you want to delete this group?`)) {
+			orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
+				window.location = '/orggroups';
+			}).catch(e => notifier.error(e.message, "Delete Failed"));
+		}
 	};
 
 	removeMembersHandler = (skipConfirmation) => {
@@ -204,13 +209,16 @@ export default class extends React.Component {
 	};
 
 	render() {
-		let actions = [
-			{
+		let actions = [];
+		if (this.state.orggroup.type === "Upgrade Group") {
+			actions.push({
 				handler: this.schedulingWindowHandler,
 				label: "Upgrade Packages",
 				group: "upgrade",
 				disabled: !this.state.validVersions
-			},
+			});
+		}
+		actions.push(
 			{
 				handler: this.refreshHandler,
 				label: "Refresh Versions",
@@ -218,7 +226,8 @@ export default class extends React.Component {
 				detail: "Fetch latest installed package version information for all orgs in this group."
 			},
 			{handler: this.editHandler, label: "Edit"},
-			{handler: this.deleteHandler, label: "Delete"}];
+			{handler: this.deleteHandler, label: "Delete"}
+		);
 			
 		let memberActions = [
 			{label: `${this.state.selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: this.state.selected.size === 0,
@@ -227,12 +236,13 @@ export default class extends React.Component {
 			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.size === 0},
 			{label: "Remove From Group", group: "remove", handler: this.removeMembersHandler, disabled: this.state.selected.size === 0},
 			{label: "Export Members", handler: this.exportHandler}
-			];
+		];
 		
 		return (
 			<div>
 				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
 					<HeaderField label="Description" value={this.state.orggroup.description}/>
+					<HeaderField label="Type" value={this.state.orggroup.type}/>
 					{this.state.orggroup.created_date ? <HeaderField label="Created" value={moment(this.state.orggroup.created_date).format("lll")}/> : ""}
 				</RecordHeader>
 
