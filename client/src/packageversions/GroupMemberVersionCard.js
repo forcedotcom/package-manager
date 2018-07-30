@@ -40,7 +40,7 @@ export default class extends React.Component {
 			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
 			{Header: "Account Name", accessor: "account_name", clickable: true},
 			{Header: "Package", accessor: "package_name", clickable: true},
-			{Header: "License Status", accessor: "license_status"},
+			{Header: "License", accessor: "license_status"},
 			{
 				Header: "Version Number",
 				minWidth: 170,

@@ -28,15 +28,16 @@ const SELECT_WITH_LICENCE = `
     SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, o.features,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups,
-    pv.version_number
+    pv.version_number,
+    opv.license_status
     FROM org o
     INNER JOIN account a on a.account_id = o.account_id
     LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
     LEFT JOIN org_group AS g ON g.id = m.org_group_id
-    INNER JOIN license lc ON o.org_id = lc.org_id
-    INNER JOIN package_version pv ON lc.package_version_id = pv.sfid`;
+    INNER JOIN org_package_version opv ON o.org_id = opv.org_id
+    INNER JOIN package_version pv ON opv.package_version_id = pv.sfid`;
 
-const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number`;
+const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, opv.license_status`;
 
 async function requestAll(req, res, next) {
 	try {
@@ -59,12 +60,12 @@ async function findAll(packageId, packageVersionId, orderByField, orderByDir) {
 
 		if (packageId) {
 			values.push(packageId);
-			whereParts.push("lc.package_id = $" + values.length);
+			whereParts.push("opv.package_id = $" + values.length);
 		}
 
 		if (packageVersionId) {
 			values.push(packageVersionId);
-			whereParts.push("lc.package_version_id = $" + values.length);
+			whereParts.push("opv.package_version_id = $" + values.length);
 		}
 	}
 

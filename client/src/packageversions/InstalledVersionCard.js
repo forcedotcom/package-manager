@@ -34,7 +34,7 @@ export default class extends React.Component {
 	render() {
 		let columns = [
 			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
-			{Header: "License Status", accessor: "license_status", sortable: true},
+			{Header: "License", accessor: "license_status", sortable: true},
 			{
 				Header: "Version Number",
 				minWidth: 170,
