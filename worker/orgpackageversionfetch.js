@@ -78,23 +78,19 @@ async function fetchFromLicenses(fetchAll, job) {
 async function updateOrgStatus(job) {
 	adminJob = job;
 
-	let n = 0;
 	// Flip orgs MISSING versions to status Not Installed
-	await db.update(`UPDATE org SET status = $${++n} WHERE status = $${++n} AND org_id IN
+	await db.update(`UPDATE org SET status = '${orgsapi.Status.NotInstalled}' WHERE status = '${orgsapi.Status.Installed}' AND org_id IN
 		  (SELECT o.org_id FROM org o 
-			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ($${++n}, $${++n})
-			GROUP BY o.org_id HAVING COUNT(opv.id) = 0)`, 
-			[orgsapi.Status.NotInstalled, orgsapi.Status.Installed,
-				orgpackageversions.LicenseStatus.Active, orgpackageversions.LicenseStatus.Trial]);
+			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id 
+			AND opv.license_status IN ('${orgpackageversions.LicenseStatus.Active}', '${orgpackageversions.LicenseStatus.Trial}')
+			GROUP BY o.org_id HAVING COUNT(opv.id) = 0)`);
 
 	// Flip orgs WITH versions to status Installed
-	n = 0;
-	await db.update(`UPDATE org SET status = $${++n} WHERE status = $${++n} AND org_id IN
+	await db.update(`UPDATE org SET status = '${orgsapi.Status.Installed}' WHERE status = '${orgsapi.Status.NotInstalled}' AND org_id IN
 		  (SELECT o.org_id FROM org o 
-			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ($${++n}, $${++n})
-			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`, 
-				[orgsapi.Status.Installed, orgsapi.Status.NotInstalled],
-					orgpackageversions.LicenseStatus.Active, orgpackageversions.LicenseStatus.Trial);
+			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id 
+			AND opv.license_status IN ('${orgpackageversions.LicenseStatus.Active}', '${orgpackageversions.LicenseStatus.Trial}')
+			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`);
 }
 
 async function upsert(recs, batchSize) {
