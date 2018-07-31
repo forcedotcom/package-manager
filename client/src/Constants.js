@@ -25,5 +25,11 @@ export const NotStartedStatus = {
 	Created: Status.Created,
 	Pending: Status.Pending
 };
-export let isDoneStatus = (status) => typeof DoneStatus[status] !== "undefined";
-export let isNotStartedStatus = (status) => typeof NotStartedStatus[status] !== "undefined";
+export const isDoneStatus = (status) => typeof DoneStatus[status] !== "undefined";
+export const isNotStartedStatus = (status) => typeof NotStartedStatus[status] !== "undefined";
+
+export const GroupTypes = [
+	{name:"Upgrade Group", label:"Upgrade Groups"},
+	{name:"Blacklist", label:"Blacklists"},
+	{name:"Whitelist", label:"Whitelists"},
+	{name:"All", label:"All"}];

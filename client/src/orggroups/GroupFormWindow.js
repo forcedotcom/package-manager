@@ -1,6 +1,6 @@
 import React from 'react';
 import {FormHeader} from "../components/PageHeader";
-import {ORG_GROUP_ICON} from "../Constants";
+import {ORG_GROUP_ICON, GroupTypes} from "../Constants";
 import PickList from "../components/PickList";
 
 export default class extends React.Component {
@@ -64,7 +64,7 @@ export default class extends React.Component {
 									<label className="slds-form-element__label" htmlFor="type">Type</label>
 									<div className="slds-form-element__control">
 										<PickList value={this.state.type} onChange={this.typeChangeHandler}
-												  items={this.props.types}/>
+												  items={GroupTypes.map(t => t.name).filter(name => name !== "All")}/>
 									</div>
 								</div>
 

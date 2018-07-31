@@ -3,20 +3,15 @@ import React from 'react';
 import * as orgGroupService from "../services/OrgGroupService";
 import * as sortage from '../services/sortage';
 
+import {GroupTypes} from "../Constants";
 import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
-import moment from "moment";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgGroupList";
 	
-	groupTypes = [
-		{name:"Upgrade Group", label:"Upgrade Groups"},
-		{name:"Blacklist", label:"Blacklists"},
-		{name:"Whitelist", label:"Whitelists"},
-		{name:"All", label:"All"}];
-	groupTypeMap = new Map(this.groupTypes.map(t => [t.name,t]));
+	groupTypeMap = new Map(GroupTypes.map(t => [t.name,t]));
 
 	state = {
 		sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"),
@@ -27,7 +22,7 @@ export default class extends React.Component {
 	};
 
 	componentDidMount() {
-		orgGroupService.requestAll('Upgrade Group', this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
+		orgGroupService.requestAll(this.state.selectedType.name, this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
 	}
 	
 	componentWillUnmount() {
@@ -75,7 +70,7 @@ export default class extends React.Component {
 	render() {
 		const actions = [
 			<div key="show" group="types" className="slds-text-title_caps slds-m-right--x-small slds-align_absolute-center">Show:</div>,
-			<TypeSelect group="types" key="types" types={this.groupTypes} selected={this.state.selectedType} onSelect={this.typeSelectionHandler}/>,
+			<TypeSelect group="types" key="types" types={GroupTypes} selected={this.state.selectedType} onSelect={this.typeSelectionHandler}/>,
 			{label: "New", handler: this.newHandler, detail: "Create new org group"},
 			{
 				label: "Delete",
@@ -90,7 +85,7 @@ export default class extends React.Component {
 				<OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler}
 							  onSelect={this.selectionHandler} type={this.state.selectedType.name}/>
 				{this.state.addingOrgGroup ?
-					<GroupFormWindow types={this.groupTypes.map(t => t.name).filter(name => name !== "All")} type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+					<GroupFormWindow type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>
 		);
 	}
