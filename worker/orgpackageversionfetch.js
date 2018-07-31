@@ -4,7 +4,7 @@ const orgsapi = require('../api/orgs');
 const orgpackageversions = require('../api/orgpackageversions');
 const push = require('./packagepush');
 
-const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.package_version_id, l.status, l.modified_date 
+const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.package_version_id, l.status, l.modified_date, l.expiration 
                     FROM license l
                     INNER JOIN package_version v on v.sfid = l.package_version_id`;
 
@@ -36,18 +36,19 @@ async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
 		}
 		
 		opvs = opvs.concat(arr.map(rec => {
+			// Found! So remove from missing list and add as an Active license
 			const orgId = rec.OrgKey.substring(0, 15);
-			missingOrgIds.delete(orgId); // not missing, is it?
+			missingOrgIds.delete(orgId); 
 			return {
 				org_id: orgId,
 				version_id: rec.MetadataPackageVersionId,
-				license_status: "Active"
+				license_status: orgpackageversions.LicenseStatus.Active
 			}
 		}));
 	}
 	job.postMessage(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
 	missingOrgIds.forEach((value) => {
-		opvs.push({version_id: null, org_id: value, license_status: "Not Found"});
+		opvs.push({version_id: null, org_id: value, license_status: orgpackageversions.LicenseStatus.NotFound});
 	});
 	if (opvs.length > 0) {
 		let res = await orgpackageversions.insertOrgPackageVersions(opvs);
@@ -77,17 +78,23 @@ async function fetchFromLicenses(fetchAll, job) {
 async function updateOrgStatus(job) {
 	adminJob = job;
 
+	let n = 0;
 	// Flip orgs MISSING versions to status Not Installed
-	await db.update(`UPDATE org SET status = '${orgsapi.Status.NotInstalled}' WHERE status = '${orgsapi.Status.Installed}' AND org_id IN
+	await db.update(`UPDATE org SET status = $${++n} WHERE status = $${++n} AND org_id IN
 		  (SELECT o.org_id FROM org o 
-			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ('Active', 'Trial')
-			GROUP BY o.org_id HAVING COUNT(opv.id) = 0)`);
+			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ($${++n}, $${++n})
+			GROUP BY o.org_id HAVING COUNT(opv.id) = 0)`, 
+			[orgsapi.Status.NotInstalled, orgsapi.Status.Installed,
+				orgpackageversions.LicenseStatus.Active, orgpackageversions.LicenseStatus.Trial]);
 
 	// Flip orgs WITH versions to status Installed
-	await db.update(`UPDATE org SET status = '${orgsapi.Status.Installed}' WHERE status = '${orgsapi.Status.NotInstalled}' AND org_id IN
+	n = 0;
+	await db.update(`UPDATE org SET status = $${++n} WHERE status = $${++n} AND org_id IN
 		  (SELECT o.org_id FROM org o 
-			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ('Active', 'Trial')
-			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`);
+			LEFT JOIN org_package_version opv ON opv.org_id = o.org_id AND opv.license_status IN ($${++n}, $${++n})
+			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`, 
+				[orgsapi.Status.Installed, orgsapi.Status.NotInstalled],
+					orgpackageversions.LicenseStatus.Active, orgpackageversions.LicenseStatus.Trial);
 }
 
 async function upsert(recs, batchSize) {
@@ -112,7 +119,13 @@ async function upsertBatch(recs) {
 			sql += ','
 		}
 		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
-		values.push(rec.org_id, rec.package_id, rec.package_version_id, rec.status, rec.modified_date);
+
+		let licenseStatus = rec.status;
+		if (rec.expiration != null && rec.expiration.getTime() < Date.now()) {
+			licenseStatus = orgpackageversions.LicenseStatus.Expired;
+		}
+		
+		values.push(rec.org_id, rec.package_id, rec.package_version_id, licenseStatus, rec.modified_date);
 	}
 	sql += ` on conflict (org_id, package_id) do update set
         package_version_id = excluded.package_version_id, license_status = excluded.license_status, modified_date = excluded.modified_date`;
@@ -122,6 +135,7 @@ async function upsertBatch(recs) {
 		console.error("Failed to insert ", e.message);
 	}
 }
+
 
 exports.fetch = fetchFromLicenses;
 exports.fetchFromSubscribers = fetchFromSubscribers;

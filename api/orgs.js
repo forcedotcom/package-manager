@@ -128,7 +128,7 @@ async function addOrgsByIds(orgIds) {
 		return {
 			org_id: rec.OrgKey.substring(0, 15),
 			version_id: rec.MetadataPackageVersionId,
-			license_status: "Active"
+			license_status: orgpackageversions.LicenseStatus.Active
 		}
 	});
 	await orgpackageversions.insertOrgPackageVersions(opvs);

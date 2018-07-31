@@ -17,11 +17,13 @@ exports.init = (sql, cb) => {
 /**
  * Utility function to execute a SQL select query against a Postgres database
  */
-exports.query = async (sql, values) => {
-	if (sql.length > MAX_SQL_DEBUG_LENGTH) {
-		logger.debug(sql.substring(0, MAX_SQL_DEBUG_LENGTH) + "..." + sql.substring(sql.length - 20));
-	} else {
-		logger.debug(sql, values);
+exports.query = async (sql, values, skipDebug) => {
+	if (!skipDebug) {
+		if (sql.length > MAX_SQL_DEBUG_LENGTH) {
+			logger.debug(sql.substring(0, MAX_SQL_DEBUG_LENGTH) + "..." + sql.substring(sql.length - 20));
+		} else {
+			logger.debug(sql, values);
+		}
 	}
 
 	let result = await pool.query(sql, values);

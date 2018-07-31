@@ -598,7 +598,7 @@ async function areAnyJobsActive() {
 	const activeJobs = await db.query(`SELECT j.id FROM upgrade_job j 
 										INNER JOIN upgrade_item i on i.id = j.item_id
 										WHERE j.status IN ($${++i},$${++i}) AND i.start_time <= NOW() LIMIT 1`,
-		[push.Status.Pending, push.Status.InProgress]);
+		[push.Status.Pending, push.Status.InProgress], true);
 	return activeJobs.length === 1;
 }
 

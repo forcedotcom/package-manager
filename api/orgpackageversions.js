@@ -13,6 +13,15 @@ const SELECT_ALL =
 const SELECT_ALL_IN_ORG_GROUP =
 	`${SELECT_ALL} INNER JOIN org_group_member gm ON gm.org_id = op.org_id`;
 
+const LicenseStatus = {
+	Active: "Active",
+	Trial: "Trial",
+	Suspended: "Suspended",
+	Uninstalled: "Uninstalled",
+	Expired: "Expired",
+	NotFound: "Not Found"
+};
+
 async function findAll(packageIds, orgGroupIds, excludeVersionIds) {
 	let whereParts = [], values = [], select = SELECT_ALL;
 
@@ -98,7 +107,7 @@ async function updateOrgPackageVersions(opvs) {
 	await db.update(sql, values);
 }
 
-
+exports.LicenseStatus = LicenseStatus;
 exports.findAll = findAll;
 exports.insertOrgPackageVersions = insertOrgPackageVersions;
 exports.updateOrgPackageVersions = updateOrgPackageVersions;
