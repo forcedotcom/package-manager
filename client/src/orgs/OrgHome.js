@@ -22,21 +22,27 @@ export default class extends React.Component {
 		showSelected: false
 	};
 
-	componentDidMount() {
-		orgService.requestAll(this.state.sortOrder)
-		.then(orgs => {
-			this.setState({orgs, itemCount: orgs.length});
-		})
-		.catch(err => console.error(err));
-	}
+	requestData = (pageSize, page, sorted, filtered) => {
+		const {orgs, sortOrder, lastFiltered, lastSorted} = this.state;
+		return new Promise((resolve, reject) => {
+			if (orgs && JSON.stringify(lastFiltered) === JSON.stringify(filtered) && JSON.stringify(lastSorted) === JSON.stringify(sorted)) {
+				// We already have our full rowset and the filters did not change, so don't go back to the server.
+				return resolve({
+					rows: orgs.slice(pageSize * page, pageSize * page + pageSize),
+					pages: Math.ceil(orgs.length / pageSize)
+				});
+			}
 
-	componentWillUnmount() {
-	}
-	
-	sortHandler = (field) => {
-		let sortOrder = sortage.changeSortOrder(this.SORTAGE_KEY, field);
-		orgService.requestAll(sortOrder).then(orgs => {
-			this.setState({sortOrder, orgs})
+			orgService.requestAll(sorted.length === 0 ? sortOrder : sortage.changeSortOrder(this.SORTAGE_KEY, sorted[0].id, sorted[0].desc ? "desc" : "asc"), filtered)
+			.then(orgs => {
+				this.setState({orgs, itemCount: orgs.length, lastFiltered: filtered, lastSorted: sorted});
+				// You must return an object containing the rows of the current page, and optionally the total pages number.
+				return resolve({
+					rows: orgs.slice(pageSize * page, pageSize * page + pageSize),
+					pages: Math.ceil(orgs.length / pageSize)
+				});
+			})
+			.catch(reject);
 		});
 	};
 
@@ -110,7 +116,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
-				<OrgList selected={this.state.selected} orgs={this.state.showSelected ? Array.from(this.state.selected.values()) : this.state.orgs} onSort={this.sortHandler} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
+				<OrgList selected={this.state.selected} onRequest={this.requestData} 
+						 orgs={this.state.orgs} showSelected={this.state.showSelected} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
 				{this.state.showAddToGroup ? <SelectGroupWindow onAdd={this.addToGroup.bind(this)}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}

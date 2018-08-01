@@ -50,6 +50,7 @@ create table if not exists org
   account_id    varchar(18),
   is_sandbox    boolean,
   status        varchar(20),
+  edition       varchar(100),
   type          varchar(100),
   features      text null
 );
@@ -205,7 +206,8 @@ alter table upgrade_item
 
 alter table org
   drop column if exists account_name,
-  add if not exists features text null;
+  add if not exists features text null,
+  add if not exists edition text null;
 
 alter table org_group
   add if not exists type varchar(80) null;
@@ -246,3 +248,5 @@ update org set status = 'Installed' where status is null;
 
 -- Added type field to group with default of Upgrade Group
 update org_group set type = 'Upgrade Group' where type is null;
+
+update org set edition = type where edition is null and status != 'Not Found'

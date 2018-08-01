@@ -13,9 +13,7 @@ export default class extends React.Component {
 	};
 
 	componentDidMount() {
-		const packageIds = new Set();
-		this.props.versions.forEach(v => packageIds.add(v.package_id));
-		packageVersionService.requestAllValid(Array.from(packageIds)).then(validVersions => {
+		packageVersionService.requestAllValid(this.props.packageIds).then(validVersions => {
 			const packageMap = new Map();
 			validVersions.forEach(v => {
 				let p = packageMap.get(v.package_id);
@@ -65,8 +63,8 @@ export default class extends React.Component {
 	};
 
 	render() {
-		const versionFields = this.state.packageMap ? this.props.versions.map(v =>
-			<VersionField key={v.package_id} package={this.state.packageMap.get(v.package_id)} onSelect={this.handleVersionChange}/> 
+		const versionFields = this.state.packageMap ? this.props.packageIds.map(packageId =>
+			<VersionField key={packageId} package={this.state.packageMap.get(packageId)} onSelect={this.handleVersionChange}/> 
 		) : [];
 		
 		return (
@@ -90,7 +88,7 @@ export default class extends React.Component {
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="text-input-id-1">Start
 										Date</label>
-									<DatePicker className="slds-input"
+									<DatePicker className="slds-input slds-m-right--xx-small"
 												selected={this.state.startDate}
 												onChange={this.handleDateChange}
 												showTimeSelect

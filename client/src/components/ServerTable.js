@@ -1,99 +1,60 @@
 import React from 'react';
 
+import debounce from 'lodash.debounce';
 import ReactTable from "react-table";
-
 import "react-table/react-table.css";
-
 import checkboxHOC from "react-table/lib/hoc/selectTable";
-import * as sortage from "../services/sortage";
+import * as jsep from 'jsep';
 
 const CheckboxTable = checkboxHOC(ReactTable);
 
 export default class extends React.Component {
-	state = {
-		data: [],
-		selection: [],
-		selectAll: false,
-		pageSize: this.props.pageSize || 20,
-		minRows: this.props.minRows || 3,
-		keyField: this.props.keyField || "id"
-	};
-
-	componentWillReceiveProps(props) {
-		this.setState({data: props.data || []});
+	constructor(props) {
+		super(props);
+		this.state = {
+			data: [],
+			allData: [],
+			selection: this.props.selection || new Map(),
+			selectAll: false,
+			pageSize: this.props.pageSize || 20,
+			minRows: this.props.minRows || 3,
+			keyField: this.props.keyField || "id",
+	
+			pages: null,
+			loading: true,
+		};
 	}
 
+	componentWillReceiveProps(props) {
+		this.setState({allData: props.data || []});
+	}
+	
 	handleSelection = (key, shift, row) => {
-		/*
-		  Implementation of how to manage the selection state is up to the developer.
-		  This implementation uses an array stored in the component state.
-		  Other implementations could use object keys, a Javascript Set, or Redux... etc.
-		*/
-		// start off with the existing state
-		let selection = [...this.state.selection];
-		const keyIndex = selection.indexOf(key);
-		// check to see if the key exists
-		if (keyIndex >= 0) {
-			// it does exist so we will remove it using destructing
-			selection = [
-				...selection.slice(0, keyIndex),
-				...selection.slice(keyIndex + 1)
-			];
+		if (!this.state.selection.has(key)) {
+			this.state.selection.set(key, row);
 		} else {
-			// it does not exist so add it
-			selection.push(key);
+			this.state.selection.delete(key);
 		}
-		// update the state
-		this.setState({selection});
-
+		this.setState({selection: this.state.selection});
 		if (this.props.onSelect) {
-			this.props.onSelect(selection);
+			this.props.onSelect(this.state.selection);
 		}
 	};
 
 	handleSelectAll = () => {
-		/*
-		  'toggleAll' is a tricky concept with any filterable table
-		  do you just select ALL the records that are in your data?
-		  OR
-		  do you only select ALL the records that are in the current filtered data?
-
-		  The latter makes more sense because 'selection' is a visual thing for the user.
-		  This is especially true if you are going to implement a set of external functions
-		  that act on the selected information (you would not want to DELETE the wrong thing!).
-
-		  So, to that end, access to the internals of ReactTable are required to get what is
-		  currently visible in the table (either on the current page or any other page).
-
-		  The HOC provides a method call 'getWrappedInstance' to get a ref to the wrapped
-		  ReactTable and then get the internal state and the 'sortedData'.
-		  That can then be iterated to get all the currently visible records and set
-		  the selection state.
-		*/
 		const selectAll = !this.state.selectAll;
-		const selection = [];
+		let selection = this.state.selection;
 		if (selectAll) {
-			// we need to get at the internals of ReactTable
-			const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
-			// the 'sortedData' property contains the currently accessible records based on the filter and sort
-			const currentRecords = wrappedInstance.getResolvedState().sortedData;
-			// we just push all the IDs onto the selection array
-			currentRecords.forEach(item => {
-				selection.push(item._original[this.state.keyField]);
+			if (window.confirm("Select all records, or just this page"))
+			this.state.allData.forEach(item => {
+				selection.set(item[this.state.keyField], item);
 			});
+		} else {
+			selection.clear();
 		}
 		this.setState({selectAll, selection});
-
 		if (this.props.onSelect) {
 			this.props.onSelect(selection);
-		}
-	};
-
-	handleFilter = (column, value) => {
-		if (this.props.onFilter) {
-			const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
-			const currentRecords = wrappedInstance.getResolvedState().sortedData;
-			this.props.onFilter(currentRecords, column, value)
 		}
 	};
 
@@ -103,21 +64,44 @@ export default class extends React.Component {
 		  callback and detect the selection state ourselves. This allows any implementation
 		  for selection (either an array, object keys, or even a Javascript Set object).
 		*/
-		return this.state.selection.includes(key);
+		return this.state.selection.has(key);
 	};
-
-	pageSizeHandler = (pageSize) => {
-		this.setState({pageSize});
-	};
+	
+	fetchData = debounce((state, instance) => {
+		try {
+			state.filtered.forEach(f => jsep(f.value));
+		} catch (e) {
+			// Bad filters, just ignore and don't change a thing.
+			console.log("Bad filters: " + JSON.stringify(state.filtered));
+			return;
+		}
+		
+		// Whenever the table model changes, or the user sorts or changes pages, this method gets called and passed the current table model.
+		this.setState({ loading: true });
+		this.props.onRequest(
+			state.pageSize,
+			state.page,
+			state.sorted,
+			state.filtered
+		).then(res => {
+			this.setState({
+				rawData: res.rows,
+				data: res.rows,
+				pages: res.pages,
+				loading: false 
+			});
+		});
+	}, 400);
 
 	render() {
+		const {data, pages, loading} = this.state;
+
 		const selectionProps = {
 			selectAll: this.state.selectAll,
 			isSelected: this.isSelected,
 			toggleSelection: this.handleSelection,
 			toggleAll: this.handleSelectAll,
-			selectType: "checkbox",
-			loading: true
+			selectType: "checkbox"
 		};
 
 		const functionalProps = {
@@ -151,36 +135,17 @@ export default class extends React.Component {
 		let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable;
 		return (
 			<TableImpl
-				defaultFilterMethod={(filter, row) => {
-					let neg = filter.value.startsWith("!");
-					let filterVal = neg ? filter.value.substring(1) : filter.value;
-					if (filterVal === "")
-						return true; // No filter after all.
-
-					let fieldVal = row[filter.id];
-					if (!fieldVal)
-						return false;
-					if (neg) {
-						return fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) === -1;
-					} else {
-						return fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) !== -1;
-					}
-				}}
+				manual // Forces table not to paginate or sort automatically, so we can handle it server-side
 				ref={r => (this.checkboxTable = r)}
-				manual
-				loading={this.state.loading}
-				data={this.state.data}
+				data={data}
 				columns={this.props.columns}
-				pageSize={this.state.pageSize}
-				onPageSizeChange={this.pageSizeHandler}
-				filterable={this.props.filterable || this.state.data.length > this.state.pageSize}
-				showPagination={this.props.showPagination || this.state.data.length > this.state.pageSize}
-				minRows={this.state.minRows}
+				pages={pages} // Display the total number of pages
+				loading={loading} // Display the loading overlay when we need it
+				onFetchData={this.fetchData} // Request new data when things change
+				filterable
+				defaultPageSize={20}
 				keyField={this.state.keyField}
 				className="-striped -highlight"
-				pivotBy={this.props.pivotBy || []}
-				onSortedChange={newSorted => sortage.changeSortOrder(this.props.id, newSorted[0].id, newSorted[0].desc ? "desc" : "asc")}
-				onFilteredChange={(column, value) => this.handleFilter(column, value)}
 				{...selectionProps}
 				{...functionalProps}
 			/>

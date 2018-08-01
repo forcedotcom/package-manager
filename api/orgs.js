@@ -1,4 +1,5 @@
 const db = require('../util/pghelper');
+const filter = require('../util/filter');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
 const sfdc = require('../api/sfdcconn');
@@ -11,8 +12,24 @@ const Status = {
 	NotInstalled: 'Not Installed'
 };
 
+const QUERY_DICTIONARY = new Map([
+	["id", "o.id"],
+	["org_id", "o.org_id"],
+	["name", "o.name"],
+	["status", "o.status"],
+	["edition", "o.edition"],
+	["instance", "o.instance"],
+	["type", "o.type"],
+	["account_id", "o.account_id"],
+	["features", "o.features"],
+	["account_name", "a.account_name"],
+	["groups", "groups"],
+	["version_number", "pv.version_number"],
+	["license_status", "opv.license_status"]
+]);
+
 const SELECT_ALL = `
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, o.features,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, 
     a.account_name,
     STRING_AGG(g.name, ', ') as groups
     FROM org o
@@ -25,7 +42,7 @@ const GROUP_BY = `
     a.account_name`;
 
 const SELECT_WITH_LICENCE = ` 
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, o.features,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups,
     pv.version_number,
@@ -41,14 +58,15 @@ const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, opv.license_statu
 
 async function requestAll(req, res, next) {
 	try {
-		let orgs = await findAll(req.query.packageId, req.query.packageVersionId, req.query.sort_field, req.query.sort_dir);
+		let orgs = await findAll(req.query.packageId, req.query.packageVersionId, req.query.sort_field, req.query.sort_dir, 
+			req.query.filters ? JSON.parse(req.query.filters) : null, req.query.page, req.query.pageSize);
 		return res.send(JSON.stringify(orgs));
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function findAll(packageId, packageVersionId, orderByField, orderByDir) {
+async function findAll(packageId, packageVersionId, orderByField, orderByDir, filters) {
 	let select = SELECT_ALL;
 	let groupBy = GROUP_BY;
 	let whereParts = [`o.status != '${Status.NotFound}'`];
@@ -69,9 +87,14 @@ async function findAll(packageId, packageVersionId, orderByField, orderByDir) {
 		}
 	}
 
+	if (filters && filters.length > 0) {
+		whereParts.push(...filter.parseSQLExpressions(QUERY_DICTIONARY, filters));
+	} 
+	
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-	let sort = ` ORDER BY ${orderByField || "account_name"} ${orderByDir || "asc"}`;
-	return await db.query(select + where + groupBy + sort, values)
+	let sort = `ORDER BY ${orderByField || "account_name"} ${orderByDir || "asc"}`;
+	
+	return await db.query(`${select} ${where} ${groupBy} ${sort}`, values)
 }
 
 function requestById(req, res, next) {
@@ -142,7 +165,7 @@ async function insertOrgsFromSubscribers(recs) {
 		values.push(rec.OrgKey.substring(0, 15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID, Status.Installed);
 	}
 
-	let sql = `INSERT INTO org (org_id, name, type, instance, account_id, status, modified_date) 
+	let sql = `INSERT INTO org (org_id, name, edition, instance, account_id, status, modified_date) 
                        VALUES ${params.join(",")}
                        on conflict (org_id) do update set status = '${Status.Installed}', 
                        account_id = excluded.account_id where org.status = '${Status.NotFound}'`;

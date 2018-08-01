@@ -64,14 +64,14 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
 	let values = [];
-	let sql = "INSERT INTO org (org_id, instance, is_sandbox, modified_date) VALUES";
+	let sql = "INSERT INTO org (org_id, instance, is_sandbox, type, modified_date) VALUES";
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++})`;
-		values.push(rec.org_id, rec.instance, rec.is_sandbox, rec.modified_date);
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
+		values.push(rec.org_id, rec.instance, rec.is_sandbox, rec.is_sandbox ? "Sandbox" : "Production", rec.modified_date);
 	}
 	sql += ` on conflict (org_id) do update set modified_date = excluded.modified_date`;
 	await db.insert(sql, values);

@@ -24,7 +24,7 @@ async function findAll(orgId, sortField, sortDir) {
 	}
 
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
-	let sort = ` ORDER BY ${sortField || "name"} ${sortDir || "desc"}`;
+	let sort = ` ORDER BY ${sortField || "dependency_tier"} ${sortDir || "asc"}`;
 
 	return await db.query(SELECT_ALL + where + sort, values);
 }

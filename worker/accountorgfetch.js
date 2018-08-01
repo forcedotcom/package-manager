@@ -51,7 +51,7 @@ async function fetchBatch(conn, accounts) {
 		orgs.push({
 			org_id: rec.Id.substring(0,15),
 			name: rec.Name,
-			type: rec.OrganizationType,
+			edition: rec.OrganizationType,
 			account_id: rec.Account,
 			modified_date: new Date(rec.LastModifiedDate).toISOString(),
 			features: extractFeatures(rec)
@@ -89,16 +89,16 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
 	let values = [];
-	let sql = "INSERT INTO org (org_id, name, type, modified_date, account_id, features, status) VALUES";
+	let sql = "INSERT INTO org (org_id, name, edition, modified_date, account_id, features, status) VALUES";
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		if (i > 0) {
 			sql += ','
 		}
 		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, null)`;
-		values.push(rec.org_id, rec.name, rec.type, rec.modified_date, rec.account_id, rec.features);
+		values.push(rec.org_id, rec.name, rec.edition, rec.modified_date, rec.account_id, rec.features);
 	}
-	sql += ` on conflict (org_id) do update set name = excluded.name, type = excluded.type, modified_date = excluded.modified_date, 
+	sql += ` on conflict (org_id) do update set name = excluded.name, edition = excluded.edition, modified_date = excluded.modified_date, 
 				features = excluded.features, status = null`;
 	await db.insert(sql, values);
 }

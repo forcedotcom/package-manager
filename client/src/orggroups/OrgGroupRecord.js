@@ -25,7 +25,8 @@ export default class extends React.Component {
 		orggroup: {},
 		sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc"),
 		selected: new Map(),
-		showSelected: false
+		showSelected: false,
+		packageIds: []
 	};
 
 	componentDidMount() {
@@ -38,8 +39,8 @@ export default class extends React.Component {
 			});
 		});
 		packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId, this.state.sortOrderVersions).then(versions => {
-			let validVersions = this.stripVersions(versions);
-			this.setState({versions, validVersions});
+			let packageIds = this.resolvePackagesFromVersions(versions);
+			this.setState({versions, packageIds});
 		});
 	}
 	
@@ -48,21 +49,14 @@ export default class extends React.Component {
 		notifier.remove('group', this.groupRefreshed);
 	}
 
-	stripVersions = (versions) => {
-		let validSet = {};
-		for (let i = 0; i < versions.length; i++) {
-			let v = versions[i];
-			if (!validSet[v.package_id] && v.license_status !== 'Uninstalled' && v.license_status !== 'Suspended'
-				&& v.version_id !== v.latest_version_id) {
-				validSet[v.package_id] = v;
-			}
-		}
-		const validVersions = [];
-		Object.entries(validSet).forEach(([key, val]) => {validVersions.push(val)});
-		validVersions.sort(function (a, b) {
+	resolvePackagesFromVersions = (versions) => {
+		const packageVersionMap = new Map();
+		versions.forEach(v => packageVersionMap.set(v.package_id, v));
+		const packageVersionList = Array.from(packageVersionMap.values());
+		packageVersionList.sort(function (a, b) {
 			return a.dependency_tier > b.dependency_tier ? 1 : -1;
 		});
-		return validVersions.length > 0 ? validVersions : null;
+		return packageVersionList.map(v => v.package_id);
 	};
 
 	upgradeHandler = (versions, startDate, description) => {
@@ -103,8 +97,8 @@ export default class extends React.Component {
 		if (this.state.orggroup.id === groupId) {
 			// Reload our versions because they may have changed
 			packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
-				let validVersions = this.stripVersions(versions);
-				this.setState({versions, validVersions, isRefreshing: false});
+				let packageIds = this.resolvePackagesFromVersions(versions);
+				this.setState({versions, packageIds, isRefreshing: false});
 			}).catch(e => {
 				this.setState({isRefreshing: false});
 				notifier.error(e.message, "Refresh Failed");
@@ -145,8 +139,8 @@ export default class extends React.Component {
 			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(members => {
 				packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
 					this.state.selected.clear();
-					const validVersions = this.stripVersions(versions);
-					this.setState({showSelected: false, members, versions, validVersions});
+					const packageIds = this.resolvePackagesFromVersions(versions);
+					this.setState({showSelected: false, members, versions, packageIds});
 				});
 			}).catch(e => notifier.error(e.message, "Removal Failed"));
 			return true;
@@ -215,7 +209,7 @@ export default class extends React.Component {
 				handler: this.schedulingWindowHandler,
 				label: "Upgrade Packages",
 				group: "upgrade",
-				disabled: !this.state.validVersions
+				disabled: this.state.packageIds.length === 0
 			});
 		}
 		actions.push(
@@ -263,7 +257,7 @@ export default class extends React.Component {
 				
 				{this.state.isEditing ? <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler}
 														 onCancel={this.cancelHandler}/> : ""}
-				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow versions={this.state.validVersions}
+				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow packageIds={this.state.packageIds}
 																	   description={`Upgrading Group: ${this.state.orggroup.name}`}
 																	   onUpgrade={this.upgradeHandler.bind(this)}
 																	   onCancel={this.cancelSchedulingHandler}/> : ""}

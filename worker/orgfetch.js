@@ -60,7 +60,7 @@ async function fetchBatch(conn, orgs) {
 	.on("record", rec => {
 		let org = orgMap[rec.Id.substring(0, 15)];
 		org.name = rec.Name;
-		org.type = rec.OrganizationType;
+		org.edition = rec.OrganizationType;
 		org.account_id = rec.Account;
 		org.modified_date = new Date(rec.LastModifiedDate).toISOString();
 		org.features = extractFeatures(rec);
@@ -101,16 +101,16 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
 	let values = [];
-	let sql = "INSERT INTO org (org_id, name, type, modified_date, account_id, features, status) VALUES";
+	let sql = "INSERT INTO org (org_id, name, edition, modified_date, account_id, features, status) VALUES";
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		if (i > 0) {
 			sql += ','
 		}
 		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, '${orgsapi.Status.Installed}')`;
-		values.push(rec.org_id, rec.name, rec.type, rec.modified_date, rec.account_id, rec.features);
+		values.push(rec.org_id, rec.name, rec.edition, rec.modified_date, rec.account_id, rec.features);
 	}
-	sql += ` on conflict (org_id) do update set name = excluded.name, type = excluded.type, modified_date = excluded.modified_date, 
+	sql += ` on conflict (org_id) do update set name = excluded.name, edition = excluded.edition, modified_date = excluded.modified_date, 
             account_id = excluded.account_id, features = excluded.features, status = '${orgsapi.Status.Installed}'`;
 	await db.insert(sql, values);
 }

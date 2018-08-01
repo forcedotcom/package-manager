@@ -6,18 +6,22 @@ import "react-table/react-table.css";
 
 import checkboxHOC from "react-table/lib/hoc/selectTable";
 import * as sortage from "../services/sortage";
+import * as filtrage from "../services/filter";
 
 const CheckboxTable = checkboxHOC(ReactTable);
 
 export default class extends React.Component {
-	state = {
-		data: [],
-		selection: this.props.selection || new Map(),
-		selectAll: false,
-		pageSize: this.props.pageSize || 20,
-		minRows: this.props.minRows || 3,
-		keyField: this.props.keyField || "id"
-	};
+	constructor(props) {
+		super(props);
+		this.state = {
+			data: props.data || [],
+			selection: this.props.selection || new Map(),
+			selectAll: false,
+			pageSize: this.props.pageSize || 20,
+			minRows: this.props.minRows || 3,
+			keyField: this.props.keyField || "id"
+		};
+	}
 
 	componentWillReceiveProps(props) {
 		this.setState({data: props.data || []});
@@ -36,24 +40,6 @@ export default class extends React.Component {
 	};
 
 	handleSelectAll = () => {
-		/*
-		  'toggleAll' is a tricky concept with any filterable table
-		  do you just select ALL the records that are in your data?
-		  OR
-		  do you only select ALL the records that are in the current filtered data?
-
-		  The latter makes more sense because 'selection' is a visual thing for the user.
-		  This is especially true if you are going to implement a set of external functions
-		  that act on the selected information (you would not want to DELETE the wrong thing!).
-
-		  So, to that end, access to the internals of ReactTable are required to get what is
-		  currently visible in the table (either on the current page or any other page).
-
-		  The HOC provides a method call 'getWrappedInstance' to get a ref to the wrapped
-		  ReactTable and then get the internal state and the 'sortedData'.
-		  That can then be iterrated to get all the currently visible records and set
-		  the selection state.
-		*/
 		const selectAll = !this.state.selectAll;
 		let selection = this.state.selection;
 		if (selectAll) {
@@ -93,76 +79,6 @@ export default class extends React.Component {
 
 	pageSizeHandler = (pageSize) => {
 		this.setState({pageSize});
-	};
-
-	defaultFilterMethod = (filter, row) => {
-		let fieldElem = row[filter.id];
-		let fieldVal = fieldElem == null || typeof fieldElem === 'string' ? fieldElem : fieldElem.props.children.join("");
-		const filters = filter.value.split(",");
-		for (let i = 0; i < filters.length; i++) {
-			let filterVal = filters[i];
-			let blank = filterVal === "!!";
-			if (blank) {
-				// Special handler for emptiness
-				return fieldVal == null || fieldVal === "";
-			}
-
-			let notblank = filterVal === "?" || filterVal === "??";
-			if (notblank) {
-				// Special handler for non-emptiness
-				return fieldVal != null && fieldVal !== "";
-			}
-			
-			let neg = filterVal.startsWith("!");
-			filterVal = neg ? filterVal.substring(1) : filterVal;
-			if (filterVal === "") {
-				return true; // No filter after all.
-			}
-
-			let starts = filterVal.startsWith("^");
-			filterVal = starts ? filterVal.substring(1) : filterVal;
-			if (filterVal === "") {
-				return true; // No filter after all.
-			}
-
-			let ends = filterVal.endsWith("$");
-			filterVal = ends ? filterVal.substring(0, filterVal.length - 1) : filterVal;
-			if (filterVal === "") {
-				return true; // No filter after all.
-			}
-
-			let whole = (filterVal.charAt(0) === "'" || filterVal.charAt(0) === '"')
-				&& (filterVal.charAt(filterVal.length - 1) === "'" || filterVal.charAt(filterVal.length - 1) === '"');
-			filterVal = whole ? filterVal.substring(1, filterVal.length - 1) : filterVal;
-			if (filterVal === "") {
-				return true; // No filter after all.
-			}
-
-			// Special case: we have a negative filter and no field val, which means Eureka
-			if (!fieldVal || fieldVal === '')
-				return neg;
-
-			let found =
-				starts ?
-					fieldVal.toLowerCase().startsWith(filterVal.toLowerCase()) :
-					ends ?
-						fieldVal.toLowerCase().endsWith(filterVal.toLowerCase()) :
-						whole ?
-							fieldVal.toLowerCase() === filterVal.toLowerCase() :
-							fieldVal.toLowerCase().indexOf(filterVal.toLowerCase()) !== -1;
-
-			if (found) {
-				// Yay found, but only return true if we aren't negative
-				if (!neg) {
-					return true;
-				}
-			} else {
-				// Boo not found, but return true if we are negative
-				if (neg) {
-					return true;
-				}
-			}
-		}
 	};
 
 	render() {
@@ -213,7 +129,7 @@ export default class extends React.Component {
 		let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable;
 		return (
 			<TableImpl
-				defaultFilterMethod={this.defaultFilterMethod}
+				defaultFilterMethod={filtrage.executeFilterOnRow}
 				ref={r => (this.checkboxTable = r)}
 				data={this.state.data}
 				columns={this.props.columns}

@@ -67,9 +67,9 @@ async function findAll(sortField, sortDir, status, packageIds, packageOrgIds, li
 
 	if (licensedOrgIds) {
 		select = SELECT_ALL_IN_ORG;
-		values.push("Suspended");
-		values.push("Uninstalled");
-		whereParts.push(`op.license_status NOT IN ($${values.length-1}, $${values.length})`);
+		values.push("Active");
+		values.push("Trial");
+		whereParts.push(`op.license_status IN ($${values.length-1}, $${values.length})`);
 
 		licensedOrgIds = licensedOrgIds.split(",");
 		let params = licensedOrgIds.map((v,i) => '$' + (values.length + i + 1));
@@ -78,9 +78,9 @@ async function findAll(sortField, sortDir, status, packageIds, packageOrgIds, li
 	} 
 	else if (orgGroupIds) {
 		select = SELECT_ALL_IN_ORG_GROUP;
-		values.push("Suspended");
-		values.push("Uninstalled");
-		whereParts.push(`op.license_status NOT IN ($${values.length-1}, $${values.length})`);
+		values.push("Active");
+		values.push("Trial");
+		whereParts.push(`op.license_status IN ($${values.length-1}, $${values.length})`);
 
 		orgGroupIds = orgGroupIds.split(",");
 		let params = orgGroupIds.map((v,i) => '$' + (values.length + i + 1));

@@ -352,7 +352,7 @@ async function uploadOrgsToSumo(interval) {
 
 async function loadOrgsInSumoFormat(job) {
 	let orgs = await db.query(
-		`SELECT o.org_id, a.account_name, CASE WHEN o.is_sandbox = true THEN 'Sandbox' ELSE 'Production' END AS type, o.type as edition, o.instance
+		`SELECT o.org_id, a.account_name, o.type, o.edition, o.instance
         FROM org o
         INNER JOIN account a on a.account_id = o.account_id
         WHERE a.account_id NOT IN ($1, $2)`, [sfdc.INTERNAL_ID, sfdc.INVALID_ID]);
