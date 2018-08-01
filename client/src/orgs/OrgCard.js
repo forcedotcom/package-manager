@@ -6,6 +6,7 @@ import {CSVDownload} from 'react-csv';
 import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import SelectGroupWindow from "./SelectGroupWindow";
+import ServerTable from "../components/ServerTable";
 
 export default class extends React.Component {
 	state = {
@@ -85,8 +86,14 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable keyField="org_id" id="OrgCard" data={this.props.orgs} onClick={this.linkHandler}
-							   onFilter={this.filterHandler} onSelect={this.selectionHandler} columns={columns}/>
+					{this.props.showSelected ?
+						<DataTable keyField="org_id" id="OrgCard" data={this.props.orgs} selection={this.props.selected}
+								   onClick={this.linkHandler} onSelect={this.selectionHandler} columns={columns}
+								   onFilter={this.filterHandler}/> :
+						<ServerTable keyField="org_id" id="OrgCard" data={this.props.orgs} selection={this.props.selected} 
+									 onClick={this.linkHandler} onSelect={this.selectionHandler} columns={columns}
+									 onRequest={this.props.onRequest}/>
+					}	
 				</div>
 				<footer className="slds-card__footer"/>
 				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)}

@@ -45,7 +45,6 @@ export default class extends React.Component {
 		const selectAll = !this.state.selectAll;
 		let selection = this.state.selection;
 		if (selectAll) {
-			if (window.confirm("Select all records, or just this page"))
 			this.state.allData.forEach(item => {
 				selection.set(item[this.state.keyField], item);
 			});
@@ -66,38 +65,50 @@ export default class extends React.Component {
 		*/
 		return this.state.selection.has(key);
 	};
-	
-	fetchData = debounce((state, instance) => {
+
+
+	fetch = (pageSize, page, sorted, filtered) => {
+		this.setState({loading: true});
+		this.props.onRequest(pageSize, page, sorted, filtered).then(
+			res => this.setState({data: res.rows, pages: res.pages, lastFiltered: filtered, lastSorted: sorted, loading: false}))
+	};
+
+	debounceFetch = debounce(this.fetch, 300);
+
+	fetchData = state => {
+		const {allData, lastFiltered, lastSorted} = this.state; // ServerTable state
+		const {filtered, sorted, page, pageSize} = state; // inner react table state
 		try {
-			state.filtered.forEach(f => jsep(f.value));
+			if (filtered) 
+				filtered.forEach(f => jsep(f.value));
 		} catch (e) {
 			// Bad filters, just ignore and don't change a thing.
-			console.log("Bad filters: " + JSON.stringify(state.filtered));
+			console.log("Bad filters: " + JSON.stringify(filtered));
 			return;
 		}
-		
-		// Whenever the table model changes, or the user sorts or changes pages, this method gets called and passed the current table model.
-		this.setState({ loading: true });
-		this.props.onRequest(
-			state.pageSize,
-			state.page,
-			state.sorted,
-			state.filtered
-		).then(res => {
+		let changedFilter = JSON.stringify(lastFiltered) !== JSON.stringify(filtered);
+		let changedSort = JSON.stringify(lastSorted) !== JSON.stringify(sorted);
+		if (allData.length > 0 && !changedFilter && !changedSort) {
+			// We already have our full rowset and the filters did not change, so don't go back to the server.
 			this.setState({
-				rawData: res.rows,
-				data: res.rows,
-				pages: res.pages,
-				loading: false 
+				data: allData.slice(pageSize * page, pageSize * page + pageSize),
+				pages: Math.ceil(allData.length / pageSize)
 			});
-		});
-	}, 400);
+		} else {
+			// We only want to debounce if our filters changed.  Not on initial load, not on a sort change.
+			if (allData.length > 0 && changedFilter) {
+				this.debounceFetch(pageSize, page, sorted, filtered);
+			} else {
+				this.fetch(pageSize, page, sorted, filtered);
+			}
+		}
+	};
 
 	render() {
-		const {data, pages, loading} = this.state;
+		const {keyField, selectAll, data, pages, loading} = this.state;
 
 		const selectionProps = {
-			selectAll: this.state.selectAll,
+			selectAll: selectAll,
 			isSelected: this.isSelected,
 			toggleSelection: this.handleSelection,
 			toggleAll: this.handleSelectAll,
@@ -108,7 +119,7 @@ export default class extends React.Component {
 			getTrProps: (s, r) => {
 				// someone asked for an example of a background color change
 				// here it is...
-				const selected = r && r.original && this.isSelected(r.original[this.state.keyField]);
+				const selected = r && r.original && this.isSelected(r.original[keyField]);
 				return {
 					style: {
 						backgroundColor: selected ? "#E0FFE0" : "inherit"
@@ -136,15 +147,16 @@ export default class extends React.Component {
 		return (
 			<TableImpl
 				manual // Forces table not to paginate or sort automatically, so we can handle it server-side
-				ref={r => (this.checkboxTable = r)}
-				data={data}
-				columns={this.props.columns}
 				pages={pages} // Display the total number of pages
 				loading={loading} // Display the loading overlay when we need it
 				onFetchData={this.fetchData} // Request new data when things change
+				
+				ref={r => (this.checkboxTable = r)}
+				data={data}
+				columns={this.props.columns}
 				filterable
 				defaultPageSize={20}
-				keyField={this.state.keyField}
+				keyField={keyField}
 				className="-striped -highlight"
 				{...selectionProps}
 				{...functionalProps}

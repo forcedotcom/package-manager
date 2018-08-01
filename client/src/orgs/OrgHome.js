@@ -23,19 +23,10 @@ export default class extends React.Component {
 	};
 
 	requestData = (pageSize, page, sorted, filtered) => {
-		const {orgs, sortOrder, lastFiltered, lastSorted} = this.state;
 		return new Promise((resolve, reject) => {
-			if (orgs && JSON.stringify(lastFiltered) === JSON.stringify(filtered) && JSON.stringify(lastSorted) === JSON.stringify(sorted)) {
-				// We already have our full rowset and the filters did not change, so don't go back to the server.
-				return resolve({
-					rows: orgs.slice(pageSize * page, pageSize * page + pageSize),
-					pages: Math.ceil(orgs.length / pageSize)
-				});
-			}
-
-			orgService.requestAll(sorted.length === 0 ? sortOrder : sortage.changeSortOrder(this.SORTAGE_KEY, sorted[0].id, sorted[0].desc ? "desc" : "asc"), filtered)
+			orgService.requestAll(sorted.length === 0 ? this.state.sortOrder : sortage.changeSortOrder(this.SORTAGE_KEY, sorted[0].id, sorted[0].desc ? "desc" : "asc"), filtered)
 			.then(orgs => {
-				this.setState({orgs, itemCount: orgs.length, lastFiltered: filtered, lastSorted: sorted});
+				this.setState({orgs, itemCount: orgs.length});
 				// You must return an object containing the rows of the current page, and optionally the total pages number.
 				return resolve({
 					rows: orgs.slice(pageSize * page, pageSize * page + pageSize),

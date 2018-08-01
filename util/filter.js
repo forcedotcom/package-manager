@@ -37,20 +37,13 @@ function resolveSQL(dict, id, node, neg) {
 		case Types.Compound:
 			return `(${node.body.map(n => resolveSQL(dict,id,n)).filter(s => s).join(" OR ")})`;
 		case Types.Identifier:
-			const first = node.name.charAt(0);
-			const last = node.name.charAt(node.name.length-1);
-			if (first === "$") {
-				return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '${node.name.substring(1)}%'`;
-			}
-			if (last === "$") {
-				return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${node.name.substring(0, node.name.length-1)}'`;
-			}
-			// Else, full monty
-			return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${node.name}%'`;
+			return formatFilterString(dict, id, node, neg);
 		case Types.MemberExpression:
 			throw "MemberExpression not supported";
 		case Types.Literal:
-			return `${dict.get(id)} ${neg ? "!=" : "=" } '${node.value}'`;
+			return isQuoted(node.raw) ? 
+				`${dict.get(id)} ${neg ? "!=" : "=" } '${node.value}'` :
+				formatFilterString(dict, id, node, neg);
 		case Types.ThisExpression:
 			throw "ThisExpression not supported";
 		case Types.CallExpression:
@@ -89,4 +82,24 @@ function resolveSQL(dict, id, node, neg) {
 		default:
 			throw `Unknown expression ${node.type}`;
 	}
+}
+
+function formatFilterString(dict, id, node, neg) {
+	const name = node.name || node.raw;
+	const first = name.charAt(0);
+	const last = name.charAt(name.length-1);
+	if (first === "$") {
+		return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '${name.substring(1)}%'`;
+	}
+	if (last === "$") {
+		return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${name.substring(0, name.length-1)}'`;
+	}
+	// Else, full monty
+	return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${name}%'`;
+}
+
+function isQuoted(str) {
+	const first = str.charAt(0);
+	const last = str.charAt(str.length - 1);
+	return (first === "'" && last === "'") || (first === '"' && last === '"');
 }

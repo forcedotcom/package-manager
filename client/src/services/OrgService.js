@@ -5,11 +5,8 @@ let url = "/api/orgs";
 export let requestAll = (sort,filters,page,pageSize) => h.get(url, {sort_field: sort.field, sort_dir: sort.direction, 
 	filters: filters ? JSON.stringify(filters) : null}, page, pageSize);
 
-export let requestByPackage = (packageId, sort) => h.get(url, {
-	packageId,
-	sort_field: sort.field,
-	sort_dir: sort.direction
-});
+export let requestByPackage = (packageId,sort,filters,page,pageSize) => h.get(url, {packageId, sort_field: sort.field, sort_dir: sort.direction,
+	filters: filters ? JSON.stringify(filters) : null}, page, pageSize);
 
 export let requestByPackageVersion = (packageVersionId, sort) => h.get(url, {
 	packageVersionId,

@@ -21,14 +21,12 @@ export default class extends React.Component {
 		];
 		return (
 			this.props.showSelected ? 
-				<DataTable selection={this.props.selected} keyField="org_id" id="OrgList" onFilter={this.props.onFilter}
-						   data={Array.from(this.props.selected.values())}
-						   onClick={this.linkHandler} onSelect={this.props.onSelect} columns={columns}/> :
-				<ServerTable selection={this.props.selected} keyField="org_id" id="OrgList"
-							 data={this.props.orgs}
-							 onRequest={this.props.onRequest} onFilter={this.props.onFilter}
-							 onClick={this.linkHandler} onSelect={this.props.onSelect}
-							 columns={columns}/>
+				<DataTable data={Array.from(this.props.selected.values())} selection={this.props.selected} keyField="org_id" id="OrgList"
+					   onClick={this.linkHandler} onSelect={this.props.onSelect} columns={columns}
+					   onFilter={this.props.onFilter}/> :
+				<ServerTable data={this.props.orgs} selection={this.props.selected} keyField="org_id" id="OrgList"
+						 onClick={this.linkHandler} onSelect={this.props.onSelect} columns={columns}
+						 onRequest={this.props.onRequest}/>
 		);
 	}
 }

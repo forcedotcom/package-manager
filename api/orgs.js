@@ -23,7 +23,7 @@ const QUERY_DICTIONARY = new Map([
 	["account_id", "o.account_id"],
 	["features", "o.features"],
 	["account_name", "a.account_name"],
-	["groups", "groups"],
+	["groups", "g.name"],
 	["version_number", "pv.version_number"],
 	["license_status", "opv.license_status"]
 ]);

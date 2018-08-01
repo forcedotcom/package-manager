@@ -18,42 +18,35 @@ const Types = {
 export const executeFilterOnRow = (filter, row) => {
 	try {
 		let tree = jsep(filter.value);
-		return matchNode(row, filter.id, tree);
+		let fieldElem = row[filter.id];
+		let fieldVal = (fieldElem == null || typeof fieldElem === 'string') ? fieldElem : fieldElem.props.children.join("");
+		fieldVal = fieldVal ? fieldVal.toLowerCase() : null;
+
+		return matchNode(fieldVal, tree);
 	} catch (e) {
 		return "";
 	}
 };
 
-function matchNode(row, id, node, neg) {
-	let fieldElem = row[id];
-	let fieldVal = (fieldElem == null || typeof fieldElem === 'string') ? fieldElem : fieldElem.props.children.join("");
-	fieldVal = fieldVal ? fieldVal.toLowerCase() : null;
-	
+function matchNode(value, node, neg) {
 	switch (node.type) {
 		case Types.Compound:
 			node.body.forEach(n => {
-				const match = matchNode(row, id, n);
+				const match = matchNode(value, n);
 				if (match)
 					return true;
 			});
 			return false;
 		case Types.Identifier:
-			const nodeName = node.name ? node.name.toLowerCase() : null;
-			const first = nodeName.charAt(0);
-			const last = nodeName.charAt(nodeName.length-1);
-			if (first === "$") {
-				return fieldVal.startsWith(nodeName.substring(1)) === !neg;
-			}
-			if (last === "$") {
-				return fieldVal.endsWith(nodeName.substring(0, nodeName.length-1)) === !neg;
-			}
-			// Else, full monty
-			return (fieldVal.indexOf(nodeName) !== -1) === !neg;
+			return matchFilterString(value, node, neg);
 		case Types.MemberExpression:
 			break;
 		case Types.Literal:
-			let nodeValue = node.value ? node.value.toLowerCase() : null;
-			return (nodeValue === fieldVal) === !neg;
+			let nodeValue = node.value && node.value.toLowerCase ? node.value.toLowerCase() : node.value;
+			return isQuoted(node.raw) ?
+				(String(nodeValue) === value) === !neg :
+				 matchFilterString(value, node, neg);
+			
 		case Types.ThisExpression:
 			break;
 		case Types.CallExpression:
@@ -64,16 +57,16 @@ function matchNode(row, id, node, neg) {
 				case "!":
 					if (node.argument.type === Types.UnaryExpression && node.argument.operator === "?")  {
 						// Operator is actually !? (Not Something)
-						return fieldVal == null || fieldVal === "";
+						return value == null || value === "";
 					} else if (!node.argument) {
 						// Possible if there is nothing of meaning after the unary op
 						return false;
 					} else {
-						return matchNode(row, id, node.argument, true);
+						return matchNode(value, node.argument, true);
 					}
 				case "?":
 					// Operator is ? (Something)
-					return fieldVal != null && fieldVal !== "";
+					return value != null && value !== "";
 				default:
 					return false;
 			}
@@ -81,9 +74,9 @@ function matchNode(row, id, node, neg) {
 			break;
 		case Types.LogicalExpression:
 			if (node.operator === "||") {
-				return matchNode(row, id, node.left) || matchNode(row, id, node.right);
+				return matchNode(value, node.left) || matchNode(value, node.right);
 			} else {
-				return matchNode(row, id, node.left) && matchNode(row, id, node.right);
+				return matchNode(value, node.left) && matchNode(value, node.right);
 			}
 		case Types.ConditionalExpression:
 			break;
@@ -93,4 +86,25 @@ function matchNode(row, id, node, neg) {
 			break;
 
 	}
+}
+
+function matchFilterString(fieldVal, node, neg) {
+	const nodeName = (node.name || node.raw || "").toLowerCase();
+	const first = nodeName.charAt(0);
+	const last = nodeName.charAt(nodeName.length-1);
+	if (first === "$") {
+		return fieldVal.startsWith(nodeName.substring(1)) === !neg;
+	}
+	if (last === "$") {
+		return fieldVal.endsWith(nodeName.substring(0, nodeName.length-1)) === !neg;
+	}
+	// Else, full monty
+	return (fieldVal.indexOf(nodeName) !== -1) === !neg;
+
+}
+
+function isQuoted(str) {
+	const first = str.charAt(0);
+	const last = str.charAt(str.length - 1);
+	return (first === "'" && last === "'") || (first === '"' && last === '"');
 }
