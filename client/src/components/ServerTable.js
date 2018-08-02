@@ -5,6 +5,7 @@ import ReactTable from "react-table";
 import "react-table/react-table.css";
 import checkboxHOC from "react-table/lib/hoc/selectTable";
 import * as filtrage from "../services/filter";
+import {FilterComponent} from "./DataTableFilter";
 
 const CheckboxTable = checkboxHOC(ReactTable);
 
@@ -156,6 +157,7 @@ export default class extends React.Component {
 				defaultPageSize={20}
 				keyField={keyField}
 				className="-striped -highlight"
+				FilterComponent={FilterComponent}
 				{...selectionProps}
 				{...functionalProps}
 			/>

@@ -434,8 +434,8 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	}
 	
 	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Active, id]);
-	admin.emit(admin.Events.UPGRADE, upgrade);
 	await activateAvailableUpgradeItems(id, username, job);
+	admin.emit(admin.Events.UPGRADE, upgrade);
 }
 
 async function activateAvailableUpgradeItems(id, username, job = {postMessage: msg => logger.info(msg)}) {
