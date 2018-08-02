@@ -85,7 +85,7 @@ function resolveSQL(dict, id, node, neg) {
 }
 
 function formatFilterString(dict, id, node, neg) {
-	const name = node.name || node.raw;
+	const name = unwrap(node.name || node.raw);
 	const first = name.charAt(0);
 	const last = name.charAt(name.length-1);
 	if (first === "$") {
@@ -101,5 +101,19 @@ function formatFilterString(dict, id, node, neg) {
 function isQuoted(str) {
 	const first = str.charAt(0);
 	const last = str.charAt(str.length - 1);
-	return (first === "'" && last === "'") || (first === '"' && last === '"');
+	return (first === '"' && last === '"');
+}
+
+/**
+ * We treat single-quotes as a sort of escape character, allowing for strings that would otherwise fail, like
+ * numbers followed by non-numbers.
+ */
+function unwrap(str) {
+	return isWrapped(str) ? str.substring(1,str.length-1) : str;	
+}
+
+function isWrapped(str) {
+	const first = str.charAt(0);
+	const last = str.charAt(str.length - 1);
+	return (first === "'" && last === "'");
 }

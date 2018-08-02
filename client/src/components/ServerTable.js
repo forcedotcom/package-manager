@@ -4,7 +4,7 @@ import debounce from 'lodash.debounce';
 import ReactTable from "react-table";
 import "react-table/react-table.css";
 import checkboxHOC from "react-table/lib/hoc/selectTable";
-import * as jsep from 'jsep';
+import * as filtrage from "../services/filter";
 
 const CheckboxTable = checkboxHOC(ReactTable);
 
@@ -67,9 +67,9 @@ export default class extends React.Component {
 	};
 
 
-	fetch = (pageSize, page, sorted, filtered) => {
+	fetch = (pageSize, page, sorted, filtered, sanitizedFilters) => {
 		this.setState({loading: true});
-		this.props.onRequest(pageSize, page, sorted, filtered).then(
+		this.props.onRequest(pageSize, page, sorted, sanitizedFilters).then(
 			res => this.setState({data: res.rows, pages: res.pages, lastFiltered: filtered, lastSorted: sorted, loading: false}))
 	};
 
@@ -78,14 +78,12 @@ export default class extends React.Component {
 	fetchData = state => {
 		const {allData, lastFiltered, lastSorted} = this.state; // ServerTable state
 		const {filtered, sorted, page, pageSize} = state; // inner react table state
-		try {
-			if (filtered) 
-				filtered.forEach(f => jsep(f.value));
-		} catch (e) {
+		const sanitizedFilters = filtrage.sanitize(filtered);
+		if (filtered && !sanitizedFilters) {
 			// Bad filters, just ignore and don't change a thing.
-			console.log("Bad filters: " + JSON.stringify(filtered));
 			return;
 		}
+		
 		let changedFilter = JSON.stringify(lastFiltered) !== JSON.stringify(filtered);
 		let changedSort = JSON.stringify(lastSorted) !== JSON.stringify(sorted);
 		if (allData.length > 0 && !changedFilter && !changedSort) {
@@ -97,9 +95,9 @@ export default class extends React.Component {
 		} else {
 			// We only want to debounce if our filters changed.  Not on initial load, not on a sort change.
 			if (allData.length > 0 && changedFilter) {
-				this.debounceFetch(pageSize, page, sorted, filtered);
+				this.debounceFetch(pageSize, page, sorted, filtered, sanitizedFilters);
 			} else {
-				this.fetch(pageSize, page, sorted, filtered);
+				this.fetch(pageSize, page, sorted, filtered, sanitizedFilters);
 			}
 		}
 	};

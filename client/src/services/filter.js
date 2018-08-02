@@ -15,9 +15,39 @@ const Types = {
 	ArrayExpression: "ArrayExpression"
 };
 
+export const sanitize = (filters) => {
+	let sanitizedFilters = null;
+	if (filters) {
+		try { 
+			sanitizedFilters = filters.map(f => {return {id: f.id, value: sanitizeValue(f.value)}});
+		} catch (e) {
+			// Bad filters, just ignore and don't change a thing.
+			console.log("Bad filters: " + JSON.stringify(filters));
+			return null;		
+		}
+	}
+	return sanitizedFilters;
+};
+
+/**
+ * Attempt to sanitize the filter value if possible, by wrapping it, so it can be unwrapped later when filtering.
+ * Workaround for the jsep library not liking literal strings with numbers followed by non-numbers
+ */
+function sanitizeValue(value) {
+	let sanitizedValue = value;
+	try {
+		jsep(sanitizedValue);
+	} catch (e1) {
+		const wrapped = `'${sanitizedValue}'`;
+		jsep(wrapped);
+		sanitizedValue = wrapped;
+	}
+	return sanitizedValue;
+}
+
 export const executeFilterOnRow = (filter, row) => {
 	try {
-		let tree = jsep(filter.value);
+		let tree = jsep(sanitizeValue(filter.value));
 		let fieldElem = row[filter.id];
 		let fieldVal = (fieldElem == null || typeof fieldElem === 'string') ? fieldElem : fieldElem.props.children.join("");
 		fieldVal = fieldVal ? fieldVal.toLowerCase() : null;
@@ -89,7 +119,7 @@ function matchNode(value, node, neg) {
 }
 
 function matchFilterString(fieldVal, node, neg) {
-	const nodeName = (node.name || node.raw || "").toLowerCase();
+	const nodeName = unwrap(node.name || node.raw || "").toLowerCase();
 	const first = nodeName.charAt(0);
 	const last = nodeName.charAt(nodeName.length-1);
 	if (first === "$") {
@@ -106,5 +136,20 @@ function matchFilterString(fieldVal, node, neg) {
 function isQuoted(str) {
 	const first = str.charAt(0);
 	const last = str.charAt(str.length - 1);
-	return (first === "'" && last === "'") || (first === '"' && last === '"');
+	return (first === '"' && last === '"');
 }
+
+/**
+ * We treat single-quotes as a sort of escape character, allowing for strings that would otherwise fail, like
+ * numbers followed by non-numbers.
+ */
+function unwrap(str) {
+	return isWrapped(str) ? str.substring(1,str.length-1) : str;
+}
+
+function isWrapped(str) {
+	const first = str.charAt(0);
+	const last = str.charAt(str.length - 1);
+	return (first === "'" && last === "'");
+}
+
