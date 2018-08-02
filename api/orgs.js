@@ -93,8 +93,13 @@ async function findAll(packageId, packageVersionId, orderByField, orderByDir, fi
 	
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
 	let sort = `ORDER BY ${orderByField || "account_name"} ${orderByDir || "asc"}`;
-	
-	return await db.query(`${select} ${where} ${groupBy} ${sort}`, values)
+
+	try { 
+		return await db.query(`${select} ${where} ${groupBy} ${sort}`, values);
+	} catch (e) {
+		// Try without sorting
+		return await db.query(`${select} ${where} ${groupBy}`, values);
+	}
 }
 
 function requestById(req, res, next) {
