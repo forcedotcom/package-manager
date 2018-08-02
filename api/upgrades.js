@@ -549,7 +549,7 @@ function monitorUpgrades() {
 			}
 		]);
 	job.singleton = true; // Don't queue us up
-	job.shouldRun = async () => await areAnyJobsActive();
+	job.shouldRun = async () => await areAnyUpgradesUnfinished();
 	return job;
 }
 
@@ -592,30 +592,24 @@ async function monitorActiveUpgradeJobs(job) {
 }
 
 
-async function areAnyJobsActive() {
-	let i = 0;
+async function areAnyUpgradesUnfinished() {
 	const activeJobs = await db.query(`SELECT j.id FROM upgrade_job j 
+										INNER JOIN upgrade u on u.id = j.upgrade_id
 										INNER JOIN upgrade_item i on i.id = j.item_id
-										WHERE j.status IN ($${++i},$${++i}) AND i.start_time <= NOW() LIMIT 1`,
-		[push.Status.Pending, push.Status.InProgress], true);
+										WHERE u.start_time <= NOW() AND (u.status = $1 
+											OR i.status IN ($2,$3,$4) OR j.status IN ($2,$3,$4)
+										) LIMIT 1`,
+		[UpgradeStatus.Active, push.Status.Created, push.Status.Pending, push.Status.InProgress], true);
 	return activeJobs.length === 1;
 }
 
 async function areJobsCompleteForUpgrade(upgradeId) {
 	let i = 0;
-	const jobs = await db.query(`SELECT id FROM upgrade_job j WHERE j.upgrade_id = $${++i} 
-								AND j.status IN ($${++i}, $${++i}, $${++i}) LIMIT 1`,
+	const jobs = await db.query(`SELECT id FROM upgrade_job WHERE upgrade_id = $${++i} 
+								AND status IN ($${++i}, $${++i}, $${++i}) LIMIT 1`,
 		[upgradeId, push.Status.Created, push.Status.Pending, push.Status.InProgress]);
 	return jobs.length === 0;
 }
-
-// async function monitorUpgradedOrgVersions(job) {
-// 	let where = `WHERE j.status = $1 AND pv.version_id != pvc.version_id`;
-// 	const upgraded = await db.query(`${SELECT_ALL_JOBS} ${where}`, [push.Status.Succeeded]);
-// 	const orgIds = upgraded.map(j => j.org_id);
-// 	const packageOrgIds = Array.from(new Set(upgraded.map(j => j.package_org_id)));
-// 	await opvfetch.fetchFromSubscribers(orgIds, packageOrgIds, job);
-// }
 
 async function requestCancelUpgrade(req, res, next) {
 	const id = req.params.id;

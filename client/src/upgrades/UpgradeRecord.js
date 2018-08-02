@@ -20,7 +20,6 @@ export default class extends React.Component {
 	SORTAGE_KEY_JOBS = "UpgradeRecord.UpgradeJobCard";
 
 	state = {
-		upgrade: {},
 		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "p.dependency_tier", "asc"),
 		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc")
 	};
@@ -30,13 +29,10 @@ export default class extends React.Component {
 		notifier.on('upgrade-items', this.upgradeItemsUpdated);
 		notifier.on('upgrade-jobs', this.upgradeJobsUpdated);
 
-		upgradeService.requestById(this.props.match.params.upgradeId).then(upgrade => this.setState({upgrade}));
-		upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems).then(items => {
-			this.setState({items});
-		});
-		upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId, this.state.sortOrderJobs).then(jobs => {
-			this.setState({jobs});
-		});
+		Promise.all([upgradeService.requestById(this.props.match.params.upgradeId),
+			upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems),
+			upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId, this.state.sortOrderJobs)])
+		.then(results => this.setState({upgrade: results[0], items: results[1], jobs: results[2]}));
 	}
 
 	componentWillUnmount() {
@@ -101,10 +97,15 @@ export default class extends React.Component {
 	};
 
 	render() {
+		const {upgrade,items,jobs} = this.state;
+		if (!upgrade) return <div/>;
+		
+		console.log("Rendering", upgrade, items, jobs);
+		
 		let userCanActivate = true;
 		let user = JSON.parse(sessionStorage.getItem("user"));
 		if (user) {
-			userCanActivate = user.enforce_activation_policy === "false" || (this.state.upgrade.created_by != null && this.state.upgrade.created_by !== user.username);
+			userCanActivate = user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username);
 		}
 
 		const itemNotes = [];
@@ -117,9 +118,9 @@ export default class extends React.Component {
 		}
 
 		let done = true;
-		let count = this.state.jobs ? this.state.jobs.length : 0, started = 0, completed = 0, errors = 0;
+		let count = jobs ? jobs.length : 0, started = 0, completed = 0, errors = 0;
 		for (let i = 0; i < count; i++) {
-			let job = this.state.jobs[i];
+			let job = jobs[i];
 			if (!isNotStartedStatus(job.status)) {
 				started++;
 			}
@@ -151,19 +152,19 @@ export default class extends React.Component {
 
 		return (
 			<div>
-				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={this.state.upgrade.description} actions={actions}>
-					<HeaderField label="Scheduled Start Time" value={`${moment(this.state.upgrade.start_time).format('lll')} (${moment(this.state.upgrade.start_time).fromNow()})`}/>
-					<HeaderField label="Status" value={this.state.upgrade.status}/>
-					<HeaderField label="Created By" value={this.state.upgrade.created_by}/>
+				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={upgrade.description} actions={actions}>
+					<HeaderField label="Scheduled Start Time" value={`${moment(upgrade.start_time).format('lll')} (${moment(upgrade.start_time).fromNow()})`}/>
+					<HeaderField label="Status" value={upgrade.status}/>
+					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
 				<ProgressBar progress={(started+completed)/(count*2)} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
-							<UpgradeItemCard upgrade={this.state.upgrade} notes={itemNotes} items={this.state.items}/>
+							<UpgradeItemCard upgrade={upgrade} notes={itemNotes} items={items}/>
 						</div>
 						<div label="Jobs">
-							<UpgradeJobCard jobs={this.state.jobs}/>
+							<UpgradeJobCard jobs={jobs}/>
 						</div>
 					</Tabs>
 				</div>

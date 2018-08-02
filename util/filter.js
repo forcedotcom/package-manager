@@ -26,7 +26,7 @@ function parseFilterAsSQL(dict, filter) {
 	try { 
 		let tree = jsep(filter.value);
 		return resolveSQL(dict, filter.id, tree) || "";
-	} catch (e) { 
+	} catch (e) {
 		logger.warn(e);
 		return "";
 	}
