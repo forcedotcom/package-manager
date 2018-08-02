@@ -100,8 +100,6 @@ export default class extends React.Component {
 		const {upgrade,items,jobs} = this.state;
 		if (!upgrade) return <div/>;
 		
-		console.log("Rendering", upgrade, items, jobs);
-		
 		let userCanActivate = true;
 		let user = JSON.parse(sessionStorage.getItem("user"));
 		if (user) {
