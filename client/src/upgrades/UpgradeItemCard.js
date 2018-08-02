@@ -6,7 +6,10 @@ import {CardHeader} from "../components/PageHeader";
 import {Status, UPGRADE_ITEM_ICON} from "../Constants";
 
 export default class extends React.Component {
-	state = {itemCount: null};
+	constructor(props) {
+		super(props);
+		this.state = {itemCount: props.items.length};
+	}
 
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
@@ -23,12 +26,6 @@ export default class extends React.Component {
 			// Nothing...
 		}
 	};
-
-	componentWillReceiveProps(props) {
-		if (props.items && this.state.itemCount === null) {
-			this.setState({itemCount: props.items.length});
-		}
-	}
 
 	filterHandler = (filtered) => {
 		this.setState({itemCount: filtered.length});

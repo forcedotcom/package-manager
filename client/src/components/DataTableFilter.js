@@ -1,18 +1,24 @@
 import React from 'react';
 import ReactTooltip from 'react-tooltip';
 
-export const FilterComponent = ({filter, onChange}) => (
-	<div><input data-tip=""
-				type="text"
-				style={{
-					width: '100%',
-				}}
-				value={filter ? filter.value : ''}
-				onChange={event => onChange(event.target.value)}/>
-		<ReactTooltip getContent={HelpText} effect="solid" delayShow={900}/>
+export const FilterComponent = ({filter, onChange}) => {
+	const handleKeyDown = (e) => {
+		switch (e.key) {
+			case "Escape":
+				ReactTooltip.hide();
+				return false;
+			default:
+				return true;
+		}
+	};
+	return (
+		<div><input data-tip="" type="text" style={{width: '100%',}} value={filter ? filter.value : ''}
+					onChange={event => onChange(event.target.value)} onKeyDown={handleKeyDown}/>
+			<ReactTooltip getContent={HelpText} effect="solid" event="click" eventOff="mouseleave" delayShow={900}/>
 
-	</div>
-);
+		</div>
+	);
+};
 
 /**
  * Supported Filters
@@ -47,7 +53,7 @@ const HelpText = () => (
 );
 
 const HelpSection = ({title,items}) => {
-	const helpItems = items.map(i => <HelpItem example={i.example} description={i.description}/>);
+	const helpItems = items.map((i,n) => <HelpItem key={n} example={i.example} description={i.description}/>);
 	return (
 		<div className="slds-col slds-small-size_1-of-2">
 			<article className="slds-text-align_left slds-m-around--medium slds-tile">

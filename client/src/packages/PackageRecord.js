@@ -20,15 +20,15 @@ export default class extends React.Component {
 	
 		this.state = {
 			sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "name", "asc"),
-			sortOrderOrgs: sortage.getSortOrder(this.SORTAGE_KEY_ORGS, "account_name", "asc")
+			sortOrderOrgs: sortage.getSortOrder(this.SORTAGE_KEY_ORGS, "account_name", "asc"),
+			orgs: []
 		};
 		
-		packageService.requestById(props.match.params.packageId).then(pkg => {
-			this.setState({pkg})
-		});
-
-		packageVersionService.findByPackage(props.match.params.packageId, this.state.sortOrderVersions).then(packageVersions => {
-			this.setState({packageVersions})
+		Promise.all([
+			packageService.requestById(props.match.params.packageId), 
+			packageVersionService.findByPackage(props.match.params.packageId, this.state.sortOrderVersions)])
+		.then(results => {
+			this.setState({pkg: results[0], packageVersions: results[1]});
 		});
 	}
 

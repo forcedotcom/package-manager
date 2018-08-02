@@ -242,6 +242,8 @@ alter table upgrade_job
 -- Added status field to upgrade.  Marking all null status as Active means the system will re-check the status of
 -- all upgrades by querying its jobs, and set the status appropriately.
 update upgrade set status = 'Active' where status is null;
+update upgrade set status = 'Canceled' where id in 
+     (select u.id from upgrade u inner join upgrade_item i on i.upgrade_id = u.id where i.status = 'Canceled');
 
 -- Changed default status from null to Installed
 update org set status = 'Installed' where status is null;

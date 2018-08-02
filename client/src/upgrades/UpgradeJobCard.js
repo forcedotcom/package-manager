@@ -7,7 +7,10 @@ import MessageWindow from "../components/MessageWindow";
 import {CSVDownload} from 'react-csv';
 
 export default class extends React.Component {
-	state = {done: false, itemCount: null};
+	constructor(props) {
+		super(props);
+		this.state = {done: false, itemCount: props.jobs.length};
+	}
 
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
@@ -31,12 +34,6 @@ export default class extends React.Component {
 			// Nothing...
 		}
 	};
-
-	componentWillReceiveProps(props) {
-		if (props.jobs && this.state.itemCount === null) {
-			this.setState({itemCount: props.jobs.length});
-		}
-	}
 
 	filterHandler = (filtered) => {
 		this.setState({filtered, itemCount: filtered.length});
