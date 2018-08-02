@@ -15,7 +15,8 @@ const State = {
 const UpgradeStatus = {
 	Ready: "Ready",
 	Active: "Active",
-	Done: "Done"
+	Done: "Done",
+	Canceled: "Canceled"
 };
 
 const MAX_ERROR_COUNT = 20;
@@ -433,8 +434,9 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 		}
 	}
 	
-	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Active, id]);
 	await activateAvailableUpgradeItems(id, username, job);
+	upgrade.status = UpgradeStatus.Active;
+	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [upgrade.status, id]);
 	admin.emit(admin.Events.UPGRADE, upgrade);
 }
 
@@ -555,8 +557,7 @@ function monitorUpgrades() {
 
 async function retrieveActiveUpgrades() {
 	let i = 0;
-	return db.query(`${SELECT_ALL} WHERE u.status IN ($${++i}) AND u.start_time <= NOW() ${GROUP_BY_ALL}`, 
-		[UpgradeStatus.Active]);
+	return db.query(`${SELECT_ALL} WHERE u.status IN ($${++i}) AND u.start_time <= NOW() ${GROUP_BY_ALL}`, [UpgradeStatus.Active]);
 }
 
 async function monitorActiveUpgrades(job) {
@@ -567,7 +568,8 @@ async function monitorActiveUpgrades(job) {
 		
 		if (await areJobsCompleteForUpgrade(upgrade.id)) {
 			// An upgrade is complete only when all of its jobs are marked as complete
-			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Done, upgrade.id]);
+			upgrade.status = UpgradeStatus.Done;
+			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [upgrade.status, upgrade.id]);
 			admin.emit(admin.Events.UPGRADE, upgrade);
 		}
 	}
@@ -617,6 +619,8 @@ async function requestCancelUpgrade(req, res, next) {
 		let items = await findItemsByUpgrade(id);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		await changeUpgradeItemAndJobStatus(items, push.Status.Canceled);
+		await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Canceled, id]);
+		admin.emit(admin.Events.UPGRADE, await retrieveById(id));
 		res.json(items);
 	} catch (e) {
 		return res.status(500).send(e.message || e);
