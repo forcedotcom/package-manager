@@ -3,7 +3,6 @@ const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
 const orgpackageversions = require('./orgpackageversions');
-const {emit, Events} = require('./admin');
 
 const State = {
 	Ready: "Ready",
@@ -135,8 +134,8 @@ async function changeUpgradeItemStatus(item, status) {
 	try {
 		item.status = status || item.status;
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
-		emit(Events.UPGRADE, await retrieveById(item.upgrade_id));
-		emit(Events.UPGRADE_ITEMS, [item]);
+		admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 	} catch (error) {
 		logger.error("Failed to update upgrade item", {itemId: item.id, status, error: error.message || error});
 	}
@@ -154,8 +153,8 @@ async function changeUpgradeItemAndJobStatus(items, status) {
 		
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
 		await db.update(`UPDATE upgrade_job SET status = $1 WHERE item_id IN (${params.join(",")})`, values);
-		emit(Events.UPGRADE, await retrieveById(items[0].upgrade_id));
-		emit(Events.UPGRADE_ITEMS, items);
+		admin.emit(admin.Events.UPGRADE, await retrieveById(items[0].upgrade_id));
+		admin.emit(admin.Events.UPGRADE_ITEMS, items);
 	} catch (error) {
 		logger.error("Failed to update upgrade items", {status, error: error.message || error});
 	}
@@ -228,7 +227,7 @@ async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 
 	if (updated.length > 0) {
 		await updateUpgradeJobsStatus(updated);
-		emit(Events.UPGRADE_JOBS, updated);
+		admin.emit(admin.Events.UPGRADE_JOBS, updated);
 	}
 
 	return {updated: updated.length, succeeded: upgraded.length, errored: errored.length};
@@ -435,7 +434,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	}
 	
 	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Active, id]);
-	emit(Events.UPGRADE, upgrade);
+	admin.emit(admin.Events.UPGRADE, upgrade);
 	await activateAvailableUpgradeItems(id, username, job);
 }
 
@@ -569,7 +568,7 @@ async function monitorActiveUpgrades(job) {
 		if (await areJobsCompleteForUpgrade(upgrade.id)) {
 			// An upgrade is complete only when all of its jobs are marked as complete
 			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Done, upgrade.id]);
-			emit(Events.UPGRADE, upgrade);
+			admin.emit(admin.Events.UPGRADE, upgrade);
 		}
 	}
 }

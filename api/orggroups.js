@@ -1,6 +1,6 @@
 const db = require('../util/pghelper');
 const orgs = require('./orgs');
-const {emit, Events} = require('./admin');
+const admin = require('./admin');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
 
@@ -107,10 +107,10 @@ async function requestUpdate(req, res, next) {
 		if (og.orgIds && og.orgIds.length > 0) {
 			insertOrgMembers(og.id, og.name, og.orgIds)
 			.then(() => {
-				emit(Events.GROUP, og.id);
+				admin.emit(admin.Events.GROUP, og.id);
 			})
 			.catch(e => {
-				emit(Events.FAIL, {subject: "Org Import Failed", message: e.message});
+				admin.emit(admin.Events.FAIL, {subject: "Org Import Failed", message: e.message});
 			});
 		}
 		return res.send({result: 'ok'});
@@ -163,7 +163,7 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	let message = null;
 	if (missingOrgs.length > 0) {
 		message = `${missingOrgs.length} org(s) were not found. We'll search for them and add them if possible. <p>(${missingOrgs.map(o => o.org_id).join(", ")})</p>`;
-		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {}).catch(e => emit(Events.FAIL, e));
+		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {}).catch(e => admin.emit(admin.Events.FAIL, e));
 	}
 
 	let n = 2;
