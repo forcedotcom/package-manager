@@ -61,12 +61,7 @@ export const executeFilterOnRow = (filter, row) => {
 function matchNode(value, node, neg) {
 	switch (node.type) {
 		case Types.Compound:
-			node.body.forEach(n => {
-				const match = matchNode(value, n);
-				if (match)
-					return true;
-			});
-			return false;
+			return node.body.filter(n => matchNode(value, n)).length > 0;
 		case Types.Identifier:
 			return matchFilterString(value, node, neg);
 		case Types.MemberExpression:

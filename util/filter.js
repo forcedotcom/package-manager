@@ -18,14 +18,14 @@ const Types = {
 };
 
 exports.parseSQLExpressions = (dict, filters) => {
-	return filters.map(f => parseFilterAsSQL(dict, f));
+	return filters.map(f => parseFilterAsSQL(dict, f)).filter(f => f);
 };
 
 
 function parseFilterAsSQL(dict, filter) {
 	try { 
 		let tree = jsep(filter.value);
-		return resolveSQL(dict, filter.id, tree) || "";
+		return resolveSQL(dict, filter.id, tree);
 	} catch (e) {
 		logger.warn(e);
 		return "";
@@ -89,13 +89,13 @@ function formatFilterString(dict, id, node, neg) {
 	const first = name.charAt(0);
 	const last = name.charAt(name.length-1);
 	if (first === "$") {
-		return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '${name.substring(1)}%'`;
+		return `(${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '${name.substring(1)}%' ${neg ? `OR ${dict.get(id)} IS NULL` : "" })`;
 	}
 	if (last === "$") {
-		return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${name.substring(0, name.length-1)}'`;
+		return `(${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${name.substring(0, name.length-1)}' ${neg ? `OR ${dict.get(id)} IS NULL` : "" })`;
 	}
 	// Else, full monty
-	return `${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${name}%'`;
+	return `(${dict.get(id)} ${neg ? "NOT" : "" } ILIKE '%${name}%' ${neg ? `OR ${dict.get(id)} IS NULL` : "" })`;
 }
 
 function isQuoted(str) {
