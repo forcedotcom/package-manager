@@ -121,8 +121,7 @@ export default class extends React.Component {
 								color: row.original.message ? "white" : "inherit",
 								borderRadius: '10px',
 								transition: 'all .3s ease-in'
-							}}>
-								{row.original.message ? "Failed" : row.value}</span>
+							}}>{row.value}</span>
 						</div>
 					)
 				}]
