@@ -7,7 +7,7 @@ import "react-table/react-table.css";
 import checkboxHOC from "react-table/lib/hoc/selectTable";
 import * as sortage from "../services/sortage";
 import * as filtrage from "../services/filter";
-import {FilterComponent} from "./DataTableFilter";
+import {DataTableFilter} from "./DataTableFilter";
 
 const CheckboxTable = checkboxHOC(ReactTable);
 
@@ -136,7 +136,7 @@ export default class extends React.Component {
 				pivotBy={this.props.pivotBy || []}
 				onSortedChange={newSorted => sortage.changeSortOrder(this.props.id, newSorted[0].id, newSorted[0].desc ? "desc" : "asc")}
 				onFilteredChange={(column, value) => this.handleFilter(column, value)}
-				FilterComponent={FilterComponent}
+				FilterComponent={DataTableFilter}
 				{...selectionProps}
 				{...functionalProps}
 			/>

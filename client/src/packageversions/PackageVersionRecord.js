@@ -6,6 +6,7 @@ import * as sortage from "../services/sortage";
 import * as orgService from "../services/OrgService";
 import OrgCard from "../orgs/OrgCard";
 import * as packageVersionService from "../services/PackageVersionService";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgCard";
@@ -59,6 +60,7 @@ export default class extends React.Component {
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<OrgCard title="Customers" orgs={this.state.orgs} onRequest={this.requestOrgs}/>
+					<DataTableFilterHelp/>
 				</div>
 			</div> : <div/>
 		);

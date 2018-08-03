@@ -11,6 +11,7 @@ import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
 import {NotificationManager} from "react-notifications";
 import * as notifier from "../services/notifications";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY_JOBS = "UpgradeJobCard";
@@ -137,6 +138,7 @@ export default class extends React.Component {
 				<ProgressBar progress={(started+completed)/(count*2)} success={errors === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard jobs={this.state.jobs}/>
+					<DataTableFilterHelp/>
 				</div>
 			</div>
 		);

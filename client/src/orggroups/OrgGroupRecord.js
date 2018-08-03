@@ -15,7 +15,7 @@ import moment from "moment";
 import Tabs from "../components/Tabs";
 import GroupMemberVersionCard from "../packageversions/GroupMemberVersionCard";
 import GroupMemberOrgCard from "../orgs/GroupMemberOrgCard";
-
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
@@ -253,6 +253,7 @@ export default class extends React.Component {
 													selected={this.state.selected}/>
 						</div>
 					</Tabs>
+					<DataTableFilterHelp/>
 				</div>
 				
 				{this.state.isEditing ? <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler}

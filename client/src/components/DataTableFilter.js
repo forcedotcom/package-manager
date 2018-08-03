@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactTooltip from 'react-tooltip';
 
-export const FilterComponent = ({filter, onChange}) => {
+export const DataTableFilter = ({filter, onChange}) => {
 	const handleKeyDown = (e) => {
 		switch (e.key) {
 			case "Escape":
@@ -14,10 +14,12 @@ export const FilterComponent = ({filter, onChange}) => {
 	return (
 		<div><input data-tip="" type="text" style={{width: '100%',}} value={filter ? filter.value : ''}
 					onChange={event => onChange(event.target.value)} onKeyDown={handleKeyDown}/>
-			<ReactTooltip getContent={HelpText} effect="solid" event="click" eventOff="mouseleave" delayShow={900}/>
-
 		</div>
 	);
+};
+
+export const DataTableFilterHelp = () => {
+	return (<ReactTooltip getContent={HelpText} effect="solid" event="dblclick" eventOff="click"/>);
 };
 
 /**
@@ -32,23 +34,29 @@ export const FilterComponent = ({filter, onChange}) => {
  * not empty
  */
 const HelpText = () => (
-	<div className="slds-grid slds-wrap">
-		<HelpSection title="Text expressions" items={[
-			{example: 'some text', description: "contains some text"},
-			{example: '$some text', description: "starts with some text"},
-			{example: 'some text$', description: "ends with some text"},
-			{example: '"some text"', description: "equals some text exactly"}
-		]}/>
-		<HelpSection title="Compound expressions" items={[
-			{example: 'a || b', description: "match a or b"},
-			{example: 'a, b, c', description: "match a, b, or c"},
-			{example: 'a && b', description: "match AND b"},
-		]}/>
-		<HelpSection title="Not and Null expressions" items={[
-			{example: '!a', description: "not a"},
-			{example: '?', description: "contains any text (not empty)"},
-			{example: '!?', description: "does not contain any text"},
-		]}/>
+	<div>
+		<div className="slds-grid slds-wrap">
+			<HelpSection title="Text expressions" items={[
+				{example: 'some text', description: "contains some text"},
+				{example: "'some text'", description: "contains some text with a space"},
+				{example: '$some text', description: "starts with some text"},
+				{example: 'some text$', description: "ends with some text"},
+				{example: '"some text"', description: "equals some text exactly"}
+			]}/>
+			<HelpSection title="Compound expressions" items={[
+				{example: 'a, b, c', description: "match a, b, or c"},
+				{example: 'a b c', description: "also match a, b, or c"},
+				{example: 'a || b', description: "agaain, match a, b, or c"},
+				{example: 'a && b', description: "match AND b"},
+				{example: '(a || b) && (c || d)', description: "use parentheses for compound conditions"},
+			]}/>
+			<HelpSection title="Not and Null expressions" items={[
+				{example: '!a', description: "not a"},
+				{example: '?', description: "contains any text (not empty)"},
+				{example: '!?', description: "does not contain any text"},
+			]}/>
+		</div>
+		<h2 className="slds-text-align--right slds-text-color_inverse-weak slds-text-title_caps">Double-click to show this help. Type Escape to close.</h2>
 	</div>
 );
 

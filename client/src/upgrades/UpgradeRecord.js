@@ -14,6 +14,7 @@ import Tabs from "../components/Tabs";
 import {NotificationManager} from "react-notifications";
 import moment from "moment";
 import * as notifier from "../services/notifications";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY_ITEMS = "UpgradeItemCard";
@@ -165,6 +166,7 @@ export default class extends React.Component {
 							<UpgradeJobCard jobs={jobs}/>
 						</div>
 					</Tabs>
+					<DataTableFilterHelp/>
 				</div>
 			</div>
 		);

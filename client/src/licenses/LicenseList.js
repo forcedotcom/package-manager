@@ -4,7 +4,7 @@ import DataTable from "../components/DataTable";
 import * as sortage from "../services/sortage";
 
 export default class extends React.Component {
-	linkHandler = (e, column, rowInfo, instance) => {
+	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
 			case "name":
 			case "account_name":
@@ -26,23 +26,11 @@ export default class extends React.Component {
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
 			{Header: "Account", accessor: "account_name", sortable: true, clickable: true},
 			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
-			{
-				Header: "Version Number", accessor: "version_number", sortable: true, clickable: true,
-				sortMethod: (a, b) => sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1
-			},
+			{Header: "Version Number", accessor: "version_number", sortable: true, clickable: true, 
+				sortMethod: (a, b) => sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1},
 			{Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
-			{
-				Header: "Last Modified",
-				id: "modified_date",
-				accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"),
-				sortable: true
-			},
-			{
-				Header: "Installed On",
-				id: "install_date",
-				accessor: d => moment(d.install_date).format("YYYY-MM-DD"),
-				sortable: true
-			}
+			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true},
+			{Header: "Installed On", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: true}
 		];
 		return (
 			<DataTable id="LicenseList" data={this.props.licenses} onFilter={this.props.onFilter}

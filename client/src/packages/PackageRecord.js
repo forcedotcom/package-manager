@@ -10,6 +10,7 @@ import OrgCard from "../orgs/OrgCard";
 import * as sortage from "../services/sortage";
 import * as packageVersionService from "../services/PackageVersionService";
 import * as orgService from "../services/OrgService";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY_VERSIONS = "PackageVersionCard";
@@ -75,6 +76,7 @@ export default class extends React.Component {
 							<OrgCard title="Customers" orgs={this.state.orgs} onRequest={this.requestOrgs} />
 						</div>
 					</Tabs>
+					<DataTableFilterHelp/>
 				</div>
 			</div> : <div/>
 		);
