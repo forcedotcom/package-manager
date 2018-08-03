@@ -6,6 +6,7 @@ import * as licenseService from '../services/LicenseService';
 import {HomeHeader} from '../components/PageHeader';
 
 import LicenseList from './LicenseList';
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "LicenseList";
@@ -61,6 +62,7 @@ export default class extends React.Component {
 							onSort={this.sortHandler}
 							onViewChange={this.viewChangeHandler}/>
 				<LicenseList licenses={this.state.licenses} onFilter={this.filterHandler} onSort={this.sortHandler}/>
+				<DataTableFilterHelp/>
 			</div>
 		);
 	}

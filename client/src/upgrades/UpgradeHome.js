@@ -6,6 +6,7 @@ import {HomeHeader} from '../components/PageHeader';
 import UpgradeList from "./UpgradeList";
 import * as upgradeService from "../services/UpgradeService";
 import {UPGRADE_ICON} from "../Constants";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "UpgradeList";
@@ -31,6 +32,7 @@ export default class extends React.Component {
 							icon={UPGRADE_ICON}
 							itemCount={this.state.itemCount}/>
 				<UpgradeList upgrades={this.state.upgrades} onFilter={this.filterHandler}/>
+				<DataTableFilterHelp/>
 			</div>
 		);
 	}

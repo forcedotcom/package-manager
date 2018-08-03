@@ -7,6 +7,7 @@ import {GroupTypes} from "../Constants";
 import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgGroupList";
@@ -84,6 +85,7 @@ export default class extends React.Component {
 				<HomeHeader type="org groups" title="Org Groups" itemCount={this.state.itemCount} actions={actions}/>
 				<OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler}
 							  onSelect={this.selectionHandler} type={this.state.selectedType.name}/>
+				<DataTableFilterHelp/>
 				{this.state.addingOrgGroup ?
 					<GroupFormWindow type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>

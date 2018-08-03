@@ -12,14 +12,14 @@ export const DataTableFilter = ({filter, onChange}) => {
 		}
 	};
 	return (
-		<div><input data-tip="" type="text" style={{width: '100%',}} value={filter ? filter.value : ''}
+		<div><input data-tip type="text" style={{width: '100%',}} value={filter ? filter.value : ''}
 					onChange={event => onChange(event.target.value)} onKeyDown={handleKeyDown}/>
 		</div>
 	);
 };
 
 export const DataTableFilterHelp = () => {
-	return (<ReactTooltip getContent={HelpText} effect="solid" event="dblclick" eventOff="click"/>);
+	return (<ReactTooltip getContent={HelpText} effect="solid" place="right" event="dblclick" eventOff="click"/>);
 };
 
 /**

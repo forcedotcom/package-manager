@@ -5,6 +5,7 @@ import * as sortage from '../services/sortage';
 
 import {HomeHeader} from '../components/PageHeader';
 import PackageList from './PackageList';
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "PackageList";
@@ -29,6 +30,7 @@ export default class extends React.Component {
 							title="Packages"
 							itemCount={this.state.itemCount}/>
 				<PackageList packages={this.state.packages} onFilter={this.filterHandler}/>
+				<DataTableFilterHelp/>
 			</div>
 		);
 	}

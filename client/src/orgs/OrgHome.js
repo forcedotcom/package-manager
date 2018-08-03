@@ -10,6 +10,7 @@ import {HomeHeader} from '../components/PageHeader';
 import OrgList from './OrgList';
 import SelectGroupWindow from "./SelectGroupWindow";
 import AddOrgWindow from "../orggroups/AddOrgWindow";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgList";
@@ -109,6 +110,7 @@ export default class extends React.Component {
 				<HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
 				<OrgList selected={this.state.selected} onRequest={this.requestData} 
 						 orgs={this.state.orgs} showSelected={this.state.showSelected} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
+				<DataTableFilterHelp/>
 				{this.state.showAddToGroup ? <SelectGroupWindow onAdd={this.addToGroup.bind(this)}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
