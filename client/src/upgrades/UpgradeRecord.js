@@ -76,13 +76,21 @@ export default class extends React.Component {
 	
 	activationHandler = () => {
 		if (window.confirm(`Are you sure you want to activate this upgrade?`)) {
-			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload());
+			this.setState({isActivating: true});
+			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
+				this.setState({isActivating: false});
+				NotificationManager.error(e.message, "Activation Failed");
+			});
 		}
 	};
 
 	cancellationHandler = () => {
 		if (window.confirm(`Are you sure you want to cancel this upgrade?  All ${this.state.items.length} request(s) will be cancelled.`)) {
-			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload());
+			this.setState({isCancelling: true});
+			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
+				this.setState({isCancelling: false});
+				NotificationManager.error(e.message, "Cancellation Failed");
+			});
 		}
 	};
 
@@ -136,16 +144,19 @@ export default class extends React.Component {
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
-				disabled: done || !userCanActivate,
-				detail: "Update items in this upgrade to Pending state"
+				disabled: !userCanActivate || started > 0 || done,
+				detail: "Update items in this upgrade to Pending state",
+				spinning: this.state.isActivating
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
-				disabled: done
+				disabled: done,
+				spinning: this.state.isCancelling
 			},
 			{
 				label: "Retry Upgrade", handler: this.retryHandler.bind(this),
-				disabled: !done || errors === 0, spinning: this.state.isRetrying
+				disabled: !done || errors === 0, 
+				spinning: this.state.isRetrying
 			}
 		];
 

@@ -18,7 +18,8 @@ export const DoneStatus = {
 	Succeeded: Status.Succeeded,
 	Failed: Status.Failed,
 	Canceled: Status.Canceled,
-	Ineligible: Status.Ineligible
+	Ineligible: Status.Ineligible,
+	Invalid: Status.Invalid
 };
 
 export const NotStartedStatus = {

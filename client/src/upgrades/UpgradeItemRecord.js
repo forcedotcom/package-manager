@@ -64,7 +64,7 @@ export default class extends React.Component {
 			this.setState({isActivating: true});
 			upgradeItemService.activate(this.state.item.id).then(item => this.loadItemJobs(item))
 			.catch(e => {
-				this.setState({isActivating: true});
+				this.setState({isActivating: false});
 				NotificationManager.error(e.message, "Activation Failed");
 			});
 		}
