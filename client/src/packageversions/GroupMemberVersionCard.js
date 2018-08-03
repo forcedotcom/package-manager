@@ -10,7 +10,7 @@ export default class extends React.Component {
 	state = {itemCount: null};
 
 	componentWillReceiveProps(props) {
-		if (props.packageVersions && this.state.itemCount === null) {
+		if (props.packageVersions) {
 			this.setState({itemCount: props.packageVersions.length});
 		}
 	};

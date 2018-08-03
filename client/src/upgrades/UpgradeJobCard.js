@@ -9,9 +9,15 @@ import {CSVDownload} from 'react-csv';
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {done: false, itemCount: props.jobs.length};
+		this.state = {done: false, itemCount: null};
 	}
 
+	componentWillReceiveProps(props) {
+		if (props.jobs) {
+			this.setState({itemCount: props.jobs.length});
+		}
+	}
+	
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
 			case "org_id":

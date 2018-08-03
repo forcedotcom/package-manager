@@ -128,7 +128,7 @@ export default class extends React.Component {
 				columns={this.props.columns}
 				pageSize={this.state.pageSize}
 				onPageSizeChange={this.pageSizeHandler}
-				filterable={this.props.filterable || this.state.data.length > this.state.pageSize}
+				filterable
 				showPagination={this.props.showPagination || this.state.data.length > this.state.pageSize}
 				minRows={this.state.minRows}
 				keyField={this.state.keyField}

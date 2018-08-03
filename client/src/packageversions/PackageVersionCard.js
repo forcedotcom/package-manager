@@ -14,7 +14,7 @@ export default class extends React.Component {
 	};
 
 	componentWillReceiveProps(props) {
-		if (props.packageVersions && this.state.itemCount === null) {
+		if (props.packageVersions) {
 			this.setState({itemCount: props.packageVersions.length});
 		}
 	}
@@ -46,7 +46,7 @@ export default class extends React.Component {
 					<DataTable id="PackageVersionCard" data={this.props.packageVersions} onFilter={this.filterHandler}
 							   onClick={this.linkHandler} columns={columns}/>
 				</section>
-				<footer className="slds-card__footer"></footer>
+				<footer className="slds-card__footer"/>
 			</div>
 		);
 	}
