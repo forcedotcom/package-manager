@@ -12,7 +12,7 @@ export const AUTH_ICON = {name: "people", category: "standard"};
 
 export const Status = {
 	Created: "Created", Pending: "Pending", InProgress: "InProgress", Canceling: "Canceling",
-	Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible"
+	Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible", Invalid: "Invalid"
 };
 export const DoneStatus = {
 	Succeeded: Status.Succeeded,
