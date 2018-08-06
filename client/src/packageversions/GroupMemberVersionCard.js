@@ -45,9 +45,7 @@ export default class extends React.Component {
 				Header: "Version Number",
 				minWidth: 170,
 				id: "version_number",
-				accessor: d => d.version_number === d.latest_version_number ? d.version_number :
-					<span style={{borderRadius: "4px", margin: 0, fontWeight: "bold", padding: "2px 4px 2px 4px"}}
-						  className="slds-theme--success">{d.version_number} =&gt; {d.latest_version_number}</span>,
+				accessor: this.renderVersionNumber,
 				sortable: true,
 				clickable: true,
 				sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
@@ -73,5 +71,16 @@ export default class extends React.Component {
 				<footer className="slds-card__footer"/>
 			</article>
 		);
+	}
+	
+	renderVersionNumber(d) {
+		if (d.version_sort === d.latest_limited_version_sort)
+			return d.version_number;
+
+		if (d.version_sort >= d.latest_version_sort)
+			return d.version_number;
+				  
+		return <span title="An upgrade to a newer version is available for this org" style={{borderRadius: "4px", margin: 0, fontWeight: "bold", padding: "2px 4px 2px 4px"}}
+				  className="slds-theme--success">{d.version_number} =&gt; {d.latest_version_number}</span>;
 	}
 }

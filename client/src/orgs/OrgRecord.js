@@ -12,15 +12,15 @@ import InstalledVersionCard from "../packageversions/InstalledVersionCard";
 import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
-	state = {org: {}, packageIds: []};
+	state = {org: {}, upgradeablePackageIds: []};
 
 	componentDidMount() {
 		notifier.on('org-versions', this.versionsRefreshed);
 
 		orgService.requestById(this.props.match.params.orgId).then(org => this.setState({org}));
 		packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
-			let packageIds = this.resolvePackagesFromVersions(versions);
-			this.setState({versions, packageIds});
+			let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
+			this.setState({versions, upgradeablePackageIds});
 		}).catch(e => {
 			notifier.error(e.message || e || "What happened?", "Catastrophic Failure");
 		});
@@ -30,10 +30,9 @@ export default class extends React.Component {
 		notifier.remove('org-versions', this.versionsRefreshed);
 	}
 
-	resolvePackagesFromVersions = (versions) => {
-		const packageVersionMap = new Map();
-		versions.forEach(v => packageVersionMap.set(v.package_id, v));
-		const packageVersionList = Array.from(packageVersionMap.values());
+	resolveUpgradeablePackages = (versions) => {
+		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
+		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
 		packageVersionList.sort(function (a, b) {
 			return a.dependency_tier > b.dependency_tier ? 1 : -1;
 		});
@@ -60,8 +59,8 @@ export default class extends React.Component {
 		if (this.state.org.id === orgId) {
 			// Reload our versions because they may have changed
 			packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
-				let packageIds = this.resolvePackagesFromVersions(versions);
-				this.setState({isRefreshing: false, versions, packageIds});
+				let upgradeablePackageIds = this.resolvePackagesFromVersions(versions);
+				this.setState({isRefreshing: false, versions, upgradeablePackageIds});
 			}).catch(e => {
 				this.setState({isRefreshing: false});
 				notifier.error(e.message, "Refresh Failed");
@@ -98,7 +97,7 @@ export default class extends React.Component {
 			{
 				label: "Upgrade Packages",
 				group: "upgrade",
-				disabled: this.state.packageIds.length === 0,
+				disabled: this.state.upgradeablePackageIds.length === 0,
 				handler: this.openSchedulerWindow
 			},
 			{label: "Add To Group", handler: this.openGroupWindow},
@@ -127,7 +126,7 @@ export default class extends React.Component {
 				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)}
 															   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.schedulingUpgrade ?
-					<ScheduleUpgradeWindow org={this.state.org} packageIds={this.state.packageIds}
+					<ScheduleUpgradeWindow org={this.state.org} packageIds={this.state.upgradeablePackageIds}
 										   onUpgrade={this.upgradeHandler} onCancel={this.closeSchedulerWindow}/> : ""}
 			</div>
 		);

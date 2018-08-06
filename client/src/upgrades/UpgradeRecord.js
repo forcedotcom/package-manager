@@ -21,6 +21,9 @@ export default class extends React.Component {
 	SORTAGE_KEY_JOBS = "UpgradeRecord.UpgradeJobCard";
 
 	state = {
+		upgrade: {},
+		items: [],
+		jobs: [],
 		sortOrderItems: sortage.getSortOrder(this.SORTAGE_KEY_ITEMS, "p.dependency_tier", "asc"),
 		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc")
 	};
@@ -107,7 +110,6 @@ export default class extends React.Component {
 
 	render() {
 		const {upgrade,items,jobs} = this.state;
-		if (!upgrade) return <div/>;
 		
 		let userCanActivate = true;
 		let user = JSON.parse(sessionStorage.getItem("user"));

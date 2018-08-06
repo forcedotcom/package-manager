@@ -109,48 +109,51 @@ async function upsertBatch(recs) {
 async function fetchLatest(job) {
 	adminJob = job;
 
-	let recs = await queryLatest();
+	let latest = await queryLatest(['Pre-Release', 'Verified', 'Limited', 'Preview']);
+	const latestByPackage = new Map(
+		latest.map(l => [l.package_id, {
+			package_id: l.package_id,
+			limited_version_id: l.version_id,
+			limited_version_number: l.version_number,
+			limited_version_sort: l.version_sort
+	}]));
+	
+	let latestValid = await queryLatest(['Pre-Release', 'Verified']);
+	latestValid.forEach(l => {
+		const pvl = latestByPackage.get(l.package_id);
+		pvl.version_id = l.version_id;
+		pvl.version_number = l.version_number;
+		pvl.version_sort = l.version_sort;
+	});
+	
 	if (adminJob.cancelled)
 		return;
-
-	return upsertLatest(recs);
+	
+	return upsertLatest(Array.from(latestByPackage.values()));
 }
 
-async function queryLatest(packageIds) {
-	let whereParts = ["status IN ('Pre-Release', 'Verified')"], values = [];
-
-	if (packageIds) {
-		let params = [];
-		for (let i = 1; i <= packageIds.length; i++) {
-			params.push('$' + i);
-		}
-		whereParts.push(`package_id IN (${params.join(",")})`);
-	}
-
-	let where = whereParts.length > 0 ? ` WHERE ${whereParts.join(" AND ")}` : "";
-
-	let sql = `SELECT v.package_id, v.sfid, v.version_id, v.name, v.version_number FROM
+async function queryLatest(status) {
+	let params = status.map((s,i) => '$' + (i+1));
+	let sql = `SELECT v.package_id, v.version_id, v.version_number, v.version_sort FROM
         (SELECT package_id, MAX(version_sort) version_sort FROM package_version
-         ${where} 
+         WHERE status IN (${params.join(",")}) 
          GROUP BY package_id) x
         INNER JOIN package_version v ON v.package_id = x.package_id AND v.version_sort = x.version_sort`;
-
-	return db.query(sql, values);
+	return db.query(sql, status);
 }
 
 async function upsertLatest(recs) {
 	let values = [];
-	let sql = `INSERT INTO package_version_latest (package_id, sfid, version_id, name, version_number) VALUES `;
-	for (let i = 0, n = 1; i < recs.length; i++) {
-		let rec = recs[i];
-		if (i > 0) {
-			sql += ','
-		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
-		values.push(rec.package_id, rec.sfid, rec.version_id, rec.name, rec.version_number);
-	}
-	sql += ` on conflict (package_id) do update set
-        sfid = excluded.sfid, version_id = excluded.version_id, name = excluded.name, version_number = excluded.version_number`;
+	let n = 0;
+	let params = recs.map(() => `($${++n},$${++n},$${++n},$${++n},$${++n},$${++n},$${++n})`);
+	recs.forEach(rec => 
+		values.push(rec.package_id, rec.version_id, rec.version_number, rec.version_sort, rec.limited_version_id, rec.limited_version_number, rec.limited_version_sort));
+	
+	let sql = `INSERT INTO package_version_latest (package_id, version_id, version_number, version_sort, limited_version_id, limited_version_number, limited_version_sort) 
+		VALUES ${params.join(",")}
+	 	ON CONFLICT (package_id) DO UPDATE SET
+        version_id = excluded.version_id, version_number = excluded.version_number, version_sort = excluded.version_sort, 
+        limited_version_id = excluded.limited_version_id, limited_version_number = excluded.limited_version_number, limited_version_sort = excluded.limited_version_sort`;
 	await db.insert(sql, values);
 }
 

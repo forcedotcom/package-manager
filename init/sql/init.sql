@@ -161,13 +161,15 @@ create table if not exists package_version
 
 create table if not exists package_version_latest
 (
-  id             serial      not null,
-  package_id     varchar(18) not null
+  id                     serial      not null,
+  package_id             varchar(18) not null
     constraint package_version_package_id_pk primary key,
-  sfid           varchar(18) not null,
-  name           varchar(255),
-  version_number varchar(20),
-  version_id     varchar(18)
+  version_id             varchar(18),
+  version_number         varchar(20),
+  version_sort           varchar(12),
+  limited_version_id     varchar(18),
+  limited_version_number varchar(20),
+  limited_version_sort   varchar(12)
 );
 
 create table if not exists license
@@ -236,6 +238,14 @@ alter table package_version
 alter table upgrade_job
   add if not exists message text null,
   add if not exists original_version_id varchar(18) null;
+
+alter table package_version_latest
+    drop column if exists name,
+    drop column if exists sfid,
+  add if not exists version_sort varchar(12),
+  add if not exists limited_version_id     varchar(18),
+  add if not exists limited_version_number varchar(20),
+  add if not exists limited_version_sort varchar(12);
 
 -- Data fixes
 

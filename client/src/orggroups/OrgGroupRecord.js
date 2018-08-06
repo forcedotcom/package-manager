@@ -26,21 +26,24 @@ export default class extends React.Component {
 		sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc"),
 		selected: new Map(),
 		showSelected: false,
-		packageIds: []
+		upgradeablePackageIds: []
 	};
 
 	componentDidMount() {
 		notifier.on('group-versions', this.versionsRefreshed);
 		notifier.on('group', this.groupRefreshed);
 
-		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => {
-			orgGroupService.requestMembers(orggroup.id).then(members => {
-				this.setState({orggroup, members});
-			});
-		});
-		packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId, this.state.sortOrderVersions).then(versions => {
-			let packageIds = this.resolvePackagesFromVersions(versions);
-			this.setState({versions, packageIds});
+		Promise.all([
+			orgGroupService.requestById(this.props.match.params.orgGroupId),
+			orgGroupService.requestMembers(this.props.match.params.orgGroupId),
+			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId, this.state.sortOrderVersions)
+		])
+		.then(results => {
+			let orggroup = results[0];
+			let members = results[1];
+			let versions = results[2];
+			let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
+			this.setState({orggroup, members, versions, upgradeablePackageIds});
 		});
 	}
 	
@@ -49,16 +52,15 @@ export default class extends React.Component {
 		notifier.remove('group', this.groupRefreshed);
 	}
 
-	resolvePackagesFromVersions = (versions) => {
-		const packageVersionMap = new Map();
-		versions.forEach(v => packageVersionMap.set(v.package_id, v));
-		const packageVersionList = Array.from(packageVersionMap.values());
+	resolveUpgradeablePackages = (versions) => {
+		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
+		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
 		packageVersionList.sort(function (a, b) {
 			return a.dependency_tier > b.dependency_tier ? 1 : -1;
 		});
 		return packageVersionList.map(v => v.package_id);
 	};
-
+	
 	upgradeHandler = (versions, startDate, description) => {
 		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
 			this.setState({schedulingUpgrade: false});
@@ -97,8 +99,8 @@ export default class extends React.Component {
 		if (this.state.orggroup.id === groupId) {
 			// Reload our versions because they may have changed
 			packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
-				let packageIds = this.resolvePackagesFromVersions(versions);
-				this.setState({versions, packageIds, isRefreshing: false});
+				let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
+				this.setState({versions, upgradeablePackageIds, isRefreshing: false});
 			}).catch(e => {
 				this.setState({isRefreshing: false});
 				notifier.error(e.message, "Refresh Failed");
@@ -139,8 +141,8 @@ export default class extends React.Component {
 			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(members => {
 				packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
 					this.state.selected.clear();
-					const packageIds = this.resolvePackagesFromVersions(versions);
-					this.setState({showSelected: false, members, versions, packageIds});
+					const upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
+					this.setState({showSelected: false, members, versions, upgradeablePackageIds});
 				});
 			}).catch(e => notifier.error(e.message, "Removal Failed"));
 			return true;
@@ -209,7 +211,7 @@ export default class extends React.Component {
 				handler: this.schedulingWindowHandler,
 				label: "Upgrade Packages",
 				group: "upgrade",
-				disabled: this.state.packageIds.length === 0
+				disabled: this.state.upgradeablePackageIds.length === 0
 			});
 		}
 		actions.push(
@@ -258,7 +260,7 @@ export default class extends React.Component {
 				
 				{this.state.isEditing ? <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler}
 														 onCancel={this.cancelHandler}/> : ""}
-				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow packageIds={this.state.packageIds}
+				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow packageIds={this.state.upgradeablePackageIds}
 																	   description={`Upgrading Group: ${this.state.orggroup.name}`}
 																	   onUpgrade={this.upgradeHandler.bind(this)}
 																	   onCancel={this.cancelSchedulingHandler}/> : ""}
