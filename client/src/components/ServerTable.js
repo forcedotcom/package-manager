@@ -84,7 +84,16 @@ export default class extends React.Component {
 			// Bad filters, just ignore and don't change a thing.
 			return;
 		}
-		
+
+		/** TODO
+		 * if filtered, yay, render below a Save Filter button.  When clicked, saves Filtered to db
+		 * Load saved filters from db, and selected filter from local storage.
+		 * Add a Show All button which just nulls the selected local filter and refetches the table data if needed
+		 * Add a Delete Filter button which only appears when a filter is selected, and deletes that selected saved filter.  
+		 * 		Optionally add a delete icon to each filter to skip having to select it first and to save another button.
+		 * Support many filters using an arrow dropdown menu but limit to something reasonable like 10 or 15	
+		 *
+		 */
 		let changedFilter = JSON.stringify(lastFiltered) !== JSON.stringify(filtered);
 		let changedSort = JSON.stringify(lastSorted) !== JSON.stringify(sorted);
 		if (allData.length > 0 && !changedFilter && !changedSort) {
