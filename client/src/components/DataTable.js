@@ -18,7 +18,7 @@ export default class extends React.Component {
 			data: props.data || [],
 			selection: this.props.selection || new Map(),
 			selectAll: false,
-			pageSize: this.props.pageSize || 20,
+			pageSize: this.props.pageSize || 25,
 			minRows: this.props.minRows || 3,
 			keyField: this.props.keyField || "id"
 		};
@@ -118,11 +118,12 @@ export default class extends React.Component {
 				} : {};
 			}
 		};
-
+		
+		this.overrideFilterAll(this.props.columns);
 		let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable;
 		return (
 			<TableImpl
-				defaultFilterMethod={filtrage.executeFilterOnRow}
+				defaultFilterMethod={filtrage.filterRows}
 				ref={r => (this.checkboxTable = r)}
 				data={this.state.data}
 				columns={this.props.columns}
@@ -141,5 +142,14 @@ export default class extends React.Component {
 				{...functionalProps}
 			/>
 		);
+	}
+	
+	overrideFilterAll(columns) {
+		columns.forEach(c => {
+			c.filterAll = true;
+			if (c.columns) {
+				this.overrideFilterAll(c.columns);
+			}
+		});
 	}
 }

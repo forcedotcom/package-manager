@@ -45,16 +45,20 @@ function sanitizeValue(value) {
 	return sanitizedValue;
 }
 
-export const executeFilterOnRow = (filter, row) => {
+export const filterRows = (filter, rows) => {
 	try {
 		let tree = jsep(sanitizeValue(filter.value));
-		let fieldElem = row[filter.id];
-		let fieldVal = (fieldElem == null || typeof fieldElem === 'string') ? fieldElem : fieldElem.props.children.join("");
-		fieldVal = fieldVal ? fieldVal.toLowerCase() : null;
-
-		return matchNode(fieldVal, tree);
+		const filteredRows = rows.filter(row => {
+			let fieldElem = row[filter.id];
+			let fieldVal = (fieldElem == null || typeof fieldElem === 'string') ? fieldElem : fieldElem.props.children.join("");
+			fieldVal = fieldVal ? fieldVal.toLowerCase() : null;
+	
+			return matchNode(fieldVal, tree);
+		});
+		return filteredRows;
 	} catch (e) {
-		return "";
+		console.log(e);
+		return rows;
 	}
 };
 
@@ -84,8 +88,8 @@ function matchNode(value, node, neg) {
 						// Operator is actually !? (Not Something)
 						return value == null || value === "";
 					} else if (!node.argument) {
-						// Possible if there is nothing of meaning after the unary op
-						return false;
+						// Possible if there is nothing of meaning after the unary op.  Just ignore filter
+						return true;
 					} else {
 						return matchNode(value, node.argument, true);
 					}
@@ -118,13 +122,13 @@ function matchFilterString(fieldVal, node, neg) {
 	const first = nodeName.charAt(0);
 	const last = nodeName.charAt(nodeName.length-1);
 	if (first === "$") {
-		return fieldVal.startsWith(nodeName.substring(1)) === !neg;
+		return (fieldVal && fieldVal.startsWith(nodeName.substring(1))) === !neg;
 	}
 	if (last === "$") {
-		return fieldVal.endsWith(nodeName.substring(0, nodeName.length-1)) === !neg;
+		return (fieldVal && fieldVal.endsWith(nodeName.substring(0, nodeName.length - 1))) === !neg;
 	}
 	// Else, full monty
-	return (fieldVal.indexOf(nodeName) !== -1) === !neg;
+	return (fieldVal && fieldVal.indexOf(nodeName) !== -1) === !neg;
 
 }
 
@@ -147,4 +151,3 @@ function isWrapped(str) {
 	const last = str.charAt(str.length - 1);
 	return (first === "'" && last === "'");
 }
-

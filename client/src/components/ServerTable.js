@@ -17,7 +17,7 @@ export default class extends React.Component {
 			allData: [],
 			selection: this.props.selection || new Map(),
 			selectAll: false,
-			pageSize: this.props.pageSize || 20,
+			pageSize: this.props.pageSize || 25,
 			minRows: this.props.minRows || 3,
 			keyField: this.props.keyField || "id",
 	
@@ -154,7 +154,7 @@ export default class extends React.Component {
 				data={data}
 				columns={this.props.columns}
 				filterable
-				defaultPageSize={20}
+				defaultPageSize={this.state.pageSize}
 				keyField={keyField}
 				className="-striped -highlight"
 				FilterComponent={DataTableFilter}

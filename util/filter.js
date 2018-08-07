@@ -23,13 +23,15 @@ exports.parseSQLExpressions = (dict, filters) => {
 
 
 function parseFilterAsSQL(dict, filter) {
-	try { 
-		let tree = jsep(filter.value);
-		return resolveSQL(dict, filter.id, tree);
+	try {
+		if (filter.id) {
+			let tree = jsep(filter.value);
+			return resolveSQL(dict, filter.id, tree);
+		}
 	} catch (e) {
 		logger.warn(e);
-		return "";
 	}
+	return "";
 }
 
 function resolveSQL(dict, id, node, neg) {
