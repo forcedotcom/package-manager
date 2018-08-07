@@ -4,6 +4,7 @@ import ReactTooltip from 'react-tooltip';
 import {HeaderIcon} from "./Icons";
 import {ButtonDropdown, DropdownItem} from "./Dropdown";
 import moment from "moment/moment";
+import {Helmet} from "react-helmet";
 
 export class HeaderNote extends React.Component {
 	render() {
@@ -336,6 +337,9 @@ export class HomeHeader extends React.Component {
 
 		return (
 			<div className="slds-page-header">
+				<Helmet>
+					<title>SteelBrick PM: {this.props.title}</title>
+				</Helmet>
 				<div className="slds-grid">
 					<div className="slds-col slds-has-flexi-truncate">
 						<p className="slds-text-heading--label">{this.props.type}</p>

@@ -9,6 +9,7 @@ import {ADMIN_ICON} from "../Constants";
 import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
+import {Helmet} from "react-helmet";
 
 const DEFAULT_HISTORY_LIMIT = 10;
 
@@ -182,6 +183,9 @@ export default class extends React.Component {
 
 		return (
 			<div>
+				<Helmet>
+					<title>SteelBrick PM: Admin</title>
+				</Helmet>
 				<RecordHeader type="Admin" icon={ADMIN_ICON} title="Administration" actions={actions}/>
 
 				{this.state.isMini ?
