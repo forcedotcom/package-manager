@@ -16,7 +16,8 @@ const UpgradeStatus = {
 	Ready: "Ready",
 	Active: "Active",
 	Done: "Done",
-	Canceled: "Canceled"
+	Canceled: "Canceled",
+	Failed: "Failed"
 };
 
 const MAX_ERROR_COUNT = 20;
@@ -120,6 +121,10 @@ async function createUpgrade(scheduledDate, createdBy, description) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status) VALUES ($1,$2,$3,$4)', [isoTime, createdBy, description, UpgradeStatus.Ready]);
 	return recs[0];
+}
+
+async function failUpgrade(upgrade) {
+	await db.update(`UPDATE upgrade set status = $1 WHERE id = $2`, [UpgradeStatus.Failed, upgrade.id]);
 }
 
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
@@ -669,6 +674,7 @@ exports.requestAll = requestAll;
 exports.requestItemsByUpgrade = requestItemsByUpgrade;
 exports.requestAllJobs = requestAllJobs;
 exports.createUpgrade = createUpgrade;
+exports.failUpgrade = failUpgrade;
 exports.createUpgradeItem = createUpgradeItem;
 exports.createUpgradeJobs = createUpgradeJobs;
 exports.requestActivateUpgrade = requestActivateUpgrade;

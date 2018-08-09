@@ -53,12 +53,12 @@ async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgI
 
 		// listen for events
 		batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
-			logger.error('Failed to batch load PushUpgradeJob records', {...batchInfo});
-			reject(`Failed to batch load PushUpgradeJob records: ${{...batchInfo}}`);
+			logger.error('Failed to batch load PushUpgradeJob records', batchInfo);
+			reject({message: `Failed to batch load PushUpgradeJob records`, details: batchInfo});
 		});
 		batch.on("queue", function (batchInfo) { // fired when batch request is queued in server.
 			logger.debug('Queued batch of PushUpgradeJob records', {...batchInfo});
-			batch.poll(1000 /* interval(ms) */, 20000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
+			batch.poll(3000 /* interval(ms) */, 240000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
 		});
 		batch.on("response", async function (results) { // fired when batch finished and result retrieved
 			let jobs = [];
@@ -198,11 +198,16 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
 	
 	let versions = await packageversions.findByVersionIds(versionIds);
-	for (let i = 0; i < versions.length; i++) {
-		let version = versions[i];
-		let conn = await sfdc.buildOrgConnection(version.package_org_id);
-		let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.version_id, scheduledDate, createdBy);
-		await createPushJob(conn, upgrade.id, item.id, item.package_version_id, item.push_request_id, orgIds);
+	try {
+		for (let i = 0; i < versions.length; i++) {
+			let version = versions[i];
+			let conn = await sfdc.buildOrgConnection(version.package_org_id);
+			let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.version_id, scheduledDate, createdBy);
+			await createPushJob(conn, upgrade.id, item.id, item.package_version_id, item.push_request_id, orgIds);
+		}
+	} catch (e) {
+		await upgrades.failUpgrade(upgrade);
+		throw e;
 	}
 	return upgrade;
 }
@@ -295,9 +300,14 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 	// Now, create the jobs
 	let reqs = Array.from(pushReqs.values());
-	for (let i = 0; i < reqs.length; i++) {
-		let pushReq = reqs[i];
-		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
+	try {
+		for (let i = 0; i < reqs.length; i++) {
+			let pushReq = reqs[i];
+			await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
+		}
+	} catch (e) {
+		await upgrades.failUpgrade(upgrade);
+		throw e;
 	}
 
 	return upgrade;
@@ -353,9 +363,14 @@ async function retryFailedUpgrade(id, createdBy) {
 
 	// Now, create the jobs
 	let reqs = Array.from(pushReqs.values());
-	for (let i = 0; i < reqs.length; i++) {
-		let pushReq = reqs[i];
-		await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
+	try {
+		for (let i = 0; i < reqs.length; i++) {
+			let pushReq = reqs[i];
+			await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
+		}
+	} catch (e) {
+		await upgrades.failUpgrade(upgrade);
+		throw e;
 	}
 
 	return upgrade;
@@ -473,7 +488,7 @@ function bulkFindSubscribersByIds(packageOrgIds, orgIds) {
                     WHERE OrgKey IN ('${orgIds.join("','")}')`;
 			sfdc.buildOrgConnection(packageOrgIds[i]).then(conn => {
 				let subs = [];
-				conn.bulk.pollTimeout = 30 * 1000;
+				conn.bulk.pollTimeout = 240000;
 				conn.bulk.query(soql)
 				.on("record", rec => {
 					subs.push(rec);
