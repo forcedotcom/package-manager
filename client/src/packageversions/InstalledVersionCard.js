@@ -27,7 +27,7 @@ export default class extends React.Component {
 		}
 	}
 
-	filterHandler = (filtered, column, value) => {
+	filterHandler = (filtered) => {
 		this.setState({itemCount: filtered.length});
 	};
 
@@ -35,22 +35,9 @@ export default class extends React.Component {
 		let columns = [
 			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
 			{Header: "License", accessor: "license_status", sortable: true},
-			{
-				Header: "Version Number",
-				minWidth: 170,
-				id: "version_number",
-				accessor: this.renderVersionNumber,
-				sortable: true,
-				clickable: true,
-				sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
-			},
+			{Header: "Version Number", minWidth: 170, id: "version_number", accessor: this.renderVersionNumber, sortable: true, clickable: true, sortMethod: this.sortVersionNumber},
 			{Header: "Status", accessor: "status", sortable: true},
-			{
-				Header: "Release Date",
-				id: "release_date",
-				accessor: d => moment(d.release_date).format("YYYY-MM-DD"),
-				sortable: false
-			}
+			{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false}
 		];
 
 		return (
@@ -60,9 +47,13 @@ export default class extends React.Component {
 					<DataTable id="InstalledVersionCard" data={this.props.packageVersions} columns={columns}
 							   onFilter={this.filterHandler} onClick={this.linkHandler}/>
 				</section>
-				<footer className="slds-card__footer"></footer>
+				<footer className="slds-card__footer"/>
 			</div>
 		);
+	}
+
+	sortVersionNumber(a, b) {
+		return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1
 	}
 
 	renderVersionNumber(d) {

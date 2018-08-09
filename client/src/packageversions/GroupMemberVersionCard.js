@@ -41,22 +41,12 @@ export default class extends React.Component {
 			{Header: "Account Name", accessor: "account_name", clickable: true},
 			{Header: "Package", accessor: "package_name", clickable: true},
 			{Header: "License", accessor: "license_status"},
-			{
-				Header: "Version Number",
-				minWidth: 170,
-				id: "version_number",
-				accessor: this.renderVersionNumber,
-				sortable: true,
-				clickable: true,
-				sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
-			},
+			{Header: "Version", id: "version_number", accessor: this.renderVersionNumber, sortable: true, clickable: true, sortMethod: this.sortVersionNumber},
+			{Header: "Instance", accessor: "instance", sortable: true},
+			{Header: "Type", accessor: "type", sortable: true},
+			{Header: "Edition", accessor: "edition", sortable: true},
 			{Header: "Status", accessor: "status", sortable: true},
-			{
-				Header: "Release Date",
-				id: "release_date",
-				accessor: d => moment(d.release_date).format("YYYY-MM-DD"),
-				sortable: false
-			},
+			{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false},
 		];
 
 		return (
@@ -71,6 +61,10 @@ export default class extends React.Component {
 				<footer className="slds-card__footer"/>
 			</article>
 		);
+	}
+
+	sortVersionNumber(a, b) {
+		return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1
 	}
 	
 	renderVersionNumber(d) {

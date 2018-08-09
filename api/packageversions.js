@@ -14,7 +14,7 @@ const SELECT_ALL_IN_ORG =
         pvl.version_number latest_version_number, pvl.version_id latest_version_id, pvl.version_sort latest_version_sort, 
         	pvl.limited_version_number latest_limited_version_number, pvl.limited_version_id latest_limited_version_id, pvl.limited_version_sort latest_limited_version_sort,
         op.org_id, op.license_status,
-        o.instance,
+        o.instance, o.type, o.edition,
         a.account_name
     FROM package_version pv
     INNER JOIN package p on p.sfid = pv.package_id
