@@ -46,7 +46,7 @@ const HelpText = () => (
 			<HelpSection title="Compound expressions" items={[
 				{example: 'a, b, c', description: "match a, b, or c"},
 				{example: 'a b c', description: "also match a, b, or c"},
-				{example: 'a || b', description: "agaain, match a, b, or c"},
+				{example: 'a || b', description: "again, match a, b, or c"},
 				{example: 'a && b', description: "match AND b"},
 				{example: '(a || b) && (c || d)', description: "use parentheses for compound conditions"},
 			]}/>
@@ -75,8 +75,8 @@ const HelpSection = ({title,items}) => {
 const HelpItem = ({example, description}) => (
 	<div className="slds-m-bottom--medium">
 		<span className="slds-badge slds-text-align--center slds-size--xx-small slds-p-left--small slds-p-right--small"
-			  style={{textTransform: "lowercase", fontSize: "1em"}}>{example}</span>
-		<span className="slds-m-left--small slds-item_detail">=></span>
-		<span className="slds-m-left--small slds-item_detail">{description}</span>
+			  style={{textTransform: "lowercase", fontSize: "1em", lineHeight: "2em"}}>{example}</span>
+		<span className="slds-m-left--small slds-item_detail" style={{textTransform: "lowercase", lineHeight: "2em"}}>=></span>
+		<span className="slds-m-left--small slds-item_detail" style={{textTransform: "lowercase", lineHeight: "2em"}}>{description}</span>
 	</div>
 );
