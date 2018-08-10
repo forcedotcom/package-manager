@@ -112,6 +112,9 @@ async function requestUpdate(req, res, next) {
 			.catch(e => {
 				admin.emit(admin.Events.FAIL, {subject: "Org Import Failed", message: e.message});
 			});
+		} else {
+			// No members, so emit right away.
+			admin.emit(admin.Events.GROUP, og.id);
 		}
 		return res.send({result: 'ok'});
 	} catch (e) {

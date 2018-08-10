@@ -32,7 +32,6 @@ export default class extends React.Component {
 	componentDidMount() {
 		notifier.on('group-versions', this.versionsRefreshed);
 		notifier.on('group', this.groupRefreshed);
-		notifier.on('group-upgrade', this.groupUpgradeScheduled);
 
 		Promise.all([
 			orgGroupService.requestById(this.props.match.params.orgGroupId),
@@ -80,15 +79,12 @@ export default class extends React.Component {
 	schedulingWindowHandler = () => {
 		this.setState({schedulingUpgrade: true});
 	};
-
-
+	
 	saveHandler = (orggroup) => {
-		orgGroupService.requestUpdate(orggroup).then((orggroup) => {
+		this.setState({isProcessing: true});
+		orgGroupService.requestUpdate(orggroup).then(() => {
 			this.setState({orggroup, isEditing: false});
-			if (orggroup.message) {
-				notifier.info(orggroup.message, "Note");
-			}
-		}).catch(e => console.error(e));
+		}).catch(e => notifier.error(e.message | e, orggroup.message, "Fail"));
 	};
 
 	refreshHandler = () => {
@@ -113,9 +109,9 @@ export default class extends React.Component {
 		if (this.state.orggroup.id === groupId) {
 			this.versionsRefreshed(groupId);
 			orgGroupService.requestMembers(groupId)
-			.then(members => this.setState({members, isEditing: false}))
+			.then(members => this.setState({members, isProcessing: false, isEditing: false}))
 			.catch(e => {
-				this.setState({isEditing: false});
+				this.setState({isProcessing: false, isEditing: false});
 				notifier.error(e.message, "Refresh Failed");
 			});
 		}
@@ -208,21 +204,11 @@ export default class extends React.Component {
 	render() {
 		let actions = [];
 		if (this.state.orggroup.type === "Upgrade Group") {
-			actions.push({
-				handler: this.schedulingWindowHandler,
-				label: "Upgrade Packages",
-				group: "upgrade",
-				disabled: this.state.upgradeablePackageIds.length === 0
-			});
+			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: this.state.upgradeablePackageIds.length === 0});
 		}
 		actions.push(
-			{
-				handler: this.refreshHandler,
-				label: "Refresh Versions",
-				spinning: this.state.isRefreshing,
-				detail: "Fetch latest installed package version information for all orgs in this group."
-			},
-			{handler: this.editHandler, label: "Edit"},
+			{handler: this.refreshHandler, label: "Refresh Versions", spinning: this.state.isRefreshing, detail: "Fetch latest installed package version information for all orgs in this group."},
+			{handler: this.editHandler, label: "Edit", spinning: this.state.isProcessing},
 			{handler: this.deleteHandler, label: "Delete"}
 		);
 			
