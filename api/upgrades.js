@@ -154,7 +154,8 @@ async function changeUpgradeItemAndJobStatus(items, status) {
 		}
 		
 		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
-		await db.update(`UPDATE upgrade_job SET status = $1 WHERE item_id IN (${params.join(",")})`, values);
+		// Do NOT change the status if a message is already set, as that means we already have a status and we don't want to lose track of it.
+		await db.update(`UPDATE upgrade_job SET status = $1 WHERE message IS NULL AND item_id IN (${params.join(",")})`, values);
 		admin.emit(admin.Events.UPGRADE, await retrieveById(items[0].upgrade_id));
 		admin.emit(admin.Events.UPGRADE_ITEMS, items);
 	} catch (error) {
