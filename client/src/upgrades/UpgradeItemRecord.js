@@ -5,7 +5,7 @@ import * as upgradeItemService from '../services/UpgradeItemService';
 import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
 import * as sortage from "../services/sortage";
 import * as upgradeJobService from "../services/UpgradeJobService";
-import {isDoneStatus, isNotStartedStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
+import {isDoneStatus, isStartedStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
@@ -83,13 +83,13 @@ export default class extends React.Component {
 	};
 
 	render() {
-		let canActivate = true;
+		let userCanActivate = true;
 		let user = JSON.parse(sessionStorage.getItem("user"));
 		if (user) {
-			canActivate = user.enforce_activation_policy === "false" || (this.state.item.created_by != null && this.state.item.created_by !== user.username);
+			userCanActivate = user.enforce_activation_policy === "false" || (this.state.item.created_by != null && this.state.item.created_by !== user.username);
 		}
 		const notes = [];
-		if (!canActivate) {
+		if (!userCanActivate) {
 			notes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an
 				upgrade cannot activate it.</HeaderNote>)
 		} else if (!user || user.enforce_activation_policy === "false") {
@@ -97,26 +97,13 @@ export default class extends React.Component {
 				purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
 		}
 
-		let actions = [
-			{
-				label: "Activate Request",
-				handler: this.handleActivation,
-				spinning: this.state.isActivating,
-				disabled: this.state.item.status !== Status.Created || !canActivate,
-				detail: canActivate ? "Update the selected items to Pending state to proceed with upgrades" : "The same user that scheduled an upgrade cannot activate it"
-			},
-			{
-				label: "Cancel Request",
-				handler: this.handleCancellation,
-				spinning: this.state.isCancelling,
-				disabled: [Status.Created, Status.Pending].indexOf(this.state.item.status) === -1
-			}
-		];
-
-		let count = this.state.jobs.length, started = 0, completed = 0, errors = 0;
-		for (let i = 0; i < count; i++) {
+		let count = this.state.jobs.length * 2, started = 0, completed = 0, errors = 0, cancelled = 0;
+		for (let i = 0; i < this.state.jobs.length; i++) {
 			let job = this.state.jobs[i];
-			if (!isNotStartedStatus(job.status)) {
+			if (job.status === Status.Invalid) {
+				count--;
+			}
+			if (isStartedStatus(job.status)) {
 				started++;
 			}
 			if (isDoneStatus(job.status)) {
@@ -125,7 +112,27 @@ export default class extends React.Component {
 			if (job.status === Status.Failed) {
 				errors++;
 			}
+			if (job.status === Status.Canceled) {
+				cancelled++;
+			}
 		}
+		const progress = (started+completed)/(count*2);
+		const done = progress === 1 || count === 0;
+
+		let actions = [
+			{
+				label: "Activate Request", handler: this.handleActivation,
+				disabled: !userCanActivate || this.state.item.status !== Status.Created,
+				detail: userCanActivate ? "Update the selected items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
+				spinning: this.state.isActivating
+			},
+			{
+				label: "Cancel Request", handler: this.handleCancellation,
+				disabled: started > 0 || done,
+				spinning: this.state.isCancelling
+			}
+		];
+		
 		return (
 			<div>
 				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.description}
@@ -135,7 +142,7 @@ export default class extends React.Component {
 								 className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={this.state.item.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={(started+completed)/(count*2)} success={errors === 0}/>
+				<ProgressBar progress={progress} success={errors === 0 && cancelled === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard jobs={this.state.jobs}/>
 					<DataTableFilterHelp/>

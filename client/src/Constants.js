@@ -11,23 +11,23 @@ export const ADMIN_ICON = {name: "calibration", category: "standard"};
 export const AUTH_ICON = {name: "people", category: "standard"};
 
 export const Status = {
-	Created: "Created", Pending: "Pending", InProgress: "InProgress", Canceling: "Canceling",
-	Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Ineligible: "Ineligible", Invalid: "Invalid"
+	Created: "Created", Pending: "Pending", InProgress: "InProgress", 
+	Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Invalid: "Invalid",
+	Ineligible: "Ineligible"
 };
 export const DoneStatus = {
 	Succeeded: Status.Succeeded,
 	Failed: Status.Failed,
 	Canceled: Status.Canceled,
-	Ineligible: Status.Ineligible,
 	Invalid: Status.Invalid
 };
 
-export const NotStartedStatus = {
-	Created: Status.Created,
-	Pending: Status.Pending
+export const StartedStatus = {
+	InProgress: Status.InProgress,
+	...DoneStatus
 };
 export const isDoneStatus = (status) => typeof DoneStatus[status] !== "undefined";
-export const isNotStartedStatus = (status) => typeof NotStartedStatus[status] !== "undefined";
+export const isStartedStatus = (status) => typeof StartedStatus[status] !== "undefined";
 
 export const GroupTypes = [
 	{name:"Upgrade Group", label:"Upgrade Groups"},

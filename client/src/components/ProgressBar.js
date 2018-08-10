@@ -16,7 +16,8 @@ export default class extends React.Component {
 					: ""}
 				<div className="slds-progress-bar">
 					<span
-						className={`slds-progress-bar__value ${this.props.success && this.props.progress === 1 ? "slds-progress-bar__value_success" : ""}`}
+						className={`slds-progress-bar__value ${this.props.success && this.props.progress === 1 ? "slds-progress-bar__value_success" :
+							!this.props.success ? "slds-theme--error" : ""}`}
 						style={{width: pct}}/>
 				</div>
 			</div>

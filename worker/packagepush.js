@@ -11,9 +11,7 @@ const logger = require('../util/logger').logger;
 const Status = {
 	Created: "Created",
 	Pending: "Pending",
-	Activating: "Activating",
 	InProgress: "InProgress",
-	Canceling: "Canceling",
 	Succeeded: "Succeeded",
 	Failed: "Failed",
 	Canceled: "Canceled",
@@ -23,14 +21,9 @@ const Status = {
 const ActiveStatus = {
 	Created: Status.Created,
 	Pending: Status.Pending,
-	InProgress: Status.InProgress,
-	Activating: Status.Activating,
-	Canceling: Status.Canceling
+	InProgress: Status.InProgress
 };
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
-
-const ALLOWED_ORGS = process.env.ALLOWED_ORGS ? new Set(JSON.parse(process.env.ALLOWED_ORGS).map(id => id.substring(0,15))) : null; 
-const DENIED_ORGS = process.env.DENIED_ORGS ? new Set(JSON.parse(process.env.DENIED_ORGS).map(id => id.substring(0,15))) : null; 
 
 async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;

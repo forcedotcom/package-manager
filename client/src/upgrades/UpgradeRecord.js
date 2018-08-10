@@ -6,7 +6,7 @@ import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
 import * as upgradeItemService from "../services/UpgradeItemService";
 import * as upgradeJobService from "../services/UpgradeJobService";
 import * as sortage from "../services/sortage";
-import {isDoneStatus, isNotStartedStatus, Status, UPGRADE_ICON} from "../Constants";
+import {isDoneStatus, isStartedStatus, Status, UPGRADE_ICON} from "../Constants";
 import UpgradeItemCard from "./UpgradeItemCard";
 import ProgressBar from "../components/ProgressBar";
 import UpgradeJobCard from "./UpgradeJobCard";
@@ -126,33 +126,38 @@ export default class extends React.Component {
 				purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
 		}
 
-		let done = true;
-		let count = jobs ? jobs.length : 0, started = 0, completed = 0, errors = 0;
-		for (let i = 0; i < count; i++) {
-			let job = jobs[i];
-			if (!isNotStartedStatus(job.status)) {
+		let count = this.state.jobs.length, started = 0, completed = 0, errors = 0, cancelled = 0;
+		for (let i = 0; i < this.state.jobs.length; i++) {
+			let job = this.state.jobs[i];
+			if (job.status === Status.Invalid) {
+				count--;
+			}
+			if (isStartedStatus(job.status)) {
 				started++;
 			}
 			if (isDoneStatus(job.status)) {
 				completed++;
-			} else {
-				done = false;
 			}
 			if (job.status === Status.Failed) {
 				errors++;
 			}
+			if (job.status === Status.Canceled) {
+				cancelled++;
+			}
 		}
+		const progress = (started+completed)/(count*2);
+		const done = progress === 1 || count === 0;
 		
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
 				disabled: !userCanActivate || started > 0 || done,
-				detail: "Update items in this upgrade to Pending state",
+				detail: userCanActivate ? "Activate all items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
 				spinning: this.state.isActivating
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
-				disabled: done,
+				disabled: started > 0 || done,
 				spinning: this.state.isCancelling
 			},
 			{
@@ -169,7 +174,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={upgrade.status}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={(started+completed)/(count*2)} success={errors === 0}/>
+				<ProgressBar progress={progress} success={errors === 0 && cancelled === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">

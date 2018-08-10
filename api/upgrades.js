@@ -37,10 +37,7 @@ const SELECT_ALL = `
     ELSE 'Done' END item_status,
     count(CASE
 			WHEN i.status = 'Failed' THEN 1
-			ELSE NULL END) failed_item_count,
-    count(CASE
-			WHEN i.status = 'Canceled' THEN 1
-			ELSE NULL END) canceled_item_count
+			ELSE NULL END) failed_item_count
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id`;
 const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
@@ -60,10 +57,7 @@ const SELECT_ONE = `
     ELSE 'Done' END item_status,
     count(CASE
 			WHEN i.status = 'Failed' THEN 1
-			ELSE NULL END) failed_item_count,
-    count(CASE
-			WHEN i.status = 'Canceled' THEN 1
-			ELSE NULL END) canceled_item_count
+			ELSE NULL END) failed_item_count
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id
     WHERE u.id = $1
