@@ -291,18 +291,15 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		pushReq.orgIds.push(opv.org_id);
 	}
 
-	// Now, create the jobs
-	let reqs = Array.from(pushReqs.values());
-	try {
-		for (let i = 0; i < reqs.length; i++) {
-			let pushReq = reqs[i];
-			await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
-		}
-	} catch (e) {
-		await upgrades.failUpgrade(upgrade);
-		throw e;
-	}
+	// Now, create the jobs, asynchronously
+	const reqs = [];
+	pushReqs.forEach(pushReq => 
+		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds))
+	);
+	Promise.all(reqs).then(results => {})
+		.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));
 
+	// Return our upgrade (before our jobs) so we can redirect and wait for the jobs to finish scheduling.
 	return upgrade;
 }
 
@@ -354,17 +351,13 @@ async function retryFailedUpgrade(id, createdBy) {
 		pushReq.orgIds.push(job.org_id);
 	}
 
-	// Now, create the jobs
-	let reqs = Array.from(pushReqs.values());
-	try {
-		for (let i = 0; i < reqs.length; i++) {
-			let pushReq = reqs[i];
-			await createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds);
-		}
-	} catch (e) {
-		await upgrades.failUpgrade(upgrade);
-		throw e;
-	}
+	// Now, create the jobs, asynchronously
+	const reqs = [];
+	pushReqs.forEach(pushReq =>
+		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds))
+	);
+	Promise.all(reqs).then(results => {})
+	.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));
 
 	return upgrade;
 }

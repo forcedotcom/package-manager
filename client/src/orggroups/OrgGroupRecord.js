@@ -32,6 +32,7 @@ export default class extends React.Component {
 	componentDidMount() {
 		notifier.on('group-versions', this.versionsRefreshed);
 		notifier.on('group', this.groupRefreshed);
+		notifier.on('group-upgrade', this.groupUpgradeScheduled);
 
 		Promise.all([
 			orgGroupService.requestById(this.props.match.params.orgGroupId),

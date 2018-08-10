@@ -118,7 +118,9 @@ async function createUpgrade(scheduledDate, createdBy, description) {
 }
 
 async function failUpgrade(upgrade) {
-	await db.update(`UPDATE upgrade set status = $1 WHERE id = $2`, [UpgradeStatus.Failed, upgrade.id]);
+	upgrade.status = UpgradeStatus.Failed;
+	await db.update(`UPDATE upgrade set status = $1 WHERE id = $2`, [upgrade.status, upgrade.id]);
+	admin.emit(admin.Events.UPGRADE, upgrade);
 }
 
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
@@ -245,7 +247,8 @@ async function createUpgradeJobs(upgradeId, itemId, requestId, jobs) {
 		values.push(job.job_id, job.org_id, job.status, job.message, job.original_version_id);
 	}
 
-	await db.insert(sql, values);
+	const recs = await db.insert(sql, values);
+	admin.emit(admin.Events.UPGRADE_JOBS, recs);
 }
 
 async function updateUpgradeJobsStatus(jobs) {

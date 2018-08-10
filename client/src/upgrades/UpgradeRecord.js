@@ -55,8 +55,8 @@ export default class extends React.Component {
 		if (!items || !items.filter)
 			return;
 		
-		const mine = items.filter(i => i.upgrade_id === this.state.upgrade.id);
-		if (mine.length > 0) {
+		const mine = items.find(i => i.upgrade_id === this.state.upgrade.id);
+		if (mine) {
 			// At least one of these is from our upgrade, so just reload all of them
 			upgradeItemService.findByUpgrade(this.props.match.params.upgradeId, this.state.sortOrderItems).then(items => {
 				this.setState({items});
@@ -68,8 +68,8 @@ export default class extends React.Component {
 		if (!jobs || !jobs.filter)
 			return;
 		
-		const mine = jobs.filter(j => j.upgrade_id === this.state.upgrade.id);
-		if (mine.length > 0) {
+		const mine = jobs.find(j => j.upgrade_id === this.state.upgrade.id);
+		if (mine) {
 			// At least one of these is from our upgrade, so just reload all of them
 			upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId, this.state.sortOrderJobs).then(jobs => {
 				this.setState({jobs});

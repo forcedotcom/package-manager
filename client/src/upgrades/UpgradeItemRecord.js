@@ -37,15 +37,15 @@ export default class extends React.Component {
 	}
 
 	upgradeItemsUpdated = (items) => {
-		const mine = items.filter(i => i.id === this.state.item.id);
-		if (mine.length > 0) {
+		const mine = items.find(i => i.id === this.state.item.id);
+		if (mine) {
 			this.setState({item: items[0]});
 		}
 	};
 
 	upgradeJobsUpdated = (jobs) => {
-		const mine = jobs.filter(j => j.item_id === this.state.item.id);
-		if (mine.length > 0) {
+		const mine = jobs.find(j => j.item_id === this.state.item.id);
+		if (mine) {
 			// At least one of these is from our item, so just reload all of them
 			upgradeItemService.requestById(this.props.match.params.itemId).then(item => {
 				this.loadItemJobs(item);
