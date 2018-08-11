@@ -181,8 +181,19 @@ async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 
 		const pushJob = pushJobsById.get(upgradeJob.job_id);
 
+		if (!pushJob) {
+			upgradeJob.message = JSON.stringify([{
+				title: "Unknown failure",
+				details: "",
+				message: `Something is very wrong.  No push job found for upgrade job. upgrade_job.job_id: ${upgradeJob.job_id}, upgrade_job.id: ${upgradeJob.id}.`
+			}]);
+			errored.push(upgradeJob);
+			updated.push(upgradeJob);
+			continue;
+		}
+		
 		if (pushJob.Id.substring(0, 15) !== upgradeJob.job_id) {
-			throw Error("Something is very wrong. Push Job is missing missing: " + upgradeJob.job_id);
+			throw Error("Something is very wrong. Push Job id does not match upgrade job id: " + upgradeJob.job_id);
 		}
 
 		// Check if our local status matches the remote status. If so, we can skip.
@@ -212,14 +223,17 @@ async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 				return {title: err.ErrorTitle, details: err.ErrorDetails, message: err.ErrorMessage}
 			});
 			if (errors.length === 0) {
-				errors.push({
-					title: "Unknown failure",
-					details: "",
-					message: "Unknown failure. No error message given from push upgrade API."
-				});
+				if (erroredJob.message == null) {
+					erroredJob.message = JSON.stringify([{
+						title: "Unknown failure",
+						details: "",
+						message: "Unknown failure. No error message given from push upgrade API."
+					}]);
+				}
+			} else {
+				erroredJob.message = JSON.stringify(errors);
 			}
 
-			erroredJob.message = JSON.stringify(errors);
 			erroredJob.status = push.Status.Failed;
 		}
 	}
