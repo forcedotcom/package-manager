@@ -129,7 +129,7 @@ export default class extends React.Component {
 		let count = this.state.jobs.length, started = 0, completed = 0, errors = 0, cancelled = 0;
 		for (let i = 0; i < this.state.jobs.length; i++) {
 			let job = this.state.jobs[i];
-			if (job.status === Status.Invalid) {
+			if (job.status === Status.Ineligible) {
 				count--;
 			}
 			if (isStartedStatus(job.status)) {
