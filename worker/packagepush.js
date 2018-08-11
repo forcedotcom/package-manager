@@ -393,8 +393,22 @@ async function findJobsByStatus(packageOrgId, requestIds, status) {
         WHERE PackagePushRequestId IN (${status.map(v => `'${v}'`).join(",")})
         AND Status IN (${status.map(v => `'${v}'`).join(",")})`;
 
-	let res = await conn.query(soql);
-	return res.records;
+	let result = await conn.query(soql);
+	let recs = result.records;
+	while (!result.done) {
+		try {
+			result = await conn.requestGet(result.nextRecordsUrl);
+			recs = recs.concat(result.records);
+		} catch (e) {
+			logger.error("Failed to retrieve job records", {
+				packageOrgId,
+				queryUrl: result.nextRecordsUrl,
+				error: e.message || e
+			});
+			return recs; // Bail.  This shouldn't happen, the platform is busted, whatever.
+		}
+	}
+	return recs;
 }
 
 async function findJobsByRequestIds(packageOrgId, requestId) {
@@ -404,8 +418,22 @@ async function findJobsByRequestIds(packageOrgId, requestId) {
         WHERE PackagePushRequestId = '${requestId}'
         ORDER BY Id`;
 
-	let res = await conn.query(soql);
-	return res.records;
+	let result = await conn.query(soql);
+	let recs = result.records;
+	while (!result.done) {
+		try {
+			result = await conn.requestGet(result.nextRecordsUrl);
+			recs = recs.concat(result.records);
+		} catch (e) {
+			logger.error("Failed to retrieve job records", {
+				packageOrgId,
+				queryUrl: result.nextRecordsUrl,
+				error: e.message || e
+			});
+			return recs; // Bail.  This shouldn't happen, the platform is busted, whatever.
+		}
+	}
+	return recs;
 }
 
 async function findJobsByIds(packageOrgId, jobIds) {
@@ -417,8 +445,22 @@ async function findJobsByIds(packageOrgId, jobIds) {
         WHERE Id IN (${params.join(",")})
         ORDER BY Id`;
 
-	let res = await conn.query(soql);
-	return res.records;
+	let result = await conn.query(soql);
+	let recs = result.records;
+	while (!result.done) {
+		try {
+			result = await conn.requestGet(result.nextRecordsUrl);
+			recs = recs.concat(result.records);
+		} catch (e) {
+			logger.error("Failed to retrieve job records", {
+				packageOrgId,
+				queryUrl: result.nextRecordsUrl,
+				error: e.message || e
+			});
+			return recs; // Bail.  This shouldn't happen, the platform is busted, whatever.
+		}
+	}
+	return recs;
 }
 
 async function findErrorsByJobIds(packageOrgId, jobIds, limit = 200) {
