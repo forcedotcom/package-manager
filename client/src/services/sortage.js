@@ -57,6 +57,13 @@ export let setSelectedName = (contextKey, name) => {
 	}
 };
 
+
+export let getSortValue = (rec, colName) => {
+	const val = rec[colName];
+	// Being expedient here.  If the colName contains version_number...it is a version number.
+	return colName.indexOf("version_number") !== -1 ? getSortableVersion(val) : val;
+};
+
 export let getSortableVersion = (dotVersion) => {
 	if (!dotVersion)
 		return 0;

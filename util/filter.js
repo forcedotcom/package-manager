@@ -17,7 +17,7 @@ const Types = {
 	ArrayExpression: "ArrayExpression"
 };
 
-exports.parseSQLExpressions = (dict, filters) => {
+exports.parseSQLExpressions = (dict = {get: s => s}, filters) => {
 	return filters.map(f => parseFilterAsSQL(dict, f)).filter(f => f);
 };
 

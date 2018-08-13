@@ -1,9 +1,11 @@
 import React from 'react';
 
+import sort from 'js-flock/es5/sort';
 import debounce from 'lodash.debounce';
 import ReactTable from "react-table";
 import "react-table/react-table.css";
 import checkboxHOC from "react-table/lib/hoc/selectTable";
+import * as sortage from "../services/sortage";
 import * as filtrage from "../services/filter";
 import {DataTableFilter} from "./DataTableFilter";
 
@@ -13,8 +15,8 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			rows: [],
 			data: [],
-			allData: [],
 			selection: this.props.selection || new Map(),
 			selectAll: false,
 			pageSize: this.props.pageSize || 25,
@@ -27,7 +29,15 @@ export default class extends React.Component {
 	}
 
 	componentWillReceiveProps(props) {
-		this.setState({allData: props.data || []});
+		const {data, showSelected} = props;
+		if (showSelected) {
+			this.setState({rows: Array.from(props.selection.values()), showSelected});
+		} else if (this.state.showSelected) {
+			// We switched from showing selected to NOT showing selected, so force a data change event here.
+			this.dataChanged(data, showSelected, this.state.lastFiltered, this.state.lastSorted, this.state.lastPage, this.state.pageSize);
+		} else {
+			this.setState({data});
+		}
 	}
 	
 	handleSelection = (key, shift, row) => {
@@ -44,9 +54,10 @@ export default class extends React.Component {
 
 	handleSelectAll = () => {
 		const selectAll = !this.state.selectAll;
-		let selection = this.state.selection;
+		const selection = this.state.selection;
+		const rows = this.state.filteredRows || this.state.data;
 		if (selectAll) {
-			this.state.allData.forEach(item => {
+			rows.forEach(item => {
 				selection.set(item[this.state.keyField], item);
 			});
 		} else {
@@ -71,49 +82,94 @@ export default class extends React.Component {
 	fetch = (pageSize, page, sorted, filtered, sanitizedFilters) => {
 		this.setState({loading: true});
 		this.props.onRequest(pageSize, page, sorted, sanitizedFilters).then(
-			res => this.setState({data: res.rows, pages: res.pages, lastFiltered: filtered, lastSorted: sorted, loading: false}))
+			res => this.setState({rows: res.rows, pages: res.pages, lastFiltered: filtered, lastSorted: sorted, lastPage: page, loading: false}))
 	};
-
+	
 	debounceFetch = debounce(this.fetch, 300);
 
+	filterAndSortRows = (rows, filterColumns, sortColumns, page, pageSize, showSelected) => {
+		let filteredRows = null;
+		if (filterColumns && filterColumns.length > 0) {
+			filterColumns.forEach(f => rows = filtrage.filterRows(f, rows));
+		}
+
+		if (sortColumns && sortColumns.length > 0) {
+			let sortColumn = sortColumns[0].id;
+			if (sortColumns[0].desc) {
+				sort(rows).desc(r => sortage.getSortValue(r, sortColumn));
+			} else {
+				sort(rows).asc(r => sortage.getSortValue(r, sortColumn));
+			}
+		}
+
+		if (filterColumns && filterColumns.length > 0) {
+			// Notify onFilter if filters applied, but after sorting
+			if (this.props.onFilter) {
+				this.props.onFilter(rows);
+			}
+			filteredRows = rows;
+		}
+		
+		// We already have our full rowset and the filters did not change, so don't go back to the server.
+		this.setState({
+			rows: rows.slice(pageSize * page, pageSize * page + pageSize), filteredRows, showSelected,
+			pages: Math.ceil(rows.length / pageSize),
+			lastFiltered: filterColumns ? filterColumns : this.state.lastFiltered, lastSorted: sortColumns ? sortColumns : this.state.lastSorted, lastPage: page
+		});	
+	};
+	
+	debounceFilterAndSortRows = debounce(this.filterAndSortRows, 300);
+	
+	/** TODO
+	 * if filtered, yay, render below a Save Filter button.  When clicked, saves Filtered to db
+	 * Load saved filters from db, and selected filter from local storage.
+	 * Add a Show All button which just nulls the selected local filter and refetches the table data if needed
+	 * Add a Delete Filter button which only appears when a filter is selected, and deletes that selected saved filter.
+	 * 		Optionally add a delete icon to each filter to skip having to select it first and to save another button.
+	 * Support many filters using an arrow dropdown menu but limit to something reasonable like 10 or 15
+	 *
+	 */
 	fetchData = state => {
-		const {allData, lastFiltered, lastSorted} = this.state; // ServerTable state
+		const {data, showSelected} = this.state; // ServerTable state
 		const {filtered, sorted, page, pageSize} = state; // inner react table state
+		this.dataChanged(data, showSelected, filtered, sorted, page, pageSize);
+	};
+	
+	dataChanged = (data, showSelected, filtered, sorted, page, pageSize) => {
+		const {lastFiltered, lastSorted, selection} = this.state; // ServerTable state
+		
 		const sanitizedFilters = filtrage.sanitize(filtered);
 		if (filtered && !sanitizedFilters) {
 			// Bad filters, just ignore and don't change a thing.
 			return;
 		}
 
-		/** TODO
-		 * if filtered, yay, render below a Save Filter button.  When clicked, saves Filtered to db
-		 * Load saved filters from db, and selected filter from local storage.
-		 * Add a Show All button which just nulls the selected local filter and refetches the table data if needed
-		 * Add a Delete Filter button which only appears when a filter is selected, and deletes that selected saved filter.  
-		 * 		Optionally add a delete icon to each filter to skip having to select it first and to save another button.
-		 * Support many filters using an arrow dropdown menu but limit to something reasonable like 10 or 15	
-		 *
-		 */
-		let changedFilter = JSON.stringify(lastFiltered) !== JSON.stringify(filtered);
 		let changedSort = JSON.stringify(lastSorted) !== JSON.stringify(sorted);
-		if (allData.length > 0 && !changedFilter && !changedSort) {
-			// We already have our full rowset and the filters did not change, so don't go back to the server.
-			this.setState({
-				data: allData.slice(pageSize * page, pageSize * page + pageSize),
-				pages: Math.ceil(allData.length / pageSize)
-			});
-		} else {
+		let changedFilter = JSON.stringify(lastFiltered) !== JSON.stringify(filtered);
+		if (changedFilter && this.props.onFilterChange) {
+			this.props.onFilterChange(filtered);
+		}
+
+		const rows = showSelected ? Array.from(selection.values()) : data;
+		if (rows.length === 0) {
 			// We only want to debounce if our filters changed.  Not on initial load, not on a sort change.
-			if (allData.length > 0 && changedFilter) {
+			if (rows.length > 0 && changedFilter) {
 				this.debounceFetch(pageSize, page, sorted, filtered, sanitizedFilters);
 			} else {
 				this.fetch(pageSize, page, sorted, filtered, sanitizedFilters);
 			}
 		}
+		else {
+			if (changedFilter) {
+				this.debounceFilterAndSortRows(rows, filtered, changedSort ? sorted : null, page, pageSize, showSelected);
+			} else {
+				this.filterAndSortRows(rows, null, changedSort ? sorted : null, page, pageSize, showSelected);
+			}
+		}
 	};
 
 	render() {
-		const {keyField, selectAll, data, pages, loading} = this.state;
+		const {keyField, selectAll, rows, pages, loading} = this.state;
 
 		const selectionProps = {
 			selectAll: selectAll,
@@ -160,7 +216,7 @@ export default class extends React.Component {
 				onFetchData={this.fetchData} // Request new data when things change
 				
 				ref={r => (this.checkboxTable = r)}
-				data={data}
+				data={rows}
 				columns={this.props.columns}
 				filterable
 				defaultPageSize={this.state.pageSize}

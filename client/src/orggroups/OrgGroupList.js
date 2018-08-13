@@ -1,6 +1,7 @@
 import React from 'react';
 import DataTable from "../components/DataTable";
 import moment from "moment";
+import ServerTable from "../components/ServerTable";
 
 export default class extends React.Component {
 	linkHandler = (e, column, rowInfo) => {
@@ -20,8 +21,9 @@ export default class extends React.Component {
 			);
 		}
 		return (
-			<DataTable id="OrgGroupList" data={this.props.orggroups} onClick={this.linkHandler}
-					   onFilter={this.props.onFilter} onSelect={this.props.onSelect} columns={columns}/>
+			<ServerTable keyField="id" id="OrgGroupList" columns={columns} data={this.props.orggroups} 
+						 showSelected={this.props.showSelected} selection={this.props.selected} onSelect={this.selectionHandler}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter} onRequest={this.props.onRequest}/>
 		);
 	}
 }

@@ -16,6 +16,7 @@ export default class extends React.Component {
 		super(props);
 		this.state = {
 			data: props.data || [],
+			loading: props.loading,
 			selection: this.props.selection || new Map(),
 			selectAll: false,
 			pageSize: this.props.pageSize || 25,
@@ -123,6 +124,7 @@ export default class extends React.Component {
 		let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable;
 		return (
 			<TableImpl
+				loading={this.state.loading} // Display the loading overlay when we need it
 				defaultFilterMethod={filtrage.filterRows}
 				ref={r => (this.checkboxTable = r)}
 				data={this.state.data}

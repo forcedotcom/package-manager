@@ -7,12 +7,15 @@ import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import SelectGroupWindow from "./SelectGroupWindow";
 import ServerTable from "../components/ServerTable";
+import * as strings from "../services/strings";
 
 export default class extends React.Component {
-	state = {
-		selected: new Map(), itemCount: null
-	};
-
+	constructor(props) {
+		super(props);
+		this.state = {
+			selected: new Map(), itemCount: null, showSelected: false
+		};
+	}
 
 	componentWillReceiveProps(props) {
 		if (props.orgs) {
@@ -25,7 +28,15 @@ export default class extends React.Component {
 	};
 
 	selectionHandler = (selected) => {
-		this.setState({selected});
+		let showSelected = this.state.showSelected;
+		if (selected.size === 0) {
+			showSelected = false;
+		}
+		this.setState({selected, showSelected});
+	};
+	
+	handleShowSelected = () => {
+		this.setState({showSelected: !this.state.showSelected});
 	};
 
 	removeMembersHandler = () => {
@@ -33,7 +44,7 @@ export default class extends React.Component {
 	};
 
 	addToGroupHandler = (groupId, groupName) => {
-		this.setState({addingToGroup: false});
+		this.setState({addingToGroup: false, showSelected: false});
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
 			window.location = `/orggroup/${orggroup.id}`;
 		});
@@ -58,6 +69,8 @@ export default class extends React.Component {
 	};
 
 	render() {
+		const {selected} = this.state;
+		
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
@@ -71,14 +84,16 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			{label: "Add To Group", handler: this.openGroupWindow, disabled: this.state.selected.size === 0},
+			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
+				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
+			{label: "Add To Group", handler: this.openGroupWindow, disabled: selected.size === 0},
 			{label: "Export", handler: this.exportHandler}
 		];
 		if (this.props.onRemove) {
 			actions.push({
 				label: "Remove Selected Member Orgs",
 				handler: this.removeMembersHandler,
-				disabled: this.state.selected.size === 0
+				disabled: selected.size === 0
 			});
 		}
 
@@ -86,17 +101,13 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					{this.props.showSelected ?
-						<DataTable keyField="org_id" id="OrgCard" data={this.props.orgs} selection={this.props.selected}
-								   onClick={this.linkHandler} onSelect={this.selectionHandler} columns={columns}
-								   onFilter={this.filterHandler}/> :
-						<ServerTable keyField="org_id" id="OrgCard" data={this.props.orgs} selection={this.props.selected} 
-									 onClick={this.linkHandler} onSelect={this.selectionHandler} columns={columns}
-									 onRequest={this.props.onRequest}/>
-					}	
+					<ServerTable data={this.props.orgs} showSelected={this.props.showSelected} selection={selected} keyField="org_id" id="OrgCard" 
+								 onClick={this.linkHandler} onSelect={this.selectionHandler} columns={columns}
+								 onRequest={this.props.onRequest} onFilter={this.filterHandler}/>
 				</div>
 				<footer className="slds-card__footer"/>
-				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)}
+				{this.state.addingToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`}
+															   onAdd={this.addToGroupHandler.bind(this)}
 															   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 

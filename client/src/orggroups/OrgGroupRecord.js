@@ -16,6 +16,7 @@ import Tabs from "../components/Tabs";
 import GroupMemberVersionCard from "../packageversions/GroupMemberVersionCard";
 import GroupMemberOrgCard from "../orgs/GroupMemberOrgCard";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as strings from "../services/strings";
 
 export default class extends React.Component {
 	SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
@@ -202,8 +203,9 @@ export default class extends React.Component {
 	};
 
 	render() {
-		let actions = [];
-		if (this.state.orggroup.type === "Upgrade Group") {
+		const {selected, showSelected, orggroup} = this.state;
+		const actions = [];
+		if (orggroup.type === "Upgrade Group") {
 			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: this.state.upgradeablePackageIds.length === 0});
 		}
 		actions.push(
@@ -213,46 +215,47 @@ export default class extends React.Component {
 		);
 			
 		let memberActions = [
-			{label: `${this.state.selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: this.state.selected.size === 0,
-				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Copy To Group", handler: this.addingToGroupHandler, disabled: this.state.selected.size === 0},
-			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: this.state.selected.size === 0},
-			{label: "Remove From Group", group: "remove", handler: this.removeMembersHandler, disabled: this.state.selected.size === 0},
+			{label: `${selected.size} Selected`, toggled: showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
+				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
+			{label: "Copy To Group", handler: this.addingToGroupHandler, disabled: selected.size === 0},
+			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: selected.size === 0},
+			{label: "Remove From Group", group: "remove", handler: this.removeMembersHandler, disabled: selected.size === 0},
 			{label: "Export Members", handler: this.exportHandler}
 		];
 		
 		return (
 			<div>
-				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={this.state.orggroup.name} actions={actions}>
-					<HeaderField label="Description" value={this.state.orggroup.description}/>
-					<HeaderField label="Type" value={this.state.orggroup.type}/>
-					{this.state.orggroup.created_date ? <HeaderField label="Created" value={moment(this.state.orggroup.created_date).format("lll")}/> : ""}
+				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={orggroup.name} actions={actions}>
+					<HeaderField label="Description" value={orggroup.description}/>
+					<HeaderField label="Type" value={orggroup.type}/>
+					{orggroup.created_date ? <HeaderField label="Created" value={moment(orggroup.created_date).format("lll")}/> : ""}
 				</RecordHeader>
 
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Members">
-							<GroupMemberOrgCard orggroup={this.state.orggroup} orgs={this.state.showSelected ? Array.from(this.state.selected.values()) : this.state.members}
+							<GroupMemberOrgCard orggroup={orggroup} orgs={this.state.showSelected ? Array.from(selected.values()) : this.state.members}
 												onSelect={this.selectionHandler} actions={memberActions}
-												selected={this.state.selected}/>
+												selected={selected}/>
 						</div>
 						<div label="Versions">
-							<GroupMemberVersionCard orggroup={this.state.orggroup} packageVersions={this.state.showSelected ? this.selectVersionsFromSelected(this.state.selected) : this.state.versions}
+							<GroupMemberVersionCard orggroup={orggroup} packageVersions={this.state.showSelected ? this.selectVersionsFromSelected(selected) : this.state.versions}
 													onSelect={this.selectionHandler} actions={memberActions}
-													selected={this.state.selected}/>
+													selected={selected}/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
 				
-				{this.state.isEditing ? <GroupFormWindow orggroup={this.state.orggroup} onSave={this.saveHandler}
+				{this.state.isEditing ? <GroupFormWindow orggroup={orggroup} onSave={this.saveHandler}
 														 onCancel={this.cancelHandler}/> : ""}
 				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow packageIds={this.state.upgradeablePackageIds}
-																	   description={`Upgrading Group: ${this.state.orggroup.name}`}
+																	   description={`Upgrading Group: ${orggroup.name}`}
 																	   onUpgrade={this.upgradeHandler.bind(this)}
 																	   onCancel={this.cancelSchedulingHandler}/> : ""}
 				{this.state.addingToGroup ?
-					<SelectGroupWindow excludeId={this.state.orggroup.id} removeAfterAdd={this.state.removeAfterAdd}
+					<SelectGroupWindow title={`${this.state.removeAfterAdd ? "Move" : "Copy"} ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to different group`} 
+									   excludeId={orggroup.id} removeAfterAdd={this.state.removeAfterAdd}
 									   onAdd={this.addToGroupHandler.bind(this)}
 									   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}

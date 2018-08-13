@@ -123,7 +123,7 @@ export default class extends React.Component {
 						<InstalledVersionCard packageVersions={this.state.versions}/>
 					</div>
 				</div>
-				{this.state.addingToGroup ? <SelectGroupWindow onAdd={this.addToGroupHandler.bind(this)}
+				{this.state.addingToGroup ? <SelectGroupWindow title="Add this org to a group" onAdd={this.addToGroupHandler.bind(this)}
 															   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.schedulingUpgrade ?
 					<ScheduleUpgradeWindow org={this.state.org} packageIds={this.state.upgradeablePackageIds}

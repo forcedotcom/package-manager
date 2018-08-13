@@ -75,8 +75,8 @@ const HelpSection = ({title,items}) => {
 const HelpItem = ({example, description}) => (
 	<div className="slds-m-bottom--medium">
 		<span className="slds-badge slds-text-align--center slds-size--xx-small slds-p-left--small slds-p-right--small"
-			  style={{textTransform: "lowercase", fontSize: "1em", lineHeight: "2em"}}>{example}</span>
-		<span className="slds-m-left--small slds-item_detail" style={{textTransform: "lowercase", lineHeight: "2em"}}>=></span>
-		<span className="slds-m-left--small slds-item_detail" style={{textTransform: "lowercase", lineHeight: "2em"}}>{description}</span>
+			  style={{textTransform: "lowercase", fontSize: "1em", lineHeight: "1.85em"}}>{example}</span>
+		<span className="slds-m-left--small slds-item_detail" style={{textTransform: "lowercase", lineHeight: "1.85em"}}>=></span>
+		<span className="slds-m-left--small slds-item_detail" style={{textTransform: "lowercase", lineHeight: "1.85em"}}>{description}</span>
 	</div>
 );

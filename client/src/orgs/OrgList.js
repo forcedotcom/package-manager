@@ -20,13 +20,9 @@ export default class extends React.Component {
 			{Header: "Status", accessor: "status", sortable: true}
 		];
 		return (
-			this.props.showSelected ? 
-				<DataTable data={Array.from(this.props.selected.values())} selection={this.props.selected} keyField="org_id" id="OrgList"
-					   onClick={this.linkHandler} onSelect={this.props.onSelect} columns={columns}
-					   onFilter={this.props.onFilter}/> :
-				<ServerTable data={this.props.orgs} selection={this.props.selected} keyField="org_id" id="OrgList"
-						 onClick={this.linkHandler} onSelect={this.props.onSelect} columns={columns}
-						 onRequest={this.props.onRequest}/>
+			<ServerTable keyField="org_id" id="OrgList" data={this.props.orgs} columns={columns}
+						 showSelected={this.props.showSelected} selection={this.props.selected} onSelect={this.props.onSelect}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter} onRequest={this.props.onRequest} />
 		);
 	}
 }

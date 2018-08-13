@@ -8,6 +8,7 @@ import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as orgService from "../services/OrgService";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgGroupList";
@@ -22,13 +23,23 @@ export default class extends React.Component {
 		selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY, "Upgrade Group"))
 	};
 
-	componentDidMount() {
-		orgGroupService.requestAll(this.state.selectedType.name, this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
-	}
-	
-	componentWillUnmount() {
-	}
-	
+	requestData = (pageSize, page, sorted, filtered) => {
+		return new Promise((resolve, reject) => {
+			orgGroupService.requestAll(this.state.selectedType.name, 
+				sorted.length === 0 ? this.state.sortOrder : sortage.changeSortOrder(this.SORTAGE_KEY, sorted[0].id, sorted[0].desc ? "desc" : "asc"), 
+				filtered)
+			.then(orggroups => {
+				this.setState({orggroups, itemCount: orggroups.length});
+				// You must return an object containing the rows of the current page, and optionally the total pages number.
+				return resolve({
+					rows: orggroups.slice(pageSize * page, pageSize * page + pageSize),
+					pages: Math.ceil(orggroups.length / pageSize)
+				});
+			})
+			.catch(reject);
+		});
+	};
+
 	filterHandler = (filtered) => {
 		this.setState({itemCount: filtered.length});
 	};
@@ -83,8 +94,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="org groups" title="Org Groups" itemCount={this.state.itemCount} actions={actions}/>
-				<OrgGroupList orggroups={this.state.orggroups} onFilter={this.filterHandler}
-							  onSelect={this.selectionHandler} type={this.state.selectedType.name}/>
+				<OrgGroupList orggroups={this.state.orggroups} onRequest={this.requestData} onFilter={this.filterHandler}
+							  onSelect={this.selectionHandler} selected={this.state.selected} type={this.state.selectedType.name}/>
 				<DataTableFilterHelp/>
 				{this.state.addingOrgGroup ?
 					<GroupFormWindow type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}

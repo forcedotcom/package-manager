@@ -8,7 +8,13 @@ import {Status, UPGRADE_ITEM_ICON} from "../Constants";
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {itemCount: props.items.length};
+		this.state = {itemCount: null};
+	}
+
+	componentWillReceiveProps(props) {
+		if (props.items) {
+			this.setState({itemCount: props.items.length});
+		}
 	}
 
 	linkHandler = (e, column, rowInfo) => {

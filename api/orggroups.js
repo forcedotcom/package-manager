@@ -6,6 +6,8 @@ const logger = require('../util/logger').logger;
 
 const SELECT_ALL = "SELECT id, name, type, description, created_date FROM org_group";
 
+const QUERY_DICTIONARY = {get: s => s};
+
 const GroupType = {
 	UpgradeGroup: "Upgrade Group",
 	Blacklist: "Blacklist",
@@ -33,6 +35,10 @@ async function requestAll(req, res, next) {
 	if (req.query.type && req.query.type !== "All") {
 		values.push(req.query.type);
 		whereParts.push(`type = $${values.length}`)
+	}
+	const filters = req.query.filters ? JSON.parse(req.query.filters) : null;
+	if (filters && filters.length > 0) {
+		whereParts.push(...filter.parseSQLExpressions(QUERY_DICTIONARY, filters));
 	}
 
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";

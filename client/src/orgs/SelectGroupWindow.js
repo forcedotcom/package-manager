@@ -4,7 +4,13 @@ import * as orgGroupService from "../services/OrgGroupService";
 import {ORG_GROUP_ICON} from "../Constants";
 
 export default class extends React.Component {
-	state = {items: []};
+	constructor(props) {
+		super(props);
+		this.state = {
+			items: [],
+			title: props.title || 'Select Group'	
+		};
+	}
 
 	componentDidMount() {
 		orgGroupService.requestByTextSearch("", this.props.excludeId).then(items => this.setState({items: items}));
@@ -36,7 +42,7 @@ export default class extends React.Component {
 								</svg>
 								<span className="slds-assistive-text">Close</span>
 							</button>
-							<h2 className="slds-text-heading--medium">Select Group</h2>
+							<h2 className="slds-text-heading--medium">{this.state.title}</h2>
 						</div>
 						<div style={{height: 450}} className="slds-modal__content slds-p-around_medium">
 							<Lookup placeholder="Select a group, or name a new one"

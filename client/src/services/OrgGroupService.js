@@ -2,7 +2,9 @@ import * as h from './h';
 
 let url = "/api/orggroups";
 
-export let requestAll = (type, sort) => h.get(url, {type, sort_field: sort.field, sort_dir: sort.direction});
+export let requestAll = (type, sort, filters, page, pageSize) => h.get(url, 
+	{type, sort_field: sort.field, sort_dir: sort.direction, filters: filters ? JSON.stringify(filters) : null, page, pageSize});
+
 export let requestByTextSearch = (text, excludeId) => h.get(url, {text, excludeId});
 export let requestById = id => h.get(url + "/" + id);
 

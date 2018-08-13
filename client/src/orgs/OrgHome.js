@@ -11,6 +11,7 @@ import OrgList from './OrgList';
 import SelectGroupWindow from "./SelectGroupWindow";
 import AddOrgWindow from "../orggroups/AddOrgWindow";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as strings from "../services/strings";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgList";
@@ -97,21 +98,22 @@ export default class extends React.Component {
 	};
 	
 	render() {
+		const {selected} = this.state;
 		const actions = [
-			{label: `${this.state.selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: this.state.selected.size === 0,
+			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: this.state.selected.size === 0, handler: this.addingToGroupHandler},
+			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.addingToGroupHandler},
 			{label: "Import", handler: this.addingHandler},
 			{label: "Export", handler: this.exportHandler}
 		];
-
 		return (
 			<div>
 				<HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
-				<OrgList selected={this.state.selected} onRequest={this.requestData} 
+				<OrgList selected={selected} onRequest={this.requestData} 
 						 orgs={this.state.orgs} showSelected={this.state.showSelected} onFilter={this.filterHandler} onSelect={this.selectionHandler}/>
 				<DataTableFilterHelp/>
-				{this.state.showAddToGroup ? <SelectGroupWindow onAdd={this.addToGroup.bind(this)}
+				{this.state.showAddToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`} 
+																onAdd={this.addToGroup.bind(this)}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
