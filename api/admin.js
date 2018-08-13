@@ -101,7 +101,7 @@ class AdminJob {
 		} catch (e) {
 			this.status = "Failed";
 			this.postProgress("Admin Job Failed", this.stepCount, `Failed ${this.name.toLowerCase()}: ${e.message || e}`);
-			logger.error("Admin Job Failed", {error: e.message || e, steps: this.stepCount, errors: this.errors.length})
+			logger.error("Admin Job Failed", {error: e.message || e, stack: e.stack, steps: this.stepCount, errors: this.errors.length})
 		} finally {
 			activeJobs.delete(this.type);
 			jobHistory.push(this);

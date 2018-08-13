@@ -56,8 +56,10 @@ app.use(express.static(path.join(__dirname, 'client/build')));
 app.use(function (req, res, next) {
 	if (process.env.ENFORCE_AUTH !== "false" && req.path.toLowerCase().startsWith('/api') && !req.session.access_token) {
 		res.status(401).send();
+		logger.info("Denied", {path: req.path, ip: req.ip, user: req.session.username, display_name: req.session.display_name, has_access_token: typeof req.session.access_token !== "undefined"})
 		return;
 	}
+	logger.info("Access", {path: req.path, ip: req.ip, user: req.session.username, display_name: req.session.display_name, has_access_token: typeof req.session.access_token !== "undefined"})
 	// Update a value in the cookie so that the set-cookie will be sent.
 	// Only changes every minute so that it's not sent with every request.
 	req.session.nowInMinutes = Math.floor(Date.now() / 60e3);

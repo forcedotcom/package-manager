@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "debug": "LOG_LEVEL=debug node --inspect server.js",
+    "debug": "node --inspect server.js",
     "heroku-postbuild": "cd client && yarn --production=false && yarn build"
   },
   "repository": "git@git.soma.salesforce.com:Steelbrick/brick-manager.git",
