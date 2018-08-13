@@ -160,10 +160,12 @@ export default class extends React.Component {
 			}
 		}
 		else {
+			// Debounce if row count is over some large sounding number
+			const f = rows.length > 1000 ? this.debounceFilterAndSortRows : this.filterAndSortRows;
 			if (changedFilter) {
-				this.debounceFilterAndSortRows(rows, filtered, changedSort ? sorted : null, page, pageSize, showSelected);
+				f(rows, filtered, changedSort ? sorted : null, page, pageSize, showSelected);
 			} else {
-				this.filterAndSortRows(rows, null, changedSort ? sorted : null, page, pageSize, showSelected);
+				f(rows, null, changedSort ? sorted : null, page, pageSize, showSelected);
 			}
 		}
 	};
