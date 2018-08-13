@@ -1,15 +1,3 @@
-create table if not exists admin_job
-(
-  id            serial not null
-    constraint admin_job_id_pk primary key,
-  name          varchar(255),
-  status        varchar(80),
-  steps         integer,
-  progress      integer,
-  message       text,
-  modified_date timestamp with time zone
-);
-
 create table if not exists package_org
 (
   id             serial      not null,
@@ -203,6 +191,8 @@ values ('Internal', '000000000000000'), ('Unknown/Invalid', '000000000000001')
 on conflict do nothing;
 
 -- Patching
+drop table if exists admin_job;
+
 alter table upgrade_item
   drop column if exists parent__item_id;
 

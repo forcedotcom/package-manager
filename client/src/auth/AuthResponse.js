@@ -10,13 +10,8 @@ export default class extends React.Component {
 		if (params.message) {
 			this.setState({...params})
 		} else {
-			if (window.opener) {
-				if (params.redirectTo) {
-					window.opener.location = params.redirectTo;
-				} else {
-					window.opener.location.reload();
-				}
-				window.close();
+			if (params.redirectTo) {
+				window.location.href = params.redirectTo;
 			}
 		}
 	}
@@ -49,10 +44,6 @@ export default class extends React.Component {
 									<b>Error code:</b> {this.state.code}<br/>
 								</p>
 							</div>
-							<footer className="slds-modal__footer slds-theme_default">
-								{window.opener ? <button className="slds-button slds-button_neutral"
-														 onClick={window.close}>Okay</button> : ""}
-							</footer>
 						</div>
 					</section> : ""}
 				<div className="slds-backdrop slds-backdrop_open"/>
