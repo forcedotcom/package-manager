@@ -10,9 +10,7 @@ export default class extends React.Component {
 		if (params.message) {
 			this.setState({...params})
 		} else {
-			if (params.redirectTo) {
-				window.location.href = params.redirectTo;
-			}
+			window.location.href = "/";
 		}
 	}
 

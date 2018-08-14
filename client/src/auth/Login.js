@@ -25,7 +25,7 @@ export default class extends React.Component {
 	}
 
 	loginHandler = () => {
-		authService.oauthLoginURL("/orgs").then(url => {
+		authService.oauthLoginURL().then(url => {
 			window.location.href = url;
 		});
 	};

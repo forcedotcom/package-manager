@@ -68,29 +68,29 @@ class App extends Component {
 					<header className="menu">
 						<ul className="slds-list--horizontal">
 							<li className="slds-list__item">
-								<Link style={{whiteSpace: "nowrap"}} to="/"><Icon name={ORG_ICON.name}
-																				  category={ORG_ICON.category}/>Orgs</Link>
-							</li>
-							<li className="slds-list__item">
-								<Link style={{whiteSpace: "nowrap"}} className="slds-nowrap" to="/orggroups"><Icon
-									name={ORG_GROUP_ICON.name} category={ORG_GROUP_ICON.category}/>Org Groups</Link>
-							</li>
-							<li className="slds-list__item">
-								<Link style={{whiteSpace: "nowrap"}} to="/licenses"><Icon name={LICENSE_ICON.name}
-																						  category={LICENSE_ICON.category}/>Licenses</Link>
+								<Link style={{whiteSpace: "nowrap"}} to="/"><Icon name={UPGRADE_ICON.name}
+																						  category={UPGRADE_ICON.category}/>Upgrades</Link>
 							</li>
 							<li className="slds-list__item">
 								<Link style={{whiteSpace: "nowrap"}} to="/packages"><Icon name={PACKAGE_ICON.name}
 																						  category={PACKAGE_ICON.category}/>Packages</Link>
 							</li>
 							<li className="slds-list__item">
+								<Link style={{whiteSpace: "nowrap"}} className="slds-nowrap" to="/orggroups"><Icon
+									name={ORG_GROUP_ICON.name} category={ORG_GROUP_ICON.category}/>Org Groups</Link>
+							</li>
+							<li className="slds-list__item">
+								<Link style={{whiteSpace: "nowrap"}} to="/orgs"><Icon name={ORG_ICON.name}
+																				  category={ORG_ICON.category}/>Orgs</Link>
+							</li>
+							<li className="slds-list__item">
+								<Link style={{whiteSpace: "nowrap"}} to="/licenses"><Icon name={LICENSE_ICON.name}
+																						  category={LICENSE_ICON.category}/>Licenses</Link>
+							</li>
+							<li className="slds-list__item">
 								<Link style={{whiteSpace: "nowrap"}} to="/packageorgs"><Icon
 									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>Package
 									Orgs</Link>
-							</li>
-							<li className="slds-list__item">
-								<Link style={{whiteSpace: "nowrap"}} to="/upgrades"><Icon name={UPGRADE_ICON.name}
-																						  category={UPGRADE_ICON.category}/>Upgrades</Link>
 							</li>
 							<li className="slds-list__item">
 								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name}
@@ -110,7 +110,8 @@ class App extends Component {
 						</ul>
 					</header>
 
-					<Route exact path="/" component={OrgHome}/>
+					<Route exact path="/" component={UpgradeHome}/>
+					
 					<Route path="/orgs" component={OrgHome}/>
 					<Route path="/org/:orgId" component={OrgRecord}/>
 

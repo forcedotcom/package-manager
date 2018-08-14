@@ -88,7 +88,6 @@ export default class extends React.Component {
 	debounceFetch = debounce(this.fetch, 300);
 
 	filterAndSortRows = (rows, filterColumns, sortColumns, page, pageSize, showSelected) => {
-		let filteredRows = null;
 		if (filterColumns && filterColumns.length > 0) {
 			filterColumns.forEach(f => rows = filtrage.filterRows(f, rows));
 		}
@@ -107,12 +106,11 @@ export default class extends React.Component {
 			if (this.props.onFilter) {
 				this.props.onFilter(rows);
 			}
-			filteredRows = rows;
 		}
 		
 		// We already have our full rowset and the filters did not change, so don't go back to the server.
 		this.setState({
-			rows: rows.slice(pageSize * page, pageSize * page + pageSize), filteredRows, showSelected,
+			rows: rows.slice(pageSize * page, pageSize * page + pageSize), filteredRows: rows, showSelected,
 			pages: Math.ceil(rows.length / pageSize),
 			lastFiltered: filterColumns ? filterColumns : this.state.lastFiltered, lastSorted: sortColumns ? sortColumns : this.state.lastSorted, lastPage: page
 		});	
@@ -165,7 +163,7 @@ export default class extends React.Component {
 			if (changedFilter) {
 				f(rows, filtered, changedSort ? sorted : null, page, pageSize, showSelected);
 			} else {
-				f(rows, null, changedSort ? sorted : null, page, pageSize, showSelected);
+				this.filterAndSortRows(this.state.filteredRows || rows, null, changedSort ? sorted : null, page, pageSize, showSelected);
 			}
 		}
 	};

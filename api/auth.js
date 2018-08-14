@@ -31,7 +31,7 @@ function requestLogout(req, res, next) {
 
 function oauthLoginURL(req, res, next) {
 	try {
-		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL, redirectTo: req.query.redirectTo});
+		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL});
 		res.json(url);
 	} catch (e) {
 		next(e);
@@ -70,7 +70,7 @@ async function oauthCallback(req, res, next) {
 				req.session.username = user.username;
 				req.session.display_name = user.display_name;
 				req.session.access_token = conn.accessToken;
-				res.redirect(`${CLIENT_URL}/authresponse?redirectTo=${state.redirectTo}`);
+				res.redirect(`${CLIENT_URL}/authresponse`);
 		}
 	} catch (error) {
 		logger.error("Failed to authorize user", error);

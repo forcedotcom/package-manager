@@ -18,21 +18,22 @@ export default class extends React.Component {
 		itemCount: "..."
 	};
 
-	componentDidMount() {
-		licenseService.requestAll(this.state.sortOrder).then(licenses => this.setState({
-			licenses,
-			itemCount: licenses.length
-		}));
-	}
-
-	sortHandler = (field) => {
-		let sortOrder = sortage.changeSortOrder(this.SORTAGE_KEY, field);
-		licenseService.requestAll(sortOrder).then(licenses => {
-			this.setState({licenses, sortOrder});
+	requestData = (pageSize, page, sorted, filtered) => {
+		return new Promise((resolve, reject) => {
+			licenseService.requestAll(sorted.length === 0 ? this.state.sortOrder : sortage.changeSortOrder(this.SORTAGE_KEY, sorted[0].id, sorted[0].desc ? "desc" : "asc"), filtered)
+			.then(licenses => {
+				this.setState({licenses, itemCount: licenses.length});
+				// You must return an object containing the rows of the current page, and optionally the total pages number.
+				return resolve({
+					rows: licenses.slice(pageSize * page, pageSize * page + pageSize),
+					pages: Math.ceil(licenses.length / pageSize)
+				});				
+			})
+			.catch(reject);
 		});
 	};
 
-	filterHandler = (filtered, column, value) => {
+	filterHandler = (filtered) => {
 		this.setState({itemCount: filtered.length});
 	};
 
@@ -61,7 +62,7 @@ export default class extends React.Component {
 							}]}
 							onSort={this.sortHandler}
 							onViewChange={this.viewChangeHandler}/>
-				<LicenseList licenses={this.state.licenses} onFilter={this.filterHandler} onSort={this.sortHandler}/>
+				<LicenseList licenses={this.state.licenses} onRequest={this.requestData} onFilter={this.filterHandler}/>
 				<DataTableFilterHelp/>
 			</div>
 		);

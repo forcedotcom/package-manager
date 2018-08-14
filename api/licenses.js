@@ -1,5 +1,27 @@
 const db = require('../util/pghelper');
 
+const QUERY_DICTIONARY = new Map([
+	["id", "l.id"],
+	["sfid", "l.sfid"],
+	["name", "l.name"],
+	["nameorg_id", "l.org_id"],
+	["status", "l.status"],
+	["is_sandbox", "l.is_sandbox"],
+	["install_date", "l.install_date"],
+	["modified_date", "l.modified_date"],
+	["expiration", "l.expiration"],
+	["used_license_count", "l.used_license_count"],
+	["package_version_id", "l.package_version_id"],
+	["instance", "o.instance"],
+	["account_id", "o.account_id"],
+	["account_name", "a.account_name"],
+	["package_id", "pv.package_id"],
+	["version_name", "pv.name"],
+	["version_number", "pv.version_number"],
+	["version_id", "pv.version_id"],
+	["package_name", "p.name"]
+]);
+
 const SELECT_ALL = `SELECT 
     l.id, l.sfid, l.name, l.org_id, l.status, l.is_sandbox,
     l.install_date, l.modified_date, l.expiration, 
@@ -17,14 +39,15 @@ const SELECT_ALL = `SELECT
 function requestAll(req, res, next) {
 	let orgId = req.query.org_id;
 
-	findAll(orgId, req.query.status, req.query.sort_field, req.query.sort_dir)
+	findAll(orgId, req.query.status, req.query.sort_field, req.query.sort_dir,
+		req.query.filters ? JSON.parse(req.query.filters) : null, req.query.page, req.query.pageSize)
 		.then((recs) => {
 			return res.send(JSON.stringify(recs))
 		})
 		.catch(next);
 }
 
-async function findAll(orgId, status, orderByField, orderByDir) {
+async function findAll(orgId, status, orderByField, orderByDir, filters) {
 	let whereParts = ["o.instance IS NOT NULL"],
 		values = [];
 
@@ -36,6 +59,10 @@ async function findAll(orgId, status, orderByField, orderByDir) {
 	if (status) {
 		values.push(status);
 		whereParts.push(`l.status = $${values.length}`)
+	}
+	
+	if (filters && filters.length > 0) {
+		whereParts.push(...filter.parseSQLExpressions(QUERY_DICTIONARY, filters));
 	}
 
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";

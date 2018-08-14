@@ -1,7 +1,7 @@
 import React from 'react';
 import moment from "moment";
-import DataTable from "../components/DataTable";
 import * as sortage from "../services/sortage";
+import ServerTable from "../components/ServerTable";
 
 export default class extends React.Component {
 	linkHandler = (e, column, rowInfo) => {
@@ -33,8 +33,9 @@ export default class extends React.Component {
 			{Header: "Installed On", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: true}
 		];
 		return (
-			<DataTable id="LicenseList" data={this.props.licenses} onFilter={this.props.onFilter}
-					   onClick={this.linkHandler} columns={columns}/>
+			<ServerTable id="LicenseList" keyField="sfid" data={this.props.licenses} columns={columns}
+						 onFilter={this.props.onFilter} onClick={this.linkHandler}
+						 onRequest={this.props.onRequest}/>
 		);
 	}
 }
