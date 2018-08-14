@@ -32,7 +32,18 @@ export default class extends React.Component {
 			this.setState({isRefreshing: false});
 			NotificationManager.error(e, "Refresh Failed");
 		});
-};
+	}
+	
+	revokeHandler = () => {
+		this.setState({isRevoking: true});
+		packageOrgService.requestRevoke([this.state.packageorg.org_id]).then(() => {
+			packageOrgService.requestById(this.state.packageorg.org_id).
+				then(packageorg => this.setState({packageorg, isRevoking: false}));
+		}).catch(e => {
+			this.setState({isRevoking: false});
+			NotificationManager.error(e, "Revoke Failed");
+		});
+	};
 
 	editHandler = () => {
 		this.setState({isEditing: true});
@@ -52,6 +63,7 @@ export default class extends React.Component {
 
 		let actions = [
 			{label: "Refresh", handler: this.refreshHandler, spinning: this.state.isRefreshing},
+			{label: "Revoke", handler: this.revokeHandler, spinning: this.state.isRevoking},
 			{label: "Edit", handler: this.editHandler},
 			{label: "Delete", handler: this.deleteHandler}
 		];

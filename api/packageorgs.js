@@ -137,6 +137,8 @@ async function updateAccessToken(org_id, access_token) {
 async function requestDelete(req, res, next) {
 	try {
 		let orgIds = req.body.orgIds;
+		await revokeByOrgIds(orgIds);
+
 		let n = 1;
 		let params = orgIds.map(v => `$${n++}`);
 		await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
@@ -175,10 +177,37 @@ async function requestRefresh(req, res, next) {
 	}
 }
 
+async function requestRevoke(req, res, next) {
+	try {
+		let orgIds = req.body.orgIds;
+		await revokeByOrgIds(orgIds);
+		res.json({result: "OK"});
+	} catch (err) {
+		return res.status(500).send(err.message || err);
+	}
+}
+
+async function revokeByOrgIds(orgIds) {
+	for (let i = 0; i < orgIds.length; i++) {
+		let orgId = orgIds[i];
+		let conn = await sfdc.buildOrgConnection(orgId);
+		try {
+			await conn.logoutByOAuth2(conn.refreshToken != null);
+		} catch (e) {
+			// Connection is already invalid, just be sure our local record is updated.
+		}
+		
+		await db.update(
+			`UPDATE package_org SET status = $1, access_token = null, refresh_token = null 
+				WHERE org_id = $2`, [Status.Invalid, orgId]);
+	}
+}
+
 exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.requestUpdate = requestUpdate;
 exports.requestRefresh = requestRefresh;
+exports.requestRevoke = requestRevoke;
 exports.requestDelete = requestDelete;
 exports.retrieveById = retrieve;
 exports.retrieveByOrgId = retrieveByOrgId;

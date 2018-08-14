@@ -53,6 +53,24 @@ export default class extends React.Component {
 			NotificationManager.error(e, "Refresh Failed");
 		});
 	};
+	
+	revokeHandler = () => {
+		let packageorgs = this.state.packageorgs;
+		for (let i = 0; i < packageorgs.length; i++) {
+			let porg = packageorgs[i];
+			if (this.state.selected.has(porg.org_id)) {
+				porg.status = null;
+			}
+		}
+		this.setState({isRevoking: true, packageorgs});
+
+		packageOrgService.requestRevoke(Array.from(this.state.selected.keys())).then(() => {
+			packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs, isRevoking: false}));
+		}).catch(e => {
+			this.setState({isRevoking: false});
+			NotificationManager.error(e, "Revoke Failed");
+		});
+	};
 
 	deleteHandler = () => {
 		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
@@ -64,25 +82,10 @@ export default class extends React.Component {
 
 	render() {
 		const actions = [
-			{
-				label: "Add Package Org",
-				group: "add",
-				detail: "Shift-click to add sandbox org",
-				handler: this.newHandler
-			},
-			{
-				label: "Refresh",
-				handler: this.refreshHandler,
-				disabled: this.state.selected.size === 0,
-				spinning: this.state.isRefreshing,
-				detail: "Refresh the access token of the selected org"
-			},
-			{
-				label: "Delete",
-				handler: this.deleteHandler,
-				disabled: this.state.selected.size === 0,
-				detail: "Remove the selected org"
-			}
+			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", handler: this.newHandler},
+			{label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
+			{label: "Revoke", handler: this.revokeHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
+			{label: "Delete", handler: this.deleteHandler, disabled: this.state.selected.size === 0, detail: "Revoke access to and delete the selected org"}
 		];
 
 		return (

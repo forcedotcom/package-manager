@@ -104,6 +104,7 @@ app.get('/api/packageorgs', packageorgs.requestAll);
 app.get('/api/packageorgs/:id', packageorgs.requestById);
 app.post('/api/packageorgs', packageorgs.requestUpdate);
 app.post('/api/packageorgs/refresh', packageorgs.requestRefresh);
+app.post('/api/packageorgs/revoke', packageorgs.requestRevoke);
 app.post('/api/packageorgs/delete', packageorgs.requestDelete);
 
 app.get('/api/upgrades', upgrades.requestAll);
