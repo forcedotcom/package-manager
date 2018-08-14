@@ -3,7 +3,6 @@ import React from 'react';
 import * as orgGroupService from '../services/OrgGroupService';
 import {CSVDownload} from 'react-csv';
 
-import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import SelectGroupWindow from "./SelectGroupWindow";
 import ServerTable from "../components/ServerTable";

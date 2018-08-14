@@ -1,5 +1,4 @@
 import React from 'react';
-import DataTable from "../components/DataTable";
 import moment from "moment";
 import ServerTable from "../components/ServerTable";
 

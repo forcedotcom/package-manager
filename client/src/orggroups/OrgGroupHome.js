@@ -8,7 +8,6 @@ import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
-import * as orgService from "../services/OrgService";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgGroupList";

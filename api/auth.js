@@ -63,14 +63,14 @@ async function oauthCallback(req, res, next) {
 		switch (state.operation) {
 			case "org":
 				await packageorgs.initOrg(conn, userInfo.organizationId);
-				res.redirect(`${CLIENT_URL}/authresponse`);
+				res.redirect(`${CLIENT_URL}/packageorgs`);
 				break;
 			default:
 				const user = await conn.identity();
 				req.session.username = user.username;
 				req.session.display_name = user.display_name;
 				req.session.access_token = conn.accessToken;
-				res.redirect(`${CLIENT_URL}/authresponse`);
+				res.redirect(`${CLIENT_URL}`);
 		}
 	} catch (error) {
 		logger.error("Failed to authorize user", error);

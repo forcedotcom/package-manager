@@ -6,7 +6,7 @@ const pool = new Pool({
 });
 
 const MAX_SQL_DEBUG_LENGTH = 5000;
-const DEBUG_SQL_VALUES = process.env.DEBUG_SQL_VALUES;
+const DEBUG_SQL_VALUES = process.env.DEBUG_SQL_VALUES === "true";
 
 /**
  * Utility function to execute a long init script against a Postgres database

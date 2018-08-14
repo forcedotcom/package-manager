@@ -81,7 +81,7 @@ export default class extends React.Component {
 							</dl>
 						</div>
 
-
+						{this.props.packageorg.access_token ? 
 						<div className="slds-col--padded slds-size--1-of-1 slds-m-top--medium">
 							<dl className="page-header--rec-home__detail-item">
 								<dt>
@@ -94,7 +94,7 @@ export default class extends React.Component {
 									</p>
 								</dd>
 							</dl>
-						</div>
+						</div> : "" }
 					</div>
 				</div>
 				{this.props.packageorg.namespace !== null ?

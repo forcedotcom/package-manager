@@ -25,7 +25,7 @@ export default class extends React.Component {
 
 	connectHandler = (instanceUrl) => {
 		authService.oauthOrgURL(instanceUrl).then(url => {
-			window.open(url, '', 'width=700,height=700,left=200,top=200');
+			window.location.href = url;
 		});
 	};
 

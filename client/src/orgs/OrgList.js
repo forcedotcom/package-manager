@@ -1,5 +1,4 @@
 import React from 'react';
-import DataTable from "../components/DataTable";
 import ServerTable from "../components/ServerTable";
 
 export default class extends React.Component {

@@ -6,13 +6,18 @@ const Status = {Connected: "Connected", Invalid: "Invalid", Missing: "Missing"};
 
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 
-const SELECT_ALL = `SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, 
-                    refresh_token, access_token, type, status, refreshed_date 
-                    FROM package_org`;
+const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
 
-const SELECT_ALL_WITH_REFRESH_TOKEN = `SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, 
-                    refresh_token, access_token, type, status, refreshed_date 
-                    FROM package_org`;
+const SELECT_ALL = 
+	`SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
+	${ENABLE_ACCESS_TOKEN_UI ? ", access_token" : ""}
+	FROM package_org`;
+
+// NOT to be used in UI requests
+const SELECT_ALL_WITH_REFRESH_TOKEN = 
+	`SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
+		refresh_token, access_token
+	FROM package_org`;
 
 async function requestAll(req, res, next) {
 	let sort = ` ORDER BY ${req.query.sort_field || "name"} ${req.query.sort_dir || "asc"}`;
