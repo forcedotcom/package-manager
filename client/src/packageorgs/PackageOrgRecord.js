@@ -37,8 +37,8 @@ export default class extends React.Component {
 	revokeHandler = () => {
 		this.setState({isRevoking: true});
 		packageOrgService.requestRevoke([this.state.packageorg.org_id]).then(() => {
-			packageOrgService.requestById(this.state.packageorg.org_id).
-				then(packageorg => this.setState({packageorg, isRevoking: false}));
+			packageOrgService.requestById(this.state.packageorg.org_id).then(
+				packageorg => this.setState({packageorg, isRevoking: false}));
 		}).catch(e => {
 			this.setState({isRevoking: false});
 			NotificationManager.error(e, "Revoke Failed");
