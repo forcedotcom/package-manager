@@ -15,7 +15,7 @@ const SELECT_ALL =
 
 // NOT to be used in UI requests
 const SELECT_ALL_WITH_REFRESH_TOKEN = 
-	`SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
+	`SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date, 
 		refresh_token, access_token
 	FROM package_org`;
 
