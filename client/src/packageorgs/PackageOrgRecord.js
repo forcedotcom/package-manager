@@ -6,6 +6,7 @@ import {HeaderField, RecordHeader} from '../components/PageHeader';
 import PackageOrgView from "./PackageOrgView";
 import {PACKAGE_ORG_ICON} from "../Constants";
 import EditPackageOrgWindow from "./EditPackageOrgWindow";
+import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
 	state = {packageorg: {}};
@@ -27,8 +28,11 @@ export default class extends React.Component {
 		this.setState({isRefreshing: true});
 		packageOrgService.requestRefresh([this.state.packageorg.org_id]).then((packageorgs) => {
 			this.setState({packageorg: packageorgs[0], isRefreshing: false});
+		}).catch(e => {
+			this.setState({isRefreshing: false});
+			NotificationManager.error(e, "Refresh Failed");
 		});
-	};
+};
 
 	editHandler = () => {
 		this.setState({isEditing: true});
