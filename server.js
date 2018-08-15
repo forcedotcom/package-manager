@@ -39,7 +39,8 @@ const server = http.Server(app);
 const session = cookieSession({
 	name: 'session',
 	maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS,
-	keys: [CLIENT_SECRET]
+	keys: [CLIENT_SECRET],
+	secure: true
 });
 
 if (process.env.FORCE_HTTPS === "true") {
