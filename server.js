@@ -24,7 +24,8 @@ const express = require('express'),
 	admin = require('./api/admin'),
 	// filters = require('./api/filters'),
 	sqlinit = require('./init/sqlinit'),
-	logger = require('./util/logger').logger;
+	logger = require('./util/logger').logger,
+	helmet = require('helmet');
 
 const http = require('http');
 const socketIo = require('socket.io');
@@ -35,12 +36,13 @@ sqlinit.init();
 
 // Setup express and socket.io
 const app = express();
+app.use(helmet());
+
 const server = http.Server(app);
 const session = cookieSession({
 	name: 'session',
 	maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS,
-	keys: [CLIENT_SECRET],
-	secure: true
+	keys: [CLIENT_SECRET]
 });
 
 if (process.env.FORCE_HTTPS === "true") {

@@ -16,6 +16,7 @@
     "dotenv": "^5.0.1",
     "express": "^4.13.4",
     "express-sslify": "^1.2.0",
+    "helmet": "^3.13.0",
     "heroku-logger": "^0.3.1",
     "jsep": "^0.3.4",
     "jsforce": "^1.8.4",
