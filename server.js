@@ -22,6 +22,7 @@ const express = require('express'),
 	licenses = require('./api/licenses'),
 	auth = require('./api/auth'),
 	admin = require('./api/admin'),
+	// filters = require('./api/filters'),
 	sqlinit = require('./init/sqlinit'),
 	logger = require('./util/logger').logger;
 
@@ -35,6 +36,11 @@ sqlinit.init();
 // Setup express and socket.io
 const app = express();
 const server = http.Server(app);
+const session = cookieSession({
+	name: 'session',
+	maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS,
+	keys: [CLIENT_SECRET]
+});
 
 if (process.env.FORCE_HTTPS === "true") {
 	app.use(enforce.HTTPS({trustProtoHeader: true}));
@@ -44,11 +50,7 @@ app.set('port', process.env.PORT || 5000);
 app.use(bodyParser.urlencoded({limit: '50mb', extended: false}));
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(compression());
-app.use(cookieSession({
-	name: 'session',
-	maxAge: 60 * 60 * 1000 * SESSION_TIMEOUT_HOURS,
-	keys: [CLIENT_SECRET]
-}));
+app.use(session);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
@@ -71,6 +73,9 @@ app.get('/oauth2/logout', auth.requestLogout);
 app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
+
+// app.get('/api/filters', filters.requestFilters);
+// app.put('/api/filters', filters.requestSaveFilters);
 
 app.get('/api/admin/settings', admin.requestSettings);
 app.get('/api/admin/jobs', admin.requestJobs);
@@ -136,7 +141,13 @@ server.listen(app.get('port'), function () {
 // Kick off socket.io
 const io = socketIo(server);
 io.on('connection', function (socket) {
-	admin.connect(socket);
+	session(socket.request, {}, () => {
+		const sess = socket.request.session;
+		if (typeof sess.access_token !== "undefined") {
+			admin.connect(socket);
+			admin.emit(admin.Events.ALERT, {subject: "Welcome", message: `Session secured.  Proceed with caution, ${sess.display_name.split(' ')[0]}.`})
+		}
+	});
 });
 
 // Set job intervals
