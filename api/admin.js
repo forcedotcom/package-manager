@@ -13,6 +13,7 @@ const db = require("../util/pghelper");
 const MAX_HISTORY = 100;
 
 const Events = {
+	ALERT: "alert",
 	FAIL: "fail",
 	JOBS: "jobs",
 	JOB_QUEUE: "job-queue",

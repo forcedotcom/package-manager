@@ -1,6 +1,8 @@
 const db = require('../util/pghelper');
 const crypt = require('../util/crypt');
 const sfdc = require('./sfdcconn');
+const admin = require('./admin');
+const logger = require('../util/logger').logger;
 
 const Status = {Connected: "Connected", Invalid: "Invalid", Missing: "Missing"};
 
@@ -44,6 +46,7 @@ async function requestById(req, res, next) {
 		let where = " WHERE org_id = $1";
 		let recs = await db.query(SELECT_ALL + where, [id]);
 		await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
+		await sfdc.applyLoginIPAccessControls(id);
 		return res.json(recs[0]);
 	} catch (err) {
 		return res.status(500).send(err.message || err);
@@ -69,6 +72,7 @@ async function initOrg(conn, org_id) {
 	if (org.status === Status.Invalid) {
 		return await updateOrgStatus(org_id, org.status);
 	}
+	applyLoginIPAccessControls(org_id).then(() => {});
 
 	await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
 	let sql = `INSERT INTO package_org 
@@ -81,6 +85,38 @@ async function initOrg(conn, org_id) {
             status = excluded.status`;
 	return await db.insert(sql,
 		[org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status]);
+	
+}
+
+async function applyLoginIPAccessControls(packageOrgId) {
+	let conn = await sfdc.buildOrgConnection(packageOrgId);
+	let profileName = "SteelBrick Package Manager Admin";
+	let metadata = {
+		fullName: profileName,
+		loginIpRanges: [
+			{description: "SFDC Network", startAddress: "204.14.232.0", endAddress: "204.14.239.255"},
+			{description: "SteelBrick Heroku NA", startAddress: "35.165.148.180", endAddress: "35.165.148.180"},
+			{description: "SteelBrick Heroku NA", startAddress: "35.165.168.63", endAddress: "35.165.168.63"},
+			{description: "SteelBrick Heroku NA", startAddress: "35.165.214.66", endAddress: "35.165.214.66"},
+			{description: "SteelBrick Heroku NA", startAddress: "35.165.214.102", endAddress: "35.165.214.102"},
+			{description: "SFDC Phoenix (PRD)", startAddress: "136.146.0.0", endAddress: "136.147.255.255"}
+		]
+	};
+	
+	conn.metadata.update('Profile', metadata).then( (result, err) => {
+		if (err) {
+			admin.emit(admin.Events.ALERT, {subject: 'Profile Not Updated',
+				message: `Profile not updated for org ${packageOrgId}.  Error: ${err.message}`});
+		} else {
+			if (result.success) {
+				logger.info(`Updated Profile with login IP ranges`, {profileName: profileName});
+			} else {
+				logger.warn(`Did not find named profile to apply login IP ranges`, {profileName: profileName});
+				admin.emit(admin.Events.ALERT, {subject: "Profile Not Found", 
+					message: `Head's up.  We did not find a profile named ${profileName} found in org ${packageOrgId}.  We recommend you create one, so we can apply our IP access control ranges the next time you refresh.`});
+			}
+		}
+	}).catch(e => logger.warn(e.message));
 }
 
 async function updateOrgStatus(orgId, status) {
