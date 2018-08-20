@@ -1,8 +1,14 @@
 const db = require('../util/pghelper');
 const orgs = require('./orgs');
 const admin = require('./admin');
+const sfdc = require('./sfdcconn');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
+
+const DEFAULT_BLACKLIST = process.env.DENIED_ORGS;
+const EXPAND_BLACKLIST = process.env.EXPAND_BLACKLIST === "true";
+const DEFAULT_WHITELIST = process.env.ALLOWED_ORGS;
+const EXPAND_WHITELIST = process.env.EXPAND_WHITELIST === "true";
 
 const SELECT_ALL = "SELECT id, name, type, description, created_date FROM org_group";
 
@@ -48,7 +54,7 @@ async function requestAll(req, res, next) {
 		let recs = await db.query(SELECT_ALL + where + sort + limit, values);
 		return res.json(recs);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -59,7 +65,7 @@ async function requestById(req, res, next) {
 		let rows = await db.query(SELECT_ALL + where, [req.params.id]);
 		return res.json(rows[0]);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -68,7 +74,7 @@ async function requestMembers(req, res, next) {
 		let recs = await orgs.findByGroup(req.params.id);
 		return res.json(recs);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -77,7 +83,7 @@ async function requestAddMembers(req, res, next) {
 		let results = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
 		return res.json(results);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -87,7 +93,7 @@ async function requestRemoveMembers(req, res, next) {
 		admin.emit(admin.Events.GROUP_MEMBERS);
 		admin.emit(admin.Events.GROUP_VERSIONS);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -101,7 +107,7 @@ async function requestCreate(req, res, next) {
 		}
 		return res.json(rows[0]);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -127,7 +133,7 @@ async function requestUpdate(req, res, next) {
 		}
 		return res.send({result: 'ok'});
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -141,7 +147,7 @@ async function requestDelete(req, res, next) {
 		admin.emit(admin.Events.GROUPS);
 		return res.send({result: 'ok'});
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -152,7 +158,7 @@ function requestUpgrade(req, res, next) {
 		})
 		.catch((e) => {
 			logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e});
-			return res.status(500).send(e.message || e);
+			next(e);
 		});
 }
 
@@ -196,22 +202,23 @@ async function deleteOrgMembers(groupId, orgIds) {
 	return await db.delete(sql, values);
 }
 
-
 async function loadBlacklist() {
-	return await loadOrgsOfType(GroupType.Blacklist, process.env.DENIED_ORGS)
+	return await loadOrgsOfType(GroupType.Blacklist, DEFAULT_BLACKLIST, EXPAND_BLACKLIST)
 }
 
 async function loadWhitelist() {
-	return await loadOrgsOfType(GroupType.Whitelist, process.env.ALLOWED_ORGS)
+	return await loadOrgsOfType(GroupType.Whitelist, DEFAULT_WHITELIST, EXPAND_WHITELIST)
 }
 
-async function loadOrgsOfType(type, defaultsJSON) {
-	const defaults = defaultsJSON ? JSON.parse(defaultsJSON).map(id => id.substring(0,15)) : [];
-	const sql = `
-		SELECT m.org_id FROM org_group_member m
-		INNER JOIN org_group AS g ON g.id = m.org_group_id
-		WHERE g.type = $1`;
-	const l = await db.query(sql, [type]);
+async function loadOrgsOfType(type, defaultsJSON, expandByAccount) {
+	const defaults = defaultsJSON ? JSON.parse(defaultsJSON).map(id => id.substring(0, 15)) : [];
+	const l = expandByAccount ?
+		await db.query(`SELECT org_id FROM org WHERE account_id IN (
+			SELECT DISTINCT o.account_id FROM org o
+			INNER JOIN org_group_member m ON m.org_id = o.org_id AND o.account_id != $1
+			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $2)`, [sfdc.INTERNAL_ID, type]) :
+		await db.query(`SELECT m.org_id FROM org_group_member m
+			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $1`, [type]);
 	return new Set(l.map(r => r.org_id).concat(defaults));
 }
 

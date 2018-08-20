@@ -43,7 +43,6 @@ create table if not exists org
   features      text null
 );
 
-
 create table if not exists org_group (
   id           serial primary key,
   master_id    integer,
@@ -68,20 +67,12 @@ create table if not exists org_package_version (
     primary key,
   org_id             varchar(18),
   package_id         varchar(18),
-  package_version_id varchar(18),
+  version_id         varchar(18),
   license_status     varchar(40),
   modified_date      timestamp with time zone,
   constraint org_package_version_org_id_package_id_pk
   unique (org_id, package_id)
 );
-
--- create table if not exists org_group_criteria (
---   id     serial primary key,
---   org_group_id integer,
---   license_field_name varchar(40),
---   license_field_operator varchar(10),
---   license_field_value text
--- );
 
 create table if not exists upgrade (
   id          serial primary key,
@@ -92,14 +83,14 @@ create table if not exists upgrade (
 );
 
 create table if not exists upgrade_item (
-  id                 serial primary key,
-  upgrade_id         integer,
-  push_request_id    varchar(18),
-  package_org_id     varchar(18),
-  package_version_id varchar(18),
-  status             varchar(40),
-  start_time         timestamp with time zone,
-  created_by         varchar(255)
+  id              serial primary key,
+  upgrade_id      integer,
+  push_request_id varchar(18),
+  package_org_id  varchar(18),
+  version_id      varchar(18),
+  status          varchar(40),
+  start_time      timestamp with time zone,
+  created_by      varchar(255)
 );
 
 create table if not exists upgrade_job (
@@ -176,7 +167,7 @@ create table if not exists license
   expiration         timestamp with time zone,
   used_license_count integer,
   package_id         varchar(18),
-  package_version_id varchar(18)
+  version_id         varchar(18)
 );
 
 create table if not exists filter
@@ -188,10 +179,10 @@ create table if not exists filter
 );
 
 create index if not exists license_org_version_index
-  on license (org_id, package_version_id);
+  on license (org_id, version_id);
 
 create index if not exists license_package_org_version_index
-  on license (org_id, package_id, package_version_id);
+  on license (org_id, package_id, version_id);
 
 -- Default internal non-account
 insert into account (account_name, account_id)

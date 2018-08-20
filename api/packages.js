@@ -29,16 +29,13 @@ async function findAll(orgId, sortField, sortDir) {
 	return await db.query(SELECT_ALL + where + sort, values);
 }
 
-async function requestById(req, res, next) {
+function requestById(req, res, next) {
 	let id = req.params.id;
 	let where = " WHERE " + ((typeof id === "string") ? "sfid = $1" : "id = $1");
 
-	try {
-		let recs = await db.query(SELECT_ALL + where, [id]);
-		return res.json(recs[0]);
-	} catch (err) {
-		next(err);
-	}
+	db.query(SELECT_ALL + where, [id])
+	.then(recs => recs.length === 0 ? next(new Error(`Cannot find any record with id ${id}`)) : res.json(recs[0]))
+	.catch (next);
 }
 
 exports.requestAll = requestAll;

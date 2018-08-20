@@ -4,7 +4,7 @@ import * as upgradeItemService from '../services/UpgradeItemService';
 import * as upgradeJobService from "../services/UpgradeJobService";
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
-import {isDoneStatus, isStartedStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
+import {getProgress, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
@@ -15,7 +15,7 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {item: {},
-			progress: {count: 0, started: 0, completed: 0, errors: 0, cancelled: 0, percentage: 0, done: 0}
+			progress: getProgress([])
 		};
 	}
 
@@ -28,38 +28,12 @@ export default class extends React.Component {
 	fetchJobs = () => {
 		return new Promise((resolve, reject) => {
 			upgradeJobService.requestAllJobs(this.props.match.params.itemId).then(jobs => {
-				this.updateProgress(jobs);
+				this.setState({progress: getProgress(jobs)});
 				resolve(jobs);
 			}).catch(reject);
 		});
 	};
 
-	updateProgress = (jobs) => {
-		let count = jobs.length, started = 0, completed = 0, errors = 0, cancelled = 0;
-		for (let i = 0; i < jobs.length; i++) {
-			let job = jobs[i];
-			if (job.status === Status.Ineligible) {
-				count--;
-			}
-			if (isStartedStatus(job.status)) {
-				started++;
-			}
-			if (isDoneStatus(job.status)) {
-				completed++;
-			}
-			if (job.status === Status.Failed) {
-				errors++;
-			}
-			if (job.status === Status.Canceled) {
-				cancelled++;
-			}
-		}
-		const percentage = (started+completed)/(count*2);
-		const done = percentage === 1 || count === 0;
-		const progress = {count, started, completed, errors, cancelled, percentage, done};
-		this.setState({progress});
-	};
-	
 	componentWillUnmount() {
 		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
 	}
@@ -111,7 +85,7 @@ export default class extends React.Component {
 			},
 			{
 				label: "Cancel Request", handler: this.handleCancellation,
-				disabled: progress.started > 0 || progress.done,
+				disabled: progress.cancelled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			}
 		];
@@ -127,7 +101,7 @@ export default class extends React.Component {
 				</RecordHeader>
 				<ProgressBar progress={progress.percentage} success={progress.errors === 0 && progress.cancelled === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
+					<UpgradeJobCard onFetch={this.fetchJobs.bind(this)} refetchOn="upgrade-jobs"/>
 				</div>
 			</div>
 		);

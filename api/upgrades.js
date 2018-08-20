@@ -74,7 +74,7 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
 			ELSE NULL END) failed_job_count
         FROM upgrade_item i
         inner join upgrade u on u.id = i.upgrade_id
-        inner join package_version pv on pv.version_id = i.package_version_id
+        inner join package_version pv on pv.version_id = i.version_id
         inner join package p on p.sfid = pv.package_id
         left join upgrade_job j on j.item_id = i.id`;
 
@@ -91,22 +91,22 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
         p.name package_name, p.dependency_tier
         FROM upgrade_item i
         INNER JOIN upgrade u on u.id = i.upgrade_id
-        INNER JOIN package_version pv on pv.version_id = i.package_version_id
+        INNER JOIN package_version pv on pv.version_id = i.version_id
         INNER JOIN package p on p.sfid = pv.package_id`;
 
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status, j.message,
         i.start_time, i.created_by,
-        pv.sfid package_version_id, pv.version_number, pv.version_id,
+        pv.version_number, pv.version_id,
         pvc.version_number current_version_number, pvc.version_id current_version_id,
         pvo.version_number original_version_number, pvo.version_id original_version_id,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
         a.account_name
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
-        INNER JOIN package_version pv on pv.version_id = i.package_version_id
+        INNER JOIN package_version pv on pv.version_id = i.version_id
         INNER JOIN org_package_version opv on opv.package_id = pv.package_id AND opv.org_id = j.org_id
-        INNER JOIN package_version pvc on pvc.sfid = opv.package_version_id
-        INNER JOIN package_version pvo on pvo.sfid = j.original_version_id
+        INNER JOIN package_version pvc on pvc.version_id = opv.version_id
+        INNER JOIN package_version pvo on pvo.version_id = j.original_version_id
         INNER JOIN package p on p.sfid = pv.package_id
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;
@@ -126,7 +126,7 @@ async function failUpgrade(upgrade) {
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let recs = await db.insert('INSERT INTO upgrade_item' +
-		' (upgrade_id, push_request_id, package_org_id, package_version_id, start_time, status, created_by)' +
+		' (upgrade_id, push_request_id, package_org_id, version_id, start_time, status, created_by)' +
 		' VALUES ($1,$2,$3,$4,$5,$6,$7)',
 		[upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy]);
 	return recs[0];
@@ -286,7 +286,7 @@ async function requestAll(req, res, next) {
 		let upgrades = await findAll(req.query.sort_field, req.query.sort_dir);
 		return res.json(upgrades);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -300,7 +300,7 @@ async function requestItemsByUpgrade(req, res, next) {
 		let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
 		return res.json(items);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -331,7 +331,7 @@ async function requestAllJobs(req, res, next) {
 		let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
 		return res.json(upgradeJobs);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -408,10 +408,8 @@ function requestJobById(req, res, next) {
 	let id = req.params.id;
 	let where = " WHERE j.id = $1";
 	db.query(SELECT_ALL_JOBS + where, [id])
-		.then(function (recs) {
-			return res.json(recs[0]);
-		})
-		.catch(next);
+	.then(recs => recs.length === 0 ? next(new Error(`Cannot find any record with id ${id}`)) : res.json(recs[0]))
+	.catch(next);
 }
 
 async function requestActivateUpgrade(req, res, next) {
@@ -420,7 +418,7 @@ async function requestActivateUpgrade(req, res, next) {
 		await activateUpgrade(id, req.session.username);
 		return res.send({result: 'ok'});
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -643,7 +641,7 @@ async function requestCancelUpgrade(req, res, next) {
 		admin.emit(admin.Events.UPGRADE, await retrieveById(id));
 		res.json(items);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -659,7 +657,7 @@ async function requestActivateUpgradeItem(req, res, next) {
 		await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
 		res.json(item);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -671,7 +669,7 @@ async function requestCancelUpgradeItem(req, res, next) {
 		await changeUpgradeItemAndJobStatus([item], push.Status.Canceled);
 		res.json(item);
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 

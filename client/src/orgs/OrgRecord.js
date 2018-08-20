@@ -108,7 +108,7 @@ export default class extends React.Component {
 				</RecordHeader>
 				<div className="slds-form--stacked slds-grid slds-wrap slds-m-top--medium">
 					<div className="slds-col--padded slds-size--1-of-1">
-						<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions"/>
+						<InstalledVersionCard onFetch={this.fetchVersions.bind(this)} refetchOn="org-versions"/>
 					</div>
 				</div>
 				{this.state.addingToGroup ? <SelectGroupWindow title="Add this org to a group" onAdd={this.addToGroupHandler.bind(this)}

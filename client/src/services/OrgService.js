@@ -6,7 +6,7 @@ export let requestAll = () => h.get(url);
 
 export let requestByPackage = packageId => h.get(url, {packageId});
 
-export let requestByPackageVersion = packageVersionId => h.get(url, {packageVersionId});
+export let requestByPackageVersion = versionId => h.get(url, {versionId});
 
 export let requestById = id => h.get(url + "/" + id);
 

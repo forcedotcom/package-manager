@@ -6,19 +6,20 @@ import * as orgService from "../services/OrgService";
 import OrgCard from "../orgs/OrgCard";
 import * as packageVersionService from "../services/PackageVersionService";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {packageVersion: {}};
 		
-		packageVersionService.requestById(props.match.params.packageVersionId).then(packageVersion => {
+		packageVersionService.requestById(props.match.params.versionId).then(packageVersion => {
 			this.setState({packageVersion})
-		});
+		}).catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.history.back()}));
 	}
 
 	fetchOrgs = () => {
-		return orgService.requestByPackageVersion(this.state.packageVersion.sfid);
+		return orgService.requestByPackageVersion(this.props.match.params.versionId);
 	};
 
 	render() {
@@ -34,7 +35,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={packageVersion.status}/>
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<OrgCard title="Customers" onFetch={this.fetchOrgs}/>
+					<OrgCard title="Customers" onFetch={this.fetchOrgs.bind(this)}/>
 					<DataTableFilterHelp/>
 				</div>
 			</div>

@@ -36,7 +36,7 @@ async function requestAll(req, res, next) {
 
 		return res.send(JSON.stringify(recs));
 	} catch (err) {
-		return res.status(500).send(err.message || err);
+		next(err);
 	}
 }
 
@@ -45,11 +45,15 @@ async function requestById(req, res, next) {
 	try {
 		let where = " WHERE org_id = $1";
 		let recs = await db.query(SELECT_ALL + where, [id]);
+		if (recs.length === 0) {
+			return next(new Error(`Cannot find any record with id ${id}`));
+		}
 		await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
-		await sfdc.applyLoginIPAccessControls(id);
+		applyLoginIPAccessControls(id).then(() => {});
+
 		return res.json(recs[0]);
 	} catch (err) {
-		return res.status(500).send(err.message || err);
+		next(err);
 	}
 }
 
@@ -181,7 +185,7 @@ async function requestDelete(req, res, next) {
 		admin.emit(admin.Events.PACKAGE_ORGS);
 		return res.send({result: 'OK'});
 	} catch (err) {
-		return res.status(500).send(err.message || err);
+		next(err);
 	}
 }
 
@@ -193,7 +197,7 @@ async function requestUpdate(req, res, next) {
 		let orgs = await db.update(`UPDATE package_org SET description = $1, type = $2 WHERE org_id = $3`, [description, type, orgId]);
 		return res.json(orgs[0]);
 	} catch (err) {
-		return res.status(500).send(err.message || err);
+		next(err);
 	}
 }
 
@@ -211,7 +215,7 @@ async function requestRefresh(req, res, next) {
 		admin.emit(admin.Events.PACKAGE_ORGS);
 		return res.json({result: "OK"});
 	} catch (err) {
-		return res.status(500).send(err.message || err);
+		next(err);
 	}
 }
 
@@ -222,7 +226,7 @@ async function requestRevoke(req, res, next) {
 		admin.emit(admin.Events.PACKAGE_ORGS);
 		res.json({result: "OK"});
 	} catch (err) {
-		return res.status(500).send(err.message || err);
+		next(err);
 	}
 }
 

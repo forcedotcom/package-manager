@@ -23,7 +23,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="upgrades" title="Upgrades" icon={UPGRADE_ICON} itemCount={this.state.itemCount}/>
-				<UpgradeList onFetch={this.fetchData} onFilter={this.filterHandler}/>
+				<UpgradeList onFetch={this.fetchData.bind(this)} onFilter={this.filterHandler}/>
 			</div>
 		);
 	}

@@ -124,7 +124,7 @@ class App extends Component {
 					<Route path="/packages" component={PackageHome}/>
 					<Route path="/package/:packageId" component={PackageRecord}/>
 
-					<Route path="/packageversion/:packageVersionId" component={PackageVersionRecord}/>
+					<Route path="/packageversion/:versionId" component={PackageVersionRecord}/>
 
 					<Route path="/upgradeitem/:itemId" component={UpgradeItemRecord}/>
 

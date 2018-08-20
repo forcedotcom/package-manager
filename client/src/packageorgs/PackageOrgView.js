@@ -96,7 +96,7 @@ export default class extends React.Component {
 				{this.props.packageorg.namespace !== null ?
 					<div className="slds-col--padded slds-size--1-of-1">
 						<br/>
-						<PackageVersionCard onFetch={this.fetchVersions}/>
+						<PackageVersionCard onFetch={this.fetchVersions.bind(this)}/>
 					</div> : ""}
 			</div>
 		)

@@ -15,19 +15,54 @@ export const Status = {
 	Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Invalid: "Invalid",
 	Ineligible: "Ineligible"
 };
-export const DoneStatus = {
-	Succeeded: Status.Succeeded,
-	Failed: Status.Failed,
-	Canceled: Status.Canceled,
-	Invalid: Status.Invalid
-};
 
-export const StartedStatus = {
-	InProgress: Status.InProgress,
-	...DoneStatus
+export const getProgress = statusRecs => {
+	if (!statusRecs || statusRecs.length === 0)
+		return {count: 0, active: 0, started: 0, completed: 0, errors: 0, cancelled: 0, percentage: 0, done: 0};
+
+	let count = statusRecs.length, active = 0, started = 0, completed = 0, errors = 0, cancelled = 0;
+	for (let i = 0; i < statusRecs.length; i++) {
+		let rec = statusRecs[i];
+		switch (rec.status) {
+			case Status.Ineligible:
+				count--;
+				break;
+			case Status.Failed:
+				active++;
+				started++;
+				completed++;
+				errors++;
+				break;
+			case Status.Canceled:
+				active++;
+				started++;
+				completed++;
+				cancelled++;
+				break;
+			case Status.Created:
+				break;
+			case Status.Pending:
+				active++;
+				break;
+			case Status.InProgress:
+				active++;
+				started++;
+				break;
+			case Status.Succeeded:
+				active++;
+				started++;
+				completed++;
+				break;
+			case Status.Invalid:
+				started++;
+				completed++;
+				break;
+		}
+	}
+	const percentage = (started + completed) / (count * 2);
+	const done = percentage === 1 || count === 0;
+	return {count, active, started, completed, errors, cancelled, percentage, done};
 };
-export const isDoneStatus = (status) => typeof DoneStatus[status] !== "undefined";
-export const isStartedStatus = (status) => typeof StartedStatus[status] !== "undefined";
 
 export const GroupTypes = [
 	{name:"Upgrade Group", label:"Upgrade Groups"},

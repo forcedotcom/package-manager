@@ -7,7 +7,7 @@ const SELECT_ALL =
         pv.id, pv.sfid, pv.name, pv.version_number, pv.version_sort, pv.package_id, pv.release_date, pv.status, pv.version_id, 
         p.package_org_id, p.name as package_name, p.dependency_tier
     FROM org_package_version op 
-    INNER JOIN package_version pv on pv.sfid = op.package_version_id
+    INNER JOIN package_version pv on pv.version_id = op.version_id
     INNER JOIN package p on p.sfid = op.package_id`;
 
 const SELECT_ALL_IN_ORG_GROUP =
@@ -78,16 +78,16 @@ async function insertOrgPackageVersions(opvs) {
 			continue;
 		}
 		params.push(`($${n++},$${n++},$${n++},$${n++},NOW())`);
-		values.push(opv.org_id, pv.package_id, pv.sfid, opv.license_status);
+		values.push(opv.org_id, pv.package_id, pv.version_id, opv.license_status);
 	}
 
 	if (values.length === 0) {
 		return [];
 	}
 	
-	let sql = `INSERT INTO org_package_version (org_id, package_id, package_version_id, license_status, modified_date) 
+	let sql = `INSERT INTO org_package_version (org_id, package_id, version_id, license_status, modified_date) 
                        VALUES ${params.join(",")}
-                       on conflict (org_id, package_id) do update set package_version_id = excluded.package_version_id,
+                       on conflict (org_id, package_id) do update set version_id = excluded.version_id,
                        license_status = excluded.license_status`;
 	return db.insert(sql, values);
 }
@@ -98,11 +98,10 @@ async function updateOrgPackageVersions(opvs) {
 	let values = [];
 	opvs.forEach(v => {
 		params.push(`($${++n},$${++n},$${++n})`);
-		values.push(v.package_id,v.package_version_id,v.org_id);
+		values.push(v.package_id,v.version_id,v.org_id);
 	});
-	let sql = `UPDATE org_package_version as t 
-			SET package_version_id = v.package_version_id
-			FROM ( VALUES ${params.join(",")} ) as v(package_id, package_version_id, org_id)
+	let sql = `UPDATE org_package_version as t SET version_id = v.version_id
+			FROM ( VALUES ${params.join(",")} ) as v(package_id, version_id, org_id)
 			WHERE v.org_id = t.org_id AND v.package_id = t.package_id`;
 	await db.update(sql, values);
 }

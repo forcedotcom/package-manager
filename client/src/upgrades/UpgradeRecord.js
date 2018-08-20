@@ -13,14 +13,16 @@ import {NotificationManager} from "react-notifications";
 import moment from "moment";
 import * as notifier from "../services/notifications";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
-import {isDoneStatus, isStartedStatus, Status, UPGRADE_ICON} from "../Constants";
+import {getProgress, Status, UPGRADE_ICON} from "../Constants";
 
 export default class extends React.Component {
-
-	state = {
-		upgrade: {},
-		progress: {count: 0, started: 0, completed: 0, errors: 0, cancelled: 0, percentage: 0, done: 0}
-	};
+	constructor(props) {
+		super(props);
+		this.state = {
+			upgrade: {},
+			progress: getProgress([])
+		};
+	}
 
 	componentDidMount() {
 		notifier.on('upgrade', this.upgradeUpdated);
@@ -37,37 +39,11 @@ export default class extends React.Component {
 	fetchJobs = () => {
 		return new Promise((resolve, reject) => {
 			upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId).then(
-				jobs => {
-					this.updateProgress(jobs);
+				jobs => { 
+					this.setState({progress: getProgress(jobs)});
 					resolve(jobs);
 				}).catch(reject);
 		});
-	};
-	
-	updateProgress = (jobs) => {
-		let count = jobs.length, started = 0, completed = 0, errors = 0, cancelled = 0;
-		for (let i = 0; i < jobs.length; i++) {
-			let job = jobs[i];
-			if (job.status === Status.Ineligible) {
-				count--;
-			}
-			if (isStartedStatus(job.status)) {
-				started++;
-			}
-			if (isDoneStatus(job.status)) {
-				completed++;
-			}
-			if (job.status === Status.Failed) {
-				errors++;
-			}
-			if (job.status === Status.Canceled) {
-				cancelled++;
-			}
-		}
-		const percentage = (started+completed)/(count*2);
-		const done = percentage === 1 || count === 0;
-		const progress = {count, started, completed, errors, cancelled, percentage, done};	
-		this.setState({progress});
 	};
 	
 	componentWillUnmount() {
@@ -124,18 +100,18 @@ export default class extends React.Component {
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
-				disabled: !userCanActivate || progress.started > 0 || progress.done,
+				disabled: !userCanActivate || progress.active > 0,
 				detail: userCanActivate ? "Activate all items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
 				spinning: this.state.isActivating
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
-				disabled: progress.started > 0 || progress.done,
+				disabled: progress.cancelled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
 			{
-				label: "Retry Upgrade", handler: this.retryHandler.bind(this),
-				disabled: !progress.done || progress.errors === 0, 
+				label: "Retry Failed Jobs", handler: this.retryHandler.bind(this),
+				disabled: progress.errors === 0, 
 				spinning: this.state.isRetrying
 			}
 		];
@@ -152,10 +128,10 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
-							<UpgradeItemCard upgrade={upgrade} onFetch={this.fetchItems} refetchOn="upgrade-items"/>
+							<UpgradeItemCard upgrade={upgrade} onFetch={this.fetchItems.bind(this)} refetchOn="upgrade-items"/>
 						</div>
 						<div label="Jobs">
-							<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
+							<UpgradeJobCard onFetch={this.fetchJobs.bind(this)} refetchOn="upgrade-jobs"/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>

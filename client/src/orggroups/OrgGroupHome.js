@@ -77,7 +77,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="org groups" title="Org Groups" itemCount={this.state.itemCount} actions={actions}/>
-				<OrgGroupList onFetch={this.fetchData} refetchOn="groups" onFilter={this.filterHandler} onSelect={this.selectionHandler} 
+				<OrgGroupList onFetch={this.fetchData.bind(this)} refetchOn="groups" onFilter={this.filterHandler} onSelect={this.selectionHandler} 
 							  selected={this.state.selected} type={this.state.selectedType.name}/>
 				{this.state.addingOrgGroup ?
 					<GroupFormWindow type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}

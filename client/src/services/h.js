@@ -24,7 +24,11 @@ function request(obj) {
 				} else if (xhr.status > 199 && xhr.status < 300) {
 					resolve(xhr.responseText ? JSON.parse(xhr.responseText) : undefined);
 				} else {
-					reject(JSON.parse(xhr.responseText));
+					try { 
+						reject(JSON.parse(xhr.responseText));
+					} catch (e) {
+						console.error(e, xhr.responseText, xhr.status);
+					}
 				}
 			}
 		};

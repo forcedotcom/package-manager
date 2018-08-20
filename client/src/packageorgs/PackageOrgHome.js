@@ -37,23 +37,29 @@ export default class extends React.Component {
 
 	refreshHandler = () => {
 		this.setState({isRefreshing: true});
-		packageOrgService.requestRefresh(Array.from(this.state.selected.keys())).then(() => {}).catch(e => {
-			this.setState({isRefreshing: false});
-			NotificationManager.error(e, "Refresh Failed");
-		});
+		packageOrgService.requestRefresh(Array.from(this.state.selected.keys()))
+			.then(() => this.setState({isRefreshing: false}))
+			.catch(e => {
+				this.setState({isRefreshing: false});
+				NotificationManager.error(e, "Refresh Failed");
+			});
 	};
 	
 	revokeHandler = () => {
 		this.setState({isRevoking: true});
-		packageOrgService.requestRevoke(Array.from(this.state.selected.keys())).then(() => {}).catch(e => {
-			this.setState({isRevoking: false});
-			NotificationManager.error(e, "Revoke Failed");
-		});
+		packageOrgService.requestRevoke(Array.from(this.state.selected.keys()))
+			.then(() => this.setState({isRevoking: false}))
+			.catch(e => {
+				this.setState({isRevoking: false});
+				NotificationManager.error(e, "Revoke Failed");
+			});
 	};
 
 	deleteHandler = () => {
 		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
-			packageOrgService.requestDelete(Array.from(this.state.selected.keys())).then(() => {}).catch(e => {
+			packageOrgService.requestDelete(Array.from(this.state.selected.keys()))
+			.then(() => this.setState({isRevoking: false}))
+			.catch(e => {
 				this.setState({isRevoking: false});
 				NotificationManager.error(e, "Delete Failed");
 			});
@@ -74,7 +80,7 @@ export default class extends React.Component {
 					<HeaderNote>Remember that packaging orgs must have the <b>Packaging Push</b> permissions as well
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
-				<PackageOrgList onFetch={this.fetchData} refetchOn="package-orgs" onConnect={this.connectHandler}
+				<PackageOrgList onFetch={this.fetchData.bind(this)} refetchOn="package-orgs" onConnect={this.connectHandler}
 								onSelect={this.selectionHandler} onDelete={this.deleteHandler}/>
 			</div>
 		);

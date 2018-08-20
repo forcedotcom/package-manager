@@ -25,11 +25,11 @@ const ActiveStatus = {
 };
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
-async function createPushRequest(conn, upgradeId, packageOrgId, packageVersionId, scheduledDate, createdBy) {
+async function createPushRequest(conn, upgradeId, packageOrgId, versionId, scheduledDate, createdBy) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-	let body = {PackageVersionId: packageVersionId, ScheduledStartTime: isoTime};
+	let body = {PackageVersionId: versionId, ScheduledStartTime: isoTime};
 	let pushReq = await conn.sobject("PackagePushRequest").create(body);
-	return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, packageVersionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
+	return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, versionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
 }
 
 async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
@@ -59,7 +59,7 @@ async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgI
 			const opvValues = [versionId, ...orgIds];
 			const opvParams = orgIds.map((v,i) => `$${i+2}`);
 			const opvs = await db.query(
-				`SELECT opv.package_version_id, opv.org_id FROM org_package_version opv, package_version pv
+				`SELECT opv.version_id, opv.org_id FROM org_package_version opv, package_version pv
 				 WHERE pv.version_id = $1 AND pv.package_id = opv.package_id AND opv.org_id IN (${opvParams.join(",")})`, opvValues);
             const opvMap = new Map();
             opvs.forEach(v => opvMap.set(v.org_id, v));
@@ -72,7 +72,7 @@ async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgI
 					job_id: res.id,
 					status: res.success ? Status.Created : Status.Ineligible,
 					message: res.success ? null : res.errors.join(", "),
-					original_version_id: opv.package_version_id
+					original_version_id: opv.version_id
 				});
 				if (!res.success) {
 					logger.error("Failed to schedule push upgrade job", {org_id: opv.org_id, error: res.errors.join(", ")})
@@ -196,7 +196,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 			let version = versions[i];
 			let conn = await sfdc.buildOrgConnection(version.package_org_id);
 			let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.version_id, scheduledDate, createdBy);
-			await createPushJob(conn, upgrade.id, item.id, item.package_version_id, item.push_request_id, orgIds);
+			await createPushJob(conn, upgrade.id, item.id, item.version_id, item.push_request_id, orgIds);
 		}
 	} catch (e) {
 		await upgrades.failUpgrade(upgrade);
@@ -294,7 +294,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	// Now, create the jobs, asynchronously
 	const reqs = [];
 	pushReqs.forEach(pushReq => 
-		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds))
+		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds))
 	);
 	Promise.all(reqs).then(results => {})
 		.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));
@@ -354,7 +354,7 @@ async function retryFailedUpgrade(id, createdBy) {
 	// Now, create the jobs, asynchronously
 	const reqs = [];
 	pushReqs.forEach(pushReq =>
-		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.package_version_id, pushReq.item.push_request_id, pushReq.orgIds))
+		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds))
 	);
 	Promise.all(reqs).then(results => {})
 	.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));

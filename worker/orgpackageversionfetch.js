@@ -4,9 +4,9 @@ const orgsapi = require('../api/orgs');
 const orgpackageversions = require('../api/orgpackageversions');
 const push = require('./packagepush');
 
-const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.package_version_id, l.status, l.modified_date, l.expiration 
+const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.version_id, l.status, l.modified_date, l.expiration 
                     FROM license l
-                    INNER JOIN package_version v on v.sfid = l.package_version_id`;
+                    INNER JOIN package_version v on v.version_id = l.version_id`;
 
 let adminJob;
 
@@ -18,9 +18,9 @@ async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
 		let params = orgIds.map(() => `$${i++}`);
 		packageOrgIds = (await db.query(
 			`SELECT DISTINCT p.package_org_id
-                             FROM package p
-                             INNER JOIN org_package_version opv on opv.package_id = p.sfid
-                             WHERE opv.org_id IN (${params.join(",")})`, orgIds)).map(p => p.package_org_id);
+			 FROM package p
+			 INNER JOIN org_package_version opv on opv.package_id = p.sfid
+			 WHERE opv.org_id IN (${params.join(",")})`, orgIds)).map(p => p.package_org_id);
 	}
 	const missingOrgIds = new Set(orgIds);
 	
@@ -107,7 +107,7 @@ async function upsert(recs, batchSize) {
 }
 
 async function upsertBatch(recs) {
-	let sql = `INSERT INTO org_package_version(org_id, package_id, package_version_id, license_status, modified_date) VALUES `;
+	let sql = `INSERT INTO org_package_version(org_id, package_id, version_id, license_status, modified_date) VALUES `;
 	let values = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
@@ -121,10 +121,10 @@ async function upsertBatch(recs) {
 			licenseStatus = orgpackageversions.LicenseStatus.Expired;
 		}
 		
-		values.push(rec.org_id, rec.package_id, rec.package_version_id, licenseStatus, rec.modified_date);
+		values.push(rec.org_id, rec.package_id, rec.version_id, licenseStatus, rec.modified_date);
 	}
 	sql += ` on conflict (org_id, package_id) do update set
-        package_version_id = excluded.package_version_id, license_status = excluded.license_status, modified_date = excluded.modified_date`;
+        version_id = excluded.version_id, license_status = excluded.license_status, modified_date = excluded.modified_date`;
 	try {
 		await db.insert(sql, values);
 	} catch (e) {

@@ -11,7 +11,6 @@ const QUERY_DICTIONARY = new Map([
 	["modified_date", "l.modified_date"],
 	["expiration", "l.expiration"],
 	["used_license_count", "l.used_license_count"],
-	["package_version_id", "l.package_version_id"],
 	["instance", "o.instance"],
 	["account_id", "o.account_id"],
 	["account_name", "a.account_name"],
@@ -25,7 +24,7 @@ const QUERY_DICTIONARY = new Map([
 const SELECT_ALL = `SELECT 
     l.id, l.sfid, l.name, l.org_id, l.status, l.is_sandbox,
     l.install_date, l.modified_date, l.expiration, 
-    l.used_license_count, l.package_version_id, 
+    l.used_license_count,
     o.instance, o.account_id,
     a.account_name,
     pv.package_id, pv.name as version_name, pv.version_number, pv.version_id,
@@ -33,7 +32,7 @@ const SELECT_ALL = `SELECT
     FROM license l
     INNER JOIN org as o on l.org_id = o.org_id
     INNER JOIN account as a on o.account_id = a.account_id
-    INNER JOIN package_version as pv on l.package_version_id = pv.sfid
+    INNER JOIN package_version as pv on l.version_id = pv.version_id
     INNER JOIN package as p on pv.package_id = p.sfid`;
 
 function requestAll(req, res, next) {
@@ -73,13 +72,9 @@ async function findAll(orgId, status, orderByField, orderByDir, filters) {
 
 function requestById(req, res, next) {
 	let id = req.params.id;
-
 	let where = " WHERE l.sfid = $1";
-
 	db.query(SELECT_ALL + where, [id])
-		.then((recs) => {
-			return res.json(recs[0])
-		})
+		.then(recs => recs.length === 0 ? next(new Error(`Cannot find any record with id ${id}`)) : res.json(recs[0]))
 		.catch(next);
 }
 

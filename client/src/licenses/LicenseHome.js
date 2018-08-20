@@ -29,7 +29,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="licenses" title="Licenses" actions={[]} itemCount={this.state.itemCount}/>
-				<LicenseList onFetch={this.fetchData} onFilter={this.filterHandler}/>
+				<LicenseList onFetch={this.fetchData.bind(this)} onFilter={this.filterHandler}/>
 			</div>
 		);
 	}

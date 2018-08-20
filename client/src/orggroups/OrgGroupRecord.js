@@ -18,8 +18,8 @@ import {DataTableFilterHelp} from "../components/DataTableFilter";
 import * as strings from "../services/strings";
 
 export default class extends React.Component {
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
 
 		this.state = {
 			isEditing: false,
@@ -208,19 +208,19 @@ export default class extends React.Component {
 			<div>
 				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={orggroup.name} actions={actions}
 							  parent={{label: "Groups", location: `/orggroups`}}>
-					<HeaderField label="Description" value={orggroup.description}/>
 					<HeaderField label="Type" value={orggroup.type}/>
+					<HeaderField label="Description" value={orggroup.description}/>
 					{orggroup.created_date ? <HeaderField label="Created" value={moment(orggroup.created_date).format("lll")}/> : ""}
 				</RecordHeader>
 
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Members">
-							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members" actions={memberActions}
+							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers.bind(this)} refetchOn="group-members" actions={memberActions}
 												selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
 						</div>
 						<div label="Versions">
-							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions" actions={memberActions}
+							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions.bind(this)} refetchOn="group-versions" actions={memberActions}
 													selected={selectedVersions} showSelected={showSelected} onSelect={this.versionSelectionHandler}/>
 						</div>
 					</Tabs>

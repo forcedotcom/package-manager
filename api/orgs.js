@@ -53,13 +53,13 @@ const SELECT_WITH_LICENCE = `
     LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
     LEFT JOIN org_group AS g ON g.id = m.org_group_id
     INNER JOIN org_package_version opv ON o.org_id = opv.org_id
-    INNER JOIN package_version pv ON opv.package_version_id = pv.sfid`;
+    INNER JOIN package_version pv ON opv.version_id = pv.version_id`;
 
 const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, opv.license_status`;
 
 async function requestAll(req, res, next) {
 	try {
-		let orgs = await findAll(req.query.packageId, req.query.packageVersionId, req.query.sort_field, req.query.sort_dir, 
+		let orgs = await findAll(req.query.packageId, req.query.versionId, req.query.sort_field, req.query.sort_dir, 
 			req.query.filterColumns ? JSON.parse(req.query.filterColumns) : null, req.query.page, req.query.pageSize);
 		return res.send(JSON.stringify(orgs));
 	} catch (err) {
@@ -67,24 +67,26 @@ async function requestAll(req, res, next) {
 	}
 }
 
-async function findAll(packageId, packageVersionId, orderByField, orderByDir, filterColumns) {
+async function findAll(packageId, versionId, orderByField, orderByDir, filterColumns) {
 	let select = SELECT_ALL;
 	let groupBy = GROUP_BY;
 	let whereParts = [`o.status != '${Status.NotFound}'`];
 	let values = [];
 
-	if (packageId || packageVersionId) {
+	if (packageId || versionId) {
 		select = SELECT_WITH_LICENCE;
 		groupBy = GROUP_BY_WITH_LICENSE;
 
 		if (packageId) {
 			values.push(packageId);
 			whereParts.push("opv.package_id = $" + values.length);
+			whereParts.push(`o.status != '${Status.NotInstalled}'`)
 		}
 
-		if (packageVersionId) {
-			values.push(packageVersionId);
-			whereParts.push("opv.package_version_id = $" + values.length);
+		if (versionId) {
+			values.push(versionId);
+			whereParts.push("opv.version_id = $" + values.length);
+			whereParts.push(`o.status != '${Status.NotInstalled}'`)
 		}
 	}
 

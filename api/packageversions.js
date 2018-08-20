@@ -19,7 +19,7 @@ const SELECT_ALL_IN_ORG =
     FROM package_version pv
     INNER JOIN package p on p.sfid = pv.package_id
     INNER JOIN package_version_latest pvl ON pvl.package_id = pv.package_id
-    INNER JOIN org_package_version op ON op.package_version_id = pv.sfid
+    INNER JOIN org_package_version op ON op.version_id = pv.version_id 
     INNER JOIN org o ON o.org_id = op.org_id
     INNER JOIN account a ON a.account_id = o.account_id`;
 
@@ -39,7 +39,7 @@ async function requestAll(req, res, next) {
 			req.query.orgGroupIds);
 		return res.send(JSON.stringify(recs));
 	} catch (e) {
-		return res.status(500).send(e.message || e);
+		next(e);
 	}
 }
 
@@ -94,13 +94,11 @@ async function findAll(sortField, sortDir, status, packageIds, packageOrgIds, li
 	return db.query(select + where + orderBy, values);
 }
 
-async function requestById(req, res, next) {
-	try {
-		let recs = await findByVersionIds([req.params.id]);
-		return res.json(recs[0]);
-	} catch (e) {
-		return res.status(500).send(e.message || e);
-	}
+function requestById(req, res, next) {
+	const id = req.params.id;
+	findByVersionIds([id])
+		.then(recs => recs.length === 0 ? next(new Error(`Cannot find any record with id ${id}`)) : res.json(recs[0]))
+		.catch(next);
 }
 
 async function findByVersionIds(versionIds) {

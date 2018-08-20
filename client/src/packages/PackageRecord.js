@@ -44,10 +44,10 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="PackageView">
 						<div label="Versions">
-							<PackageVersionCard onFetch={this.fetchVersions}/>
+							<PackageVersionCard onFetch={this.fetchVersions.bind(this)}/>
 						</div>
 						<div label="Customers">
-							<OrgCard title="Customers" onFetch={this.fetchOrgs} />
+							<OrgCard title="Customers" onFetch={this.fetchOrgs.bind(this)} />
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
