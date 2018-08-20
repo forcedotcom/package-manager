@@ -383,6 +383,9 @@ function requestById(req, res, next) {
 
 async function retrieveById(id) {
 	let recs = await db.query(SELECT_ONE, [id]);
+	if (recs.length === 0)
+		throw new Error(`Cannot find any record with id ${id}`);
+
 	return recs[0];
 }
 

@@ -137,6 +137,14 @@ app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
+/**
+ * Error handling should always go LAST.  And remember, this needs four args, even though next is not used.
+ */
+app.use(function(error, req, res, next) {
+	logger.error(error);
+	return res.status(500).json({subject: "Something isn't right", message: error.message});
+});
+
 server.listen(app.get('port'), function () {
 	logger.info('Express initialized', {port: app.get('port')});
 });

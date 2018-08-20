@@ -25,7 +25,9 @@ export default class extends React.Component {
 	componentDidMount() {
 		notifier.on('upgrade', this.upgradeUpdated);
 
-		upgradeService.requestById(this.props.match.params.upgradeId).then(upgrade => this.setState({upgrade}));
+		upgradeService.requestById(this.props.match.params.upgradeId)
+			.then(upgrade => this.setState({upgrade}))
+			.catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.location = `/upgrades`}));
 	}
 
 	fetchItems = () => {
