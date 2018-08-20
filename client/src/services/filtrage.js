@@ -1,5 +1,10 @@
+import * as h from './h';
+
 const jsep = require('jsep');
 jsep.addUnaryOp("?");
+
+const PREFIX = "__filtrage";
+const URL = "/api/filters";
 
 const Types = {
 	Compound: "Compound",
@@ -13,6 +18,29 @@ const Types = {
 	LogicalExpression: "LogicalExpression",
 	ConditionalExpression: "ConditionalExpression",
 	ArrayExpression: "ArrayExpression"
+};
+
+export const requestFilters = (key) => h.get(URL, {key});
+
+export const requestSaveFilters = (key, name, query) => h.put(URL, {key, name, query});
+
+export const getFilters = (key) => {
+	if (!key) {
+		return null;
+	}
+
+	const str = window.localStorage.getItem(PREFIX + key);
+	return str ? JSON.parse(str) : [];
+};
+
+const setFilters = (key, filters) => {
+	if (!key) {
+		return;
+	}
+
+	if (filters) {
+		window.localStorage.setItem(PREFIX + key, JSON.stringify(filters));
+	}
 };
 
 export const sanitize = (filters) => {
@@ -45,19 +73,31 @@ function sanitizeValue(value) {
 	return sanitizedValue;
 }
 
-export const filterRows = (filter, rows) => {
+export const hasChanged = (filters, key) => {
+	const lastJson = window.localStorage.getItem(PREFIX + key);
+	const thisJson = JSON.stringify(filters);
+	return lastJson !== thisJson;
+};
+
+export const filterRows = (filters, rows, key) => {
 	try {
-		let tree = jsep(sanitizeValue(filter.value));
-		const filteredRows = rows.filter(row => {
-			let fieldElem = row[filter.id];
-			let fieldVal = (fieldElem == null || typeof fieldElem === 'string') ? fieldElem : fieldElem.props.children.join("");
-			fieldVal = fieldVal ? fieldVal.toLowerCase() : null;
-	
-			return matchNode(fieldVal, tree);
-		});
+		let filteredRows = rows;
+		if (filters && filters.length > 0 ) {
+			let filterNodes = filters.map(f => ({id: f.id, node: jsep(sanitizeValue(f.value))}));
+			filteredRows = rows.filter(row => {
+				return !filterNodes.some(f => {
+					let fieldElem = row[f.id];
+					let fieldVal = (fieldElem == null || typeof fieldElem !== 'object') ? fieldElem : fieldElem.props.children.join("");
+					fieldVal = fieldVal ? fieldVal.toLowerCase ? fieldVal.toLowerCase() : String(fieldVal) : null;
+
+					return !matchNode(fieldVal, f.node);
+				});
+			});
+		}
+		setFilters(key, filters);
 		return filteredRows;
 	} catch (e) {
-		console.log(e);
+		console.error(e);
 		return rows;
 	}
 };

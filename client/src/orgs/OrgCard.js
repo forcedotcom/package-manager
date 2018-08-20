@@ -5,22 +5,16 @@ import {CSVDownload} from 'react-csv';
 
 import {CardHeader} from "../components/PageHeader";
 import SelectGroupWindow from "./SelectGroupWindow";
-import ServerTable from "../components/ServerTable";
+import DataTable from "../components/DataTable";
 import * as strings from "../services/strings";
 
 export default class extends React.Component {
-	constructor(props) {
-		super(props);
+	constructor() {
+		super();
 		this.state = {
-			selected: new Map(), itemCount: null, showSelected: false
+			selected: new Map(), showSelected: false
 		};
 	}
-
-	componentWillReceiveProps(props) {
-		if (props.orgs) {
-			this.setState({itemCount: props.orgs.length});
-		}
-	};
 
 	linkHandler = (e, column, rowInfo) => {
 		window.location = "/org/" + rowInfo.row.org_id;
@@ -100,9 +94,10 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<ServerTable data={this.props.orgs} showSelected={this.props.showSelected} selection={selected} keyField="org_id" id="OrgCard" 
-								 onClick={this.linkHandler} onSelect={this.selectionHandler} columns={columns}
-								 onRequest={this.props.onRequest} onFilter={this.filterHandler}/>
+					<DataTable id="OrgCard" keyField="org_id" columns={columns} onFetch={this.props.onFetch}
+								 onClick={this.linkHandler} onFilter={this.filterHandler}
+								 showSelected={this.props.showSelected} selection={selected}
+								 onSelect={this.selectionHandler}/>
 				</div>
 				<footer className="slds-card__footer"/>
 				{this.state.addingToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`}

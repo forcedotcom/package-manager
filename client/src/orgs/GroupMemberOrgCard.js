@@ -1,8 +1,8 @@
 import React from 'react';
 
-import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {ORG_ICON} from "../Constants";
+import DataTable from "../components/DataTable";
 
 export default class extends React.Component {
 	state = {itemCount: null};
@@ -37,8 +37,10 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title="Members" icon={ORG_ICON} actions={this.props.actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable selection={this.props.selected} keyField="org_id" id="OrgCard" data={this.props.orgs} columns={columns}
-							   onClick={this.linkHandler} onFilter={this.filterHandler} onSelect={this.props.onSelect}/>
+					<DataTable id="OrgCard" keyField="org_id" columns={columns}
+								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+								 onClick={this.linkHandler} onFilter={this.filterHandler}
+								 selection={this.props.selected} onSelect={this.props.onSelect}/>
 				</div>
 				<footer className="slds-card__footer"/>
 			</article>

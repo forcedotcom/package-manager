@@ -1,4 +1,6 @@
 const jsep = require('jsep');
+const db = require('../util/pghelper');
+
 const logger = require('../util/logger').logger;
 
 jsep.addUnaryOp("?");
@@ -21,6 +23,35 @@ exports.parseSQLExpressions = (dict = {get: s => s}, filters) => {
 	return filters.map(f => parseFilterAsSQL(dict, f)).filter(f => f);
 };
 
+async function requestFilters(req, res, next) {
+	try {
+		let filters = await db.query(`SELECT key, created_by, name, query FROM filter WHERE key = $1 AND created_by = $2`,
+			[req.query.key, req.session.username]);
+		if (filters.length === 0) {
+			return res.json({});
+		}
+	
+		const filter = filters[0];
+		filter.query = JSON.parse(filter.query);
+		return res.json(filter);
+	} catch (err) {
+		next(err);
+	}
+}
+
+async function requestSaveFilters(req, res, next) {
+	try {
+		await db.insert(
+			`INSERT filter (key, created_by, name, query)
+			 VALUES ($1, $2, $3, $4)
+			 ON CONFLICT (key, created_by) DO UPDATE SET
+				name = excluded.name, query = excluded.query`,
+			[req.query.key, req.session.username, req.query.name, req.query.query]);
+		return res.json({result: "OK"});
+	} catch (err) {
+		next(err);
+	}
+}
 
 function parseFilterAsSQL(dict, filter) {
 	try {
@@ -119,3 +150,6 @@ function isWrapped(str) {
 	const last = str.charAt(str.length - 1);
 	return (first === "'" && last === "'");
 }
+
+exports.requestFilters = requestFilters;
+exports.requestSaveFilters = requestSaveFilters;

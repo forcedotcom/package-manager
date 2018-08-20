@@ -1,5 +1,4 @@
 import React from 'react';
-
 import DataTable from "../components/DataTable";
 
 export default class extends React.Component {
@@ -31,8 +30,9 @@ export default class extends React.Component {
 		];
 
 		return (
-			<DataTable keyField="org_id" id="PackageOrgList" data={this.props.packageorgs} onClick={this.linkHandler}
-					   onSelect={this.props.onSelect} columns={columns}/>
+			<DataTable keyField="org_id" id="PackageOrgList" columns={columns}
+						 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+						 onClick={this.linkHandler} onSelect={this.props.onSelect}/>
 		);
 	}
 }

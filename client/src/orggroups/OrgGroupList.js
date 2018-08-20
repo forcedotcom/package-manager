@@ -1,6 +1,7 @@
 import React from 'react';
 import moment from "moment";
-import ServerTable from "../components/ServerTable";
+import DataTable from "../components/DataTable";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	linkHandler = (e, column, rowInfo) => {
@@ -14,15 +15,15 @@ export default class extends React.Component {
 			{Header: "Created", id: "created_date", maxWidth: 200, accessor: d => d.created_date ? moment(d.created_date).format("YYYY-MM-DD HH:mm:ss A") : null, clickable: true},
 			{Header: "When", id: "when", maxWidth: 200, accessor: d => d.created_date ? moment(d.created_date).fromNow() : null, clickable: true, sortable: false}
 		];
-		if (this.props.type === "All") {
-			columns.push(
-				{Header: "Type", accessor: "type", maxWidth: 130, sortable: true}
-			);
-		}
 		return (
-			<ServerTable keyField="id" id="OrgGroupList" columns={columns} data={this.props.orggroups} 
-						 showSelected={this.props.showSelected} selection={this.props.selected} onSelect={this.selectionHandler}
-						 onClick={this.linkHandler} onFilter={this.props.onFilter} onRequest={this.props.onRequest}/>
+			<div>
+				<DataTable id="OrgGroupList" keyField="id" columns={columns} onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter}
+						 defaultFilter={{id: "type", value: this.props.type}}
+						 showSelected={this.props.showSelected} selection={this.props.selected} 
+						 onSelect={this.props.onSelect}/>
+				<DataTableFilterHelp/>
+			</div>
 		);
 	}
 }

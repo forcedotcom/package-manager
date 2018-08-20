@@ -178,7 +178,8 @@ async function requestDelete(req, res, next) {
 		let n = 1;
 		let params = orgIds.map(v => `$${n++}`);
 		await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
-		return res.send({result: 'ok'});
+		admin.emit(admin.Events.PACKAGE_ORGS);
+		return res.send({result: 'OK'});
 	} catch (err) {
 		return res.status(500).send(err.message || err);
 	}
@@ -207,7 +208,8 @@ async function requestRefresh(req, res, next) {
 			orgs.push(recs[0]);
 		}
 		await crypt.passwordDecryptObjects(CRYPT_KEY, orgs, ['access_token', 'refresh_token']);
-		return res.json(orgs);
+		admin.emit(admin.Events.PACKAGE_ORGS);
+		return res.json({result: "OK"});
 	} catch (err) {
 		return res.status(500).send(err.message || err);
 	}
@@ -217,6 +219,7 @@ async function requestRevoke(req, res, next) {
 	try {
 		let orgIds = req.body.orgIds;
 		await revokeByOrgIds(orgIds);
+		admin.emit(admin.Events.PACKAGE_ORGS);
 		res.json({result: "OK"});
 	} catch (err) {
 		return res.status(500).send(err.message || err);

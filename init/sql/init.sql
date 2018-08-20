@@ -179,6 +179,14 @@ create table if not exists license
   package_version_id varchar(18)
 );
 
+create table if not exists filter
+(
+  key        varchar(80)  not null,
+  created_by varchar(80),
+  name       varchar(255) not null,
+  query      text
+);
+
 create index if not exists license_org_version_index
   on license (org_id, package_version_id);
 

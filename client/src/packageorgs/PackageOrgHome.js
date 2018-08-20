@@ -5,19 +5,21 @@ import * as packageOrgService from '../services/PackageOrgService';
 import {HeaderNote, HomeHeader} from '../components/PageHeader';
 import PackageOrgList from './PackageOrgList';
 import * as authService from "../services/AuthService";
-import * as sortage from "../services/sortage";
 import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
-	SORTAGE_KEY = "PackageOrgList";
-
-
-	state = {packageorgs: [], sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"), selected: new Map()};
-
-	componentDidMount() {
-		packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs}));
+	constructor(props) {
+		super(props);
+		this.state = {selected: new Map()};
 	}
 
+	fetchData = () => {
+		return packageOrgService.requestAll();
+	};
+
+	filterHandler = (filtered) => {
+		this.setState({itemCount: filtered.length});
+	};
 
 	newHandler = (event) => {
 		this.connectHandler(event.shiftKey ? "https://test.salesforce.com" : "https://login.salesforce.com");
@@ -34,39 +36,16 @@ export default class extends React.Component {
 	};
 
 	refreshHandler = () => {
-		let packageorgs = this.state.packageorgs;
-		for (let i = 0; i < packageorgs.length; i++) {
-			let porg = packageorgs[i];
-			if (this.state.selected.has(porg.org_id)) {
-				porg.status = null;
-			}
-		}
-		this.setState({isRefreshing: true, packageorgs});
-
-		packageOrgService.requestRefresh(Array.from(this.state.selected.keys())).then(() => {
-			packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({
-				packageorgs,
-				isRefreshing: false
-			}));
-		}).catch(e => {
+		this.setState({isRefreshing: true});
+		packageOrgService.requestRefresh(Array.from(this.state.selected.keys())).then(() => {}).catch(e => {
 			this.setState({isRefreshing: false});
 			NotificationManager.error(e, "Refresh Failed");
 		});
 	};
 	
 	revokeHandler = () => {
-		let packageorgs = this.state.packageorgs;
-		for (let i = 0; i < packageorgs.length; i++) {
-			let porg = packageorgs[i];
-			if (this.state.selected.has(porg.org_id)) {
-				porg.status = null;
-			}
-		}
-		this.setState({isRevoking: true, packageorgs});
-
-		packageOrgService.requestRevoke(Array.from(this.state.selected.keys())).then(() => {
-			packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs, isRevoking: false}));
-		}).catch(e => {
+		this.setState({isRevoking: true});
+		packageOrgService.requestRevoke(Array.from(this.state.selected.keys())).then(() => {}).catch(e => {
 			this.setState({isRevoking: false});
 			NotificationManager.error(e, "Revoke Failed");
 		});
@@ -74,8 +53,9 @@ export default class extends React.Component {
 
 	deleteHandler = () => {
 		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
-			packageOrgService.requestDelete(Array.from(this.state.selected.keys())).then(() => {
-				packageOrgService.requestAll(this.state.sortOrder).then(packageorgs => this.setState({packageorgs}));
+			packageOrgService.requestDelete(Array.from(this.state.selected.keys())).then(() => {}).catch(e => {
+				this.setState({isRevoking: false});
+				NotificationManager.error(e, "Delete Failed");
 			});
 		}
 	};
@@ -90,15 +70,11 @@ export default class extends React.Component {
 
 		return (
 			<div>
-				<HomeHeader type="package orgs"
-							title="Package Orgs"
-							newLabel="Add Package Org"
-							actions={actions}
-							itemCount={this.state.packageorgs.length}>
+				<HomeHeader type="package orgs" title="Package Orgs" newLabel="Add Package Org" actions={actions} itemCount={this.state.itemCount}>
 					<HeaderNote>Remember that packaging orgs must have the <b>Packaging Push</b> permissions as well
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
-				<PackageOrgList packageorgs={this.state.packageorgs} onConnect={this.connectHandler}
+				<PackageOrgList onFetch={this.fetchData} refetchOn="package-orgs" onConnect={this.connectHandler}
 								onSelect={this.selectionHandler} onDelete={this.deleteHandler}/>
 			</div>
 		);

@@ -12,22 +12,22 @@ import InstalledVersionCard from "../packageversions/InstalledVersionCard";
 import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
-	state = {org: {}, upgradeablePackageIds: []};
-
-	componentDidMount() {
-		notifier.on('org-versions', this.versionsRefreshed);
-
-		orgService.requestById(this.props.match.params.orgId).then(org => this.setState({org}));
-		packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
-			let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
-			this.setState({versions, upgradeablePackageIds});
-		}).catch(e => {
-			notifier.error(e.message || e || "What happened?", "Catastrophic Failure");
-		});
+	constructor(props) {
+		super(props);
+		this.state = {org: {}, upgradeablePackageIds: []};
 	}
 
-	componentWillUnmount() {
-		notifier.remove('org-versions', this.versionsRefreshed);
+	fetchVersions = () => {
+		return new Promise((resolve, reject) => {
+			packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
+				let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
+				this.setState({upgradeablePackageIds});
+				resolve(versions);
+			}).catch(reject);
+		});
+	};
+	componentDidMount() {
+		orgService.requestById(this.props.match.params.orgId).then(org => this.setState({org}));
 	}
 
 	resolveUpgradeablePackages = (versions) => {
@@ -55,19 +55,6 @@ export default class extends React.Component {
 		notifier.emit("refresh-org-versions", this.state.org.id);
 	};
 
-	versionsRefreshed = (orgId) => {
-		if (this.state.org.id === orgId) {
-			// Reload our versions because they may have changed
-			packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
-				let upgradeablePackageIds = this.resolvePackagesFromVersions(versions);
-				this.setState({isRefreshing: false, versions, upgradeablePackageIds});
-			}).catch(e => {
-				this.setState({isRefreshing: false});
-				notifier.error(e.message, "Refresh Failed");
-			});
-		}
-	};
-	
 	closeSchedulerWindow = () => {
 		this.setState({schedulingUpgrade: false});
 	};
@@ -110,7 +97,8 @@ export default class extends React.Component {
 		];
 		return (
 			<div>
-				<RecordHeader type="Org" icon={ORG_ICON} title={this.state.org.account_name} actions={actions}>
+				<RecordHeader type="Org" icon={ORG_ICON} title={this.state.org.account_name} actions={actions}
+							  parent={{label: "Orgs", location: `/orgs`}}>
 					<HeaderField label="Name" value={this.state.org.name}/>
 					<HeaderField label="Org ID" value={this.state.org.org_id}/>
 					<HeaderField label="Instance" value={this.state.org.instance}/>
@@ -120,7 +108,7 @@ export default class extends React.Component {
 				</RecordHeader>
 				<div className="slds-form--stacked slds-grid slds-wrap slds-m-top--medium">
 					<div className="slds-col--padded slds-size--1-of-1">
-						<InstalledVersionCard packageVersions={this.state.versions}/>
+						<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions"/>
 					</div>
 				</div>
 				{this.state.addingToGroup ? <SelectGroupWindow title="Add this org to a group" onAdd={this.addToGroupHandler.bind(this)}

@@ -32,5 +32,5 @@ export const isStartedStatus = (status) => typeof StartedStatus[status] !== "und
 export const GroupTypes = [
 	{name:"Upgrade Group", label:"Upgrade Groups"},
 	{name:"Blacklist", label:"Blacklists"},
-	{name:"Whitelist", label:"Whitelists"},
-	{name:"All", label:"All"}];
+	{name:"Whitelist", label:"Whitelists"}
+];

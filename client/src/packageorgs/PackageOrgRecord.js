@@ -71,7 +71,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<RecordHeader type="Package Org" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name}
-							  actions={actions}>
+							  actions={actions} parent={{label: "Orgs", location: `/packageorgs`}}>
 					<HeaderField label="Description" value={this.state.packageorg.description}/>
 					<HeaderField label="Org ID" value={this.state.packageorg.org_id}/>
 					<HeaderField label="Type" value={this.state.packageorg.type}/>

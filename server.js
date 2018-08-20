@@ -22,6 +22,7 @@ const express = require('express'),
 	licenses = require('./api/licenses'),
 	auth = require('./api/auth'),
 	admin = require('./api/admin'),
+	filters = require('./api/filters'),
 	sqlinit = require('./init/sqlinit'),
 	logger = require('./util/logger').logger,
 	helmet = require('helmet');
@@ -75,6 +76,9 @@ app.get('/oauth2/logout', auth.requestLogout);
 app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
+
+app.get('/api/filters', filters.requestFilters);
+app.put('/api/filters', filters.requestSaveFilters);
 
 app.get('/api/admin/settings', admin.requestSettings);
 app.get('/api/admin/jobs', admin.requestJobs);
@@ -142,7 +146,7 @@ const io = socketIo(server);
 io.on('connection', function (socket) {
 	session(socket.request, {}, () => {
 		const sess = socket.request.session;
-		if (typeof sess.access_token !== "undefined") {
+		if (process.env.ENFORCE_AUTH === "false" || typeof sess.access_token !== "undefined") {
 			admin.connect(socket);
 		}
 	});

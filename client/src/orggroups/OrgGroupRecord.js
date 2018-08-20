@@ -2,7 +2,6 @@ import React from 'react';
 
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
-import * as sortage from "../services/sortage";
 import * as notifier from "../services/notifications";
 import {CSVDownload} from 'react-csv';
 
@@ -19,37 +18,38 @@ import {DataTableFilterHelp} from "../components/DataTableFilter";
 import * as strings from "../services/strings";
 
 export default class extends React.Component {
-	SORTAGE_KEY_VERSIONS = "GroupMemberVersionCard";
+	constructor() {
+		super();
 
-	state = {
-		isEditing: false,
-		orggroup: {},
-		sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "org_id", "asc"),
-		selected: new Map(),
-		showSelected: false,
-		upgradeablePackageIds: []
+		this.state = {
+			isEditing: false,
+			orggroup: {},
+			selected: new Map(),
+			showSelected: false,
+			upgradeablePackageIds: []
+		};
+	}
+
+	fetchMembers = () => {
+		return orgGroupService.requestMembers(this.props.match.params.orgGroupId);
 	};
-
+	
+	fetchVersions = () => {
+		return new Promise((resolve, reject) => {
+			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId).then(versions => {
+				this.setState({upgradeablePackageIds: this.resolveUpgradeablePackages(versions)});
+				resolve(versions);
+			}).catch(reject);
+		});
+	};
+	
 	componentDidMount() {
-		notifier.on('group-versions', this.versionsRefreshed);
 		notifier.on('group', this.groupRefreshed);
 
-		Promise.all([
-			orgGroupService.requestById(this.props.match.params.orgGroupId),
-			orgGroupService.requestMembers(this.props.match.params.orgGroupId),
-			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId, this.state.sortOrderVersions)
-		])
-		.then(results => {
-			let orggroup = results[0];
-			let members = results[1];
-			let versions = results[2];
-			let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
-			this.setState({orggroup, members, versions, upgradeablePackageIds});
-		});
+		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => this.setState({orggroup}));
 	}
 	
 	componentWillUnmount() {
-		notifier.remove('group-versions', this.versionsRefreshed);
 		notifier.remove('group', this.groupRefreshed);
 	}
 
@@ -92,29 +92,15 @@ export default class extends React.Component {
 		this.setState({isRefreshing: true});
 		notifier.emit("refresh-group-versions", this.state.orggroup.id);
 	};
-
-	versionsRefreshed = (groupId) => {
-		if (this.state.orggroup.id === groupId) {
-			// Reload our versions because they may have changed
-			packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
-				let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
-				this.setState({versions, upgradeablePackageIds, isRefreshing: false});
-			}).catch(e => {
-				this.setState({isRefreshing: false});
-				notifier.error(e.message, "Refresh Failed");
-			});
-		}
-	};
-
+	
 	groupRefreshed = (groupId) => {
 		if (this.state.orggroup.id === groupId) {
-			this.versionsRefreshed(groupId);
-			orgGroupService.requestMembers(groupId)
-			.then(members => this.setState({members, isProcessing: false, isEditing: false}))
-			.catch(e => {
+			try {
+				this.setState({isProcessing: false, isEditing: false});
+			} catch(e) {
 				this.setState({isProcessing: false, isEditing: false});
 				notifier.error(e.message, "Refresh Failed");
-			});
+			}
 		}
 	};
 
@@ -136,13 +122,8 @@ export default class extends React.Component {
 
 	removeMembersHandler = (skipConfirmation) => {
 		if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.size} member(s)?`)) {
-			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(members => {
-				packageVersionService.findByOrgGroupId(this.state.orggroup.id, this.state.sortOrderVersions).then(versions => {
-					this.state.selected.clear();
-					const upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
-					this.setState({showSelected: false, members, versions, upgradeablePackageIds});
-				});
-			}).catch(e => notifier.error(e.message, "Removal Failed"));
+			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(() => {})
+				.catch(e => notifier.error(e.message, "Removal Failed"));
 			return true;
 		}
 		return false;
@@ -189,21 +170,21 @@ export default class extends React.Component {
 		this.setState({selected, showSelected});
 	};
 	
+	versionSelectionHandler = (selected) => {
+		this.setState({selectedVersions: selected});
+	};
+	
 	handleShowSelected = () => {
 		this.setState({showSelected: !this.state.showSelected});
 	};
 	
-	selectVersionsFromSelected = (selectedMap) => {
-		return this.state.versions.filter(v => selectedMap.has(v.org_id));
-	};
-
 	exportHandler = () => {
 		this.setState({isExporting: true, exportable: this.state.members});
 		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	};
 
 	render() {
-		const {selected, showSelected, orggroup} = this.state;
+		const {selected, selectedVersions, showSelected, orggroup} = this.state;
 		const actions = [];
 		if (orggroup.type === "Upgrade Group") {
 			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: this.state.upgradeablePackageIds.length === 0});
@@ -225,7 +206,8 @@ export default class extends React.Component {
 		
 		return (
 			<div>
-				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={orggroup.name} actions={actions}>
+				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={orggroup.name} actions={actions}
+							  parent={{label: "Groups", location: `/orggroups`}}>
 					<HeaderField label="Description" value={orggroup.description}/>
 					<HeaderField label="Type" value={orggroup.type}/>
 					{orggroup.created_date ? <HeaderField label="Created" value={moment(orggroup.created_date).format("lll")}/> : ""}
@@ -234,14 +216,12 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Members">
-							<GroupMemberOrgCard orggroup={orggroup} orgs={this.state.showSelected ? Array.from(selected.values()) : this.state.members}
-												onSelect={this.selectionHandler} actions={memberActions}
-												selected={selected}/>
+							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members" actions={memberActions}
+												selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
 						</div>
 						<div label="Versions">
-							<GroupMemberVersionCard orggroup={orggroup} packageVersions={this.state.showSelected ? this.selectVersionsFromSelected(selected) : this.state.versions}
-													onSelect={this.selectionHandler} actions={memberActions}
-													selected={selected}/>
+							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions" actions={memberActions}
+													selected={selectedVersions} showSelected={showSelected} onSelect={this.versionSelectionHandler}/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>

@@ -1,15 +1,13 @@
 import React from 'react';
 
-import DataTable from "../components/DataTable";
 import moment from "moment";
+import DataTable from "../components/DataTable";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
-	state = {upgrades: []};
-
-	componentWillReceiveProps(props) {
-		if (props.upgrades) {
-			this.setState({upgrades: props.upgrades});
-		}
+	constructor(props) {
+		super(props);
+		this.state = {};
 	}
 
 	linkHandler = (e, column, rowInfo) => {
@@ -36,8 +34,11 @@ export default class extends React.Component {
 			{Header: "Failures", accessor: "failed_item_count", sortable: true}
 		];
 		return (
-			<DataTable id="UpgradeList" data={this.state.upgrades} onFilter={this.props.onFilter}
-					   onClick={this.linkHandler} columns={columns}/>
+			<div>
+				<DataTable id="UpgradeList" onFetch={this.props.onFetch} onFilter={this.props.onFilter}
+							onClick={this.linkHandler} columns={columns}/>
+				<DataTableFilterHelp/>
+			</div>
 		);
 	}
 }

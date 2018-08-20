@@ -1,20 +1,14 @@
 import React from 'react';
 
-import DataTable from "../components/DataTable";
 import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
 import {Status, UPGRADE_ITEM_ICON} from "../Constants";
+import DataTable from "../components/DataTable";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {itemCount: null};
-	}
-
-	componentWillReceiveProps(props) {
-		if (props.items) {
-			this.setState({itemCount: props.items.length});
-		}
+		this.state = {};
 	}
 
 	linkHandler = (e, column, rowInfo) => {
@@ -69,13 +63,14 @@ export default class extends React.Component {
 
 		return (
 			<div className="slds-card">
-				<CardHeader title="Upgrade Requests" icon={UPGRADE_ITEM_ICON} actions={this.props.actions}
-							count={this.state.itemCount}>
+				<CardHeader title="Upgrade Requests" icon={UPGRADE_ITEM_ICON} actions={this.props.actions} count={this.state.itemCount}>
 					{this.props.notes}
 				</CardHeader>
 				<section className="slds-card__body">
-					<DataTable id="UpgradeItemCard" data={this.props.items} onClick={this.linkHandler}
-							   onFilter={this.filterHandler} onSelect={this.props.onSelect} columns={columns}/>
+					<DataTable id="UpgradeItemCard" columns={columns}
+								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+								 onClick={this.linkHandler} onFilter={this.filterHandler} 
+								 onSelect={this.props.onSelect}/>
 				</section>
 				<footer className="slds-card__footer"/>
 			</div>

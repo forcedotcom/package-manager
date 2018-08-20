@@ -63,8 +63,7 @@ export default class extends React.Component {
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="type">Type</label>
 									<div className="slds-form-element__control">
-										<PickList value={this.state.type} onChange={this.typeChangeHandler}
-												  items={GroupTypes.map(t => t.name).filter(name => name !== "All")}/>
+										<PickList value={this.state.type} onChange={this.typeChangeHandler} items={GroupTypes.map(t => t.name)}/>
 									</div>
 								</div>
 

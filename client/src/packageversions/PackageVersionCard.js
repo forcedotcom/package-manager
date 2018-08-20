@@ -1,13 +1,16 @@
 import React from 'react';
 
 import moment from "moment/moment";
-import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
 import * as sortage from "../services/sortage";
+import DataTable from "../components/DataTable";
 
 export default class extends React.Component {
-	state = {itemCount: null};
+	constructor() {
+		super();
+		this.state = {};
+	}
 
 	linkHandler = (e, column, rowInfo) => {
 		window.location = "/packageversion/" + rowInfo.original.version_id;
@@ -19,7 +22,7 @@ export default class extends React.Component {
 		}
 	}
 
-	filterHandler = (filtered, column, value) => {
+	filterHandler = (filtered) => {
 		this.setState({itemCount: filtered.length});
 	};
 
@@ -43,7 +46,7 @@ export default class extends React.Component {
 			<div className="slds-card">
 				<CardHeader title="Package Versions" icon={PACKAGE_VERSION_ICON} count={this.state.itemCount}/>
 				<section className="slds-card__body">
-					<DataTable id="PackageVersionCard" data={this.props.packageVersions} onFilter={this.filterHandler}
+					<DataTable id="PackageVersionCard" onFetch={this.props.onFetch} onFilter={this.filterHandler}
 							   onClick={this.linkHandler} columns={columns}/>
 				</section>
 				<footer className="slds-card__footer"/>

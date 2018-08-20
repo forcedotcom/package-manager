@@ -1,5 +1,6 @@
 import React from 'react';
-import ServerTable from "../components/ServerTable";
+import DataTable from "../components/DataTable";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	linkHandler = (e, column, rowInfo) => {
@@ -19,9 +20,14 @@ export default class extends React.Component {
 			{Header: "Status", accessor: "status", sortable: true}
 		];
 		return (
-			<ServerTable keyField="org_id" id="OrgList" data={this.props.orgs} columns={columns}
-						 showSelected={this.props.showSelected} selection={this.props.selected} onSelect={this.props.onSelect}
-						 onClick={this.linkHandler} onFilter={this.props.onFilter} onRequest={this.props.onRequest} />
+			<div>
+				<DataTable id="OrgList" keyField="org_id" columns={columns} 
+						 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter}
+						 showSelected={this.props.showSelected} selection={this.props.selected}
+						 onSelect={this.props.onSelect}/>
+				<DataTableFilterHelp/>
+			</div>
 		);
 	}
 }

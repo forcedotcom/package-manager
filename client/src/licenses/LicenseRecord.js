@@ -16,7 +16,8 @@ export default class extends React.Component {
 	render() {
 		return (
 			<div>
-				<RecordHeader type="License" icon={LICENSE_ICON} title={this.state.license.account_name}>
+				<RecordHeader type="License" icon={LICENSE_ICON} title={this.state.license.account_name}
+							  parent={{label: "Licenses", location: `/licenses`}}>
 					<HeaderField label="Name" value={this.state.license.name}/>
 					<HeaderField label="Version Name" value={this.state.license.version_name}/>
 					<HeaderField label="Version Number" value={this.state.license.version_number}/>

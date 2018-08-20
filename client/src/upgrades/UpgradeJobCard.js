@@ -1,23 +1,18 @@
 import React from 'react';
 
-import DataTable from "../components/DataTable";
 import {CardHeader} from "../components/PageHeader";
 import {UPGRADE_JOB_ICON} from "../Constants";
 import MessageWindow from "../components/MessageWindow";
 import {CSVDownload} from 'react-csv';
+import DataTable from "../components/DataTable";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {done: false, itemCount: null};
+		this.state = {done: false};
 	}
 
-	componentWillReceiveProps(props) {
-		if (props.jobs) {
-			this.setState({itemCount: props.jobs.length});
-		}
-	}
-	
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
 			case "org_id":
@@ -136,14 +131,16 @@ export default class extends React.Component {
 			<div className="slds-card">
 				<CardHeader title="Upgrade Jobs" icon={UPGRADE_JOB_ICON} count={this.state.itemCount} actions={actions}/>
 				<section className="slds-card__body">
-					<DataTable id="UpgradeJobCard" minRows="1" data={this.props.jobs} onFilter={this.filterHandler}
-							   onClick={this.linkHandler} columns={columns}/>
+					<DataTable id="UpgradeJobCard" columns={columns}
+								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} 
+								 onFilter={this.filterHandler} onClick={this.linkHandler}/>
 				</section>
 				<footer className="slds-card__footer"/>
 				{this.state.showMessage ?
 					<MessageWindow subject={this.state.messageSubject} message={this.state.messageDetail}
 								   onClose={this.closeMessageWindow}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
+				<DataTableFilterHelp/>
 			</div>
 		);
 	}

@@ -1,32 +1,56 @@
 import React from 'react';
 
+import debounce from 'lodash.debounce';
 import ReactTable from "react-table";
-
 import "react-table/react-table.css";
-
 import checkboxHOC from "react-table/lib/hoc/selectTable";
 import * as sortage from "../services/sortage";
-import * as filtrage from "../services/filter";
+import * as filtrage from "../services/filtrage";
 import {DataTableFilter} from "./DataTableFilter";
+import * as notifier from "../services/notifications";
 
 const CheckboxTable = checkboxHOC(ReactTable);
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
+		let {id, minRows, keyField, selection, showSelected} = props;
+
 		this.state = {
-			data: props.data || [],
-			loading: props.loading,
-			selection: this.props.selection || new Map(),
+			tableId: id,
+			data: [],
+			pages: null,
+			loading: true,
+
+			showSelected,
+			selection: selection || new Map(),
 			selectAll: false,
-			pageSize: this.props.pageSize || 25,
-			minRows: this.props.minRows || 3,
-			keyField: this.props.keyField || "id"
+			minRows: minRows || 3,
+			keyField: keyField || "id"
 		};
 	}
 
+	componentDidMount() {
+		if (this.props.refetchOn)
+			notifier.on(this.props.refetchOn, this.refetchData);
+	}
+	componentWillUnmount() {
+		if (this.props.refetchOn)
+			notifier.remove(this.props.refetchOn, this.refetchData);
+	}
+
 	componentWillReceiveProps(props) {
-		this.setState({data: props.data || []});
+		let {defaultFilter, showSelected} = props;
+		let {tableId, data} = this.state;
+
+		let filterColumns = filtrage.getFilters(tableId);
+		if (defaultFilter) {
+			// Remove existing default filter if found, then add it back
+			filterColumns = filterColumns.filter(c => c.id !== defaultFilter.id);
+			filterColumns.push(defaultFilter);
+		}
+		const force = props.showSelected !== this.props.showSelected;
+		this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSorts(tableId), 0, sortage.getPageSize(tableId), force);
 	}
 
 	handleSelection = (key, shift, row) => {
@@ -43,15 +67,11 @@ export default class extends React.Component {
 
 	handleSelectAll = () => {
 		const selectAll = !this.state.selectAll;
-		let selection = this.state.selection;
+		const selection = this.state.selection;
+		const rows = this.state.filteredRows || this.state.data;
 		if (selectAll) {
-			// we need to get at the internals of ReactTable
-			const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
-			// the 'sortedData' property contains the currently accessible records based on the filter and sort
-			const currentRecords = wrappedInstance.getResolvedState().sortedData;
-			// we just push all the IDs onto the selection array
-			currentRecords.forEach(item => {
-				selection.set(item._original[this.state.keyField], item._original);
+			rows.forEach(item => {
+				selection.set(item[this.state.keyField], item);
 			});
 		} else {
 			selection.clear();
@@ -59,14 +79,6 @@ export default class extends React.Component {
 		this.setState({selectAll, selection});
 		if (this.props.onSelect) {
 			this.props.onSelect(selection);
-		}
-	};
-
-	handleFilter = (column, value) => {
-		if (this.props.onFilter) {
-			const wrappedInstance = this.checkboxTable.getWrappedInstance ? this.checkboxTable.getWrappedInstance() : this.checkboxTable;
-			const currentRecords = wrappedInstance.getResolvedState().sortedData;
-			this.props.onFilter(currentRecords, column, value)
 		}
 	};
 
@@ -79,13 +91,103 @@ export default class extends React.Component {
 		return this.state.selection.has(key);
 	};
 
-	pageSizeHandler = (pageSize) => {
-		this.setState({pageSize});
+	filterAndSort = (tableId, data, filteredRows, filterColumns, sortColumns, page, pageSize, showSelected) => {
+		let rows = showSelected ? Array.from(this.state.selection.values()) : filteredRows || data;
+
+		rows = filterColumns ?
+			filtrage.filterRows(filterColumns, rows, tableId) : rows;
+
+		if (sortColumns)
+			sortage.sortRows(sortColumns, rows, tableId);
+
+		sortage.setPageSize(tableId, pageSize);
+
+		if (filterColumns) {
+			// Notify onFilter if filters applied, but after sorting
+			if (this.props.onFilter) {
+				this.props.onFilter(rows, filterColumns);
+			}
+		}
+		this.setState({
+			tableId,
+			loading: false,
+			showSelected,
+			data,
+			rows: rows.slice(pageSize * page, pageSize * page + pageSize),
+			filteredRows: rows,
+			pages: Math.ceil(rows.length / pageSize),
+			page,
+			pageSize
+		});
+	};
+
+	debounceFilterAndSort = debounce(this.filterAndSort, 250);
+
+	fetchData = state => {
+		const {tableId, data, showSelected} = this.state;
+		const {filtered, sorted, page, pageSize} = state; // inner react table state
+
+		if (data.length === 0) {
+			// Haven't loaded data yet.  Do it now.
+			this.setState({ loading: true });
+			this.props.onFetch().then(data => {
+				this.dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize, true);
+			});
+		} else {
+			this.dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize);
+		}
+	};
+
+	refetchData = () => {
+		const {tableId, showSelected, page, pageSize} = this.state;
+
+		this.props.onFetch().then(data => {
+			const filterColumns = filtrage.getFilters(tableId);
+			const sortColumns = sortage.getSorts(tableId);
+			this.dataChanged(tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, true);
+		});
+	};
+
+	dataChanged = (tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, force) => {
+		const {filteredRows} = this.state;
+
+		let changedFilter = force || filtrage.hasChanged(filterColumns, tableId);
+		let changedSort = force || sortage.hasChanged(sortColumns, tableId);
+		let changedPage = this.state.page !== undefined && this.state.page !== page;
+		let changedPageSize = this.state.pageSize !== undefined && this.state.pageSize !== pageSize;
+
+		if (!changedFilter && !changedSort && !changedPage && !changedPageSize) {
+			// Nothing to do.
+			return;
+		}
+
+		if (changedFilter && !filtrage.sanitize(filterColumns)) {
+			// Bad filters, just ignore and don't change a thing.
+			return;
+		}
+
+		// Debounce if row count is over some large sounding number
+		const shouldDebounce = 	changedFilter && (showSelected ? this.state.selection.size : data.length) > 5000;
+
+		if (shouldDebounce) {
+			this.setState({ loading: true });
+			this.debounceFilterAndSort(tableId, data, data, filterColumns, changedSort ? sortColumns : null, page, pageSize, showSelected);
+		} else if (changedFilter) {
+			this.filterAndSort(tableId, data, data, filterColumns, changedSort ? sortColumns : null, page, pageSize, showSelected);
+		} else {
+			this.filterAndSort(tableId, data, filteredRows, null, changedSort ? sortColumns : null, page, pageSize, showSelected);
+		}
 	};
 
 	render() {
+		const {tableId, keyField, selectAll, rows, pages, loading} = this.state;
+
+		const filterColumns = filtrage.getFilters(tableId);
+		const sortColumns = sortage.getSorts(tableId);
+		const pageSize = sortage.getPageSize(tableId);
+
 		const selectionProps = {
-			selectAll: this.state.selectAll,
+			selectAll: selectAll,
 			isSelected: this.isSelected,
 			toggleSelection: this.handleSelection,
 			toggleAll: this.handleSelectAll,
@@ -96,7 +198,7 @@ export default class extends React.Component {
 			getTrProps: (s, r) => {
 				// someone asked for an example of a background color change
 				// here it is...
-				const selected = r && r.original && this.isSelected(r.original[this.state.keyField]);
+				const selected = r && r.original && this.isSelected(r.original[keyField]);
 				return {
 					style: {
 						backgroundColor: selected ? "#E0FFE0" : "inherit"
@@ -119,39 +221,28 @@ export default class extends React.Component {
 				} : {};
 			}
 		};
-		
-		this.overrideFilterAll(this.props.columns);
+
 		let TableImpl = this.props.onSelect ? CheckboxTable : ReactTable;
 		return (
 			<TableImpl
-				loading={this.state.loading} // Display the loading overlay when we need it
-				defaultFilterMethod={filtrage.filterRows}
-				ref={r => (this.checkboxTable = r)}
-				data={this.state.data}
 				columns={this.props.columns}
-				pageSize={this.state.pageSize}
-				onPageSizeChange={this.pageSizeHandler}
+				manual // Forces table not to paginate or sort automatically, so we can handle it server-side
+				data={rows}
+				pages={pages}
+				loading={loading}
+				onFetchData={this.fetchData} // Request new data when things change
+
+				ref={r => (this.checkboxTable = r)}
 				filterable
-				showPagination={this.props.showPagination || this.state.data.length > this.state.pageSize}
-				minRows={this.state.minRows}
-				keyField={this.state.keyField}
+				defaultPageSize={pageSize}
+				defaultFiltered={filterColumns}
+				defaultSorted={sortColumns}
+				keyField={keyField}
 				className="-striped -highlight"
-				pivotBy={this.props.pivotBy || []}
-				onSortedChange={newSorted => sortage.changeSortOrder(this.props.id, newSorted[0].id, newSorted[0].desc ? "desc" : "asc")}
-				onFilteredChange={(column, value) => this.handleFilter(column, value)}
 				FilterComponent={DataTableFilter}
 				{...selectionProps}
 				{...functionalProps}
 			/>
 		);
-	}
-	
-	overrideFilterAll(columns) {
-		columns.forEach(c => {
-			c.filterAll = true;
-			if (c.columns) {
-				this.overrideFilterAll(c.columns);
-			}
-		});
 	}
 }

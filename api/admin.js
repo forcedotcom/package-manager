@@ -26,13 +26,17 @@ const Events = {
 	CANCEL_JOBS: "cancel-jobs",
 	UPLOAD_ORGS: "upload-orgs",
 	GROUP: "group",
+	GROUPS: "groups",
 	ORG_VERSIONS: "org-versions",
 	REFRESH_ORG_VERSIONS: "refresh-org-versions",
 	GROUP_VERSIONS: "group-versions",
+	GROUP_MEMBERS: "group-members",
 	REFRESH_GROUP_VERSIONS: "refresh-group-versions",
 	UPGRADE: "upgrade",
 	UPGRADE_ITEMS: "upgrade-items",
-	UPGRADE_JOBS: "upgrade-jobs"
+	UPGRADE_JOBS: "upgrade-jobs",
+	ORGS: "orgs",
+	PACKAGE_ORGS: "package-orgs"
 };
 
 let jobQueue = [];

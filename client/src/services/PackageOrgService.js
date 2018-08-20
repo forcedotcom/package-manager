@@ -2,7 +2,7 @@ import * as h from './h';
 
 let url = "/api/packageorgs";
 
-export let requestAll = sort => h.get(url, {sort_field: sort.field, sort_dir: sort.direction});
+export let requestAll = (sort_field, sort_dir) => h.get(url, {sort_field, sort_dir});
 
 export let requestById = org_id => h.get(`${url}/${org_id}`);
 

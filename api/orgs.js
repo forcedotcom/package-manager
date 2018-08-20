@@ -1,9 +1,10 @@
 const db = require('../util/pghelper');
-const filter = require('../util/filter');
+const filters = require('./filters');
 const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
 const sfdc = require('../api/sfdcconn');
 const packageorgs = require('../api/packageorgs');
+const admin = require('../api/admin');
 const orgpackageversions = require('../api/orgpackageversions');
 
 const Status = {
@@ -59,14 +60,14 @@ const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, opv.license_statu
 async function requestAll(req, res, next) {
 	try {
 		let orgs = await findAll(req.query.packageId, req.query.packageVersionId, req.query.sort_field, req.query.sort_dir, 
-			req.query.filters ? JSON.parse(req.query.filters) : null, req.query.page, req.query.pageSize);
+			req.query.filterColumns ? JSON.parse(req.query.filterColumns) : null, req.query.page, req.query.pageSize);
 		return res.send(JSON.stringify(orgs));
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function findAll(packageId, packageVersionId, orderByField, orderByDir, filters) {
+async function findAll(packageId, packageVersionId, orderByField, orderByDir, filterColumns) {
 	let select = SELECT_ALL;
 	let groupBy = GROUP_BY;
 	let whereParts = [`o.status != '${Status.NotFound}'`];
@@ -87,8 +88,8 @@ async function findAll(packageId, packageVersionId, orderByField, orderByDir, fi
 		}
 	}
 
-	if (filters && filters.length > 0) {
-		whereParts.push(...filter.parseSQLExpressions(QUERY_DICTIONARY, filters));
+	if (filterColumns && filterColumns.length > 0) {
+		whereParts.push(...filters.parseSQLExpressions(QUERY_DICTIONARY, filterColumns));
 	} 
 	
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
@@ -126,7 +127,7 @@ function requestUpgrade(req, res, next) {
 async function requestAdd(req, res, next) {
 	try {
 		await addOrgsByIds(req.body.orgIds);
-		await requestAll(req, res, next);
+		admin.emit(admin.Events.ORGS);
 	} catch (e) {
 		logger.error("Failed to fetch subscriber orgs", {org_ids: req.body.orgIds, error: e.message || e});
 		next(e);

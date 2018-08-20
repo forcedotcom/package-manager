@@ -84,7 +84,8 @@ async function requestAddMembers(req, res, next) {
 async function requestRemoveMembers(req, res, next) {
 	try {
 		await deleteOrgMembers(req.params.id, req.body.orgIds);
-		return requestMembers(req, res, next);
+		admin.emit(admin.Events.GROUP_MEMBERS);
+		admin.emit(admin.Events.GROUP_VERSIONS);
 	} catch (e) {
 		return res.status(500).send(e.message || e);
 	}
@@ -114,6 +115,8 @@ async function requestUpdate(req, res, next) {
 			insertOrgMembers(og.id, og.name, og.orgIds)
 			.then(() => {
 				admin.emit(admin.Events.GROUP, og.id);
+				admin.emit(admin.Events.GROUP_MEMBERS, og.id);
+				admin.emit(admin.Events.GROUP_VERSIONS, og.id);
 			})
 			.catch(e => {
 				admin.emit(admin.Events.FAIL, {subject: "Org Import Failed", message: e.message});
@@ -135,6 +138,7 @@ async function requestDelete(req, res, next) {
 		let params = ids.map(() => `$${n++}`);
 		await db.delete(`DELETE FROM org_group_member WHERE org_group_id IN (${params.join(",")})`, ids);
 		await db.delete(`DELETE FROM org_group WHERE id IN (${params.join(",")})`, ids);
+		admin.emit(admin.Events.GROUPS);
 		return res.send({result: 'ok'});
 	} catch (e) {
 		return res.status(500).send(e.message || e);

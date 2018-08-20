@@ -1,7 +1,8 @@
 import React from 'react';
 import moment from "moment";
 import * as sortage from "../services/sortage";
-import ServerTable from "../components/ServerTable";
+import DataTable from "../components/DataTable";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	linkHandler = (e, column, rowInfo) => {
@@ -28,14 +29,16 @@ export default class extends React.Component {
 			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
 			{Header: "Version Number", accessor: "version_number", sortable: true, clickable: true, 
 				sortMethod: (a, b) => sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1},
-			{Header: "Type", id: "is_sandbox", accessor: d => d.is_sandbox ? "Sandbox" : "Production", sortable: true},
+			{Header: "Is Sandbox", id: "is_sandbox", accessor: d => d.is_sandbox ? "Yes" : "No", filterable: false, sortable: true},
 			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true},
 			{Header: "Installed On", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: true}
 		];
 		return (
-			<ServerTable id="LicenseList" keyField="sfid" data={this.props.licenses} columns={columns}
-						 onFilter={this.props.onFilter} onClick={this.linkHandler}
-						 onRequest={this.props.onRequest}/>
+			<div>
+				<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter}/>
+				<DataTableFilterHelp/>
+			</div>
 		);
 	}
 }

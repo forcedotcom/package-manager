@@ -3,14 +3,12 @@ import React from 'react';
 import * as packageVersionService from '../services/PackageVersionService';
 
 import PackageVersionCard from './../packageversions/PackageVersionCard';
-import * as sortage from "../services/sortage";
 
 export default class extends React.Component {
-	SORTAGE_KEY_VERSIONS = "PackageVersionCard";
-
-	state = {
-		sortOrderVersions: sortage.getSortOrder(this.SORTAGE_KEY_VERSIONS, "release_date", "asc"),
-	};
+	constructor(props) {
+		super(props);
+		this.state = {};
+	}
 
 	revealAccessToken = (event) => {
 		if (event.target.value === this.props.packageorg.access_token) {
@@ -21,12 +19,10 @@ export default class extends React.Component {
 		}
 	};
 
-	componentWillReceiveProps(props) {
-		if (props.packageorg.org_id) {
-			packageVersionService.findByPackageOrgId(props.packageorg.org_id, this.state.sortOrderVersions).then(packageVersions => this.setState({packageVersions}));
-		}
-	}
-
+	fetchVersions = () => {
+		return packageVersionService.findByPackageOrgId(this.props.packageorg.org_id);		
+	};
+	
 	render() {
 		return (
 			<div className="slds-form--stacked slds-grid slds-wrap slds-m-top">
@@ -100,7 +96,7 @@ export default class extends React.Component {
 				{this.props.packageorg.namespace !== null ?
 					<div className="slds-col--padded slds-size--1-of-1">
 						<br/>
-						<PackageVersionCard packageVersions={this.state.packageVersions}/>
+						<PackageVersionCard onFetch={this.fetchVersions}/>
 					</div> : ""}
 			</div>
 		)

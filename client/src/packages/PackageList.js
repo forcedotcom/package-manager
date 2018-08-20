@@ -1,5 +1,6 @@
 import React from 'react';
 import DataTable from "../components/DataTable";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 
@@ -27,8 +28,11 @@ export default class extends React.Component {
 		];
 
 		return (
-			<DataTable id="PackageList" data={this.props.packages} onFilter={this.props.onFilter}
+			<div>
+				<DataTable id="PackageList" onFetch={this.props.onFetch} onFilter={this.props.onFilter}
 					   onClick={this.linkHandler} columns={columns}/>
+				<DataTableFilterHelp/>
+			</div>
 		);
 	}
 }

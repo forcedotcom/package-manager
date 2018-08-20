@@ -7,42 +7,37 @@ import {GroupTypes} from "../Constants";
 import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
-import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
 	SORTAGE_KEY = "OrgGroupList";
-	
-	groupTypeMap = new Map(GroupTypes.map(t => [t.name,t]));
+	constructor() {
+		super();
+		this.groupTypeMap = new Map(GroupTypes.map(t => [t.name, t]));
 
-	state = {
-		sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc"),
-		orggroups: [],
-		selected: new Map(),
-		itemCount: "...",
-		selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY, "Upgrade Group"))
-	};
+		this.state = {
+			selected: new Map(),
+			selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY, "Upgrade Group"))
+		};
+	}
 
-	requestData = (pageSize, page, sorted, filtered) => {
-		return new Promise((resolve, reject) => {
-			orgGroupService.requestAll(this.state.selectedType.name, 
-				sorted.length === 0 ? this.state.sortOrder : sortage.changeSortOrder(this.SORTAGE_KEY, sorted[0].id, sorted[0].desc ? "desc" : "asc"), 
-				filtered)
-			.then(orggroups => {
-				this.setState({orggroups, itemCount: orggroups.length});
-				// You must return an object containing the rows of the current page, and optionally the total pages number.
-				return resolve({
-					rows: orggroups.slice(pageSize * page, pageSize * page + pageSize),
-					pages: Math.ceil(orggroups.length / pageSize)
-				});
-			})
-			.catch(reject);
-		});
+	fetchData = () => {
+		return orgGroupService.requestAll();
 	};
 
 	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+		this.setState({filtered, itemCount: filtered.length});
 	};
 
+	selectionHandler = (selected) => {
+		this.setState({selected});
+	};
+
+	typeSelectionHandler = (selectedType) => {
+		sortage.setSelectedName(this.SORTAGE_KEY, selectedType.name);
+		this.setState({selectedType});
+	};
+	
 	newHandler = () => {
 		this.setState({addingOrgGroup: true});
 	};
@@ -57,24 +52,13 @@ export default class extends React.Component {
 		this.setState({addingOrgGroup: false});
 	};
 
-	selectionHandler = (selected) => {
-		this.setState({selected});
-	};
-	
-	typeSelectionHandler = (selectedType) => {
-		sortage.setSelectedName(this.SORTAGE_KEY, selectedType.name);
-		orgGroupService.requestAll(selectedType.name, this.state.sortOrder).then(orggroups => this.setState({orggroups, itemCount: orggroups.length}));
-		this.setState({selectedType})
-	};
-
 	deleteHandler = () => {
 		const msg = this.state.selected.size === 1 ?
 			`Are you sure you want to delete this group?` :
-			`Are you sure you want to delete these ${this.state.selected.size} groups?`
+			`Are you sure you want to delete these ${this.state.selected.size} groups?`;
 		if (window.confirm(msg)) {
-			orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => {
-				orgGroupService.requestAll('Upgrade Group', this.state.sortOrder).then(orggroups => this.setState({orggroups}));
-			});
+			orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => this.state.selected.clear())
+				.catch(e => notifier.error(e.message | e, "Fail"));
 		}
 	};
 
@@ -93,9 +77,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="org groups" title="Org Groups" itemCount={this.state.itemCount} actions={actions}/>
-				<OrgGroupList orggroups={this.state.orggroups} onRequest={this.requestData} onFilter={this.filterHandler}
-							  onSelect={this.selectionHandler} selected={this.state.selected} type={this.state.selectedType.name}/>
-				<DataTableFilterHelp/>
+				<OrgGroupList onFetch={this.fetchData} refetchOn="groups" onFilter={this.filterHandler} onSelect={this.selectionHandler} 
+							  selected={this.state.selected} type={this.state.selectedType.name}/>
 				{this.state.addingOrgGroup ?
 					<GroupFormWindow type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>

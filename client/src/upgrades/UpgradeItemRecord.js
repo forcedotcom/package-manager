@@ -1,39 +1,67 @@
 import React from 'react';
 
 import * as upgradeItemService from '../services/UpgradeItemService';
-
-import {HeaderField, HeaderNote, RecordHeader} from '../components/PageHeader';
-import * as sortage from "../services/sortage";
 import * as upgradeJobService from "../services/UpgradeJobService";
+
+import {HeaderField, RecordHeader} from '../components/PageHeader';
 import {isDoneStatus, isStartedStatus, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
 import {NotificationManager} from "react-notifications";
 import * as notifier from "../services/notifications";
-import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
-	SORTAGE_KEY_JOBS = "UpgradeJobCard";
-
-	state = {
-		item: {},
-		sortOrderJobs: sortage.getSortOrder(this.SORTAGE_KEY_JOBS, "id", "asc"),
-		active: false,
-		jobs: []
-	};
+	constructor() {
+		super();
+		this.state = {item: {},
+			progress: {count: 0, started: 0, completed: 0, errors: 0, cancelled: 0, percentage: 0, done: 0}
+		};
+	}
 
 	componentDidMount() {
 		notifier.on('upgrade-items', this.upgradeItemsUpdated);
-		notifier.on('upgrade-jobs', this.upgradeJobsUpdated);
-		upgradeItemService.requestById(this.props.match.params.itemId).then(item => {
-			this.loadItemJobs(item);
+
+		upgradeItemService.requestById(this.props.match.params.itemId).then(item => this.setState({item}));
+	}
+	
+	fetchJobs = () => {
+		return new Promise((resolve, reject) => {
+			upgradeJobService.requestAllJobs(this.props.match.params.itemId).then(jobs => {
+				this.updateProgress(jobs);
+				resolve(jobs);
+			}).catch(reject);
 		});
 	};
 
+	updateProgress = (jobs) => {
+		let count = jobs.length, started = 0, completed = 0, errors = 0, cancelled = 0;
+		for (let i = 0; i < jobs.length; i++) {
+			let job = jobs[i];
+			if (job.status === Status.Ineligible) {
+				count--;
+			}
+			if (isStartedStatus(job.status)) {
+				started++;
+			}
+			if (isDoneStatus(job.status)) {
+				completed++;
+			}
+			if (job.status === Status.Failed) {
+				errors++;
+			}
+			if (job.status === Status.Canceled) {
+				cancelled++;
+			}
+		}
+		const percentage = (started+completed)/(count*2);
+		const done = percentage === 1 || count === 0;
+		const progress = {count, started, completed, errors, cancelled, percentage, done};
+		this.setState({progress});
+	};
+	
 	componentWillUnmount() {
 		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
-		notifier.remove('upgrade-jobs', this.upgradeJobsUpdated);
 	}
 
 	upgradeItemsUpdated = (items) => {
@@ -42,22 +70,6 @@ export default class extends React.Component {
 			this.setState({item: items[0]});
 		}
 	};
-
-	upgradeJobsUpdated = (jobs) => {
-		const mine = jobs.find(j => j.item_id === this.state.item.id);
-		if (mine) {
-			// At least one of these is from our item, so just reload all of them
-			upgradeItemService.requestById(this.props.match.params.itemId).then(item => {
-				this.loadItemJobs(item);
-			});
-		}
-	};
-	
-	loadItemJobs(item) {
-		upgradeJobService.requestAllJobs(item.id, this.state.sortOrderJobs).then(jobs => {
-			this.setState({item, jobs, isCancelling: false, isActivating: false});
-		});
-	}
 
 	handleActivation = () => {
 		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
@@ -83,69 +95,39 @@ export default class extends React.Component {
 	};
 
 	render() {
+		const {item, progress} = this.state;
 		let userCanActivate = true;
 		let user = JSON.parse(sessionStorage.getItem("user"));
 		if (user) {
-			userCanActivate = user.enforce_activation_policy === "false" || (this.state.item.created_by != null && this.state.item.created_by !== user.username);
+			userCanActivate = user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username);
 		}
-		const notes = [];
-		if (!userCanActivate) {
-			notes.push(<HeaderNote key="activation_warning">Activation is disabled. The same user that scheduled an
-				upgrade cannot activate it.</HeaderNote>)
-		} else if (!user || user.enforce_activation_policy === "false") {
-			notes.push(<HeaderNote key="activation_warning">Activation policy enforcement is disabled for testing
-				purposes. THIS IS NOT ALLOWED IN PRODUCTION.</HeaderNote>)
-		}
-
-		let count = this.state.jobs.length * 2, started = 0, completed = 0, errors = 0, cancelled = 0;
-		for (let i = 0; i < this.state.jobs.length; i++) {
-			let job = this.state.jobs[i];
-			if (job.status === Status.Ineligible) {
-				count--;
-			}
-			if (isStartedStatus(job.status)) {
-				started++;
-			}
-			if (isDoneStatus(job.status)) {
-				completed++;
-			}
-			if (job.status === Status.Failed) {
-				errors++;
-			}
-			if (job.status === Status.Canceled) {
-				cancelled++;
-			}
-		}
-		const progress = (started+completed)/(count*2);
-		const done = progress === 1 || count === 0;
 
 		let actions = [
 			{
 				label: "Activate Request", handler: this.handleActivation,
-				disabled: !userCanActivate || this.state.item.status !== Status.Created,
+				disabled: !userCanActivate || item.status !== Status.Created,
 				detail: userCanActivate ? "Update the selected items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
 				spinning: this.state.isActivating
 			},
 			{
 				label: "Cancel Request", handler: this.handleCancellation,
-				disabled: started > 0 || done,
+				disabled: progress.started > 0 || progress.done,
 				spinning: this.state.isCancelling
 			}
 		];
 		
 		return (
 			<div>
-				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={this.state.item.description}
-							  actions={actions} notes={notes} parent={{label: "Upgrade", location: `/upgrade/${this.state.item.upgrade_id}`}}>
-					<HeaderField label="Scheduled Start Time" value={`${moment(this.state.item.start_time).format('lll')} (${moment(this.state.item.start_time).fromNow()})`}/>
-					<HeaderField label="Status" value={this.state.item.status}
-								 className={this.state.item.status === "Done" ? "" : "slds-text-color_success"}/>
-					<HeaderField label="Created By" value={this.state.item.created_by}/>
+				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={item.description}
+							  actions={actions} parent={{label: "Upgrade", location: `/upgrade/${item.upgrade_id}`}}>
+					<HeaderField label="Scheduled Start Time" value={`${moment(item.start_time).format('lll')} (${moment(item.start_time).fromNow()})`}/>
+					<HeaderField label="Status" value={item.status}
+								 className={item.status === "Done" ? "" : "slds-text-color_success"}/>
+					<HeaderField label="Created By" value={item.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={progress} success={errors === 0 && cancelled === 0}/>
+				<ProgressBar progress={progress.percentage} success={progress.errors === 0 && progress.cancelled === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<UpgradeJobCard jobs={this.state.jobs}/>
-					<DataTableFilterHelp/>
+					<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 				</div>
 			</div>
 		);
