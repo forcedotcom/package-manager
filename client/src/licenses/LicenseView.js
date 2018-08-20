@@ -69,7 +69,7 @@ export default class extends React.Component {
 									   title="Name of the installed package version">Version Name</p>
 								</dt>
 								<dd>
-									<Link to={`/packageversion/${this.props.license.package_version_id}`}
+									<Link to={`/packageversion/${this.props.license.version_id}`}
 										  className="slds-text-body--regular slds-truncate"
 										  title="">{this.props.license.version_name}</Link>
 								</dd>
@@ -82,7 +82,7 @@ export default class extends React.Component {
 									   title="Name of the installed package version">Version Number</p>
 								</dt>
 								<dd>
-									<Link to={`/packageversion/${this.props.license.package_version_id}`}
+									<Link to={`/packageversion/${this.props.license.version_id}`}
 										  className="slds-text-body--regular slds-truncate"
 										  title="">{this.props.license.version_number}</Link>
 								</dd>
