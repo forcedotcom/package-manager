@@ -13,7 +13,7 @@ import {NotificationManager} from "react-notifications";
 import moment from "moment";
 import * as notifier from "../services/notifications";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
-import {getProgress, Status, UPGRADE_ICON} from "../Constants";
+import {getProgress, UPGRADE_ICON} from "../Constants";
 
 export default class extends React.Component {
 	constructor(props) {

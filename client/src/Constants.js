@@ -57,6 +57,8 @@ export const getProgress = statusRecs => {
 				started++;
 				completed++;
 				break;
+			default:
+				break;
 		}
 	}
 	const percentage = (started + completed) / (count * 2);

@@ -2,7 +2,6 @@ import React from 'react';
 import ReactTooltip from 'react-tooltip';
 
 import {HeaderIcon} from "./Icons";
-import {ButtonDropdown, DropdownItem} from "./Dropdown";
 import moment from "moment/moment";
 import {Helmet} from "react-helmet";
 
@@ -186,7 +185,7 @@ export class CardHeader extends React.Component {
 					<div className="slds-media__body">
 						<h3 className="slds-text-heading--small slds-truncate"
 							title={this.props.title}>{this.props.title}</h3>
-						<p className="slds-text-body--small">{this.props.count && this.props.count > 0 ? ` ${this.props.count} found` : ""}</p>
+						<p className="slds-text-body--small">{this.props.itemCount && this.props.itemCount > 0 ? ` ${this.props.itemCount} found` : ""}</p>
 					</div>
 					<div className="slds-col slds-no-flex slds-align-bottom">
 						{actionBar}
@@ -283,22 +282,6 @@ export class HomeHeader extends React.Component {
 	};
 
 	render() {
-		let viewItems = null;
-		if (this.props.viewOptions) {
-			let dropdown = this.props.viewOptions.map(item => <DropdownItem key={item.label} value={item.value}
-																			label={item.label} icon={item.icon}/>);
-			viewItems = <ButtonDropdown header="Display as" iconMore={true} value={this.props.viewOptions[0].value}
-										onChange={this.props.onViewChange}>{dropdown}</ButtonDropdown>
-		}
-
-		let sortItems = null;
-		if (this.props.sortOptions) {
-			let dropdown = this.props.sortOptions.map(item => <DropdownItem key={item.label} value={item.value}
-																			label={item.label}/>);
-			sortItems = <ButtonDropdown header="Sort By" icon="sort" iconMore={true}
-										onChange={this.props.onSort}>{dropdown}</ButtonDropdown>
-		}
-
 		let actions = this.props.actions || [];
 		let groups = [];
 		let currentGroup = null;
@@ -352,12 +335,6 @@ export class HomeHeader extends React.Component {
 					</div>
 					<div className="slds-col slds-no-flex slds-align-bottom">
 						<div className="slds-grid">
-							<div className="slds-button-space-left">
-								{viewItems}
-							</div>
-							<div className="slds-button-space-left">
-								{sortItems}
-							</div>
 							<div className="slds-button-group slds-button-space-left" role="group">
 								{actionBar}
 							</div>
@@ -365,7 +342,7 @@ export class HomeHeader extends React.Component {
 					</div>
 				</div>
 				{this.props.itemCount ?
-					<p className="slds-text-body--small slds-m-top--x-small">{this.props.count && this.props.count > 0 ? ` ${this.props.count} found` : ""}</p> :
+					<p className="slds-text-body--small slds-m-top--x-small">{this.props.itemCount && this.props.itemCount > 0 ? ` ${this.props.itemCount} found` : ""}</p> :
 					<p>&nbsp;</p>}
 				{this.props.children ?
 					<div className="slds-grid slds-page-header__detail-row">{this.props.children}</div> : ""}
