@@ -81,6 +81,7 @@ async function requestMembers(req, res, next) {
 async function requestAddMembers(req, res, next) {
 	try {
 		let results = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
+		admin.emit(admin.Events.ORGS);
 		return res.json(results);
 	} catch (e) {
 		next(e);

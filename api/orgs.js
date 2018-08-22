@@ -181,8 +181,8 @@ async function insertOrgsFromSubscribers(recs) {
 }
 
 async function findByGroup(orgGroupId) {
-	let where = " WHERE m.org_group_id = $1";
-	return await db.query(SELECT_ALL + where + GROUP_BY, [orgGroupId])
+	let where = "WHERE o.org_id IN (SELECT org_id FROM org_group_member WHERE org_group_id = $1)";
+	return await db.query(`${SELECT_ALL} ${where} ${GROUP_BY}`, [orgGroupId])
 }
 
 async function findByIds(orgIds) {
