@@ -17,7 +17,7 @@ export default class extends React.Component {
 
 		this.state = {
 			selected: new Map(),
-			selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY, "Upgrade Group"))
+			selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY)) || GroupTypes[0]
 		};
 	}
 
