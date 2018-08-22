@@ -22,7 +22,7 @@ export default class extends React.Component {
 	render() {
 		return (
 			<div>
-				<HomeHeader type="upgrades" title="Upgrades" icon={UPGRADE_ICON} itemCount={this.state.itemCount}/>
+				<HomeHeader type="upgrades" title="Upgrades" icon={UPGRADE_ICON} count={this.state.itemCount}/>
 				<UpgradeList onFetch={this.fetchData.bind(this)} onFilter={this.filterHandler}/>
 			</div>
 		);

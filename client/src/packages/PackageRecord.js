@@ -24,11 +24,11 @@ export default class extends React.Component {
 	}
 
 	fetchVersions = () => {
-		return packageVersionService.findByPackage(this.state.pkg.sfid)
+		return packageVersionService.findByPackage(this.props.match.params.packageId)
 	};
 	
 	fetchOrgs = () => {
-		return orgService.requestByPackage(this.state.pkg.sfid)
+		return orgService.requestByPackage(this.props.match.params.packageId)
 	};
 	
 	render() {

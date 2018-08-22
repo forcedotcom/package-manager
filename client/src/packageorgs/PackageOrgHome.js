@@ -76,7 +76,7 @@ export default class extends React.Component {
 
 		return (
 			<div>
-				<HomeHeader type="package orgs" title="Package Orgs" newLabel="Add Package Org" actions={actions} itemCount={this.state.itemCount}>
+				<HomeHeader type="package orgs" title="Package Orgs" newLabel="Add Package Org" actions={actions} count={this.state.itemCount}>
 					<HeaderNote>Remember that packaging orgs must have the <b>Packaging Push</b> permissions as well
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
