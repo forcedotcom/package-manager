@@ -36,7 +36,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
-						 onClick={this.linkHandler} onFilter={this.props.onFilter}/>
+						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}/>
 				<DataTableFilterHelp/>
 			</div>
 		);

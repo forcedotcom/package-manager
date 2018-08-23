@@ -37,7 +37,7 @@ export default class extends React.Component {
 			isModified = true;
 		}
 		
-		this.setState({selectedId, isModified});
+		this.setState({isModified});
 	}
 	
 	filterChangeHandler = (e) => {
@@ -61,32 +61,39 @@ export default class extends React.Component {
 			filtrage.requestSaveFilter(this.props.id, name)
 				.then(filter => {
 					filtrage.requestFilters(this.props.id)
-						.then(filters => this.setState({filters, selectedId: filter.id, isModified: false}))
+						.then(filters => {
+							filtrage.setSelectedFilterId(this.props.id, filter.id);
+							this.setState({filters, isModified: false});
+						})
 				}).catch(err => notifier.error(err.message));
 		}
 	};
 	
 	updateHandler = () => {
-		const {filters, selectedId} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+
+		const {filters} = this.state;
 		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
 		const name = prompt("Save changes to your filter", selected.name);
 		if (name) {
 			filtrage.requestSaveFilter(this.props.id, name, selected.id)
-				.then(filter => {
+				.then(() => {
 					filtrage.requestFilters(this.props.id)
-						.then(filters => this.setState({filters, selectedId: filter.id, isModified: false}))
+						.then(filters => this.setState({filters, isModified: false}))
 				}).catch(err => notifier.error(err.message));
 		}
 	};
 	
 	deleteHandler = () => {
-		const {filters, selectedId} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+
+		const {filters} = this.state;
 		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
 		if (window.confirm(`Are you sure you want to delete ${selected.name}?`)) {
 			filtrage.requestDeleteFilter(this.props.id, selected.id)
 			.then(() => {
 				filtrage.requestFilters(this.props.id)
-					.then(filters => this.setState({filters, selectedId: null, isModified: false}))
+					.then(filters => this.setState({filters, isModified: false}))
 			}).catch(err => notifier.error(err.message));
 		}
 	};
@@ -97,7 +104,9 @@ export default class extends React.Component {
 	};
 
 	render() {
-		const {selectedId, isModified, filters, showMenu} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+
+		const {isModified, filters, showMenu} = this.state;
 		if (!this.props.filterColumns && filters.length === 0)
 			return "";
 
