@@ -1,6 +1,5 @@
 import React from 'react';
 
-import * as sortage from '../services/sortage';
 import * as licenseService from '../services/LicenseService';
 
 import {HomeHeader} from '../components/PageHeader';
@@ -9,13 +8,9 @@ import LicenseList from './LicenseList';
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
-	SORTAGE_KEY = "LicenseList";
-
 	constructor(props) {
 		super(props);
-		this.state = {
-			sortOrder: sortage.getSortOrder(this.SORTAGE_KEY, "name", "asc")
-		};
+		this.state = {};
 	}
 
 	fetchData = () => {

@@ -24,7 +24,7 @@ const Types = {
 export const requestFilters = (key) => h.get(URL, {key});
 
 export const requestSaveFilter = (key, name, id) => {
-	return h.put(URL, {id, key, name, query: getFilters(key)});
+	return h.put(URL, {id, key, name, query: getFilterColumns(key)});
 };
 
 export const requestDeleteFilter = (key, id) => {
@@ -35,7 +35,7 @@ export const requestDeleteFilter = (key, id) => {
 	return h.del(`${URL}/${id}`);
 };
 
-export const getFilters = (key) => {
+export const getFilterColumns = (key) => {
 	if (!key) {
 		return null;
 	}
@@ -44,7 +44,7 @@ export const getFilters = (key) => {
 	return str ? JSON.parse(str) : [];
 };
 
-const setFilters = (key, filters) => {
+const setFilterColumns = (key, filters) => {
 	if (!key) {
 		return;
 	}
@@ -129,7 +129,7 @@ export const filterRows = (filters, rows, key) => {
 				});
 			});
 		}
-		setFilters(key, filters);
+		setFilterColumns(key, filters);
 		return filteredRows;
 	} catch (e) {
 		console.error(e);
@@ -197,13 +197,13 @@ function matchFilterString(fieldVal, node, neg) {
 	const first = nodeName.charAt(0);
 	const last = nodeName.charAt(nodeName.length-1);
 	if (first === "$") {
-		return (fieldVal && fieldVal.startsWith(nodeName.substring(1))) === !neg;
+		return (fieldVal != null && fieldVal.startsWith(nodeName.substring(1))) === !neg;
 	}
 	if (last === "$") {
-		return (fieldVal && fieldVal.endsWith(nodeName.substring(0, nodeName.length - 1))) === !neg;
+		return (fieldVal != null && fieldVal.endsWith(nodeName.substring(0, nodeName.length - 1))) === !neg;
 	}
 	// Else, full monty
-	return (fieldVal && fieldVal.indexOf(nodeName) !== -1) === !neg;
+	return (fieldVal != null && fieldVal.indexOf(nodeName) !== -1) === !neg;
 
 }
 

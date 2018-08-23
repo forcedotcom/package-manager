@@ -18,7 +18,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<DataTable id="OrgGroupList" keyField="id" columns={columns} onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
-						 onClick={this.linkHandler} onFilter={this.props.onFilter}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}
 						 defaultFilter={{id: "type", value: this.props.type}}
 						 showSelected={this.props.showSelected} selection={this.props.selected} 
 						 onSelect={this.props.onSelect}/>

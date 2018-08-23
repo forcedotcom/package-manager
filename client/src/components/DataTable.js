@@ -44,14 +44,14 @@ export default class extends React.Component {
 		let {defaultFilter, showSelected} = props;
 		let {tableId, data} = this.state;
 
-		let filterColumns = props.filters ? props.filters : filtrage.getFilters(tableId);
+		let filterColumns = props.filters ? props.filters : filtrage.getFilterColumns(tableId);
 		if (defaultFilter) {
 			// Remove existing default filter if found, then add it back
 			filterColumns = filterColumns.filter(c => c.id !== defaultFilter.id);
 			filterColumns.push(defaultFilter);
 		}
 		const force = props.showSelected !== this.props.showSelected;
-		this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSorts(tableId), 0, sortage.getPageSize(tableId), force);
+		this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSortColumns(tableId), 0, sortage.getPageSize(tableId), force);
 	}
 
 	handleSelection = (key, shift, row) => {
@@ -143,8 +143,8 @@ export default class extends React.Component {
 		const {tableId, showSelected, page, pageSize} = this.state;
 
 		this.props.onFetch().then(data => {
-			const filterColumns = filtrage.getFilters(tableId);
-			const sortColumns = sortage.getSorts(tableId);
+			const filterColumns = filtrage.getFilterColumns(tableId);
+			const sortColumns = sortage.getSortColumns(tableId);
 			this.dataChanged(tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, true);
 		});
 	};
@@ -182,8 +182,8 @@ export default class extends React.Component {
 	render() {
 		const {tableId, keyField, selectAll, rows, pages, loading} = this.state;
 
-		const filterColumns = filtrage.getFilters(tableId);
-		const sortColumns = sortage.getSorts(tableId);
+		const filterColumns = filtrage.getFilterColumns(tableId);
+		const sortColumns = sortage.getSortColumns(tableId);
 		const pageSize = sortage.getPageSize(tableId);
 
 		const selectionProps = {

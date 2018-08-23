@@ -2,13 +2,14 @@ import React from 'react';
 import * as filtrage from '../services/filtrage';
 import * as notifier from '../services/notifications';
 
-const OVERFLOW_LIMIT = 5;
+const DEFAULT_THRESHOLD = 5;
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		
 		this.state = {
-			filters: []
+			filters: [],
+			threshold: props.threshold || DEFAULT_THRESHOLD
 		};
 		
 		filtrage.requestFilters(props.id).then(filters => {
@@ -17,7 +18,7 @@ export default class extends React.Component {
 	}
 
 	componentWillReceiveProps(props) {
-		const {filters} = this.state;
+		const {filters, threshold} = this.state;
 		let isModified = false;
 		let selectedId = filtrage.getSelectedFilterId(props.id);
 		let foundIndex = -1;
@@ -28,9 +29,9 @@ export default class extends React.Component {
 			}
 			return found;
 		});
-		if (foundIndex >= OVERFLOW_LIMIT) {
+		if (foundIndex >= threshold) {
 			filters.splice(foundIndex, 1);
-			filters.splice(OVERFLOW_LIMIT-1, 0, selected);
+			filters.splice(threshold-1, 0, selected);
 		}
 		if (selected && props.filterColumns && filtrage.hasChangedFrom(selected.query, props.filterColumns)) {
 			// Filter changed, so signal that it no longer matches the selected saved filter.
@@ -112,11 +113,11 @@ export default class extends React.Component {
 	render() {
 		let selectedId = filtrage.getSelectedFilterId(this.props.id);
 
-		const {isModified, filters, showMenu} = this.state;
+		const {isModified, threshold, filters, showMenu} = this.state;
 		if (!this.props.filterColumns && filters.length === 0)
 			return "";
 
-		const options = filters.slice(0, OVERFLOW_LIMIT).map(f =>
+		const options = filters.slice(0, threshold).map(f =>
 			<span key={f.id} className="slds-button slds-radio_button">
 				<input checked={f.id === selectedId} type="radio" name={this.props.id} id={f.id} value={f.id}
 					   onChange={this.filterChangeHandler}/>
@@ -127,7 +128,7 @@ export default class extends React.Component {
 				</label>
 			</span>);
 
-		const overflow = filters.length > OVERFLOW_LIMIT ? filters.slice(OVERFLOW_LIMIT).map(f =>
+		const overflow = filters.length > threshold ? filters.slice(threshold).map(f =>
 			<li key={f.id} id={f.id} className="slds-dropdown__item">
 				<a onClick={this.filterChangeHandler}>
 					<span className="slds-truncate">

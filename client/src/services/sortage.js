@@ -13,7 +13,7 @@ export const hasChanged = (sorted, key) => {
 	return lastJson !== thisJson;
 };
 
-export const getSorts = (key) => {
+export const getSortColumns = (key) => {
 	if (!key) {
 		return null;
 	}
@@ -22,7 +22,7 @@ export const getSorts = (key) => {
 	return str ? JSON.parse(str) : [];
 };
 
-const setSorts = (key, sorts) => {
+const setSortColumns = (key, sorts) => {
 	if (!key) {
 		return;
 	}
@@ -41,13 +41,13 @@ export let sortRows = (sortColumns, rows, key) => {
 			sort(rows).asc(r => getSortValue(r, sortColumn));
 		}
 	}
-	setSorts(key, sortColumns);
+	setSortColumns(key, sortColumns);
 };
 
 const getSortValue = (rec, colName) => {
 	const val = rec[colName];
 	// Being expedient here.  If the colName contains version_number...it is a version number.
-	return colName.indexOf("version_number") !== -1 ? getSortableVersion(val) : val;
+	return colName.indexOf("version_number") !== -1 ? getSortableVersion(val) : val == null ? "" : val;
 };
 
 export let getSortableVersion = (dotVersion) => {
@@ -62,25 +62,6 @@ export let getSortableVersion = (dotVersion) => {
 		}
 		return value;
 	}).join("");
-};
-
-export let getSortOrder = (contextKey, defaultField, defaultDirection) => {
-	let orderJson = window.localStorage.getItem(PREFIX + contextKey);
-	return orderJson ? JSON.parse(orderJson) : {field: defaultField, direction: defaultDirection};
-};
-
-export let changeSortOrder = (contextKey, field, desc) => {
-	let sortOrder = getSortOrder(contextKey);
-	if (desc !== undefined) {
-		sortOrder = {field: field, direction: desc};
-	} else if (sortOrder.field === field) {
-		sortOrder.direction = sortOrder.direction !== 'desc' ? 'desc' : 'asc';
-	} else {
-		sortOrder = {field: field, direction: 'desc'};
-	}
-
-	window.localStorage.setItem(PREFIX + contextKey, JSON.stringify(sortOrder));
-	return sortOrder;
 };
 
 export let getPageSize = (contextKey, def = 25) => {

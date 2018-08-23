@@ -8,16 +8,16 @@ import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
 import * as notifier from "../services/notifications";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
-	SORTAGE_KEY = "OrgGroupList";
 	constructor() {
 		super();
 		this.groupTypeMap = new Map(GroupTypes.map(t => [t.name, t]));
 
 		this.state = {
 			selected: new Map(),
-			selectedType: this.groupTypeMap.get(sortage.getSelectedName(this.SORTAGE_KEY)) || GroupTypes[0]
+			selectedType: this.groupTypeMap.get(sortage.getSelectedName("OrgGroupList")) || GroupTypes[0]
 		};
 	}
 
@@ -25,8 +25,12 @@ export default class extends React.Component {
 		return orgGroupService.requestAll();
 	};
 
-	filterHandler = (filtered) => {
-		this.setState({filtered, itemCount: filtered.length});
+	filterHandler = (filtered, filterColumns) => {
+		this.setState({filtered, itemCount: filtered.length, filterColumns});
+	};
+
+	applySavedFilter = (filterColumns) => {
+		this.setState({filterColumns});
 	};
 
 	selectionHandler = (selected) => {
@@ -63,13 +67,15 @@ export default class extends React.Component {
 	};
 
 	render() {
+		const {selected, selectedType, filterColumns} = this.state;
+
 		const actions = [
-			<div key="show" group="types" className="slds-text-title_caps slds-m-right--x-small slds-align_absolute-center">Show:</div>,
-			<TypeSelect group="types" key="types" types={GroupTypes} selected={this.state.selectedType} onSelect={this.typeSelectionHandler}/>,
+			<DataTableSavedFilters key="OrgGroupList" threshold="3" id="OrgGroupList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<TypeSelect group="types" key="types" types={GroupTypes} selected={selectedType} onSelect={this.typeSelectionHandler}/>,
 			{label: "New", handler: this.newHandler, detail: "Create new org group"},
 			{
 				label: "Delete",
-				disabled: this.state.selected.size === 0,
+				disabled: selected.size === 0,
 				handler: this.deleteHandler,
 				detail: "Delete the selected groups"
 			}
@@ -77,10 +83,11 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="org groups" title="Org Groups" count={this.state.itemCount} actions={actions}/>
-				<OrgGroupList onFetch={this.fetchData.bind(this)} refetchOn="groups" onFilter={this.filterHandler} onSelect={this.selectionHandler} 
-							  selected={this.state.selected} type={this.state.selectedType.name}/>
+				<OrgGroupList onFetch={this.fetchData.bind(this)} refetchOn="groups" 
+							  onFilter={this.filterHandler} filterColumns={filterColumns} 
+							  onSelect={this.selectionHandler} selected={selected} type={selectedType.name}/>
 				{this.state.addingOrgGroup ?
-					<GroupFormWindow type={this.state.selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+					<GroupFormWindow type={selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>
 		);
 	}
@@ -100,8 +107,10 @@ class TypeSelect extends React.Component {
 				</label>
 			</span>);
 
-		return (
-			<div className="slds-m-right--small slds-radio_button-group">{options}</div>
+		return ([
+				<div key="show" className="slds-text-title_caps slds-m-right--x-small slds-align_absolute-center">Type</div>,
+				<div key="types" className="slds-m-right--small slds-radio_button-group">{options}</div>
+			]
 		);
 	}
 }
