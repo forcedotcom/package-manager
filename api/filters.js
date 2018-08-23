@@ -25,7 +25,8 @@ exports.parseSQLExpressions = (dict = {get: s => s}, filters) => {
 
 async function requestFilters(req, res, next) {
 	try {
-		let filters = await db.query(`SELECT id, key, created_by, name, query FROM filter WHERE key = $1`,
+		let filters = await db.query(`SELECT id, key, created_by, name, query FROM filter WHERE key = $1
+					ORDER BY id desc`,
 			[req.query.key]);
 	
 		filters.forEach(f => f.query = JSON.parse(f.query));
