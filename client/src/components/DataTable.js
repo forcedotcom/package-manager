@@ -34,6 +34,7 @@ export default class extends React.Component {
 		if (this.props.refetchOn)
 			notifier.on(this.props.refetchOn, this.refetchData);
 	}
+
 	componentWillUnmount() {
 		if (this.props.refetchOn)
 			notifier.remove(this.props.refetchOn, this.refetchData);

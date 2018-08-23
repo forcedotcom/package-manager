@@ -70,9 +70,8 @@ export default class extends React.Component {
 	};
 	
 	updateHandler = () => {
-		let selectedId = filtrage.getSelectedFilterId(this.props.id);
-
 		const {filters} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
 		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
 		const name = prompt("Save changes to your filter", selected.name);
 		if (name) {
@@ -82,6 +81,13 @@ export default class extends React.Component {
 						.then(filters => this.setState({filters, isModified: false}))
 				}).catch(err => notifier.error(err.message));
 		}
+	};
+	
+	resetHandler = () => {
+		const {filters} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
+		this.props.onSelect(selected ? selected.query : null);
 	};
 	
 	deleteHandler = () => {
@@ -162,8 +168,8 @@ export default class extends React.Component {
 								</span>
 							</a>
 						</li>
-						{selectedId != null ?
-						<li className="slds-has-divider_top-space slds-dropdown__item">
+						{selectedId != null ? [
+						<li key="updateHandler" className="slds-has-divider_top-space slds-dropdown__item">
 							<a tabIndex="0" onClick={this.updateHandler}>
 								<span className="slds-truncate">
 									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
@@ -171,9 +177,17 @@ export default class extends React.Component {
 									</svg>Save changes to filter
 								</span>
 							</a>
-						</li> : "" }
-						{selectedId != null ? 
-						<li className="slds-dropdown__item">
+						</li>,
+						<li key="resetHandler" className="slds-dropdown__item">
+							<a tabIndex="0" onClick={this.resetHandler}>
+								<span className="slds-truncate">
+									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
+									  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#undo"/>
+									</svg>Undo changes to filter
+								</span>
+							</a>
+						</li>,
+						<li key="deleteHandler" className="slds-dropdown__item">
 							<a tabIndex="2" onClick={this.deleteHandler}>
 								<span className="slds-truncate">
 									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
@@ -181,8 +195,7 @@ export default class extends React.Component {
 									</svg>Delete selected filter
 								</span>
 							</a>
-						</li> : "" }
-						
+						</li>] : "" }
 						{this.props.filterColumns && this.props.filterColumns.length > 0 ?
 						<li className="slds-has-divider_top-space slds-dropdown__item">
 							<a tabIndex="3" onClick={this.clearHandler}>

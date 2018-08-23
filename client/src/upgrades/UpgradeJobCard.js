@@ -6,6 +6,7 @@ import MessageWindow from "../components/MessageWindow";
 import {CSVDownload} from 'react-csv';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -36,8 +37,12 @@ export default class extends React.Component {
 		}
 	};
 
-	filterHandler = (filtered) => {
-		this.setState({filtered, itemCount: filtered.length});
+	filterHandler = (filtered, filterColumns) => {
+		this.setState({filtered, itemCount: filtered.length, filterColumns});
+	};
+
+	applySavedFilter = (filterColumns) => {
+		this.setState({filterColumns});
 	};
 
 	openMessageWindow = (event) => {
@@ -57,6 +62,8 @@ export default class extends React.Component {
 	};
 
 	render() {
+		const {filterColumns} = this.state;
+
 		const columns = [
 			{Header: "Org Information", columns: [
 				{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
@@ -124,6 +131,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
+			<DataTableSavedFilters key="UpgradeJobCard" id="UpgradeJobCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: "Export Results", handler: this.exportHandler}
 		];
 
@@ -133,7 +141,7 @@ export default class extends React.Component {
 				<section className="slds-card__body">
 					<DataTable id="UpgradeJobCard" columns={columns}
 								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} 
-								 onFilter={this.filterHandler} onClick={this.linkHandler}/>
+								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}/>
 				</section>
 				<footer className="slds-card__footer"/>
 				{this.state.showMessage ?
