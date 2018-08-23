@@ -21,17 +21,11 @@ export default class extends React.Component {
 		const {filters, threshold} = this.state;
 		let isModified = false;
 		let selectedId = filtrage.getSelectedFilterId(props.id);
-		let foundIndex = -1;
-		const selected = filters.find((f,index) => {
-			const found = f.id === selectedId;
-			if (found) {
-				foundIndex = index;
-			}
-			return found;
-		});
-		if (foundIndex >= threshold) {
-			filters.splice(foundIndex, 1);
-			filters.splice(threshold-1, 0, selected);
+		const selectedIndex = filters.findIndex(f => f.id === selectedId);
+		const selected = filters[selectedIndex];
+		if (selectedIndex >= threshold) {
+			filters.splice(selectedIndex, 1);
+			filters.splice(threshold - 1, 0, selected);
 		}
 		if (selected && props.filterColumns && filtrage.hasChangedFrom(selected.query, props.filterColumns)) {
 			// Filter changed, so signal that it no longer matches the selected saved filter.
@@ -71,7 +65,7 @@ export default class extends React.Component {
 	};
 	
 	updateHandler = () => {
-		const {filters} = this.state;
+		const {filters, threshold} = this.state;
 		let selectedId = filtrage.getSelectedFilterId(this.props.id);
 		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
 		const name = prompt("Save changes to your filter", selected.name);
@@ -79,7 +73,15 @@ export default class extends React.Component {
 			filtrage.requestSaveFilter(this.props.id, name, selected.id)
 				.then(() => {
 					filtrage.requestFilters(this.props.id)
-						.then(filters => this.setState({filters, isModified: false}))
+						.then(filters => {
+							const selectedIndex = filters.findIndex(f => f.id === selectedId);
+							if (selectedIndex >= threshold) {
+								const selected = filters[selectedIndex];
+								filters.splice(selectedIndex, 1);
+								filters.splice(threshold - 1, 0, selected);
+							}
+							this.setState({filters, isModified: false})
+						})
 				}).catch(err => notifier.error(err.message));
 		}
 	};
@@ -141,7 +143,7 @@ export default class extends React.Component {
 		
 		) : [];
 		if (overflow.length > 0)
-			overflow.push(<li className="slds-has-divider_top-space slds-dropdown__item"/>);
+			overflow.push(<li key="overflowDivider" className="slds-has-divider_top-space slds-dropdown__item"/>);
 
 		const menu =
 			<div className={`slds-dropdown-trigger slds-dropdown-trigger_click slds-m-right--medium ${showMenu ? "slds-is-open" : ""}`}
