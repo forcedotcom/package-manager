@@ -25,32 +25,41 @@ exports.parseSQLExpressions = (dict = {get: s => s}, filters) => {
 
 async function requestFilters(req, res, next) {
 	try {
-		let filters = await db.query(`SELECT key, created_by, name, query FROM filter WHERE key = $1 AND created_by = $2`,
-			[req.query.key, req.session.username]);
-		if (filters.length === 0) {
-			return res.json({});
-		}
+		let filters = await db.query(`SELECT id, key, created_by, name, query FROM filter WHERE key = $1`,
+			[req.query.key]);
 	
-		const filter = filters[0];
-		filter.query = JSON.parse(filter.query);
-		return res.json(filter);
+		filters.forEach(f => f.query = JSON.parse(f.query));
+		return res.json(filters);
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function requestSaveFilters(req, res, next) {
+async function requestSaveFilter(req, res, next) {
 	try {
-		await db.insert(
-			`INSERT filter (key, created_by, name, query)
-			 VALUES ($1, $2, $3, $4)
-			 ON CONFLICT (key, created_by) DO UPDATE SET
-				name = excluded.name, query = excluded.query`,
-			[req.query.key, req.session.username, req.query.name, req.query.query]);
-		return res.json({result: "OK"});
+		let filter = req.body;
+		filter.query = JSON.stringify(filter.query);
+		let recs = (filter.id == null || filter.id === -1)  ?
+			await db.insert(`INSERT INTO filter (key, created_by, name, query) VALUES ($1, $2, $3, $4)`,
+				[filter.key, req.session.username, filter.name, filter.query]) :
+			await db.update(`UPDATE filter SET (name, query) = ($1, $2) WHERE id = $3`,
+				[filter.name, filter.query, filter.id]);
+		let rec = Array.isArray(recs) ? recs[0] : recs;
+		rec.query = JSON.parse(rec.query);
+		return res.json(rec);
 	} catch (err) {
 		next(err);
 	}
+}
+
+async function requestDeleteFilter(req, res, next) {
+	let id = req.params.id;
+	try { 
+		await db.delete(`DELETE FROM filter WHERE id = $1`, [id]);
+		return res.json({result: "OK"});
+	} catch (e) {
+		next(e);
+	}	
 }
 
 function parseFilterAsSQL(dict, filter) {
@@ -152,4 +161,5 @@ function isWrapped(str) {
 }
 
 exports.requestFilters = requestFilters;
-exports.requestSaveFilters = requestSaveFilters;
+exports.requestSaveFilter = requestSaveFilter;
+exports.requestDeleteFilter = requestDeleteFilter;

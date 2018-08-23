@@ -78,7 +78,8 @@ app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/callback', auth.oauthCallback);
 
 app.get('/api/filters', filters.requestFilters);
-app.put('/api/filters', filters.requestSaveFilters);
+app.put('/api/filters', filters.requestSaveFilter);
+app.del('/api/filters/:id', filters.requestDeleteFilter);
 
 app.get('/api/admin/settings', admin.requestSettings);
 app.get('/api/admin/jobs', admin.requestJobs);

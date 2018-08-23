@@ -35,7 +35,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={packageVersion.status}/>
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<OrgCard title="Customers" onFetch={this.fetchOrgs.bind(this)}/>
+					<OrgCard id="PackageVersionMembers" title="Customers" onFetch={this.fetchOrgs.bind(this)}/>
 					<DataTableFilterHelp/>
 				</div>
 			</div>

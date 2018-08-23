@@ -10,6 +10,7 @@ import OrgList from './OrgList';
 import SelectGroupWindow from "./SelectGroupWindow";
 import AddOrgWindow from "../orggroups/AddOrgWindow";
 import * as strings from "../services/strings";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
 	constructor() {
@@ -23,8 +24,12 @@ export default class extends React.Component {
 		return orgService.requestAll();
 	};
 	
-	filterHandler = (filtered) => {
-		this.setState({filtered, itemCount: filtered.length});
+	filterHandler = (filtered, filterColumns) => {
+		this.setState({filtered, itemCount: filtered.length, filterColumns});
+	};
+	
+	applySavedFilter = (filterColumns) => {
+		this.setState({filterColumns});
 	};
 
 	selectionHandler = (selected) => {
@@ -76,8 +81,9 @@ export default class extends React.Component {
 	};
 	
 	render() {
-		const {selected} = this.state;
+		const {selected, filterColumns} = this.state;
 		const actions = [
+			<DataTableSavedFilters key="OrgList" id="OrgList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.addingToGroupHandler},
@@ -86,8 +92,8 @@ export default class extends React.Component {
 		];
 		return (
 			<div>
-				<HomeHeader type="orgs" title="Orgs" actions={actions} itemCount={this.state.itemCount}/>
-				<OrgList onFetch={this.fetchData.bind(this)} refetchOn="orgs" onFilter={this.filterHandler} 
+				<HomeHeader type="orgs" title="Orgs" actions={actions} count={this.state.itemCount}/>
+				<OrgList onFetch={this.fetchData.bind(this)} refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
 						 showSelected={this.state.showSelected} onSelect={this.selectionHandler} selected={selected} />
 				{this.state.showAddToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`} 
 																onAdd={this.addToGroup.bind(this)}

@@ -172,6 +172,7 @@ create table if not exists license
 
 create table if not exists filter
 (
+  id         serial       not null,
   key        varchar(80)  not null,
   created_by varchar(80),
   name       varchar(255) not null,
@@ -191,6 +192,9 @@ on conflict do nothing;
 
 -- Patching
 drop table if exists admin_job;
+
+alter table filter
+  add if not exists id serial not null;
 
 alter table upgrade_item
   drop column if exists parent__item_id;

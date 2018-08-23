@@ -3,12 +3,21 @@ import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
 	}
+
+	filterHandler = (filtered, filterColumns) => {
+		this.setState({itemCount: filtered.length, filterColumns});
+	};
+
+	applySavedFilter = (filterColumns) => {
+		this.setState({filterColumns});
+	};
 
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
@@ -26,11 +35,9 @@ export default class extends React.Component {
 		}
 	};
 
-	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
-	};
-
 	render() {
+		const {filterColumns} = this.state;
+
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
 			{Header: "Account Name", accessor: "account_name", clickable: true},
@@ -44,14 +51,18 @@ export default class extends React.Component {
 			{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false},
 		];
 
+		const actions = [
+			<DataTableSavedFilters key="GroupMemberVersionCard" id="GroupMemberVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
+		].concat(this.props.actions);
+		
 		return (
 			<article className="slds-card">
-				<CardHeader title="Installed Versions" icon={PACKAGE_VERSION_ICON} actions={this.props.actions} count={this.state.itemCount}/>
+				<CardHeader title="Installed Versions" icon={PACKAGE_VERSION_ICON} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
 					<DataTable id="GroupMemberVersionCard" keyField="org_id" columns={columns} 
 								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} 
-								 onFilter={this.filterHandler} onClick={this.linkHandler}
-								 selection={this.props.selected} onSelect={this.props.onSelect}/>
+								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
+							   selection={this.props.selected} onSelect={this.props.onSelect}/>
 				</div>
 				<footer className="slds-card__footer"/>
 			</article>

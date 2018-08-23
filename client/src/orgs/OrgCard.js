@@ -7,15 +7,24 @@ import {CardHeader} from "../components/PageHeader";
 import SelectGroupWindow from "./SelectGroupWindow";
 import DataTable from "../components/DataTable";
 import * as strings from "../services/strings";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {
-			selected: new Map(), showSelected: false
+			selected: new Map()
 		};
 	}
+	
+	filterHandler = (filtered, filterColumns) => {
+		this.setState({filtered, itemCount: filtered.length, filterColumns});
+	};
 
+	applySavedFilter = (filterColumns) => {
+		this.setState({filterColumns});
+	};
+	
 	linkHandler = (e, column, rowInfo) => {
 		window.location = "/org/" + rowInfo.row.org_id;
 	};
@@ -50,11 +59,7 @@ export default class extends React.Component {
 	openGroupWindow = () => {
 		this.setState({addingToGroup: true});
 	};
-
-	filterHandler = (filtered) => {
-		this.setState({filtered, itemCount: filtered.length});
-	};
-
+	
 	exportHandler = () => {
 		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.orgs;
 		this.setState({isExporting: true, exportable});
@@ -62,7 +67,7 @@ export default class extends React.Component {
 	};
 
 	render() {
-		const {selected} = this.state;
+		const {selected, filterColumns} = this.state;
 		
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
@@ -77,6 +82,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
+			<DataTableSavedFilters key={this.props.id} id={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Add To Group", handler: this.openGroupWindow, disabled: selected.size === 0},
@@ -94,8 +100,8 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable id="OrgCard" keyField="org_id" columns={columns} onFetch={this.props.onFetch}
-								 onClick={this.linkHandler} onFilter={this.filterHandler}
+					<DataTable id={this.props.id} keyField="org_id" columns={columns} onFetch={this.props.onFetch}
+								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
 								 showSelected={this.props.showSelected} selection={selected}
 								 onSelect={this.selectionHandler}/>
 				</div>

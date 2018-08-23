@@ -4,6 +4,7 @@ const jsep = require('jsep');
 jsep.addUnaryOp("?");
 
 const PREFIX = "__filtrage";
+const SEL_PREFIX = PREFIX + "__sel";
 const URL = "/api/filters";
 
 const Types = {
@@ -22,7 +23,17 @@ const Types = {
 
 export const requestFilters = (key) => h.get(URL, {key});
 
-export const requestSaveFilters = (key, name, query) => h.put(URL, {key, name, query});
+export const requestSaveFilter = (key, name, id) => {
+	return h.put(URL, {id, key, name, query: getFilters(key)});
+};
+
+export const requestDeleteFilter = (key, id) => {
+	const selectedId = getSelectedFilterId(key);
+	if (selectedId === id) {
+		setSelectedFilterId(key, null);
+	}
+	return h.del(`${URL}/${id}`);
+};
 
 export const getFilters = (key) => {
 	if (!key) {
@@ -41,6 +52,25 @@ const setFilters = (key, filters) => {
 	if (filters) {
 		window.localStorage.setItem(PREFIX + key, JSON.stringify(filters));
 	}
+};
+
+export const getSelectedFilterId = (key) => {
+	if (!key) {
+		return null;
+	}
+
+	const str = window.localStorage.getItem(SEL_PREFIX + key);
+	return str ? parseInt(str, 10) : null;
+};
+
+export const setSelectedFilterId = (key, id) => {
+	if (!key) {
+		return;
+	}
+	if (id == null)
+		window.localStorage.removeItem(SEL_PREFIX + key);
+	else 
+		window.localStorage.setItem(SEL_PREFIX + key, id);
 };
 
 export const sanitize = (filters) => {
@@ -73,10 +103,15 @@ function sanitizeValue(value) {
 	return sanitizedValue;
 }
 
-export const hasChanged = (filters, key) => {
-	const lastJson = window.localStorage.getItem(PREFIX + key);
-	const thisJson = JSON.stringify(filters);
-	return lastJson !== thisJson;
+export const hasChanged = (newFilters, key) => {
+	const storedJson = window.localStorage.getItem(PREFIX + key);
+	return hasChangedFrom(storedJson, newFilters);
+};
+
+export const hasChangedFrom = (oldFilters, newFilters) => {
+	const oldJson = typeof oldFilters !== "string" ? JSON.stringify(oldFilters) : oldFilters;
+	const newJson = typeof newFilters !== "string" ? JSON.stringify(newFilters) : newFilters;
+	return oldJson !== newJson;
 };
 
 export const filterRows = (filters, rows, key) => {

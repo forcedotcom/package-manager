@@ -23,7 +23,7 @@ export default class extends React.Component {
 			<div>
 				<DataTable id="OrgList" keyField="org_id" columns={columns} 
 						 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
-						 onClick={this.linkHandler} onFilter={this.props.onFilter}
+						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filters}
 						 showSelected={this.props.showSelected} selection={this.props.selected}
 						 onSelect={this.props.onSelect}/>
 				<DataTableFilterHelp/>

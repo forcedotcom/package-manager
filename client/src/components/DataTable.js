@@ -43,7 +43,7 @@ export default class extends React.Component {
 		let {defaultFilter, showSelected} = props;
 		let {tableId, data} = this.state;
 
-		let filterColumns = filtrage.getFilters(tableId);
+		let filterColumns = props.filters ? props.filters : filtrage.getFilters(tableId);
 		if (defaultFilter) {
 			// Remove existing default filter if found, then add it back
 			filterColumns = filterColumns.filter(c => c.id !== defaultFilter.id);
@@ -87,7 +87,7 @@ export default class extends React.Component {
 		  Instead of passing our external selection state we provide an 'isSelected'
 		  callback and detect the selection state ourselves. This allows any implementation
 		  for selection (either an array, object keys, or even a Javascript Set object).
-		*/
+		*/	
 		return this.state.selection.has(key);
 	};
 
@@ -170,7 +170,6 @@ export default class extends React.Component {
 		const shouldDebounce = 	changedFilter && (showSelected ? this.state.selection.size : data.length) > 5000;
 
 		if (shouldDebounce) {
-			this.setState({ loading: true });
 			this.debounceFilterAndSort(tableId, data, data, filterColumns, changedSort ? sortColumns : null, page, pageSize, showSelected);
 		} else if (changedFilter) {
 			this.filterAndSort(tableId, data, data, filterColumns, changedSort ? sortColumns : null, page, pageSize, showSelected);
@@ -196,8 +195,7 @@ export default class extends React.Component {
 
 		const functionalProps = {
 			getTrProps: (s, r) => {
-				// someone asked for an example of a background color change
-				// here it is...
+				// Set selected rows to different background color
 				const selected = r && r.original && this.isSelected(r.original[keyField]);
 				return {
 					style: {
