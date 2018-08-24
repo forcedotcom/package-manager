@@ -12,7 +12,7 @@ export const DataTableFilter = ({filter, onChange}) => {
 		}
 	};
 	return (
-		<div><input data-tip="" type="text" style={{width: '100%',backgroundColor: filter ? "#eeffee" : "inherit"}} value={filter ? filter.value : ''}
+		<div><input data-tip="" type="text" style={{width: '100%',backgroundColor: filter ? "#eeffee" : "inherit"}} value={filter ? filter.value : ''} title={filter ? filter.value : ''}
 					onChange={event => onChange(event.target.value)} onKeyDown={handleKeyDown}/>
 		</div>
 	);
