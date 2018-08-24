@@ -37,7 +37,7 @@ export default class extends React.Component {
 	fetchVersions = () => {
 		return new Promise((resolve, reject) => {
 			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId).then(versions => {
-				this.setState({upgradeablePackageIds: this.resolveUpgradeablePackages(versions)});
+				this.setState({isRefreshing: false, upgradeablePackageIds: this.resolveUpgradeablePackages(versions)});
 				resolve(versions);
 			}).catch(reject);
 		});

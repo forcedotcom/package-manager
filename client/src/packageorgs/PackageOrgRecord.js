@@ -1,6 +1,7 @@
 import React from 'react';
 
 import * as packageOrgService from '../services/PackageOrgService';
+import * as notifier from '../services/notifications';
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import PackageOrgView from "./PackageOrgView";
@@ -12,10 +13,19 @@ export default class extends React.Component {
 	state = {packageorg: {}};
 
 	componentDidMount() {
-		let packageorgId = this.props.match.params.packageorgId;
-		packageOrgService.requestById(packageorgId).then(packageorg => this.setState({packageorg}));
+		notifier.on("package-orgs", this.fetchData);
+		this.fetchData();
 	}
-
+	
+	componentWillUnmount() {
+		notifier.remove("package-orgs", this.fetchData);	
+	}
+	
+	fetchData = () => {
+		packageOrgService.requestById(this.props.match.params.packageorgId).then(
+			packageorg => this.setState({packageorg, isRefreshing: false}));
+	};
+	
 	deleteHandler = () => {
 		if (window.confirm(`Are you sure you want to remove this packaging org?`)) {
 			packageOrgService.requestDelete([this.state.packageorg.org_id]).then(() => {
@@ -26,9 +36,8 @@ export default class extends React.Component {
 
 	refreshHandler = () => {
 		this.setState({isRefreshing: true});
-		packageOrgService.requestRefresh([this.state.packageorg.org_id]).then((packageorgs) => {
-			this.setState({packageorg: packageorgs[0], isRefreshing: false});
-		}).catch(e => {
+		packageOrgService.requestRefresh([this.state.packageorg.org_id]).then(() => {})
+		.catch(e => {
 			this.setState({isRefreshing: false});
 			NotificationManager.error(e, "Refresh Failed");
 		});
