@@ -52,7 +52,7 @@ export default class extends React.Component {
 
 	refreshHandler = () => {
 		this.setState({isRefreshing: true});
-		notifier.emit("refresh-org-versions", this.state.org.id);
+		notifier.emit("refresh-org-versions", this.state.org.org_id);
 	};
 
 	closeSchedulerWindow = () => {
