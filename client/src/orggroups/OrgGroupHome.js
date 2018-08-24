@@ -25,8 +25,8 @@ export default class extends React.Component {
 		return orgGroupService.requestAll();
 	};
 
-	filterHandler = (filtered, filterColumns) => {
-		this.setState({filtered, itemCount: filtered.length, filterColumns});
+	filterHandler = (filtered, filterColumns, itemCount) => {
+		this.setState({filtered, itemCount, filterColumns});
 	};
 
 	applySavedFilter = (filterColumns) => {

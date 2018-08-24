@@ -16,8 +16,8 @@ export default class extends React.Component {
 		return upgradeService.requestAll();
 	};
 
-	filterHandler = (filtered, filterColumns) => {
-		this.setState({itemCount: filtered.length, filterColumns});
+	filterHandler = (filtered, filterColumns, itemCount) => {
+		this.setState({itemCount, filterColumns});
 	};
 	
 	applySavedFilter = (filterColumns) => {

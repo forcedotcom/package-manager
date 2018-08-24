@@ -27,8 +27,8 @@ export default class extends React.Component {
 		}
 	};
 
-	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+	filterHandler = (filtered, filterColumns, itemCount) => {
+		this.setState({itemCount});
 	};
 
 	render() {

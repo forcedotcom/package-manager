@@ -37,8 +37,8 @@ export default class extends React.Component {
 		}
 	};
 
-	filterHandler = (filtered, filterColumns) => {
-		this.setState({filtered, itemCount: filtered.length, filterColumns});
+	filterHandler = (filtered, filterColumns, itemCount) => {
+		this.setState({filtered, itemCount, filterColumns});
 	};
 
 	applySavedFilter = (filterColumns) => {

@@ -190,7 +190,13 @@ export class CardHeader extends React.Component {
 						{actionBar}
 					</div>
 				</div>
-				<p className="slds-m-top--xxx-small slds-text-body--small">{this.props.count && this.props.count > 0 ? ` ${this.props.count} records found` : <br/>}</p>
+				<p className="slds-m-top--xxx-small slds-text-body--small">{this.props.count ? (this.props.count > 0 ? ` ${this.props.count} records found` :
+						<span className="slds-p-around_none slds-icon-typing slds-is-animated" title="Loading records">
+						  <span className="slds-icon-typing__dot" style={{height: ".5em", width: ".5em"}}/>
+						  <span className="slds-icon-typing__dot" style={{height: ".5em", width: ".5em"}}/>
+						  <span className="slds-icon-typing__dot" style={{height: ".5em", width: ".5em"}}/>
+						</span>
+				) : <br/>}</p>
 				{this.props.children ?
 					<div className="slds-p-top--x-small">
 						{this.props.children}
@@ -341,7 +347,13 @@ export class HomeHeader extends React.Component {
 						</div>
 					</div>
 				</div>
-				<p className="slds-text-body--small slds-m-top--x-small">{this.props.count && this.props.count > 0 ? ` ${this.props.count} records found` : <br/>}</p>
+				<p className="slds-text-body--small slds-m-top--x-small">{this.props.count ? (this.props.count > 0 ? ` ${this.props.count} records found` :
+						<span className="slds-p-around_none slds-icon-typing slds-is-animated" title="Loading records">
+						  <span className="slds-icon-typing__dot" style={{height: ".5em", width: ".5em"}}/>
+						  <span className="slds-icon-typing__dot" style={{height: ".5em", width: ".5em"}}/>
+						  <span className="slds-icon-typing__dot" style={{height: ".5em", width: ".5em"}}/>
+						</span>
+				) : <br/>}</p>
 				{this.props.children ?
 					<div className="slds-grid slds-page-header__detail-row">{this.props.children}</div> : ""}
 			</div>

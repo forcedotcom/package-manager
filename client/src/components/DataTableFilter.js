@@ -18,6 +18,12 @@ export const DataTableFilter = ({filter, onChange}) => {
 	);
 };
 
+export const DataTableFilterDisabled = ({filter}) => {
+	return (
+		<div><input disabled={true} data-tip="" type="text" style={{width: '100%'}} value={filter ? filter.value : ''}/></div>
+	);
+};
+
 export const DataTableFilterHelp = () => {
 	return (<ReactTooltip getContent={HelpText} effect="solid" place="right" event="dblclick" eventOff="click"/>);
 };

@@ -4,9 +4,10 @@ import debounce from 'lodash.debounce';
 import ReactTable from "react-table";
 import "react-table/react-table.css";
 import checkboxHOC from "react-table/lib/hoc/selectTable";
+import * as storage from "../services/storage";
 import * as sortage from "../services/sortage";
 import * as filtrage from "../services/filtrage";
-import {DataTableFilter} from "./DataTableFilter";
+import {DataTableFilter, DataTableFilterDisabled} from "./DataTableFilter";
 import * as notifier from "../services/notifications";
 
 const CheckboxTable = checkboxHOC(ReactTable);
@@ -51,7 +52,7 @@ export default class extends React.Component {
 			filterColumns.push(defaultFilter);
 		}
 		const force = props.showSelected !== this.props.showSelected;
-		this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSortColumns(tableId), 0, sortage.getPageSize(tableId), force);
+		this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSortColumns(tableId), 0, sortage.getPageSize(tableId), data.length, force);
 	}
 
 	handleSelection = (key, shift, row) => {
@@ -92,27 +93,30 @@ export default class extends React.Component {
 		return this.state.selection.has(key);
 	};
 
-	filterAndSort = (tableId, data, filteredRows, filterColumns, sortColumns, page, pageSize, showSelected) => {
+	filterAndSort = (tableId, data, filteredRows, filterColumns, sortColumns, page, pageSize, showSelected, rowCount) => {
 		let rows = showSelected ? Array.from(this.state.selection.values()) : filteredRows || data;
 
-		rows = filterColumns ?
-			filtrage.filterRows(filterColumns, rows, tableId) : rows;
-
-		if (sortColumns)
+		if (filterColumns) {
+			rows = filtrage.filterRows(filterColumns, rows, tableId);
 			sortage.sortRows(sortColumns, rows, tableId);
+		} else if (sortColumns) {
+			sortage.sortRows(sortColumns, rows, tableId);
+		}
 
 		sortage.setPageSize(tableId, pageSize);
 
 		if (filterColumns) {
 			// Notify onFilter if filters applied, but after sorting
 			if (this.props.onFilter) {
-				this.props.onFilter(rows, filterColumns);
+				this.props.onFilter(rows, filterColumns, rowCount);
 			}
 		}
+		storage.setPreviewRows(this.props.id, data.length > 3000 ? rows.slice(pageSize * page, pageSize * page + pageSize) : null);
 		this.setState({
 			tableId,
 			loading: false,
 			showSelected,
+			filterable: rowCount >= 0,
 			data,
 			rows: rows.slice(pageSize * page, pageSize * page + pageSize),
 			filteredRows: rows,
@@ -130,12 +134,18 @@ export default class extends React.Component {
 
 		if (data.length === 0) {
 			// Haven't loaded data yet.  Do it now.
-			this.setState({ loading: true });
+			const previewData = storage.getPreviewRows(this.props.id);
+			if (previewData) {
+				this.dataChanged(tableId, previewData, showSelected, filtered, sorted, page, pageSize, -1, true);
+			}
+			else {
+				this.setState({loading: true});
+			}
 			this.props.onFetch().then(data => {
-				this.dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize, true);
+				this.dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize, data.length, true);
 			});
 		} else {
-			this.dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize);
+			this.dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize, data.length);
 		}
 	};
 
@@ -145,11 +155,11 @@ export default class extends React.Component {
 		this.props.onFetch().then(data => {
 			const filterColumns = filtrage.getFilterColumns(tableId);
 			const sortColumns = sortage.getSortColumns(tableId);
-			this.dataChanged(tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, true);
+			this.dataChanged(tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, data.length, true);
 		});
 	};
 
-	dataChanged = (tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, force) => {
+	dataChanged = (tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, rowCount, force) => {
 		const {filteredRows} = this.state;
 
 		let changedFilter = force || filtrage.hasChanged(filterColumns, tableId);
@@ -168,19 +178,19 @@ export default class extends React.Component {
 		}
 
 		// Debounce if row count is over some large sounding number
-		const shouldDebounce = 	changedFilter && (showSelected ? this.state.selection.size : data.length) > 5000;
+		const shouldDebounce = changedFilter && (showSelected ? this.state.selection.size : data.length) > 3000;
 
 		if (shouldDebounce) {
-			this.debounceFilterAndSort(tableId, data, data, filterColumns, changedSort ? sortColumns : null, page, pageSize, showSelected);
+			this.debounceFilterAndSort(tableId, data, data, filterColumns, sortColumns, page, pageSize, showSelected, rowCount);
 		} else if (changedFilter) {
-			this.filterAndSort(tableId, data, data, filterColumns, changedSort ? sortColumns : null, page, pageSize, showSelected);
+			this.filterAndSort(tableId, data, data, filterColumns, sortColumns, page, pageSize, showSelected, rowCount);
 		} else {
-			this.filterAndSort(tableId, data, filteredRows, null, changedSort ? sortColumns : null, page, pageSize, showSelected);
+			this.filterAndSort(tableId, data, filteredRows, null, changedSort ? sortColumns : null, page, pageSize, showSelected, rowCount);
 		}
 	};
 
 	render() {
-		const {tableId, keyField, selectAll, rows, pages, loading} = this.state;
+		const {tableId, keyField, selectAll, rows, pages, loading, filterable} = this.state;
 
 		const filterColumns = filtrage.getFilterColumns(tableId);
 		const sortColumns = sortage.getSortColumns(tableId);
@@ -238,7 +248,7 @@ export default class extends React.Component {
 				defaultSorted={sortColumns}
 				keyField={keyField}
 				className="-striped -highlight"
-				FilterComponent={DataTableFilter}
+				FilterComponent={filterable ? DataTableFilter : DataTableFilterDisabled}
 				{...selectionProps}
 				{...functionalProps}
 			/>

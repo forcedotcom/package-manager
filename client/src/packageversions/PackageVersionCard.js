@@ -5,6 +5,7 @@ import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
 import * as sortage from "../services/sortage";
 import DataTable from "../components/DataTable";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
 
 export default class extends React.Component {
 	constructor() {
@@ -16,17 +17,16 @@ export default class extends React.Component {
 		window.location = "/packageversion/" + rowInfo.original.version_id;
 	};
 
-	componentWillReceiveProps(props) {
-		if (props.packageVersions) {
-			this.setState({itemCount: props.packageVersions.length});
-		}
-	}
+	filterHandler = (filtered, filterColumns, itemCount) => {
+		this.setState({filtered, itemCount, filterColumns});
+	};
 
-	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+	applySavedFilter = (filterColumns) => {
+		this.setState({filterColumns});
 	};
 
 	render() {
+		const {filterColumns} = this.state;
 		let columns = [
 			{
 				Header: "Version Number", accessor: "version_number", sortable: true, clickable: true,
@@ -42,12 +42,16 @@ export default class extends React.Component {
 			{Header: "Status", accessor: "status", sortable: true}
 		];
 
+		const actions = [
+			<DataTableSavedFilters key="PackageVersionCard" id="PackageVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
+		];
+		
 		return (
 			<div className="slds-card">
-				<CardHeader title="Package Versions" icon={PACKAGE_VERSION_ICON} count={this.state.itemCount}/>
+				<CardHeader title="Package Versions" icon={PACKAGE_VERSION_ICON} count={this.state.itemCount} actions={actions}/>
 				<section className="slds-card__body">
-					<DataTable id="PackageVersionCard" onFetch={this.props.onFetch} onFilter={this.filterHandler}
-							   onClick={this.linkHandler} columns={columns}/>
+					<DataTable id="PackageVersionCard" columns={columns} onFetch={this.props.onFetch} 
+							   onFilter={this.filterHandler} filters={filterColumns} onClick={this.linkHandler} />
 				</section>
 				<footer className="slds-card__footer"/>
 			</div>

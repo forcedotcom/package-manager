@@ -17,8 +17,8 @@ export default class extends React.Component {
 		return packageOrgService.requestAll();
 	};
 
-	filterHandler = (filtered) => {
-		this.setState({itemCount: filtered.length});
+	filterHandler = (filtered, filterColumns, itemCount) => {
+		this.setState({itemCount});
 	};
 
 	newHandler = (event) => {
