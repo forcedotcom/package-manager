@@ -21,7 +21,7 @@ export default class extends React.Component {
 		return new Promise((resolve, reject) => {
 			packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
 				let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
-				this.setState({upgradeablePackageIds});
+				this.setState({isRefreshing: false, upgradeablePackageIds});
 				resolve(versions);
 			}).catch(reject);
 		});
