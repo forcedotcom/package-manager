@@ -9,16 +9,12 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
-	}
-
-	fetchData = () => {
-		return packageService.requestAll();
-	}
 	
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({itemCount});
-	};
+		this.fetchData = this.fetchData.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+	}
 
+	// Lifecycle
 	render() {
 		return (
 			<div>
@@ -26,5 +22,14 @@ export default class extends React.Component {
 				<PackageList onFetch={this.fetchData.bind(this)} onFilter={this.filterHandler}/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchData()  {
+		return packageService.requestAll();
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({itemCount});
 	}
 }

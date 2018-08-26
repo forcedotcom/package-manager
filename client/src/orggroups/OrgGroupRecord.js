@@ -28,21 +28,31 @@ export default class extends React.Component {
 			showSelected: false,
 			upgradeablePackageIds: []
 		};
+		
+		this.fetchMembers = this.fetchMembers.bind(this);
+		this.fetchVersions = this.fetchVersions.bind(this);
+		this.resolveUpgradeablePackages = this.resolveUpgradeablePackages.bind(this);
+		this.upgradeHandler = this.upgradeHandler.bind(this);
+		this.schedulingWindowHandler = this.schedulingWindowHandler.bind(this);
+		this.cancelSchedulingHandler = this.cancelSchedulingHandler.bind(this);
+		this.saveHandler = this.saveHandler.bind(this);
+		this.refreshHandler = this.refreshHandler.bind(this);
+		this.groupRefreshed = this.groupRefreshed.bind(this);
+		this.editHandler = this.editHandler.bind(this);
+		this.cancelHandler = this.cancelHandler.bind(this);
+		this.deleteHandler = this.deleteHandler.bind(this);
+		this.addToGroupHandler = this.addToGroupHandler.bind(this);
+		this.removeMembersHandler = this.removeMembersHandler.bind(this);
+		this.closeGroupWindow = this.closeGroupWindow.bind(this);
+		this.addingToGroupHandler = this.addingToGroupHandler.bind(this);
+		this.movingToGroupHandler = this.movingToGroupHandler.bind(this);
+		this.selectionHandler = this.selectionHandler.bind(this);
+		this.versionSelectionHandler = this.versionSelectionHandler.bind(this);
+		this.handleShowSelected = this.handleShowSelected.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 
-	fetchMembers = () => {
-		return orgGroupService.requestMembers(this.props.match.params.orgGroupId);
-	};
-	
-	fetchVersions = () => {
-		return new Promise((resolve, reject) => {
-			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId).then(versions => {
-				this.setState({isRefreshing: false, upgradeablePackageIds: this.resolveUpgradeablePackages(versions)});
-				resolve(versions);
-			}).catch(reject);
-		});
-	};
-	
+	// Lifecycle
 	componentDidMount() {
 		notifier.on('group', this.groupRefreshed);
 
@@ -52,136 +62,6 @@ export default class extends React.Component {
 	componentWillUnmount() {
 		notifier.remove('group', this.groupRefreshed);
 	}
-
-	resolveUpgradeablePackages = (versions) => {
-		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
-		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
-		packageVersionList.sort(function (a, b) {
-			return a.dependency_tier > b.dependency_tier ? 1 : -1;
-		});
-		return packageVersionList.map(v => v.package_id);
-	};
-	
-	upgradeHandler = (versions, startDate, description) => {
-		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
-			this.setState({schedulingUpgrade: false});
-			if (res.message) {
-				notifier.error(res.message, "Upgrade failed");
-			} else {
-				window.location = `/upgrade/${res.id}`;
-			}
-		});
-	};
-
-	cancelSchedulingHandler = () => {
-		this.setState({schedulingUpgrade: false});
-	};
-
-	schedulingWindowHandler = () => {
-		this.setState({schedulingUpgrade: true});
-	};
-	
-	saveHandler = (orggroup) => {
-		this.setState({isProcessing: true});
-		orgGroupService.requestUpdate(orggroup).then(() => {
-			this.setState({orggroup, isEditing: false});
-		}).catch(e => notifier.error(e.message | e, orggroup.message, "Fail"));
-	};
-
-	refreshHandler = () => {
-		this.setState({isRefreshing: true});
-		notifier.emit("refresh-group-versions", this.state.orggroup.id);
-	};
-	
-	groupRefreshed = (groupId) => {
-		if (this.state.orggroup.id === groupId) {
-			try {
-				this.setState({isProcessing: false, isEditing: false});
-			} catch(e) {
-				this.setState({isProcessing: false, isEditing: false});
-				notifier.error(e.message, "Refresh Failed");
-			}
-		}
-	};
-
-	editHandler = () => {
-		this.setState({isEditing: true});
-	};
-
-	cancelHandler = () => {
-		this.setState({isEditing: false});
-	};
-
-	deleteHandler = () => {
-		if (window.confirm(`Are you sure you want to delete this group?`)) {
-			orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
-				window.location = '/orggroups';
-			}).catch(e => notifier.error(e.message, "Delete Failed"));
-		}
-	};
-
-	removeMembersHandler = (skipConfirmation) => {
-		if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.size} member(s)?`)) {
-			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(() => {})
-				.catch(e => notifier.error(e.message, "Removal Failed"));
-			return true;
-		}
-		return false;
-	};
-
-	addToGroupHandler = (groupId, groupName, removeAfterAdd) => {
-		if (removeAfterAdd && !window.confirm(`Are you sure you want to move ${this.state.selected.size} member(s) to ${groupName}?`)) {
-			this.setState({addingToGroup: false, removeAfterAdd: false});
-			return;
-		}
-		this.setState({addingToGroup: false});
-		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
-			let moved = false;
-			if (removeAfterAdd) {
-				moved = this.removeMembersHandler(true);
-			}
-			if (moved) {
-				notifier.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
-			} else {
-				notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
-			}
-			this.state.selected.clear();
-			this.setState({showSelected: false, removeAfterAdd: false});
-		}).catch(e => notifier.error(e.message, "Addition Failed"));
-	};
-
-	closeGroupWindow = () => {
-		this.setState({addingToGroup: false});
-	};
-
-	addingToGroupHandler = () => {
-		this.setState({addingToGroup: true});
-	};
-
-	movingToGroupHandler = () => {
-		this.setState({addingToGroup: true, removeAfterAdd: true});
-	};
-
-	selectionHandler = (selected) => {
-		let showSelected = this.state.showSelected;
-		if (selected.size === 0) {
-			showSelected = false;
-		}
-		this.setState({selected, showSelected});
-	};
-	
-	versionSelectionHandler = (selected) => {
-		this.setState({selectedVersions: selected});
-	};
-	
-	handleShowSelected = () => {
-		this.setState({showSelected: !this.state.showSelected});
-	};
-	
-	exportHandler = () => {
-		this.setState({isExporting: true, exportable: this.state.members});
-		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
-	};
 
 	render() {
 		const {selected, selectedVersions, showSelected, orggroup} = this.state;
@@ -216,11 +96,11 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Members">
-							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers.bind(this)} refetchOn="group-members" actions={memberActions}
+							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members" actions={memberActions}
 												selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
 						</div>
 						<div label="Versions">
-							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions.bind(this)} refetchOn="group-versions" actions={memberActions}
+							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions" refetchFor={orggroup.id} actions={memberActions}
 													selected={selectedVersions} showSelected={showSelected} onSelect={this.versionSelectionHandler}/>
 						</div>
 					</Tabs>
@@ -231,15 +111,159 @@ export default class extends React.Component {
 														 onCancel={this.cancelHandler}/> : ""}
 				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow packageIds={this.state.upgradeablePackageIds}
 																	   description={`Upgrading Group: ${orggroup.name}`}
-																	   onUpgrade={this.upgradeHandler.bind(this)}
+																	   onUpgrade={this.upgradeHandler}
 																	   onCancel={this.cancelSchedulingHandler}/> : ""}
 				{this.state.addingToGroup ?
 					<SelectGroupWindow title={`${this.state.removeAfterAdd ? "Move" : "Copy"} ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to different group`} 
 									   excludeId={orggroup.id} removeAfterAdd={this.state.removeAfterAdd}
-									   onAdd={this.addToGroupHandler.bind(this)}
+									   onAdd={this.addToGroupHandler}
 									   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 			</div>
 		);
 	}
+
+	// Handlers
+	fetchMembers() {
+		return orgGroupService.requestMembers(this.props.match.params.orgGroupId);
+	}
+
+	fetchVersions() {
+		return new Promise((resolve, reject) => {
+			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId).then(versions => {
+				this.setState({isRefreshing: false, upgradeablePackageIds: this.resolveUpgradeablePackages(versions)});
+				resolve(versions);
+			}).catch(reject);
+		});
+	}
+
+	resolveUpgradeablePackages(versions) {
+		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
+		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
+		packageVersionList.sort(function (a, b) {
+			return a.dependency_tier > b.dependency_tier ? 1 : -1;
+		});
+		return packageVersionList.map(v => v.package_id);
+	}
+
+	upgradeHandler(versions, startDate, description) {
+		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
+			this.setState({schedulingUpgrade: false});
+			if (res.message) {
+				notifier.error(res.message, "Upgrade failed");
+			} else {
+				window.location = `/upgrade/${res.id}`;
+			}
+		});
+	}
+
+	schedulingWindowHandler() {
+		this.setState({schedulingUpgrade: true});
+	}
+
+	cancelSchedulingHandler() {
+		this.setState({schedulingUpgrade: false});
+	}
+
+	saveHandler(orggroup) {
+		this.setState({isProcessing: true});
+		orgGroupService.requestUpdate(orggroup).then(() => {
+			this.setState({orggroup, isEditing: false});
+		}).catch(e => notifier.error(e.message | e, orggroup.message, "Fail"));
+	}
+
+	refreshHandler() {
+		this.setState({isRefreshing: true});
+		notifier.emit("refresh-group-versions", this.state.orggroup.id);
+	}
+
+	groupRefreshed(groupId) {
+		if (this.state.orggroup.id === groupId) {
+			try {
+				this.setState({isProcessing: false, isEditing: false});
+			} catch(e) {
+				this.setState({isProcessing: false, isEditing: false});
+				notifier.error(e.message, "Refresh Failed");
+			}
+		}
+	}
+
+	editHandler() {
+		this.setState({isEditing: true});
+	}
+
+	cancelHandler() {
+		this.setState({isEditing: false});
+	}
+
+	deleteHandler() {
+		if (window.confirm(`Are you sure you want to delete this group?`)) {
+			orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
+				window.location = '/orggroups';
+			}).catch(e => notifier.error(e.message, "Delete Failed"));
+		}
+	}
+
+	addToGroupHandler(groupId, groupName, removeAfterAdd) {
+		if (removeAfterAdd && !window.confirm(`Are you sure you want to move ${this.state.selected.size} member(s) to ${groupName}?`)) {
+			this.setState({addingToGroup: false, removeAfterAdd: false});
+			return;
+		}
+		this.setState({addingToGroup: false});
+		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
+			let moved = false;
+			if (removeAfterAdd) {
+				moved = this.removeMembersHandler(true);
+			}
+			if (moved) {
+				notifier.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			} else {
+				notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			}
+			this.state.selected.clear();
+			this.setState({showSelected: false, removeAfterAdd: false});
+		}).catch(e => notifier.error(e.message, "Addition Failed"));
+	}
+
+	removeMembersHandler(skipConfirmation) {
+		if (skipConfirmation || window.confirm(`Are you sure you want to remove ${this.state.selected.size} member(s)?`)) {
+			orgGroupService.requestRemoveMembers(this.state.orggroup.id, Array.from(this.state.selected.keys())).then(() => {})
+			.catch(e => notifier.error(e.message, "Removal Failed"));
+			return true;
+		}
+		return false;
+	}
+
+	closeGroupWindow() {
+		this.setState({addingToGroup: false});
+	}
+
+	addingToGroupHandler = () => {
+		this.setState({addingToGroup: true});
+	};
+
+	movingToGroupHandler = () => {
+		this.setState({addingToGroup: true, removeAfterAdd: true});
+	};
+
+	selectionHandler = (selected) => {
+		let showSelected = this.state.showSelected;
+		if (selected.size === 0) {
+			showSelected = false;
+		}
+		this.setState({selected, showSelected});
+	};
+
+	versionSelectionHandler = (selected) => {
+		this.setState({selectedVersions: selected});
+	};
+
+	handleShowSelected = () => {
+		this.setState({showSelected: !this.state.showSelected});
+	};
+
+	exportHandler = () => {
+		this.setState({isExporting: true, exportable: this.state.members});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
+	};
 }

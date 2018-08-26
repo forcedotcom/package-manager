@@ -11,20 +11,13 @@ export default class extends React.Component {
 			type: props.packageorg.type || "",
 			description: props.packageorg.description || ""
 		};
+		
+		this.saveHandler = this.saveHandler.bind(this);
+		this.typeChangeHandler = this.typeChangeHandler.bind(this);
+		this.descChangeHandler = this.descChangeHandler.bind(this);
 	}
 
-	saveHandler = () => {
-		this.props.onSave(this.state);
-	};
-
-	typeChangeHandler = (value) => {
-		this.setState({type: value});
-	};
-
-	descChangeHandler = (event) => {
-		this.setState({description: event.target.value});
-	};
-
+	// Lifecycle
 	render() {
 		return (
 			<div>
@@ -49,7 +42,7 @@ export default class extends React.Component {
 									<label className="slds-form-element__label"
 										   htmlFor="description">Description</label>
 									<div className="slds-form-element__control">
-										<textarea rows="4" className="slds-input" type="text" id="description"
+										<textarea rows="4" className="slds-input" id="description"
 												  value={this.state.description} onChange={this.descChangeHandler}/>
 									</div>
 								</div>
@@ -58,8 +51,21 @@ export default class extends React.Component {
 						</div>
 					</div>
 				</div>
-				<div className="slds-modal-backdrop slds-modal-backdrop--open"></div>
+				<div className="slds-modal-backdrop slds-modal-backdrop--open"/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	saveHandler() {
+		this.props.onSave(this.state);
+	}
+
+	typeChangeHandler(value) {
+		this.setState({type: value});
+	}
+
+	descChangeHandler(event) {
+		this.setState({description: event.target.value});
 	}
 }

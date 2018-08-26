@@ -12,7 +12,6 @@ import * as orgService from "../services/OrgService";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
-
 	constructor(props) {
 		super(props);
 	
@@ -21,16 +20,12 @@ export default class extends React.Component {
 		};
 		
 		packageService.requestById(props.match.params.packageId).then(pkg => this.setState({pkg}));
+		
+		this.fetchVersions = this.fetchVersions.bind(this);
+		this.fetchOrgs = this.fetchOrgs.bind(this);
 	}
 
-	fetchVersions = () => {
-		return packageVersionService.findByPackage(this.props.match.params.packageId)
-	};
-	
-	fetchOrgs = () => {
-		return orgService.requestByPackage(this.props.match.params.packageId)
-	};
-	
+	// Lifecycle
 	render() {
 		const {pkg} = this.state; 
 		return (
@@ -54,5 +49,14 @@ export default class extends React.Component {
 				</div>
 			</div> 
 		);
+	}
+	
+	// Handlers
+	fetchVersions() {
+		return packageVersionService.findByPackage(this.props.match.params.packageId)
+	}
+
+	fetchOrgs() {
+		return orgService.requestByPackage(this.props.match.params.packageId)
 	}
 }

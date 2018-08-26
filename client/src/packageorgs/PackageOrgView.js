@@ -8,21 +8,12 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
+		
+		this.revealAccessToken = this.revealAccessToken.bind(this);
+		this.fetchVersions = this.fetchVersions.bind(this);
 	}
 
-	revealAccessToken = (event) => {
-		if (event.target.value === this.props.packageorg.access_token) {
-			event.target.value = 'Double-click to reveal';
-		} else {
-			event.target.value = this.props.packageorg.access_token;
-			event.target.select();
-		}
-	};
-
-	fetchVersions = () => {
-		return packageVersionService.findByPackageOrgId(this.props.packageorg.org_id);		
-	};
-	
+	// Lifecycle
 	render() {
 		return (
 			<div className="slds-form--stacked slds-grid slds-wrap slds-m-top">
@@ -100,5 +91,19 @@ export default class extends React.Component {
 					</div> : ""}
 			</div>
 		)
+	}
+	
+	// Handlers
+	revealAccessToken(event) {
+		if (event.target.value === this.props.packageorg.access_token) {
+			event.target.value = 'Double-click to reveal';
+		} else {
+			event.target.value = this.props.packageorg.access_token;
+			event.target.select();
+		}
+	}
+
+	fetchVersions() {
+		return packageVersionService.findByPackageOrgId(this.props.packageorg.org_id);
 	}
 }

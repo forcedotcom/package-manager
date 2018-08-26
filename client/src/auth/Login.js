@@ -21,15 +21,12 @@ export default class extends React.Component {
 
 		this.state = {
 			message: WELCOMONING[Math.floor(Math.random() * WELCOMONING.length)]
-		}
+		};
+		
+		this.loginHandler = this.loginHandler.bind(this);
 	}
 
-	loginHandler = () => {
-		authService.oauthLoginURL().then(url => {
-			window.location.href = url;
-		});
-	};
-
+	// Lifecycle
 	render() {
 		return (
 			<div>
@@ -53,5 +50,12 @@ export default class extends React.Component {
 				<div className="slds-backdrop slds-backdrop_open"/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	loginHandler() {
+		authService.oauthLoginURL().then(url => {
+			window.location.href = url;
+		});
 	}
 }

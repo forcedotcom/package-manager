@@ -17,57 +17,21 @@ export default class extends React.Component {
 		this.state = {item: {},
 			progress: getProgress([])
 		};
+		
+		this.upgradeItemsUpdated = this.upgradeItemsUpdated.bind(this);
+		this.fetchJobs = this.fetchJobs.bind(this);
+		this.upgradeItemsUpdated = this.upgradeItemsUpdated.bind(this);
+		this.handleActivation = this.handleActivation.bind(this);
+		this.handleCancellation = this.handleCancellation.bind(this);
 	}
 
+	// Lifecycle
 	componentDidMount() {
 		notifier.on('upgrade-items', this.upgradeItemsUpdated);
 
 		upgradeItemService.requestById(this.props.match.params.itemId).then(item => this.setState({item}));
 	}
 	
-	fetchJobs = () => {
-		return new Promise((resolve, reject) => {
-			upgradeJobService.requestAllJobs(this.props.match.params.itemId).then(jobs => {
-				this.setState({progress: getProgress(jobs)});
-				resolve(jobs);
-			}).catch(reject);
-		});
-	};
-
-	componentWillUnmount() {
-		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
-	}
-
-	upgradeItemsUpdated = (items) => {
-		const mine = items.find(i => i.id === this.state.item.id);
-		if (mine) {
-			this.setState({item: items[0]});
-		}
-	};
-
-	handleActivation = () => {
-		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
-			this.setState({isActivating: true});
-			upgradeItemService.activate(this.state.item.id).then(item => this.loadItemJobs(item))
-			.catch(e => {
-				this.setState({isActivating: false});
-				NotificationManager.error(e.message, "Activation Failed");
-			});
-		}
-	};
-
-	handleCancellation = () => {
-		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
-			this.setState({isCancelling: true});
-			upgradeItemService.cancel(this.state.item.id)
-				.then(item => this.loadItemJobs(item))
-				.catch(e => {
-					this.setState({isCancelling: false});
-					NotificationManager.error(e.message, "Cancellation Failed");
-				});
-		}
-	};
-
 	render() {
 		const {item, progress} = this.state;
 		let userCanActivate = true;
@@ -101,9 +65,53 @@ export default class extends React.Component {
 				</RecordHeader>
 				<ProgressBar progress={progress.percentage} success={progress.errors === 0 && progress.cancelled === 0}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<UpgradeJobCard onFetch={this.fetchJobs.bind(this)} refetchOn="upgrade-jobs"/>
+					<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 				</div>
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchJobs() {
+		return new Promise((resolve, reject) => {
+			upgradeJobService.requestAllJobs(this.props.match.params.itemId).then(jobs => {
+				this.setState({progress: getProgress(jobs)});
+				resolve(jobs);
+			}).catch(reject);
+		});
+	}
+
+	componentWillUnmount() {
+		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
+	}
+
+	upgradeItemsUpdated(items) {
+		const mine = items.find(i => i.id === this.state.item.id);
+		if (mine) {
+			this.setState({item: items[0]});
+		}
+	}
+
+	handleActivation() {
+		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
+			this.setState({isActivating: true});
+			upgradeItemService.activate(this.state.item.id).then(item => this.loadItemJobs(item))
+			.catch(e => {
+				this.setState({isActivating: false});
+				NotificationManager.error(e.message, "Activation Failed");
+			});
+		}
+	}
+
+	handleCancellation() {
+		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
+			this.setState({isCancelling: true});
+			upgradeItemService.cancel(this.state.item.id)
+			.then(item => this.loadItemJobs(item))
+			.catch(e => {
+				this.setState({isCancelling: false});
+				NotificationManager.error(e.message, "Cancellation Failed");
+			});
+		}
 	}
 }

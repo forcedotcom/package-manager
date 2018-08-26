@@ -2,14 +2,14 @@ import React from 'react';
 import DataTable from "../components/DataTable";
 
 export default class extends React.Component {
-	linkHandler = (e, column, rowInfo, instance) => {
-		if (rowInfo.original.status !== "Connected") {
-			this.props.onConnect(rowInfo.original.instance_url);
-		} else {
-			window.location = "/packageorg/" + rowInfo.row.org_id;
-		}
-	};
+	constructor(props) {
+		super(props);
+		this.state = {};
+		
+		this.linkHandler = this.linkHandler.bind(this);
+	}
 
+	// Lifecycle
 	render() {
 		const columns = [
 			{Header: "Name", accessor: "name", minWidth: 160, sortable: true, clickable: true},
@@ -30,9 +30,18 @@ export default class extends React.Component {
 		];
 
 		return (
-			<DataTable keyField="org_id" id="PackageOrgList" columns={columns}
+			<DataTable id="PackageOrgList" keyField="org_id" columns={columns}
 						 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
 						 onClick={this.linkHandler} onSelect={this.props.onSelect}/>
 		);
+	}
+	
+	// Handlers
+	linkHandler(e, column, rowInfo, instance) {
+		if (rowInfo.original.status !== "Connected") {
+			this.props.onConnect(rowInfo.original.instance_url);
+		} else {
+			window.location = "/packageorg/" + rowInfo.row.org_id;
+		}
 	}
 }

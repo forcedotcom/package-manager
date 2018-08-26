@@ -57,27 +57,23 @@ class ListBox extends React.Component {
 }
 
 export default class extends React.Component {
-	state = {
-		opened: false,
-		value: "",
-		placeholder: this.props.placeholder || 'Enter text to search'
-	};
+	constructor(props) {
+		super(props);
 
+		this.state = {
+			opened: false,
+			value: "",
+			placeholder: this.props.placeholder || 'Enter text to search'
+		};
+		
+		this.searchKeyChangeHandler = this.searchKeyChangeHandler.bind(this);
+		this.changeHandler = this.changeHandler.bind(this);
+	}
+
+	// Lifecycle
 	componentWillReceiveProps(props) {
 		this.setState({opened: props.items.length > 0 ? true : false});
 	}
-
-	searchKeyChangeHandler = (key) => {
-		this.setState({value: key.target.value});
-		this.props.onSearchKeyChange(key);
-	};
-
-	changeHandler = (value, label) => {
-		this.setState({value: label, items: [], opened: false});
-		if (this.props.onChange) {
-			this.props.onChange(value, label);
-		}
-	};
 
 	render() {
 		return (
@@ -96,5 +92,18 @@ export default class extends React.Component {
 				</div>
 			</div>
 		);
+	}
+	
+	// Handlers
+	searchKeyChangeHandler(key) {
+		this.setState({value: key.target.value});
+		this.props.onSearchKeyChange(key);
+	}
+
+	changeHandler(value, label) {
+		this.setState({value: label, items: [], opened: false});
+		if (this.props.onChange) {
+			this.props.onChange(value, label);
+		}
 	}
 }

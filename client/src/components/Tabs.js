@@ -30,13 +30,14 @@ class Tab extends React.Component {
 }
 
 export default class extends React.Component {
-	state = {activeTabIndex: sortage.getTabIndex(this.props.id)};
+	constructor(props) {
+		super(props);
+		this.state = {activeTabIndex: sortage.getTabIndex(this.props.id)};
+	
+		this.clickHandler = this.clickHandler.bind(this);
+	}
 
-	clickHandler = (index) => {
-		this.setState({activeTabIndex: index});
-		sortage.setTabIndex(this.props.id, index);
-	};
-
+	// Lifecycle
 	render() {
 		let tabHeaders = [];
 		let tabs = [];
@@ -55,5 +56,11 @@ export default class extends React.Component {
 				{tabs}
 			</div>
 		)
+	}
+	
+	// Handlers
+	clickHandler(index) {
+		this.setState({activeTabIndex: index});
+		sortage.setTabIndex(this.props.id, index);
 	}
 }

@@ -10,36 +10,16 @@ export default class extends React.Component {
 		this.state = {
 			...orggroup, orgIds: [], orgs: ""
 		};
+		
+		this.saveHandler = this.saveHandler.bind(this);
+		this.nameChangeHandler = this.nameChangeHandler.bind(this);
+		this.descChangeHandler = this.descChangeHandler.bind(this);
+		this.typeChangeHandler = this.typeChangeHandler.bind(this);
+		this.orgsChangeHandler = this.orgsChangeHandler.bind(this);
+		this.orgsBlurHandler = this.orgsBlurHandler.bind(this);
 	}
 
-	saveHandler = () => {
-		this.setState({isSaving: true});
-		this.props.onSave(this.state);
-	};
-
-	nameChangeHandler = (event) => {
-		this.setState({name: event.target.value});
-	};
-
-	descChangeHandler = (event) => {
-		this.setState({description: event.target.value});
-	};
-
-	typeChangeHandler = (value) => {
-		this.setState({type: value});
-	};
-	
-	orgsChangeHandler = (event) => {
-		this.setState({orgs: event.target.value});
-	};
-
-	orgsBlurHandler = (event) => {
-		let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0, 15));
-		let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length === 15 && elem.startsWith("00D"))));
-		let orgIds = Array.from(orgIdSet);
-		this.setState({orgIds: orgIds, orgs: orgIds.join(", ")});
-	};
-
+	// Lifecycle
 	render() {
 		let actions = [
 			{handler: this.saveHandler, label: "Save", spinning: this.state.isSaving},
@@ -91,5 +71,34 @@ export default class extends React.Component {
 				<div className="slds-modal-backdrop slds-modal-backdrop--open"/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	saveHandler() {
+		this.setState({isSaving: true});
+		this.props.onSave(this.state);
+	}
+
+	nameChangeHandler(event) {
+		this.setState({name: event.target.value});
+	}
+
+	descChangeHandler(event) {
+		this.setState({description: event.target.value});
+	}
+
+	typeChangeHandler(value) {
+		this.setState({type: value});
+	}
+
+	orgsChangeHandler(event) {
+		this.setState({orgs: event.target.value});
+	}
+
+	orgsBlurHandler(event) {
+		let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0, 15));
+		let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length === 15 && elem.startsWith("00D"))));
+		let orgIds = Array.from(orgIdSet);
+		this.setState({orgIds: orgIds, orgs: orgIds.join(", ")});
 	}
 }

@@ -4,34 +4,26 @@ import {ORG_ICON} from "../Constants";
 import * as packageOrgService from '../services/PackageOrgService';
 
 export default class extends React.Component {
-	state = {
-		orgIds: [],
-		isAdding: false,
-		orgs: ""
-	};
+	constructor(props) {
+		super(props);
+		this.state = {
+			orgIds: [],
+			isAdding: false,
+			orgs: ""
+		};
+	
+		this.onAdd = this.onAdd.bind(this);
+		this.orgsChangeHandler = this.orgsChangeHandler.bind(this);
+		this.orgsBlurHandler = this.orgsBlurHandler.bind(this);
+	}
 
+	// Lifecycle
 	componentDidMount() {
 		packageOrgService.requestAll({
 			field: "name",
 			direction: "desc"
 		}).then(packageOrgs => this.setState({packageOrgs}));
 	}
-
-	onAdd = () => {
-		this.setState({isAdding: true});
-		this.props.onSave(this.state.orgIds);
-	};
-
-	orgsChangeHandler = (event) => {
-		this.setState({orgs: event.target.value});
-	};
-
-	orgsBlurHandler = (event) => {
-		let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0, 15));
-		let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length === 15 && elem.startsWith("00D"))));
-		let orgIds = Array.from(orgIdSet);
-		this.setState({orgIds: orgIds, orgs: orgIds.join(", ")});
-	};
 
 	render() {
 		const actions = [
@@ -62,5 +54,22 @@ export default class extends React.Component {
 				<div className="slds-modal-backdrop slds-modal-backdrop--open"/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	onAdd() {
+		this.setState({isAdding: true});
+		this.props.onSave(this.state.orgIds);
+	}
+
+	orgsChangeHandler(event) {
+		this.setState({orgs: event.target.value});
+	}
+
+	orgsBlurHandler(event) {
+		let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0, 15));
+		let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length === 15 && elem.startsWith("00D"))));
+		let orgIds = Array.from(orgIdSet);
+		this.setState({orgIds: orgIds, orgs: orgIds.join(", ")});
 	}
 }

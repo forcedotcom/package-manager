@@ -14,63 +14,28 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.groupTypeMap = new Map(GroupTypes.map(t => [t.name, t]));
-
 		this.state = {
 			selected: new Map(),
 			selectedType: this.groupTypeMap.get(sortage.getSelectedName("OrgGroupList")) || GroupTypes[0]
 		};
+		
+		this.fetchData = this.fetchData.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.selectionHandler = this.selectionHandler.bind(this);
+		this.typeSelectionHandler = this.typeSelectionHandler.bind(this);
+		this.newHandler = this.newHandler.bind(this);
+		this.saveHandler = this.saveHandler.bind(this);
+		this.cancelHandler = this.cancelHandler.bind(this);
+		this.deleteHandler = this.deleteHandler.bind(this);
 	}
 
-	fetchData = () => {
-		return orgGroupService.requestAll();
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({filtered, itemCount, filterColumns});
-	};
-
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-
-	selectionHandler = (selected) => {
-		this.setState({selected});
-	};
-
-	typeSelectionHandler = (selectedType) => {
-		sortage.setSelectedName(this.SORTAGE_KEY, selectedType.name);
-		this.setState({selectedType});
-	};
-	
-	newHandler = () => {
-		this.setState({addingOrgGroup: true});
-	};
-
-	saveHandler = (orggroup) => {
-		orgGroupService.requestCreate(orggroup).then((orggroup) => {
-			window.location = `/orggroup/${orggroup.id}`;
-		});
-	};
-
-	cancelHandler = () => {
-		this.setState({addingOrgGroup: false});
-	};
-
-	deleteHandler = () => {
-		const msg = this.state.selected.size === 1 ?
-			`Are you sure you want to delete this group?` :
-			`Are you sure you want to delete these ${this.state.selected.size} groups?`;
-		if (window.confirm(msg)) {
-			orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => this.state.selected.clear())
-				.catch(e => notifier.error(e.message | e, "Fail"));
-		}
-	};
-
+	// Lifecycle
 	render() {
 		const {selected, selectedType, filterColumns} = this.state;
 
 		const actions = [
-			<DataTableSavedFilters key="OrgGroupList" threshold="3" id="OrgGroupList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id="OrgGroupList" key="OrgGroupList" threshold="3" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			<TypeSelect group="types" key="types" types={GroupTypes} selected={selectedType} onSelect={this.typeSelectionHandler}/>,
 			{label: "New", handler: this.newHandler, detail: "Create new org group"},
 			{
@@ -83,13 +48,59 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="org groups" title="Org Groups" count={this.state.itemCount} actions={actions}/>
-				<OrgGroupList onFetch={this.fetchData.bind(this)} refetchOn="groups" 
+				<OrgGroupList onFetch={this.fetchData} refetchOn="groups" 
 							  onFilter={this.filterHandler} filterColumns={filterColumns} 
 							  onSelect={this.selectionHandler} selected={selected} type={selectedType.name}/>
 				{this.state.addingOrgGroup ?
 					<GroupFormWindow type={selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchData() {
+		return orgGroupService.requestAll();
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
+	}
+
+	selectionHandler(selected) {
+		this.setState({selected});
+	}
+
+	typeSelectionHandler(selectedType) {
+		sortage.setSelectedName(this.SORTAGE_KEY, selectedType.name);
+		this.setState({selectedType});
+	}
+
+	newHandler() {
+		this.setState({addingOrgGroup: true});
+	}
+
+	saveHandler(orggroup) {
+		orgGroupService.requestCreate(orggroup).then((orggroup) => {
+			window.location = `/orggroup/${orggroup.id}`;
+		});
+	}
+
+	cancelHandler() {
+		this.setState({addingOrgGroup: false});
+	}
+
+	deleteHandler() {
+		const msg = this.state.selected.size === 1 ?
+			`Are you sure you want to delete this group?` :
+			`Are you sure you want to delete these ${this.state.selected.size} groups?`;
+		if (window.confirm(msg)) {
+			orgGroupService.requestDelete(Array.from(this.state.selected.keys())).then(() => this.state.selected.clear())
+			.catch(e => notifier.error(e.message | e, "Fail"));
+		}
 	}
 }
 

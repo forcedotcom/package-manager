@@ -7,11 +7,20 @@ import '../components/datepicker.css';
 import * as packageVersionService from "../services/PackageVersionService";
 
 export default class extends React.Component {
-	state = {
-		startDate: moment().add(15, 'minutes'),
-		description: this.props.description || ""
-	};
-
+	constructor(props) {
+		super(props);
+		this.state = {
+			startDate: moment().add(15, 'minutes'),
+			description: this.props.description || ""
+		};
+		
+		this.handleVersionChange = this.handleVersionChange.bind(this);
+		this.handleDateChange = this.handleDateChange.bind(this);
+		this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
+		this.upgradeHandler = this.upgradeHandler.bind(this);
+	}
+	
+	// Lifecycle
 	componentDidMount() {
 		packageVersionService.requestAllValid(this.props.packageIds).then(validVersions => {
 			const packageMap = new Map();
@@ -29,39 +38,7 @@ export default class extends React.Component {
 			this.setState({packageMap});
 		});
 	}
-
-	handleVersionChange = (packageId, selectedVersion) => {
-		let p = this.state.packageMap.get(packageId);
-		p.selectedVersion = selectedVersion;
-		this.setState({packageMap: this.state.packageMap});
-	};
-
-	handleDateChange = (startDate) => {
-		this.setState({startDate});
-	};
-
-	handleDescriptionChange = (event) => {
-		this.setState({description: event.target.value});
-	};
-
-	upgradeHandler = () => {
-		let valid = true;
-		if (this.state.description === null || this.state.description === "") {
-			this.setState({missingDescription: true});
-			valid = false;
-		} else {
-			this.setState({missingDescription: false});
-		}
-
-		if (!valid)
-			return;
-
-		const versions = Array.from(this.state.packageMap.values()).map(p => p.selectedVersion).filter(versionId => !versionId.startsWith("[[NONE]]"));
-		
-		this.setState({isScheduling: true});
-		this.props.onUpgrade(versions, this.state.startDate, this.state.description);
-	};
-
+	
 	render() {
 		const versionFields = this.state.packageMap ? this.props.packageIds.map(packageId =>
 			<VersionField key={packageId} package={this.state.packageMap.get(packageId)} onSelect={this.handleVersionChange}/> 
@@ -120,7 +97,7 @@ export default class extends React.Component {
 							<button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel
 							</button>
 							<button className="slds-button slds-button--neutral slds-button--brand"
-									onClick={this.upgradeHandler.bind(this)}>
+									onClick={this.upgradeHandler}>
 								{this.state.isScheduling ?
 									<div style={{width: "3em"}}>&nbsp;
 										<div role="status" className="slds-spinner slds-spinner_x-small">
@@ -135,6 +112,39 @@ export default class extends React.Component {
 				<div className="slds-modal-backdrop slds-modal-backdrop--open"/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	handleVersionChange(packageId, selectedVersion) {
+		let p = this.state.packageMap.get(packageId);
+		p.selectedVersion = selectedVersion;
+		this.setState({packageMap: this.state.packageMap});
+	}
+
+	handleDateChange(startDate) {
+		this.setState({startDate});
+	}
+
+	handleDescriptionChange(event) {
+		this.setState({description: event.target.value});
+	}
+
+	upgradeHandler() {
+		let valid = true;
+		if (this.state.description === null || this.state.description === "") {
+			this.setState({missingDescription: true});
+			valid = false;
+		} else {
+			this.setState({missingDescription: false});
+		}
+
+		if (!valid)
+			return;
+
+		const versions = Array.from(this.state.packageMap.values()).map(p => p.selectedVersion).filter(versionId => !versionId.startsWith("[[NONE]]"));
+
+		this.setState({isScheduling: true});
+		this.props.onUpgrade(versions, this.state.startDate, this.state.description);
 	}
 }
 

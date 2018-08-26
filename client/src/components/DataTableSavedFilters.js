@@ -15,8 +15,16 @@ export default class extends React.Component {
 		filtrage.requestFilters(props.id).then(filters => {
 			this.setState({current: props.filter, filters});
 		});
+		
+		this.filterChangeHandler = this.filterChangeHandler.bind(this);
+		this.createHandler = this.createHandler.bind(this);
+		this.updateHandler = this.updateHandler.bind(this);
+		this.resetHandler = this.resetHandler.bind(this);
+		this.deleteHandler = this.deleteHandler.bind(this);
+		this.clearHandler = this.clearHandler.bind(this);
 	}
 
+	// Lifecycle
 	componentWillReceiveProps(props) {
 		const {filters, threshold} = this.state;
 		let isModified = false;
@@ -31,87 +39,10 @@ export default class extends React.Component {
 			// Filter changed, so signal that it no longer matches the selected saved filter.
 			isModified = true;
 		}
-		
+
 		this.setState({isModified});
 	}
 	
-	filterChangeHandler = (e) => {
-		const {filters} = this.state;
-		const id = this.findId(e.target);
-		const selected = filters.find(f => f.id === parseInt(id, 10));
-		const selectedId = selected ? selected.id : null;
-		filtrage.setSelectedFilterId(this.props.id, selectedId);
-		this.props.onSelect(selected ? selected.query : null);
-	};
-
-	findId = (elem) => {
-		if (elem.id != null && elem.id !== "")
-			return elem.id;
-		return this.findId(elem.parentElement);
-	};
-	
-	createHandler = () => {
-		const name = prompt("Choose a name for your filter");
-		if (name) {
-			filtrage.requestSaveFilter(this.props.id, name)
-				.then(filter => {
-					filtrage.requestFilters(this.props.id)
-						.then(filters => {
-							filtrage.setSelectedFilterId(this.props.id, filter.id);
-							this.setState({filters, isModified: false});
-						})
-				}).catch(err => notifier.error(err.message));
-		}
-	};
-	
-	updateHandler = () => {
-		const {filters, threshold} = this.state;
-		let selectedId = filtrage.getSelectedFilterId(this.props.id);
-		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
-		const name = prompt("Save changes to your filter", selected.name);
-		if (name) {
-			filtrage.requestSaveFilter(this.props.id, name, selected.id)
-				.then(() => {
-					filtrage.requestFilters(this.props.id)
-						.then(filters => {
-							const selectedIndex = filters.findIndex(f => f.id === selectedId);
-							if (selectedIndex >= threshold) {
-								const selected = filters[selectedIndex];
-								filters.splice(selectedIndex, 1);
-								filters.splice(threshold - 1, 0, selected);
-							}
-							this.setState({filters, isModified: false})
-						})
-				}).catch(err => notifier.error(err.message));
-		}
-	};
-	
-	resetHandler = () => {
-		const {filters} = this.state;
-		let selectedId = filtrage.getSelectedFilterId(this.props.id);
-		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
-		this.props.onSelect(selected ? selected.query : null);
-	};
-	
-	deleteHandler = () => {
-		let selectedId = filtrage.getSelectedFilterId(this.props.id);
-
-		const {filters} = this.state;
-		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
-		if (window.confirm(`Are you sure you want to delete ${selected.name}?`)) {
-			filtrage.requestDeleteFilter(this.props.id, selected.id)
-			.then(() => {
-				filtrage.requestFilters(this.props.id)
-					.then(filters => this.setState({filters, isModified: false}))
-			}).catch(err => notifier.error(err.message));
-		}
-	};
-	
-	clearHandler = () => {
-		filtrage.setSelectedFilterId(this.props.id, null);
-		this.props.onSelect([]);
-	};
-
 	render() {
 		let selectedId = filtrage.getSelectedFilterId(this.props.id);
 
@@ -222,5 +153,85 @@ export default class extends React.Component {
 				{menu}
 			</div>
 		);
+	}
+
+	// Handlers
+	filterChangeHandler(e) {
+		const {filters} = this.state;
+		const id = this.findId(e.target);
+		const selected = filters.find(f => f.id === parseInt(id, 10));
+		const selectedId = selected ? selected.id : null;
+		filtrage.setSelectedFilterId(this.props.id, selectedId);
+		this.props.onSelect(selected ? selected.query : null);
+	}
+
+	createHandler() {
+		const name = prompt("Choose a name for your filter");
+		if (name) {
+			filtrage.requestSaveFilter(this.props.id, name)
+			.then(filter => {
+				filtrage.requestFilters(this.props.id)
+				.then(filters => {
+					filtrage.setSelectedFilterId(this.props.id, filter.id);
+					this.setState({filters, isModified: false});
+				})
+			}).catch(err => notifier.error(err.message));
+		}
+	}
+
+	updateHandler() {
+		const {filters, threshold} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
+		const name = prompt("Save changes to your filter", selected.name);
+		if (name) {
+			filtrage.requestSaveFilter(this.props.id, name, selected.id)
+			.then(() => {
+				filtrage.requestFilters(this.props.id)
+				.then(filters => {
+					const selectedIndex = filters.findIndex(f => f.id === selectedId);
+					if (selectedIndex >= threshold) {
+						const selected = filters[selectedIndex];
+						filters.splice(selectedIndex, 1);
+						filters.splice(threshold - 1, 0, selected);
+					}
+					this.setState({filters, isModified: false})
+				})
+			}).catch(err => notifier.error(err.message));
+		}
+	}
+
+	resetHandler() {
+		const {filters} = this.state;
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
+		this.props.onSelect(selected ? selected.query : null);
+	}
+
+	deleteHandler() {
+		let selectedId = filtrage.getSelectedFilterId(this.props.id);
+
+		const {filters} = this.state;
+		const selected = filters.find(f => f.id === parseInt(selectedId, 10));
+		if (window.confirm(`Are you sure you want to delete ${selected.name}?`)) {
+			filtrage.requestDeleteFilter(this.props.id, selected.id)
+			.then(() => {
+				filtrage.requestFilters(this.props.id)
+				.then(filters => this.setState({filters, isModified: false}))
+			}).catch(err => notifier.error(err.message));
+		}
+	}
+
+	clearHandler() {
+		filtrage.setSelectedFilterId(this.props.id, null);
+		this.props.onSelect([]);
+	}
+
+	
+	// Utilities
+	findId(elem) {
+		if (elem.id != null && elem.id !== "")
+			return elem.id;
+		return this.findId(elem.parentElement);
 	}
 }

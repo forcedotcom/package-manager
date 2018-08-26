@@ -5,23 +5,14 @@ import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
-	linkHandler = (e, column, rowInfo) => {
-		switch (column.id) {
-			case "name":
-			case "account_name":
-				window.location = "/license/" + rowInfo.original.sfid;
-				break;
-			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
-			case "version_number":
-				window.location = "/packageversion/" + rowInfo.original.version_id;
-				break;
-			default:
-			// Nothing...
-		}
-	};
+	constructor(props) {
+		super(props);
+		this.state = {};
+		
+		this.linkHandler = this.linkHandler.bind(this);
+	}
 
+	// Lifecycle
 	render() {
 		let columns = [
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
@@ -40,5 +31,23 @@ export default class extends React.Component {
 				<DataTableFilterHelp/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		switch (column.id) {
+			case "name":
+			case "account_name":
+				window.location = "/license/" + rowInfo.original.sfid;
+				break;
+			case "package_name":
+				window.location = "/package/" + rowInfo.original.package_id;
+				break;
+			case "version_number":
+				window.location = "/packageversion/" + rowInfo.original.version_id;
+				break;
+			default:
+			// Nothing...
+		}
 	}
 }

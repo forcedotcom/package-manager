@@ -10,10 +10,24 @@ import EditPackageOrgWindow from "./EditPackageOrgWindow";
 import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
-	state = {packageorg: {}};
+	constructor(props) {
+		super(props);
+		this.state = {
+			packageorg: {}
+		};
+		
+		this.fetchData = this.fetchData.bind(this);
+		this.deleteHandler = this.deleteHandler.bind(this);
+		this.refreshHandler = this.refreshHandler.bind(this);
+		this.revokeHandler = this.revokeHandler.bind(this);
+		this.editHandler = this.editHandler.bind(this);
+		this.cancelHandler = this.cancelHandler.bind(this);
+		this.saveHandler = this.saveHandler.bind(this);
+	}
 
+	// Lifecycle
 	componentDidMount() {
-		notifier.on("package-orgs", this.fetchData);
+		notifier.on("package-orgs", this.fetchData.bind(this));
 		this.fetchData();
 	}
 	
@@ -21,53 +35,6 @@ export default class extends React.Component {
 		notifier.remove("package-orgs", this.fetchData);	
 	}
 	
-	fetchData = () => {
-		packageOrgService.requestById(this.props.match.params.packageorgId).then(
-			packageorg => this.setState({packageorg, isRefreshing: false}));
-	};
-	
-	deleteHandler = () => {
-		if (window.confirm(`Are you sure you want to remove this packaging org?`)) {
-			packageOrgService.requestDelete([this.state.packageorg.org_id]).then(() => {
-				window.location = '/packageorgs';
-			});
-		}
-	};
-
-	refreshHandler = () => {
-		this.setState({isRefreshing: true});
-		packageOrgService.requestRefresh([this.state.packageorg.org_id]).then(() => {})
-		.catch(e => {
-			this.setState({isRefreshing: false});
-			NotificationManager.error(e, "Refresh Failed");
-		});
-	};
-	
-	revokeHandler = () => {
-		this.setState({isRevoking: true});
-		packageOrgService.requestRevoke([this.state.packageorg.org_id]).then(() => {
-			packageOrgService.requestById(this.state.packageorg.org_id).then(
-				packageorg => this.setState({packageorg, isRevoking: false}));
-		}).catch(e => {
-			this.setState({isRevoking: false});
-			NotificationManager.error(e, "Revoke Failed");
-		});
-	};
-
-	editHandler = () => {
-		this.setState({isEditing: true});
-	};
-
-	cancelHandler = () => {
-		this.setState({isEditing: false});
-	};
-
-	saveHandler = (packageorg) => {
-		packageOrgService.requestUpdate(packageorg).then((packageorg) => {
-			this.setState({packageorg, isEditing: false});
-		});
-	};
-
 	render() {
 
 		let actions = [
@@ -91,5 +58,53 @@ export default class extends React.Component {
 										  onCancel={this.cancelHandler}/> : ""}
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchData() {
+		packageOrgService.requestById(this.props.match.params.packageorgId).then(
+			packageorg => this.setState({packageorg, isRefreshing: false}));
+	}
+
+	deleteHandler() {
+		if (window.confirm(`Are you sure you want to remove this packaging org?`)) {
+			packageOrgService.requestDelete([this.state.packageorg.org_id]).then(() => {
+				window.location = '/packageorgs';
+			});
+		}
+	}
+
+	refreshHandler() {
+		this.setState({isRefreshing: true});
+		packageOrgService.requestRefresh([this.state.packageorg.org_id]).then(() => {})
+		.catch(e => {
+			this.setState({isRefreshing: false});
+			NotificationManager.error(e, "Refresh Failed");
+		});
+	}
+
+	revokeHandler() {
+		this.setState({isRevoking: true});
+		packageOrgService.requestRevoke([this.state.packageorg.org_id]).then(() => {
+			packageOrgService.requestById(this.state.packageorg.org_id).then(
+				packageorg => this.setState({packageorg, isRevoking: false}));
+		}).catch(e => {
+			this.setState({isRevoking: false});
+			NotificationManager.error(e, "Revoke Failed");
+		});
+	}
+
+	editHandler() {
+		this.setState({isEditing: true});
+	}
+
+	cancelHandler() {
+		this.setState({isEditing: false});
+	}
+
+	saveHandler(packageorg) {
+		packageOrgService.requestUpdate(packageorg).then((packageorg) => {
+			this.setState({packageorg, isEditing: false});
+		});
 	}
 }

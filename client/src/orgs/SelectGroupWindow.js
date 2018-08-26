@@ -10,25 +10,15 @@ export default class extends React.Component {
 			items: [],
 			title: props.title || 'Select Group'	
 		};
+		
+		this.searchKeyChangeHandler = this.searchKeyChangeHandler.bind(this);
+		this.groupChangeHandler = this.groupChangeHandler.bind(this);
 	}
 
+	// Lifecycle
 	componentDidMount() {
 		orgGroupService.requestByTextSearch("", this.props.excludeId).then(items => this.setState({items: items}));
 	}
-
-	searchKeyChangeHandler = (key) => {
-		let text = key.target.value || "";
-		orgGroupService.requestByTextSearch(text, this.props.excludeId).then(items => {
-			if (items.length === 0 && text !== "") {
-				items.push({name: text, description: `Create a new group named "${text}"`, id: -1})
-			}
-			this.setState({items: items});
-		});
-	};
-
-	groupChangeHandler = (groupId, groupName) => {
-		this.props.onAdd(groupId, groupName, this.props.removeAfterAdd);
-	};
 
 	render() {
 		return (
@@ -64,5 +54,20 @@ export default class extends React.Component {
 				<div className="slds-modal-backdrop slds-modal-backdrop--open"></div>
 			</div>
 		);
+	}
+	
+	// Handlers
+	searchKeyChangeHandler(key) {
+		let text = key.target.value || "";
+		orgGroupService.requestByTextSearch(text, this.props.excludeId).then(items => {
+			if (items.length === 0 && text !== "") {
+				items.push({name: text, description: `Create a new group named "${text}"`, id: -1})
+			}
+			this.setState({items: items});
+		});
+	}
+
+	groupChangeHandler(groupId, groupName) {
+		this.props.onAdd(groupId, groupName, this.props.removeAfterAdd);
 	}
 }

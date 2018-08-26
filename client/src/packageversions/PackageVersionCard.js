@@ -11,20 +11,13 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
+		
+		this.linkHandler = this.linkHandler.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
 	}
 
-	linkHandler = (e, column, rowInfo) => {
-		window.location = "/packageversion/" + rowInfo.original.version_id;
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({filtered, itemCount, filterColumns});
-	};
-
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-
+	// Lifecycle
 	render() {
 		const {filterColumns} = this.state;
 		let columns = [
@@ -43,7 +36,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			<DataTableSavedFilters key="PackageVersionCard" id="PackageVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
+			<DataTableSavedFilters id="PackageVersionCard" key="PackageVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		];
 		
 		return (
@@ -56,5 +49,18 @@ export default class extends React.Component {
 				<footer className="slds-card__footer"/>
 			</div>
 		);
+	}
+
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		window.location = "/packageversion/" + rowInfo.original.version_id;
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
 	}
 }

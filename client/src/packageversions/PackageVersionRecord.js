@@ -16,12 +16,11 @@ export default class extends React.Component {
 		packageVersionService.requestById(props.match.params.versionId).then(packageVersion => {
 			this.setState({packageVersion})
 		}).catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.history.back()}));
+		
+		this.fetchOrgs = this.fetchOrgs.bind(this);
 	}
 
-	fetchOrgs = () => {
-		return orgService.requestByPackageVersion(this.props.match.params.versionId);
-	};
-
+	// Lifecycle
 	render() {
 		const {packageVersion} = this.state;
 		return (
@@ -40,5 +39,10 @@ export default class extends React.Component {
 				</div>
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchOrgs() {
+		return orgService.requestByPackageVersion(this.props.match.params.versionId);
 	}
 }

@@ -12,55 +12,16 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {done: false};
+		
+		this.linkHandler = this.linkHandler.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.openMessageWindow = this.openMessageWindow.bind(this);
+		this.closeMessageWindow = this.closeMessageWindow.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 
-	linkHandler = (e, column, rowInfo) => {
-		switch (column.id) {
-			case "org_id":
-			case "account_name":
-				window.location = "/org/" + rowInfo.original.org_id;
-				break;
-			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
-			case "original_version_number":
-				window.location = "/packageversion/" + rowInfo.original.original_version_id;
-				break;
-			case "current_version_number":
-				window.location = "/packageversion/" + rowInfo.original.current_version_id;
-				break;
-			case "version_number":
-				window.location = "/packageversion/" + rowInfo.original.version_id;
-				break;
-			default:
-			// Nothing...
-		}
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({filtered, itemCount, filterColumns});
-	};
-
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-
-	openMessageWindow = (event) => {
-		const msg = event.target.getAttribute("data-message");
-		if (msg) {
-			const subj = event.target.getAttribute("data-subject");
-			this.setState({showMessage: true, messageSubject: subj, messageDetail: msg});
-		}
-	};
-
-	closeMessageWindow = () => this.setState({showMessage: null});
-
-	exportHandler = () => {
-		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.jobs;
-		this.setState({isExporting: true, exportable});
-		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
-	};
-
+	// Lifecycle
 	render() {
 		const {filterColumns} = this.state;
 
@@ -131,7 +92,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			<DataTableSavedFilters key="UpgradeJobCard" id="UpgradeJobCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id="UpgradeJobCard" key="UpgradeJobCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: "Export Results", handler: this.exportHandler}
 		];
 
@@ -151,5 +112,55 @@ export default class extends React.Component {
 				<DataTableFilterHelp/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		switch (column.id) {
+			case "org_id":
+			case "account_name":
+				window.location = "/org/" + rowInfo.original.org_id;
+				break;
+			case "package_name":
+				window.location = "/package/" + rowInfo.original.package_id;
+				break;
+			case "original_version_number":
+				window.location = "/packageversion/" + rowInfo.original.original_version_id;
+				break;
+			case "current_version_number":
+				window.location = "/packageversion/" + rowInfo.original.current_version_id;
+				break;
+			case "version_number":
+				window.location = "/packageversion/" + rowInfo.original.version_id;
+				break;
+			default:
+			// Nothing...
+		}
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
+	}
+
+	openMessageWindow(event) {
+		const msg = event.target.getAttribute("data-message");
+		if (msg) {
+			const subj = event.target.getAttribute("data-subject");
+			this.setState({showMessage: true, messageSubject: subj, messageDetail: msg});
+		}
+	}
+
+	closeMessageWindow() {
+		this.setState({showMessage: null});
+	}
+
+	exportHandler() {
+		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.jobs;
+		this.setState({isExporting: true, exportable});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
 }

@@ -3,8 +3,12 @@ import {Link} from "react-router-dom";
 import moment from "moment/moment";
 
 export default class extends React.Component {
-	state = {activities: []};
-
+	constructor(props) {
+		super(props);
+		this.state = {activities: []};
+	}
+	
+	// Lifecycle
 	render() {
 		return (
 			<div className="slds-form--stacked slds-grid slds-wrap slds-m-top">

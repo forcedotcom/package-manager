@@ -8,8 +8,12 @@ import {LICENSE_ICON} from "../Constants";
 import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
-	state = {license: {}};
-
+	constructor(props) {
+		super(props);
+		this.state = {license: {}};
+	}
+	
+	// Lifecycle
 	componentDidMount() {
 		licenseService.requestById(this.props.match.params.licenseId).then(license => this.setState({license}))
 		.catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.history.back()}));

@@ -18,72 +18,26 @@ export default class extends React.Component {
 		this.state = {
 			selected: new Map()
 		};
+		
+		this.fetchData = this.fetchData.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.selectionHandler = this.selectionHandler.bind(this);
+		this.handleShowSelected = this.handleShowSelected.bind(this);
+		this.saveHandler = this.saveHandler.bind(this);
+		this.addingHandler = this.addingHandler.bind(this);
+		this.cancelHandler = this.cancelHandler.bind(this);
+		this.addToGroup = this.addToGroup.bind(this);
+		this.addingToGroupHandler = this.addingToGroupHandler.bind(this);
+		this.cancelAddingToGroupHandler = this.cancelAddingToGroupHandler.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 
-	fetchData = () => {
-		return orgService.requestAll();
-	};
-	
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({filtered, itemCount, filterColumns});
-	};
-	
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-
-	selectionHandler = (selected) => {
-		let showSelected = this.state.showSelected;
-		if (selected.size === 0) {
-			showSelected = false;
-		}
-		this.setState({selected, showSelected});
-	};
-
-	handleShowSelected = () => {
-		this.setState({showSelected: !this.state.showSelected});
-	};
-	
-	saveHandler = (orgIds) => {
-		orgService.requestAdd(orgIds)
-			.then(() => this.setState({isAdding: false, showSelected: false}))
-			.catch(e => console.error(e));
-	};
-
-	addingHandler = () => {
-		this.setState({isAdding: true});
-	};
-
-	cancelHandler = () => {
-		this.setState({isAdding: false});
-	};
-
-	addToGroup = (groupId, groupName) => {
-		this.setState({showAddToGroup: false, addingToGroup: true});
-		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
-			NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
-			this.state.selected.clear(); 
-			this.setState({showSelected: false, addingToGroup: false});
-		});
-	};
-
-	cancelAddingToGroupHandler = () => {
-		this.setState({showAddToGroup: false});
-	};
-
-	addingToGroupHandler = () => {
-		this.setState({showAddToGroup: true});
-	};
-
-	exportHandler = () => {
-		this.setState({isExporting: true});
-		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
-	};
-	
+	// Lifecycle
 	render() {
 		const {selected, filterColumns} = this.state;
 		const actions = [
-			<DataTableSavedFilters key="OrgList" id="OrgList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id="OrgList" key="OrgList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.addingToGroupHandler},
@@ -93,14 +47,75 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="orgs" title="Orgs" actions={actions} count={this.state.itemCount}/>
-				<OrgList onFetch={this.fetchData.bind(this)} refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
+				<OrgList onFetch={this.fetchData} refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
 						 showSelected={this.state.showSelected} onSelect={this.selectionHandler} selected={selected} />
 				{this.state.showAddToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`} 
-																onAdd={this.addToGroup.bind(this)}
+																onAdd={this.addToGroup}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.filtered} target="_blank" /> : ""}
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchData() {
+		return orgService.requestAll();
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
+	}
+
+	selectionHandler(selected) {
+		let showSelected = this.state.showSelected;
+		if (selected.size === 0) {
+			showSelected = false;
+		}
+		this.setState({selected, showSelected});
+	}
+
+	handleShowSelected() {
+		this.setState({showSelected: !this.state.showSelected});
+	}
+
+	saveHandler(orgIds) {
+		orgService.requestAdd(orgIds)
+		.then(() => this.setState({isAdding: false, showSelected: false}))
+		.catch(e => console.error(e));
+	}
+
+	addingHandler() {
+		this.setState({isAdding: true});
+	}
+
+	cancelHandler() {
+		this.setState({isAdding: false});
+	}
+
+	addToGroup(groupId, groupName) {
+		this.setState({showAddToGroup: false, addingToGroup: true});
+		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
+			NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			this.state.selected.clear();
+			this.setState({showSelected: false, addingToGroup: false});
+		});
+	}
+
+	addingToGroupHandler() {
+		this.setState({showAddToGroup: true});
+	}
+
+	cancelAddingToGroupHandler() {
+		this.setState({showAddToGroup: false});
+	}
+
+	exportHandler() {
+		this.setState({isExporting: true});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
 }

@@ -10,25 +10,12 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
+	
+		this.linkHandler = this.linkHandler.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
 	}
 
-
-	linkHandler = (e, column, rowInfo) => {
-		switch (column.id) {
-			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
-			case "version_number":
-				window.location = "/packageversion/" + rowInfo.original.latest_version_id;
-				break;
-			default:
-		}
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({itemCount});
-	};
-
+	// Lifecycle
 	render() {
 		let columns = [
 			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
@@ -43,7 +30,7 @@ export default class extends React.Component {
 				<CardHeader title="Installed Versions" icon={PACKAGE_VERSION_ICON} count={this.state.itemCount}/>
 				<section className="slds-card__body">
 					<DataTable id="InstalledVersionCard" columns={columns}
-								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} refetchFor={this.props.refetchFor}
 								 onFilter={this.filterHandler} onClick={this.linkHandler}/>
 					<DataTableFilterHelp/>
 				</section>
@@ -52,6 +39,24 @@ export default class extends React.Component {
 		);
 	}
 
+	// Handlers
+	linkHandler = (e, column, rowInfo) => {
+		switch (column.id) {
+			case "package_name":
+				window.location = "/package/" + rowInfo.original.package_id;
+				break;
+			case "version_number":
+				window.location = "/packageversion/" + rowInfo.original.latest_version_id;
+				break;
+			default:
+		}
+	};
+
+	filterHandler (filtered, filterColumns, itemCount) {
+		this.setState({itemCount});
+	}
+
+	// Utilities
 	renderVersionNumber(d) {
 		if (d.version_sort === d.latest_limited_version_sort)
 			return d.version_number;

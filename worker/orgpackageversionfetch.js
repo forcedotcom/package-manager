@@ -10,8 +10,9 @@ const SELECT_ALL = `SELECT distinct l.org_id, v.package_id, l.version_id, l.stat
 
 let adminJob;
 
-async function fetchFromSubscribers(orgIds, packageOrgIds, job) {
+async function fetchFromSubscribers(orgId, packageOrgIds, job) {
 	adminJob = job;
+	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
 
 	if (!packageOrgIds) {
 		let i = 1;

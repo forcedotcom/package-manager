@@ -3,32 +3,15 @@ import {NotificationManager} from 'react-notifications';
 
 
 export default class extends React.Component {
+	constructor(props) {
+		super(props);
+		
+		this.handleKeyDown = this.handleKeyDown.bind(this);
+		this.dontCloseHandler = this.dontCloseHandler.bind(this);
+		this.copyHandler = this.copyHandler.bind(this);
+	}
 
-	handleKeyDown = (e) => {
-		switch (e.key) {
-			case "Escape":
-				this.props.onClose();
-				return false;
-			default:
-				return true;
-		}
-	};
-
-	dontCloseHandler = (e) => {
-		if (!e.target.type) {
-			e.stopPropagation();
-		}
-	};
-
-	copyHandler = () => {
-		let clippy = document.getElementById("clippy");
-		clippy.value = this.props.message;
-		clippy.select();
-		document.execCommand("copy");
-		NotificationManager.success("Copied message text to clipboard", "Done", 1000);
-		this.props.onClose();
-	};
-
+	// Lifecycle
 	render() {
 		let messages;
 		try {
@@ -84,5 +67,31 @@ export default class extends React.Component {
 				<div style={{position: "absolute", opacity: 0}}><input type="text" id="clippy"/></div>
 			</div>
 		);
+	}
+	
+	// Handlers
+	handleKeyDown(e) {
+		switch (e.key) {
+			case "Escape":
+				this.props.onClose();
+				return false;
+			default:
+				return true;
+		}
+	}
+
+	dontCloseHandler(e) {
+		if (!e.target.type) {
+			e.stopPropagation();
+		}
+	}
+
+	copyHandler() {
+		let clippy = document.getElementById("clippy");
+		clippy.value = this.props.message;
+		clippy.select();
+		document.execCommand("copy");
+		NotificationManager.success("Copied message text to clipboard", "Done", 1000);
+		this.props.onClose();
 	}
 }

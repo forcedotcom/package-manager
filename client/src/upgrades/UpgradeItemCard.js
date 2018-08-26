@@ -9,28 +9,12 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
+		
+		this.linkHandler = this.linkHandler.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
 	}
 
-	linkHandler = (e, column, rowInfo) => {
-		switch (column.id) {
-			case "start_time":
-				window.location = "/upgradeitem/" + rowInfo.original.id;
-				break;
-			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
-			case "version_number":
-				window.location = "/packageversion/" + rowInfo.original.version_id;
-				break;
-			default:
-			// Nothing...
-		}
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({itemCount});
-	};
-
+	// Lifecycle
 	render() {
 		let columns = [
 			{
@@ -75,5 +59,26 @@ export default class extends React.Component {
 				<footer className="slds-card__footer"/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		switch (column.id) {
+			case "start_time":
+				window.location = "/upgradeitem/" + rowInfo.original.id;
+				break;
+			case "package_name":
+				window.location = "/package/" + rowInfo.original.package_id;
+				break;
+			case "version_number":
+				window.location = "/packageversion/" + rowInfo.original.version_id;
+				break;
+			default:
+			// Nothing...
+		}
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({itemCount});
 	}
 }

@@ -9,32 +9,13 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
+		
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.linkHandler = this.linkHandler.bind(this);
 	}
 
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({itemCount, filterColumns});
-	};
-
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-
-	linkHandler = (e, column, rowInfo) => {
-		switch (column.id) {
-			case "org_id":
-			case "account_name":
-				window.location = "/org/" + rowInfo.row.org_id;
-				break;
-			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
-			case "version_number":
-				window.location = "/packageversion/" + rowInfo.original.latest_version_id;
-				break;
-			default:
-		}
-	};
-
+	// Lifecycle
 	render() {
 		const {filterColumns} = this.state;
 
@@ -52,7 +33,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			<DataTableSavedFilters key="GroupMemberVersionCard" id="GroupMemberVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
+			<DataTableSavedFilters id="GroupMemberVersionCard" key="GroupMemberVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		].concat(this.props.actions);
 		
 		return (
@@ -69,6 +50,32 @@ export default class extends React.Component {
 		);
 	}
 
+	// Handlers
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
+	}
+
+	linkHandler(e, column, rowInfo) {
+		switch (column.id) {
+			case "org_id":
+			case "account_name":
+				window.location = "/org/" + rowInfo.row.org_id;
+				break;
+			case "package_name":
+				window.location = "/package/" + rowInfo.original.package_id;
+				break;
+			case "version_number":
+				window.location = "/packageversion/" + rowInfo.original.latest_version_id;
+				break;
+			default:
+		}
+	}
+	
+	// Utilities
 	renderVersionNumber(d) {
 		if (d.version_sort === d.latest_limited_version_sort)
 			return d.version_number;

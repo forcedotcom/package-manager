@@ -8,14 +8,11 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
+		
+		this.linkHandler = this.linkHandler.bind(this);
 	}
 
-	linkHandler = (e, column, rowInfo) => {
-		if (rowInfo) {
-			window.location = "/upgrade/" + rowInfo.row.id;
-		}
-	};
-
+	// Lifecycle
 	render() {
 		let columns = [
 			{Header: "Number", accessor: "id", minWidth: 30, sortable: true, clickable: true},
@@ -40,5 +37,12 @@ export default class extends React.Component {
 				<DataTableFilterHelp/>
 			</div>
 		);
+	}
+
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		if (rowInfo) {
+			window.location = "/upgrade/" + rowInfo.row.id;
+		}
 	}
 }

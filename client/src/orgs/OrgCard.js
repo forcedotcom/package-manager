@@ -15,57 +15,21 @@ export default class extends React.Component {
 		this.state = {
 			selected: new Map()
 		};
+		
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.linkHandler = this.linkHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.selectionHandler = this.selectionHandler.bind(this);
+		this.handleShowSelected = this.handleShowSelected.bind(this);
+		this.removeMembersHandler = this.removeMembersHandler.bind(this);
+		this.addToGroupHandler = this.addToGroupHandler.bind(this);
+		this.openGroupWindow = this.openGroupWindow.bind(this);
+		this.closeGroupWindow = this.closeGroupWindow.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 	
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({filtered, itemCount, filterColumns});
-	};
-
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-	
-	linkHandler = (e, column, rowInfo) => {
-		window.location = "/org/" + rowInfo.row.org_id;
-	};
-
-	selectionHandler = (selected) => {
-		let showSelected = this.state.showSelected;
-		if (selected.size === 0) {
-			showSelected = false;
-		}
-		this.setState({selected, showSelected});
-	};
-	
-	handleShowSelected = () => {
-		this.setState({showSelected: !this.state.showSelected});
-	};
-
-	removeMembersHandler = () => {
-		this.props.onRemove(Array.from(this.state.selected.keys()));
-	};
-
-	addToGroupHandler = (groupId, groupName) => {
-		this.setState({addingToGroup: false, showSelected: false});
-		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
-			window.location = `/orggroup/${orggroup.id}`;
-		});
-	};
-
-	closeGroupWindow = () => {
-		this.setState({addingToGroup: false});
-	};
-
-	openGroupWindow = () => {
-		this.setState({addingToGroup: true});
-	};
-	
-	exportHandler = () => {
-		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.orgs;
-		this.setState({isExporting: true, exportable});
-		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
-	};
-
+	// Lifecycle
 	render() {
 		const {selected, filterColumns} = this.state;
 		
@@ -82,7 +46,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			<DataTableSavedFilters key={this.props.id} id={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id={this.props.id} key={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Add To Group", handler: this.openGroupWindow, disabled: selected.size === 0},
@@ -107,11 +71,61 @@ export default class extends React.Component {
 				</div>
 				<footer className="slds-card__footer"/>
 				{this.state.addingToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`}
-															   onAdd={this.addToGroupHandler.bind(this)}
+															   onAdd={this.addToGroupHandler}
 															   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 
 			</article>
 		);
+	}
+	
+	// Handlers
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
+	}
+
+	linkHandler(e, column, rowInfo) {
+		window.location = "/org/" + rowInfo.row.org_id;
+	}
+
+	selectionHandler(selected) {
+		let showSelected = this.state.showSelected;
+		if (selected.size === 0) {
+			showSelected = false;
+		}
+		this.setState({selected, showSelected});
+	}
+
+	handleShowSelected() {
+		this.setState({showSelected: !this.state.showSelected});
+	}
+
+	removeMembersHandler() {
+		this.props.onRemove(Array.from(this.state.selected.keys()));
+	}
+
+	addToGroupHandler(groupId, groupName) {
+		this.setState({addingToGroup: false, showSelected: false});
+		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
+			window.location = `/orggroup/${orggroup.id}`;
+		});
+	}
+
+	openGroupWindow() {
+		this.setState({addingToGroup: true});
+	}
+	
+	closeGroupWindow() {
+		this.setState({addingToGroup: false});
+	}
+
+	exportHandler() {
+		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.orgs;
+		this.setState({isExporting: true, exportable});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
 }

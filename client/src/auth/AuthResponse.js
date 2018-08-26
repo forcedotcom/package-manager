@@ -3,8 +3,12 @@ import React from 'react';
 const qs = require('query-string');
 
 export default class extends React.Component {
-	state = {};
-
+	constructor(props) {
+		super(props);
+		this.state = {};
+	}
+	
+	// Lifecycle
 	componentDidMount() {
 		const params = qs.parse(this.props.location.search);
 		if (params.message) {

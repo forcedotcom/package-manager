@@ -4,10 +4,13 @@ import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
-	linkHandler = (e, column, rowInfo) => {
-		window.location = "/orggroup/" + rowInfo.original.id;
-	};
+	constructor(props) {
+		super(props);
+		
+		this.linkHandler = this.linkHandler.bind(this);
+	}
 
+	// Lifecycle
 	render() {
 		const columns = [
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
@@ -25,5 +28,10 @@ export default class extends React.Component {
 				<DataTableFilterHelp/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		window.location = "/orggroup/" + rowInfo.original.id;
 	}
 }

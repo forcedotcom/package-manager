@@ -201,13 +201,13 @@ function connect(sock) {
 		cancelJobs(jobIds);
 	});
 	socket.on(Events.REFRESH_ORG_VERSIONS, async function (orgId) {
-		await fetchVersions([orgId]);
-		emit(Events.ORG_VERSIONS, orgId);
+		const job = fetch.fetchOrgVersions(orgId);
+		await job.run();
 	});
 	socket.on(Events.REFRESH_GROUP_VERSIONS, async function (groupId) {
 		let orgIds = (await orgs.findByGroup(groupId)).map(o => o.org_id);
-		await fetchVersions(orgIds);
-		emit(Events.GROUP_VERSIONS, groupId);
+		const job = fetch.fetchOrgGroupVersions(groupId, orgIds);
+		await job.run();	
 	});
 	socket.on(Events.UPLOAD_ORGS, async function () {
 		await uploadOrgsToSumo();
@@ -330,11 +330,6 @@ async function fetchInvalidOrgs(interval) {
 	await job.run();
 }
 
-async function fetchVersions(orgIds, packageOrgIds) {
-	const job = fetch.fetchVersions(orgIds, packageOrgIds);
-	await job.run();
-}
-
 async function uploadOrgsToSumo(interval) {
 	let job = new AdminJob("upload-orgs", "Upload org data to sumologic",
 		[
@@ -434,5 +429,4 @@ exports.scheduleJobs = scheduleJobs;
 exports.requestSettings = requestSettings;
 exports.requestJobs = requestJobs;
 exports.requestCancel = requestCancel;
-exports.fetchVersions = fetchVersions;
 exports.AdminJob = AdminJob;

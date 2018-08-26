@@ -11,61 +11,18 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {selected: new Map()};
+		
+		this.fetchData = this.fetchData.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+		this.newHandler = this.newHandler.bind(this);
+		this.connectHandler = this.connectHandler.bind(this);
+		this.selectionHandler = this.selectionHandler.bind(this);
+		this.refreshHandler = this.refreshHandler.bind(this);
+		this.revokeHandler = this.revokeHandler.bind(this);
+		this.deleteHandler = this.deleteHandler.bind(this);
 	}
 
-	fetchData = () => {
-		return packageOrgService.requestAll();
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({itemCount});
-	};
-
-	newHandler = (event) => {
-		this.connectHandler(event.shiftKey ? "https://test.salesforce.com" : "https://login.salesforce.com");
-	};
-
-	connectHandler = (instanceUrl) => {
-		authService.oauthOrgURL(instanceUrl).then(url => {
-			window.location.href = url;
-		});
-	};
-
-	selectionHandler = (selected) => {
-		this.setState({selected});
-	};
-
-	refreshHandler = () => {
-		this.setState({isRefreshing: true});
-		packageOrgService.requestRefresh(Array.from(this.state.selected.keys()))
-			.then(() => this.setState({isRefreshing: false}))
-			.catch(e => {
-				this.setState({isRefreshing: false});
-				NotificationManager.error(e, "Refresh Failed");
-			});
-	};
-	
-	revokeHandler = () => {
-		this.setState({isRevoking: true});
-		packageOrgService.requestRevoke(Array.from(this.state.selected.keys()))
-			.then(() => this.setState({isRevoking: false}))
-			.catch(e => {
-				this.setState({isRevoking: false});
-				NotificationManager.error(e, "Revoke Failed");
-			});
-	};
-
-	deleteHandler = () => {
-		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
-			packageOrgService.requestDelete(Array.from(this.state.selected.keys()))
-			.then(() => this.setState({isRevoking: false}))
-			.catch(e => {
-				this.setState({isRevoking: false});
-				NotificationManager.error(e, "Delete Failed");
-			});
-		}
-	};
-
+	// Lifecycle
 	render() {
 		const actions = [
 			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", handler: this.newHandler},
@@ -84,5 +41,59 @@ export default class extends React.Component {
 								onSelect={this.selectionHandler} onDelete={this.deleteHandler}/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchData() {
+		return packageOrgService.requestAll();
+	}
+
+	filterHandler (filtered, filterColumns, itemCount) {
+		this.setState({itemCount});
+	}
+
+	newHandler(event) {
+		this.connectHandler(event.shiftKey ? "https://test.salesforce.com" : "https://login.salesforce.com");
+	}
+
+	connectHandler(instanceUrl) {
+		authService.oauthOrgURL(instanceUrl).then(url => {
+			window.location.href = url;
+		});
+	}
+
+	selectionHandler(selected) {
+		this.setState({selected});
+	}
+
+	refreshHandler() {
+		this.setState({isRefreshing: true});
+		packageOrgService.requestRefresh(Array.from(this.state.selected.keys()))
+		.then(() => this.setState({isRefreshing: false}))
+		.catch(e => {
+			this.setState({isRefreshing: false});
+			NotificationManager.error(e, "Refresh Failed");
+		});
+	}
+
+	revokeHandler() {
+		this.setState({isRevoking: true});
+		packageOrgService.requestRevoke(Array.from(this.state.selected.keys()))
+		.then(() => this.setState({isRevoking: false}))
+		.catch(e => {
+			this.setState({isRevoking: false});
+			NotificationManager.error(e, "Revoke Failed");
+		});
+	}
+
+	deleteHandler() {
+		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
+			packageOrgService.requestDelete(Array.from(this.state.selected.keys()))
+			.then(() => this.setState({isRevoking: false}))
+			.catch(e => {
+				this.setState({isRevoking: false});
+				NotificationManager.error(e, "Delete Failed");
+			});
+		}
 	}
 }

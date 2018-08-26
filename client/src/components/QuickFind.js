@@ -53,25 +53,20 @@ class Dropdown extends React.Component {
 
 
 export default class extends React.Component {
-	state = {
-		value: undefined,
-		label: this.props.label || 'Select an option',
-		isOpen: false
-	};
+	constructor(props) {
+		super(props);
+		this.state = {
+			value: undefined,
+			label: this.props.label || 'Select an option',
+			isOpen: false
+		};
+	
+		this.focusHandler = this.focusHandler.bind(this);
+		this.blurHandler = this.blurHandler.bind(this);
+		this.changeHandler = this.changeHandler.bind(this);
+	}
 
-	focusHandler = () => {
-		this.setState({isOpen: true});
-	};
-
-	blurHandler = (value, label) => {
-		this.setState({isOpen: false});
-	};
-
-	changeHandler = (value, label) => {
-		this.setState({value: value, label: label, isOpen: false});
-		this.props.onChange(value, label);
-	};
-
+	// Lifecycle
 	render() {
 		return (
 			<div aria-expanded="true" className="slds-picklist slds-picklist--quickfind" onFocus={this.focusHandler}
@@ -88,5 +83,19 @@ export default class extends React.Component {
 						  onChange={this.changeHandler}/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	focusHandler() {
+		this.setState({isOpen: true});
+	}
+
+	blurHandler(value, label) {
+		this.setState({isOpen: false});
+	}
+
+	changeHandler(value, label) {
+		this.setState({value: value, label: label, isOpen: false});
+		this.props.onChange(value, label);
 	}
 }

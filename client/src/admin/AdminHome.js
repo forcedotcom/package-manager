@@ -14,30 +14,29 @@ import {Helmet} from "react-helmet";
 const DEFAULT_HISTORY_LIMIT = 10;
 
 export default class extends React.Component {
-	state = {
-		jobs: [],
-		queue: [],
-		history: [],
-		settings: {},
-		isMini: window.innerWidth < 1000
-	};
+	constructor(props) {
+		super(props);
+		this.state = {
+			jobs: [],
+			queue: [],
+			history: [],
+			settings: {},
+			isMini: window.innerWidth < 1000
+		};
+		
+		this.onJobs = this.onJobs.bind(this);
+		this.onHistory = this.onHistory.bind(this);
+		this.onQueue = this.onQueue.bind(this);
+		this.cancellationHandler = this.cancellationHandler.bind(this);
+		this.fetchHandler = this.fetchHandler.bind(this);
+		this.refetchInvalidHandler = this.refetchInvalidHandler.bind(this);
+		this.refetchAllHandler = this.refetchAllHandler.bind(this);
+		this.uploadOrgsHandler = this.uploadOrgsHandler.bind(this);
+		this.goToHerokuHandler = this.goToHerokuHandler.bind(this);
+		this.showAllHistoryHandler = this.showAllHistoryHandler.bind(this);
+	}
 
-	handleWindowResize = debounce(() => {
-		this.setState({isMini: window.innerWidth < 1000})
-	}, 200);
-
-	onJobs = (data) => {
-		this.setState({jobs: data || []});
-	};
-	
-	onHistory = (data) => {
-		this.setState({history: data || []});
-	};
-	
-	onQueue = (data) => {
-		this.setState({queue: data || []});
-	};
-	
+	// Lifecycle	
 	componentDidMount() {
 		window.addEventListener('resize', this.handleWindowResize);
 
@@ -59,39 +58,6 @@ export default class extends React.Component {
 		notifier.remove('job-history', this.onHistory);
 		notifier.remove('job-queue', this.onQueue);
 	}
-
-	cancellationHandler = (job) => {
-		job.cancelling = true;
-		adminService.requestCancel([job.id]).then(res => this.setState({
-			jobs: res.jobs,
-			queue: res.queue,
-			history: res.history
-		}));
-	};
-
-	fetchHandler = () => {
-		notifier.emit("fetch", {});
-	};
-
-	refetchInvalidHandler = () => {
-		notifier.emit("fetch-invalid", {});
-	};
-
-	refetchAllHandler = () => {
-		notifier.emit("fetch-all", {});
-	};
-
-	uploadOrgsHandler = () => {
-		notifier.emit("upload-orgs", {});
-	};
-
-	goToHerokuHandler = () => {
-		window.open(`https://dashboard.heroku.com/apps/${encodeURI(this.state.settings.HEROKU_APP_NAME)}`);
-	};
-
-	showAllHistoryHandler = () => {
-		this.setState({showAllHistory: true});
-	};
 
 	render() {
 		let activeCards = [];
@@ -226,6 +192,56 @@ export default class extends React.Component {
 			</div>
 		);
 	}
+
+	//  Handlers
+	handleWindowResize = debounce(() => {
+		this.setState({isMini: window.innerWidth < 1000})
+	}, 200);
+
+	onJobs(data) {
+		this.setState({jobs: data || []});
+	}
+
+	onHistory(data) {
+		this.setState({history: data || []});
+	}
+
+	onQueue(data) {
+		this.setState({queue: data || []});
+	}
+
+	cancellationHandler(job) {
+		job.cancelling = true;
+		adminService.requestCancel([job.id]).then(res => this.setState({
+			jobs: res.jobs,
+			queue: res.queue,
+			history: res.history
+		}));
+	}
+
+	fetchHandler() {
+		notifier.emit("fetch", {});
+	}
+
+	refetchInvalidHandler() {
+		notifier.emit("fetch-invalid", {});
+	}
+
+	refetchAllHandler() {
+		notifier.emit("fetch-all", {});
+	}
+
+	uploadOrgsHandler() {
+		notifier.emit("upload-orgs", {});
+	}
+
+	goToHerokuHandler() {
+		window.open(`https://dashboard.heroku.com/apps/${encodeURI(this.state.settings.HEROKU_APP_NAME)}`);
+	}
+
+	showAllHistoryHandler = () => {
+		this.setState({showAllHistory: true});
+	};
 }
 
 class Section extends React.Component {

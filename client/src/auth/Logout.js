@@ -3,8 +3,12 @@ import * as authService from "../services/AuthService";
 import Login from "./Login";
 
 export default class extends React.Component {
-	state = {};
+	constructor(props) {
+		super(props);
+		this.state = {};
+	}
 
+	// Lifecycle
 	componentDidMount() {
 		authService.requestLogout().then(() => {
 			console.log("Logged out!");

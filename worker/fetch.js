@@ -205,12 +205,30 @@ function fetchInvalid() {
 		]);
 }
 
-function fetchVersions(orgIds, packageOrgIds) {
+function fetchOrgVersions(orgId, packageOrgIds) {
+	return new admin.AdminJob(admin.Events.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
+		[
+			{
+				name: "Fetching package versions from subscribers",
+				handler: (job) => orgpackageversions.fetchFromSubscribers(orgId, packageOrgIds, job),
+			},
+			{
+				name: "Finish event",
+				handler: () => 	admin.emit(admin.Events.ORG_VERSIONS, orgId)
+			}
+		]);
+}
+
+function fetchOrgGroupVersions(groupId, orgIds, packageOrgIds) {
 	return new admin.AdminJob(admin.Events.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
 		[
 			{
 				name: "Fetching package versions from subscribers",
 				handler: (job) => orgpackageversions.fetchFromSubscribers(orgIds, packageOrgIds, job),
+			},
+			{
+				name: "Finish event",
+				handler: () => 	admin.emit(admin.Events.GROUP_VERSIONS, groupId)
 			}
 		]);
 }
@@ -218,4 +236,5 @@ function fetchVersions(orgIds, packageOrgIds) {
 exports.fetchAccountOrgs = fetchAccountOrgs;
 exports.fetch = fetch;
 exports.fetchInvalid = fetchInvalid;
-exports.fetchVersions = fetchVersions;
+exports.fetchOrgVersions = fetchOrgVersions;
+exports.fetchOrgGroupVersions = fetchOrgGroupVersions;

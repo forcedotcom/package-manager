@@ -1,13 +1,22 @@
 import React from 'react';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import {Redirect} from "react-router-dom";
 
 export default class extends React.Component {
-	linkHandler = (e, column, rowInfo) => {
-		window.location = "/org/" + rowInfo.row.org_id;
-	};
+	constructor(props) {
+		super(props);
+		this.state = {};
+		
+		this.linkHandler = this.linkHandler.bind(this);
+	}
 
+	// Lifecycle
 	render() {
+		if (this.state.goto) {
+			return <Redirect to={this.state.goto}/>
+		}
+		
 		let columns = [
 			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
@@ -29,5 +38,11 @@ export default class extends React.Component {
 				<DataTableFilterHelp/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	linkHandler(e, column, rowInfo) {
+		// this.setState({goto: "/org/" + rowInfo.row.org_id});
+		window.location = "/org/" + rowInfo.row.org_id;
 	}
 }

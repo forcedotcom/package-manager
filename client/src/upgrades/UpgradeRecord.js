@@ -22,6 +22,13 @@ export default class extends React.Component {
 			upgrade: {},
 			progress: getProgress([])
 		};
+		
+		this.fetchItems = this.fetchItems.bind(this);
+		this.fetchJobs = this.fetchJobs.bind(this);
+		this.upgradeUpdated = this.upgradeUpdated.bind(this);
+		this.activationHandler = this.activationHandler.bind(this);
+		this.cancellationHandler = this.cancellationHandler.bind(this);
+		this.retryHandler = this.retryHandler.bind(this);
 	}
 
 	componentDidMount() {
@@ -32,61 +39,10 @@ export default class extends React.Component {
 			.catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.location = `/upgrades`}));
 	}
 
-	fetchItems = () => {
-		return upgradeItemService.findByUpgrade(this.props.match.params.upgradeId);
-	};
-	
-	fetchJobs = () => {
-		return new Promise((resolve, reject) => {
-			upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId).then(
-				jobs => { 
-					this.setState({progress: getProgress(jobs)});
-					resolve(jobs);
-				}).catch(reject);
-		});
-	};
-	
 	componentWillUnmount() {
 		notifier.remove('upgrade', this.upgradeUpdated);
 	}
-
-	upgradeUpdated = (upgrade) => {
-		if (upgrade && this.state.upgrade.id === upgrade.id) {
-			this.setState({upgrade});
-		}
-	};
 	
-	activationHandler = () => {
-		if (window.confirm(`Are you sure you want to activate this upgrade?`)) {
-			this.setState({isActivating: true});
-			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
-				this.setState({isActivating: false});
-				NotificationManager.error(e.message, "Activation Failed");
-			});
-		}
-	};
-
-	cancellationHandler = () => {
-		if (window.confirm(`Are you sure you want to cancel this upgrade?  All ${this.state.items.length} request(s) will be cancelled.`)) {
-			this.setState({isCancelling: true});
-			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
-				this.setState({isCancelling: false});
-				NotificationManager.error(e.message, "Cancellation Failed");
-			});
-		}
-	};
-
-	retryHandler = () => {
-		if (window.confirm(`Are you sure you want to retry this upgrade?  Only failed jobs will be rescheduled.`)) {
-			this.setState({isRetrying: true});
-			upgradeService.retry(this.state.upgrade.id).then((upgrade) => window.location = `/upgrade/${upgrade.id}`)
-			.catch((e) => {
-				this.setState({isRetrying: false});
-				NotificationManager.error(e.message, "Retry Failed");
-			});
-		}
-	};
-
 	render() {
 		const {upgrade, progress} = this.state;
 		
@@ -99,18 +55,18 @@ export default class extends React.Component {
 		
 		const actions = [
 			{
-				label: "Activate Upgrade", handler: this.activationHandler.bind(this),
+				label: "Activate Upgrade", handler: this.activationHandler,
 				disabled: !userCanActivate || progress.active > 0,
 				detail: userCanActivate ? "Activate all items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
 				spinning: this.state.isActivating
 			},
 			{
-				label: "Cancel Upgrade", handler: this.cancellationHandler.bind(this),
+				label: "Cancel Upgrade", handler: this.cancellationHandler,
 				disabled: progress.cancelled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
 			{
-				label: "Retry Failed Jobs", handler: this.retryHandler.bind(this),
+				label: "Retry Failed Jobs", handler: this.retryHandler,
 				disabled: progress.errors === 0, 
 				spinning: this.state.isRetrying
 			}
@@ -128,15 +84,67 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
-							<UpgradeItemCard upgrade={upgrade} onFetch={this.fetchItems.bind(this)} refetchOn="upgrade-items"/>
+							<UpgradeItemCard upgrade={upgrade} onFetch={this.fetchItems} refetchOn="upgrade-items"/>
 						</div>
 						<div label="Jobs">
-							<UpgradeJobCard onFetch={this.fetchJobs.bind(this)} refetchOn="upgrade-jobs"/>
+							<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchItems() {
+		return upgradeItemService.findByUpgrade(this.props.match.params.upgradeId);
+	};
+
+	fetchJobs() {
+		return new Promise((resolve, reject) => {
+			upgradeJobService.requestAllJobsInUpgrade(this.props.match.params.upgradeId).then(
+				jobs => {
+					this.setState({progress: getProgress(jobs)});
+					resolve(jobs);
+				}).catch(reject);
+		});
+	}
+
+	upgradeUpdated(upgrade) {
+		if (upgrade && this.state.upgrade.id === upgrade.id) {
+			this.setState({upgrade});
+		}
+	}
+
+	activationHandler() {
+		if (window.confirm(`Are you sure you want to activate this upgrade?`)) {
+			this.setState({isActivating: true});
+			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
+				this.setState({isActivating: false});
+				NotificationManager.error(e.message, "Activation Failed");
+			});
+		}
+	}
+
+	cancellationHandler() {
+		if (window.confirm(`Are you sure you want to cancel this upgrade?  All ${this.state.items.length} request(s) will be cancelled.`)) {
+			this.setState({isCancelling: true});
+			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
+				this.setState({isCancelling: false});
+				NotificationManager.error(e.message, "Cancellation Failed");
+			});
+		}
+	}
+
+	retryHandler() {
+		if (window.confirm(`Are you sure you want to retry this upgrade?  Only failed jobs will be rescheduled.`)) {
+			this.setState({isRetrying: true});
+			upgradeService.retry(this.state.upgrade.id).then((upgrade) => window.location = `/upgrade/${upgrade.id}`)
+			.catch((e) => {
+				this.setState({isRetrying: false});
+				NotificationManager.error(e.message, "Retry Failed");
+			});
+		}
 	}
 }

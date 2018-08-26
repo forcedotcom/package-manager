@@ -11,24 +11,17 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
+		
+		this.fetchData = this.fetchData.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
 	}
 
-	fetchData = () => {
-		return licenseService.requestAll();
-	};
-
-	filterHandler = (filtered, filterColumns, itemCount) => {
-		this.setState({filtered, itemCount, filterColumns});
-	};
-
-	applySavedFilter = (filterColumns) => {
-		this.setState({filterColumns});
-	};
-	
+	// Lifecycle
 	render() {
 		const {filterColumns} = this.state;
 		const actions = [
-			<DataTableSavedFilters key="LicenseList" id="LicenseList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
+			<DataTableSavedFilters id="LicenseList" key="LicenseList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		];
 		return (
 			<div>
@@ -36,5 +29,18 @@ export default class extends React.Component {
 				<LicenseList onFetch={this.fetchData.bind(this)} onFilter={this.filterHandler} filterColumns={filterColumns}/>
 			</div>
 		);
+	}
+	
+	// Handlers
+	fetchData() {
+		return licenseService.requestAll();
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
+	};
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
 	}
 }
