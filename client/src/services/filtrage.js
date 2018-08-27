@@ -175,7 +175,19 @@ function matchNode(value, node, neg) {
 					return false;
 			}
 		case Types.BinaryExpression:
-			break;
+			const nodeName = unwrap(node.right);
+			switch(node.operator) {
+				case "<":
+					return value && value < nodeName;
+				case ">":
+					return value && value > nodeName;
+				case "<=":
+					return value && value <= nodeName;
+				case ">=":
+					return value && value >= nodeName;
+				default:
+					return false;
+			}
 		case Types.LogicalExpression:
 			if (node.operator === "||") {
 				return matchNode(value, node.left) || matchNode(value, node.right);
@@ -193,7 +205,7 @@ function matchNode(value, node, neg) {
 }
 
 function matchFilterString(fieldVal, node, neg) {
-	const nodeName = unwrap(node.name || node.raw || "").toLowerCase();
+	const nodeName = unwrap(node);
 	const first = nodeName.charAt(0);
 	const last = nodeName.charAt(nodeName.length-1);
 	if (first === "$") {
@@ -217,8 +229,25 @@ function isQuoted(str) {
  * We treat single-quotes as a sort of escape character, allowing for strings that would otherwise fail, like
  * numbers followed by non-numbers.
  */
-function unwrap(str) {
-	return isWrapped(str) ? str.substring(1,str.length-1) : str;
+function unwrap(node) {
+	let fieldVal = "";
+	switch(node.type) {
+		case "Literal":
+			fieldVal = node.name || String(node.raw) || "";
+			break;
+		case "BinaryExpression":
+			fieldVal = unwrap(node.left) + node.operator + unwrap(node.right);
+			break;
+		case "UnaryExpression":
+			fieldVal = "";
+			break;
+		default:
+			fieldVal = node.name || String(node.raw) || "";
+			break;
+	}
+
+	let unwrapped = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
+	return unwrapped.toLowerCase();
 }
 
 function isWrapped(str) {
