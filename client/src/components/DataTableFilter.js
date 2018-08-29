@@ -64,6 +64,7 @@ const HelpText = () => (
 			<HelpSection title="Greater or less than string-based comparisons" items={[
 				{example: '> 2018-08', description: "after August 2018"},
 				{example: '<= 2', description: "less than or equal to 2"}
+			]}/>
 		</div>
 		<h2 className="slds-text-align--right slds-text-color_inverse-weak slds-text-title_caps">Double-click to show this help. Type Escape to close.</h2>
 	</div>
