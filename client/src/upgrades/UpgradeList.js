@@ -27,8 +27,7 @@ export default class extends React.Component {
 			},
 			{Header: "When", id: "when", accessor: d => moment(d.start_time).fromNow(), clickable: true, sortable: false},
 			{Header: "Created By", accessor: "created_by", sortable: true},
-			{Header: "Status", accessor: "status", sortable: true},
-			{Header: "Failures", accessor: "failed_item_count", sortable: true}
+			{Header: "Status", accessor: "item_status", sortable: true}
 		];
 		return (
 			<div>

@@ -22,42 +22,42 @@ const UpgradeStatus = {
 
 const MAX_ERROR_COUNT = 20;
 
+const ITEM_STATUS_SOQL = `
+	CASE
+	     WHEN -- ALL Created == Inactive
+         count(CASE 
+                      WHEN i.status = 'Created' THEN 1
+                      ELSE NULL END) = count(i.*) THEN 'Scheduled'
+         WHEN -- At least one canceled == Canceled
+         count(CASE 
+                      WHEN i.status = 'Canceled' THEN 1
+                      ELSE NULL END) > 0 THEN 'Canceled'
+         WHEN -- At least one create, pending or in progress == Active
+         count(CASE 
+                      WHEN i.status = 'Created' THEN 1
+                      WHEN i.status = 'Pending' THEN 1
+                      WHEN i.status = 'InProgress' THEN 1
+                      ELSE NULL END) > 0 THEN 'Active'
+         WHEN -- At least one failed or ineligible == Failed
+         count(CASE 
+                      WHEN i.status = 'Failed' THEN 1
+                      WHEN i.status = 'Ineligible' THEN 1
+                      ELSE NULL END) > 0 THEN 'Failed'
+         ELSE -- All done and succeeded == Succeeded
+         'Succeeded' 
+	END item_status`;
+
 const SELECT_ALL = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description,
-    CASE
-    WHEN count(CASE
-             WHEN i.status = 'Created' THEN 1
-             ELSE NULL END) = count(i.*) THEN 'Inactive'
-    WHEN count(CASE
-             WHEN i.status = 'Succeeded' THEN 1
-             WHEN i.status = 'Failed' THEN 1
-             WHEN i.status = 'Canceled' THEN 1
-             WHEN i.status = 'Ineligible' THEN 1
-             ELSE NULL END) != count(i.*) THEN 'Active'
-    ELSE 'Done' END item_status,
-    count(CASE
-			WHEN i.status = 'Failed' THEN 1
-			ELSE NULL END) failed_item_count
+    ${ITEM_STATUS_SOQL}
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id`;
+
 const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ONE = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description,
-    CASE
-    WHEN count(CASE
-             WHEN i.status = 'Created' THEN 1
-             ELSE NULL END) = count(i.*) THEN 'Inactive'
-    WHEN count(CASE
-             WHEN i.status = 'Succeeded' THEN 1
-             WHEN i.status = 'Failed' THEN 1
-             WHEN i.status = 'Canceled' THEN 1
-             WHEN i.status = 'Ineligible' THEN 1
-             ELSE NULL END) != count(i.*) THEN 'Active'
-    ELSE 'Done' END item_status,
-    count(CASE
-			WHEN i.status = 'Failed' THEN 1
-			ELSE NULL END) failed_item_count
+	${ITEM_STATUS_SOQL}
     FROM upgrade u
     INNER JOIN upgrade_item i ON i.upgrade_id = u.id
     WHERE u.id = $1
