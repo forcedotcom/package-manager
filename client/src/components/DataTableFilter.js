@@ -41,7 +41,7 @@ export const DataTableFilterHelp = () => {
  */
 const HelpText = () => (
 	<div>
-		<div className="slds-grid slds-wrap">
+		<div style={{width: window.innerWidth * .4}} className="slds-grid slds-wrap">
 			<HelpSection title="Text expressions" items={[
 				{example: 'some text', description: "contains some text"},
 				{example: "'some text'", description: "contains some text with a space"},
