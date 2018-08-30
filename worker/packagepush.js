@@ -160,7 +160,7 @@ async function updatePushRequests(items, status, currentUser) {
 
 async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
 	const whitelist = await orggroups.loadWhitelist();
-	if (whitelist) {
+	if (whitelist.size > 0) {
 		orgIds = orgIds.filter(orgId => {
 			if (!whitelist.has(orgId)) {
 				logger.warn("Skipping org missing from whitelist", {org_id: orgId});
@@ -172,7 +172,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 	}
 
 	const blacklist = await orggroups.loadBlacklist();
-	if (blacklist) {
+	if (blacklist.size > 0) {
 		orgIds = orgIds.filter(orgId => {
 			if (blacklist.has(orgId)) {
 				logger.warn("Skipping blacklisted org", {org_id: orgId});
@@ -239,7 +239,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	}
 
 	const blacklist = await orggroups.loadBlacklist();
-	if (blacklist) {
+	if (blacklist.size > 0) {
 		opvs = opvs.filter(opv => {
 			if (blacklist.has(opv.org_id)) {
 				logger.warn("Skipping blacklisted org", {org_id: opv.org_id});
@@ -252,7 +252,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 	if (opvs.length === 0) {
 		// Orgs were stripped above, nothing to do 
-		return {message: "None of your orgs were allowed to be upgraded"};
+		return {message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
