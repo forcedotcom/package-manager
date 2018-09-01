@@ -52,7 +52,7 @@ async function load(result, conn) {
 			version_id: v.sfLma__Version_ID__c
 		};
 	});
-	if (!result.done && !adminJob.cancelled) {
+	if (!result.done && !adminJob.canceled) {
 		return fetchMore(result.nextRecordsUrl, conn, recs);
 	}
 	return recs;
@@ -80,7 +80,7 @@ async function upsert(recs, batchSize) {
 		return; // nothing to see here
 	}
 	logger.info(`New package versions found`, {count});
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Batch upserting package versions`, {batch: start, count: count});
 		await upsertBatch(recs.slice(start, start += batchSize));
 	}
@@ -126,7 +126,7 @@ async function fetchLatest(job) {
 		pvl.version_sort = l.version_sort;
 	});
 	
-	if (adminJob.cancelled)
+	if (adminJob.canceled)
 		return;
 	
 	return upsertLatest(Array.from(latestByPackage.values()));

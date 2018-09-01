@@ -62,7 +62,7 @@ export default class extends React.Component {
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler,
-				disabled: progress.cancelled > 0 || progress.done,
+				disabled: progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
 			{
@@ -80,7 +80,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={upgrade.item_status}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={progress.percentage} success={progress.errors === 0 && progress.cancelled === 0}/>
+				<ProgressBar progress={progress.percentage} status={progress.status}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
@@ -128,7 +128,7 @@ export default class extends React.Component {
 	}
 
 	cancellationHandler() {
-		if (window.confirm(`Are you sure you want to cancel this upgrade?  All ${this.state.items.length} request(s) will be cancelled.`)) {
+		if (window.confirm(`Are you sure you want to cancel this upgrade?  All requests will be canceled.`)) {
 			this.setState({isCancelling: true});
 			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
 				this.setState({isCancelling: false});

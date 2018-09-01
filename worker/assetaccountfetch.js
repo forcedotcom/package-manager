@@ -11,7 +11,7 @@ const SELECT_ALL = `SELECT Apttus_Config2__AccountId__c, Apttus_Config2__Account
 let adminJob;
 
 async function fetch(org62Id, fetchAll, job) {
-	adminJob = job || {cancelled: false};
+	adminJob = job || {canceled: false};
 	let fromDate = null;
 	if (!fetchAll) {
 		let latest = await db.query(`select max(modified_date) max from account`);
@@ -48,7 +48,7 @@ async function load(result, conn) {
 			status: 'Purchased'
 		};
 	});
-	if (!result.done && !adminJob.cancelled) {
+	if (!result.done && !adminJob.canceled) {
 		return fetchMore(result.nextRecordsUrl, conn, recs);
 	}
 	return recs;
@@ -70,7 +70,7 @@ async function upsert(recs, batchSize) {
 	count = recs.length;
 
 	logger.info(`New account records found`, {count});
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		await upsertBatch(recs.slice(start, start += batchSize));
 	}
 }

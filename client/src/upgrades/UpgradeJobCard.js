@@ -7,7 +7,6 @@ import {CSVDownload} from 'react-csv';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
-import * as Utils from "../components/Utils";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -49,7 +48,7 @@ export default class extends React.Component {
 				},
 				{
 					Header: "Original",
-					id: "original_version_sort", accessor: Utils.renderVersionNumber,
+					id: "original_version_sort", accessor: "original_version_number",
 					sortable: true,
 					clickable: true,
 					maxWidth: 100,
@@ -57,7 +56,7 @@ export default class extends React.Component {
 				},
 				{
 					Header: "Current",
-					id: "current_version_sort", accessor: Utils.renderVersionNumber,
+					id: "current_version_sort", accessor: "current_version_number",
 					sortable: true,
 					clickable: true,
 					maxWidth: 100,
@@ -65,7 +64,7 @@ export default class extends React.Component {
 				},
 				{
 					Header: "Target",
-					id: "version_sort", accessor: Utils.renderVersionNumber,
+					id: "version_sort", accessor: "version_number",
 					sortable: true,
 					clickable: true,
 					maxWidth: 100,

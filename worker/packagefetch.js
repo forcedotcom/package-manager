@@ -50,7 +50,7 @@ async function load(result, conn) {
 		};
 	});
 
-	if (!result.done && !adminJob.cancelled) {
+	if (!result.done && !adminJob.canceled) {
 		return fetchMore(result.nextRecordsUrl, conn, recs);
 	}
 	return recs;
@@ -63,7 +63,7 @@ async function upsert(recs, batchSize) {
 		return; // nothing to see here
 	}
 	logger.info(`New packages found`, {count});
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Batch upserting package records`, {batch: start, count});
 		await upsertBatch(recs.slice(start, start += batchSize));
 	}

@@ -25,7 +25,7 @@ async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
 	}
 
 	let conn = await sfdc.buildOrgConnection(org62Id);
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Querying accounts`, {start, count});
 		await fetchBatch(conn, accounts.slice(start, start += batchSize), useBulkAPI);
 	}
@@ -69,7 +69,7 @@ async function upsert(recs, batchSize) {
 		return; // nothing to see here
 	}
 	logger.info(`New account records found`, {count});
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		await upsertBatch(recs.slice(start, start += batchSize));
 	}
 }

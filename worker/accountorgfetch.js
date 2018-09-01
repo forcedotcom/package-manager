@@ -10,12 +10,12 @@ const QUERY_BATCH_SIZE = 500;
 let adminJob;
 
 async function fetch(btOrgId, fetchAll, job) {
-	adminJob = job || {cancelled: false};
+	adminJob = job || {canceled: false};
 	return await queryAndStore(btOrgId, fetchAll, false, false);
 }
 
 async function refetchInvalid(btOrgId, job) {
-	adminJob = job || {cancelled: false};
+	adminJob = job || {canceled: false};
 	return await queryAndStore(btOrgId, false, true, false);
 }
 
@@ -35,7 +35,7 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
 		return;
 	}
 
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Retrieving org records`, {batch: start, count});
 		await fetchBatch(conn, accounts.slice(start, start += QUERY_BATCH_SIZE));
 	}

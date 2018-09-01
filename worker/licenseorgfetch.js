@@ -56,7 +56,7 @@ async function upsert(recs, batchSize) {
 		logger.info("    " + msgs.join("\n    "));
 	}
 	logger.info(`New license orgs found`, {count});
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Upserting license orgs`, {batch: start, count: count});
 		await upsertBatch(recs.slice(start, start += batchSize));
 	}

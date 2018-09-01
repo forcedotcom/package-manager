@@ -65,7 +65,7 @@ export default class extends React.Component {
 			for (let i = 0; i < this.state.jobs.length; i++) {
 				let job = this.state.jobs[i];
 				let actions = [];
-				if (job.stepIndex !== job.stepCount && !job.cancelled) {
+				if (job.stepIndex !== job.stepCount && !job.canceled) {
 					actions.push({
 						label: "Cancel Job",
 						handler: () => this.cancellationHandler(job),
@@ -75,7 +75,7 @@ export default class extends React.Component {
 				activeCards.push(
 					<AdminCard key={job.id} title={job.name} status={job.status} actions={actions}>
 						<ProgressBar message={job.message} progress={job.stepIndex / job.stepCount}
-									 success={job.errors.length === 0}/>
+									 status={job.errors.length > 0 ? "error" : "success"}/>
 						{job.errors.length > 0 ?
 							<Section title="Errors"><Results lines={job.errors}
 															 divider="slds-has-dividers_bottom-space"/></Section> : ""}

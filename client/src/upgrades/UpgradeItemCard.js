@@ -25,7 +25,7 @@ export default class extends React.Component {
 				clickable: true
 			},
 			{Header: "Package Name", accessor: "package_name", sortable: true, clickable: true},
-			{Header: "Package Version", accessor: "version_sort", sortable: true, clickable: true},
+			{Header: "Package Version", id: "version_sort", accessor: "version_number", sortable: true, clickable: true},
 			{Header: "Orgs", accessor: "job_count", sortable: true},
 			{
 				Header: "Status", accessor: "status", sortable: true,

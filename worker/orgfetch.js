@@ -39,7 +39,7 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
 		return;
 	}
 
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Retrieving org records`, {batch: start, count});
 		await fetchBatch(conn, orgs.slice(start, start += QUERY_BATCH_SIZE));
 	}

@@ -101,7 +101,7 @@ async function upsert(recs, batchSize) {
 		return;
 	}
 	logger.info(`New org package versions found`, {count});
-	for (let start = 0; start < count && !adminJob.cancelled;) {
+	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Batch upserting org package versions`, {batch: start, count});
 		await upsertBatch(recs.slice(start, start += batchSize));
 	}

@@ -49,7 +49,7 @@ export default class extends React.Component {
 			},
 			{
 				label: "Cancel Request", handler: this.handleCancellation,
-				disabled: progress.cancelled > 0 || progress.done,
+				disabled: progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			}
 		];
@@ -63,7 +63,7 @@ export default class extends React.Component {
 								 className={item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={item.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={progress.percentage} success={progress.errors === 0 && progress.cancelled === 0}/>
+				<ProgressBar progress={progress.percentage} status={progress.status}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 				</div>
@@ -104,7 +104,7 @@ export default class extends React.Component {
 	}
 
 	handleCancellation() {
-		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be cancelled.`)) {
+		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be canceled.`)) {
 			this.setState({isCancelling: true});
 			upgradeItemService.cancel(this.state.item.id)
 			.then(item => this.loadItemJobs(item))

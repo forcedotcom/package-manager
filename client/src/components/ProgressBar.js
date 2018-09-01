@@ -3,6 +3,20 @@ import React from 'react';
 export default class extends React.Component {
 	render() {
 		let pct = `${Math.floor(this.props.progress * 100)}%`;
+		let classNames = ["slds-progress-bar__value"];
+		switch(this.props.status) {
+			case "success":
+				if (this.props.progress === 1)
+					classNames.push("slds-progress-bar__value_success");
+				break;
+			case "error":
+				classNames.push("slds-theme--error");
+				break;
+			case "canceled":
+				classNames.push("slds-theme--warning");
+				break;
+			default:
+		}
 		return (
 			<div>
 				{this.props.message ?
@@ -15,10 +29,7 @@ export default class extends React.Component {
 					</div>
 					: ""}
 				<div className="slds-progress-bar">
-					<span
-						className={`slds-progress-bar__value ${this.props.success && this.props.progress === 1 ? "slds-progress-bar__value_success" :
-							!this.props.success ? "slds-theme--error" : ""}`}
-						style={{width: pct}}/>
+					<span className={classNames.join(" ")} style={{width: pct}}/>
 				</div>
 			</div>
 		);

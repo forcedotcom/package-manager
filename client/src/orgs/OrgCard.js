@@ -8,7 +8,6 @@ import SelectGroupWindow from "./SelectGroupWindow";
 import DataTable from "../components/DataTable";
 import * as strings from "../services/strings";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
-import * as Utils from "../components/Utils";
 
 export default class extends React.Component {
 	constructor() {
@@ -38,7 +37,7 @@ export default class extends React.Component {
 			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
 			{Header: "Account", accessor: "account_name", sortable: true, clickable: true},
-			{Header: "Version", id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true},
+			{Header: "Version", id: "version_sort", accessor: "version_number", sortable: true},
 			{Header: "License", accessor: "license_status", sortable: true},
 			{Header: "Instance", accessor: "instance", sortable: true},
 			{Header: "Type", accessor: "type", sortable: true},

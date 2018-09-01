@@ -56,7 +56,7 @@ class AdminJob {
 		this.stepCount = this.collectSteps(this.steps).length;
 		this.messages = [];
 		this.errors = [];
-		this.cancelled = false;
+		this.canceled = false;
 		this.singleton = false;
 		this.shouldRun = () => true;
 	}
@@ -97,9 +97,9 @@ class AdminJob {
 			this.postMessage(`Starting job ${this.name}`);
 
 			await this.runSteps(this.steps);
-			this.status = this.cancelled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
-			this.postProgress(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", this.cancelled ? this.stepIndex : this.stepCount);
-			logger.info(this.cancelled ? "Admin Job Cancelled" : "Admin Job Complete", {
+			this.status = this.canceled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
+			this.postProgress(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.canceled ? this.stepIndex : this.stepCount);
+			logger.info(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", {
 				steps: this.stepCount,
 				errors: this.errors.length
 			})
@@ -139,7 +139,7 @@ class AdminJob {
 	async runSteps(steps) {
 		for (let i = 0; i < steps.length; i++) {
 			let step = steps[i];
-			if (this.cancelled) {
+			if (this.canceled) {
 				this.postProgress(`Canceling job before ${step.name.toLowerCase()}`, this.stepIndex);
 				break;
 			}
@@ -175,7 +175,7 @@ class AdminJob {
 	}
 
 	cancel() {
-		this.cancelled = true;
+		this.canceled = true;
 	}
 }
 
