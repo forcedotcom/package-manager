@@ -17,6 +17,7 @@ const QUERY_DICTIONARY = new Map([
 	["package_id", "pv.package_id"],
 	["version_name", "pv.name"],
 	["version_number", "pv.version_number"],
+	["version_sort", "pv.version_sort"],
 	["version_id", "pv.version_id"],
 	["package_name", "p.name"]
 ]);
@@ -27,7 +28,7 @@ const SELECT_ALL = `SELECT
     l.used_license_count,
     o.instance, o.account_id,
     a.account_name,
-    pv.package_id, pv.name as version_name, pv.version_number, pv.version_id,
+    pv.package_id, pv.name as version_name, pv.version_number, pv.version_sort, pv.version_id,
     p.name as package_name
     FROM license l
     INNER JOIN org as o on l.org_id = o.org_id

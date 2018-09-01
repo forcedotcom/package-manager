@@ -6,6 +6,7 @@ import {PACKAGE_VERSION_ICON} from "../Constants";
 import * as sortage from "../services/sortage";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import * as Utils from "../components/Utils";
 
 export default class extends React.Component {
 	constructor() {
@@ -22,8 +23,7 @@ export default class extends React.Component {
 		const {filterColumns} = this.state;
 		let columns = [
 			{
-				Header: "Version Number", accessor: "version_number", sortable: true, clickable: true,
-				sortMethod: (a, b) => {return sortage.getSortableVersion(a) > sortage.getSortableVersion(b) ? 1 : -1}
+				Header: "Version Number", id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true, clickable: true
 			},
 			{
 				Header: "Release Date",

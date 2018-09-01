@@ -47,7 +47,7 @@ export let sortRows = (sortColumns, rows, key) => {
 const getSortValue = (rec, colName) => {
 	const val = rec[colName];
 	// Being expedient here.  If the colName contains version_number...it is a version number.
-	const sortVal = [colName.indexOf("version_number") !== -1 ? getSortableVersion(val) : val == null ? "" : val];
+	const sortVal = [val == null ? "" : val];
 	if (rec.id) {
 		sortVal.push(rec.id);
 	}

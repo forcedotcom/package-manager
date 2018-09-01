@@ -26,6 +26,7 @@ const QUERY_DICTIONARY = new Map([
 	["account_name", "a.account_name"],
 	["groups", "g.name"],
 	["version_number", "pv.version_number"],
+	["version_sort", "pv.version_sort"],
 	["license_status", "opv.license_status"]
 ]);
 
@@ -46,7 +47,7 @@ const SELECT_WITH_LICENCE = `
     SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups,
-    pv.version_number,
+    pv.version_number, pv.version_sort,
     opv.license_status
     FROM org o
     INNER JOIN account a on a.account_id = o.account_id
@@ -55,7 +56,7 @@ const SELECT_WITH_LICENCE = `
     INNER JOIN org_package_version opv ON o.org_id = opv.org_id
     INNER JOIN package_version pv ON opv.version_id = pv.version_id`;
 
-const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, opv.license_status`;
+const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, pv.version_sort, opv.license_status`;
 
 async function requestAll(req, res, next) {
 	try {

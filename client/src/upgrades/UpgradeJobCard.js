@@ -7,6 +7,7 @@ import {CSVDownload} from 'react-csv';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import * as Utils from "../components/Utils";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -48,7 +49,7 @@ export default class extends React.Component {
 				},
 				{
 					Header: "Original",
-					accessor: "original_version_number",
+					id: "original_version_sort", accessor: Utils.renderVersionNumber,
 					sortable: true,
 					clickable: true,
 					maxWidth: 100,
@@ -56,7 +57,7 @@ export default class extends React.Component {
 				},
 				{
 					Header: "Current",
-					accessor: "current_version_number",
+					id: "current_version_sort", accessor: Utils.renderVersionNumber,
 					sortable: true,
 					clickable: true,
 					maxWidth: 100,
@@ -64,7 +65,7 @@ export default class extends React.Component {
 				},
 				{
 					Header: "Target",
-					accessor: "version_number",
+					id: "version_sort", accessor: Utils.renderVersionNumber,
 					sortable: true,
 					clickable: true,
 					maxWidth: 100,
@@ -124,13 +125,13 @@ export default class extends React.Component {
 			case "package_name":
 				window.location = "/package/" + rowInfo.original.package_id;
 				break;
-			case "original_version_number":
+			case "original_version_sort":
 				window.location = "/packageversion/" + rowInfo.original.original_version_id;
 				break;
-			case "current_version_number":
+			case "current_version_sort":
 				window.location = "/packageversion/" + rowInfo.original.current_version_id;
 				break;
-			case "version_number":
+			case "version_sort":
 				window.location = "/packageversion/" + rowInfo.original.version_id;
 				break;
 			default:

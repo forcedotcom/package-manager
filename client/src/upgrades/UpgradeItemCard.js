@@ -25,7 +25,7 @@ export default class extends React.Component {
 				clickable: true
 			},
 			{Header: "Package Name", accessor: "package_name", sortable: true, clickable: true},
-			{Header: "Package Version", accessor: "version_number", sortable: true, clickable: true},
+			{Header: "Package Version", accessor: "version_sort", sortable: true, clickable: true},
 			{Header: "Orgs", accessor: "job_count", sortable: true},
 			{
 				Header: "Status", accessor: "status", sortable: true,
@@ -70,7 +70,7 @@ export default class extends React.Component {
 			case "package_name":
 				window.location = "/package/" + rowInfo.original.package_id;
 				break;
-			case "version_number":
+			case "version_sort":
 				window.location = "/packageversion/" + rowInfo.original.version_id;
 				break;
 			default:

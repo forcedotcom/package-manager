@@ -125,7 +125,7 @@ export const filterRows = (filters, rows, key) => {
 					let fieldVal = (fieldElem == null || typeof fieldElem !== 'object') ? fieldElem : fieldElem.props.children.join("");
 					fieldVal = fieldVal ? fieldVal.toLowerCase ? fieldVal.toLowerCase() : String(fieldVal) : null;
 
-					return !matchNode(fieldVal, f.node);
+					return !matchNode(fieldVal, f, f.node);
 				});
 			});
 		}
@@ -137,19 +137,19 @@ export const filterRows = (filters, rows, key) => {
 	}
 };
 
-function matchNode(value, node, neg) {
+function matchNode(value, filter, node, neg) {
 	switch (node.type) {
 		case Types.Compound:
-			return node.body.filter(n => matchNode(value, n)).length > 0;
+			return node.body.filter(n => matchNode(value, filter, n)).length > 0;
 		case Types.Identifier:
-			return matchFilterString(value, node, neg);
+			return matchFilterString(value, filter, node, neg);
 		case Types.MemberExpression:
 			break;
 		case Types.Literal:
 			let nodeValue = node.value && node.value.toLowerCase ? node.value.toLowerCase() : node.value;
 			return isQuoted(node.raw) ?
 				(String(nodeValue) === value) === !neg :
-				 matchFilterString(value, node, neg);
+				 matchFilterString(value, filter, node, neg);
 			
 		case Types.ThisExpression:
 			break;
@@ -166,7 +166,7 @@ function matchNode(value, node, neg) {
 						// Possible if there is nothing of meaning after the unary op.  Just ignore filter
 						return true;
 					} else {
-						return matchNode(value, node.argument, true);
+						return matchNode(value, filter, node.argument, true);
 					}
 				case "?":
 					// Operator is ? (Something)
@@ -175,24 +175,24 @@ function matchNode(value, node, neg) {
 					return false;
 			}
 		case Types.BinaryExpression:
-			const nodeName = unwrap(node.right);
+			const sortVal = unwrap(filter, node.right).sortVal;
 			switch(node.operator) {
 				case "<":
-					return value && value < nodeName;
+					return value && value < sortVal;
 				case ">":
-					return value && value > nodeName;
+					return value && value > sortVal;
 				case "<=":
-					return value && value <= nodeName;
+					return value && value <= sortVal;
 				case ">=":
-					return value && value >= nodeName;
+					return value && value >= sortVal;
 				default:
 					return false;
 			}
 		case Types.LogicalExpression:
 			if (node.operator === "||") {
-				return matchNode(value, node.left) || matchNode(value, node.right);
+				return matchNode(value, filter, node.left) || matchNode(value, filter, node.right);
 			} else {
-				return matchNode(value, node.left) && matchNode(value, node.right);
+				return matchNode(value, filter, node.left) && matchNode(value, filter, node.right);
 			}
 		case Types.ConditionalExpression:
 			break;
@@ -204,18 +204,18 @@ function matchNode(value, node, neg) {
 	}
 }
 
-function matchFilterString(fieldVal, node, neg) {
-	const nodeName = unwrap(node);
-	const first = nodeName.charAt(0);
-	const last = nodeName.charAt(nodeName.length-1);
+function matchFilterString(fieldVal, filter, node, neg) {
+	const filterVal = unwrap(filter, node).filterVal;
+	const first = filterVal.charAt(0);
+	const last = filterVal.charAt(filterVal.length-1);
 	if (first === "$") {
-		return (fieldVal != null && fieldVal.startsWith(nodeName.substring(1))) === !neg;
+		return (fieldVal != null && fieldVal.startsWith(filterVal.substring(1))) === !neg;
 	}
 	if (last === "$") {
-		return (fieldVal != null && fieldVal.endsWith(nodeName.substring(0, nodeName.length - 1))) === !neg;
+		return (fieldVal != null && fieldVal.endsWith(filterVal.substring(0, filterVal.length - 1))) === !neg;
 	}
 	// Else, full monty
-	return (fieldVal != null && fieldVal.indexOf(nodeName) !== -1) === !neg;
+	return (fieldVal != null && fieldVal.indexOf(filterVal) !== -1) === !neg;
 
 }
 
@@ -229,25 +229,48 @@ function isQuoted(str) {
  * We treat single-quotes as a sort of escape character, allowing for strings that would otherwise fail, like
  * numbers followed by non-numbers.
  */
-function unwrap(node) {
-	let fieldVal = "";
-	switch(node.type) {
-		case "Literal":
-			fieldVal = node.name || String(node.raw) || "";
-			break;
-		case "BinaryExpression":
-			fieldVal = unwrap(node.left) + node.operator + unwrap(node.right);
-			break;
-		case "UnaryExpression":
-			fieldVal = "";
-			break;
-		default:
-			fieldVal = node.name || String(node.raw) || "";
-			break;
-	}
+function unwrap(filter, node) {
+	if (!node.filterVal) {
+		let fieldVal = "";
+		switch (node.type) {
+			case "Literal":
+				fieldVal = node.name || String(node.raw) || "";
+				break;
+			case "BinaryExpression":
+				fieldVal = unwrap(filter, node.left).filterVal + node.operator + unwrap(filter, node.right).filterVal;
+				break;
+			case "UnaryExpression":
+				fieldVal = "";
+				break;
+			default:
+				fieldVal = node.name || String(node.raw) || "";
+				break;
+		}
 
-	let unwrapped = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
-	return unwrapped.toLowerCase();
+		if (filter.id.indexOf("version_sort") !== -1) {
+			node.sortVal = toVersionSort(fieldVal);
+		}
+		
+		let filterVal = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
+		node.filterVal = filterVal.toLowerCase();
+	}
+	
+	return node;
+}
+
+function toVersionSort(versionNumber) {
+	let segments = versionNumber.split(".");
+	while (segments.length < 3) {
+		segments.push("0");
+	}
+	let paddedNumbers = segments.map(n => {
+		let s = n;
+		while (s.length < 4) {
+			s = "0" + s;
+		}
+		return s;
+	});
+	return paddedNumbers.join("");
 }
 
 function isWrapped(str) {
