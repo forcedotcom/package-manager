@@ -14,6 +14,7 @@ export default class extends React.Component {
 			description: this.props.description || ""
 		};
 		
+		this.handleSelectNone = this.handleSelectNone.bind(this);
 		this.handleVersionChange = this.handleVersionChange.bind(this);
 		this.handleDateChange = this.handleDateChange.bind(this);
 		this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
@@ -27,11 +28,11 @@ export default class extends React.Component {
 			validVersions.forEach(v => {
 				let p = packageMap.get(v.package_id);
 				if (!p) {
-					p = {id: v.package_id, name: v.package_name, selectedVersion: null, versions: []};
+					p = {id: v.package_id, name: v.package_name, selectedVersions: [], versions: []};
 					packageMap.set(p.id, p);
 				}
-				if (p.selectedVersion == null && v.status === "Verified") {
-					p.selectedVersion = v.version_id;
+				if (p.selectedVersions.length === 0 && v.status === "Verified") {
+					p.selectedVersions.push(v.version_id);
 				}
 				p.versions.push(v);
 			});
@@ -58,7 +59,7 @@ export default class extends React.Component {
 							</button>
 						</div>
 						<div className="slds-modal__content slds-p-around_medium">
-							<div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
+							<div className="slds-form slds-form_stacked slds-wrap slds-m-around--medium">
 								<div className="slds-form-element">
 									<label className="slds-text-heading_small slds-m-bottom--x-small">Details</label>
 								</div>
@@ -88,6 +89,13 @@ export default class extends React.Component {
 								</div>
 								<div className="slds-form-element">
 									<label className="slds-text-heading_small">Package Upgrade Versions</label>
+									{versionFields.length > 1 ? 
+										<button style={{marginBottom: ".18em", height: "2em", lineHeight: "1rem", borderRadius: "10px"}} 
+											className="slds-button slds-text-title_caps slds-button--neutral 
+											slds-p-left--x-small slds-p-right--x-small slds-m-left--small" id={this.props.id}
+											   onClick={this.handleSelectNone}><svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+											<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
+										</svg>Select None</button> : "" }
 								</div>
 								{versionFields}
 							</div>
@@ -115,10 +123,31 @@ export default class extends React.Component {
 	}
 	
 	// Handlers
+	handleSelectNone() {
+		const {packageMap} = this.state;
+		packageMap.forEach(p => p.selectedVersions = ["[[NONE]]"]);
+		this.setState({packageMap});
+	}
+	
 	handleVersionChange(packageId, selectedVersion) {
-		let p = this.state.packageMap.get(packageId);
-		p.selectedVersion = selectedVersion;
-		this.setState({packageMap: this.state.packageMap});
+		const {packageMap} = this.state;
+		let p = packageMap.get(packageId);
+		const index = p.selectedVersions.indexOf(selectedVersion);
+		if (selectedVersion === "[[NONE]]") {
+			p.selectedVersions = [selectedVersion];
+		} else {
+			const noneIndex = p.selectedVersions.indexOf("[[NONE]]");
+			if (noneIndex !== -1)
+				p.selectedVersions.splice(noneIndex, 1);
+			
+			if (index === -1) {
+				p.selectedVersions.push(selectedVersion);
+			} else {
+				p.selectedVersions.splice(index, 1);
+			}
+		}
+		
+		this.setState({packageMap});
 	}
 
 	handleDateChange(startDate) {
@@ -141,39 +170,65 @@ export default class extends React.Component {
 		if (!valid)
 			return;
 
-		const versions = Array.from(this.state.packageMap.values()).map(p => p.selectedVersion).filter(versionId => !versionId.startsWith("[[NONE]]"));
-
 		this.setState({isScheduling: true});
-		this.props.onUpgrade(versions, this.state.startDate, this.state.description);
+		let versions = [];
+		this.state.packageMap.forEach(p => versions = versions.concat(p.selectedVersions));
+		this.props.onUpgrade(versions.filter(versionId => !versionId.startsWith("[[NONE]]")), this.state.startDate, this.state.description);
 	}
 }
 
 class VersionField extends React.Component {
 	versionChangeHandler = (e) => {
-		this.props.onSelect(this.props.package.id, e.target.value);
+		this.props.onSelect(this.props.package.id, this.findId(e.target));
 	};
 
 	render() {
 		const p = this.props.package;
-		const availableVersions = p.versions.concat([{version_number: "NONE", version_id: "[[NONE]]" + p.id}]);
+		const availableVersions = p.versions.concat([{version_number: "NONE", version_id: "[[NONE]]"}]);
 		let options = availableVersions.map(v => 
-			<span key={v.version_id} className="slds-button slds-radio_button">
-				<input checked={v.version_id === this.props.package.selectedVersion} type="radio" name={p.id} id={v.version_id} value={v.version_id}
-					onChange={this.versionChangeHandler}/>
-				<label className="slds-radio_button__label" htmlFor={v.version_id}>
-					<span className="slds-radio_faux">{v.version_number}</span>
-				</label>
-			</span>);
-		
+			<VersionButton key={v.version_id} toggled={this.props.package.selectedVersions.indexOf(v.version_id) !== -1} 
+						   id={v.version_id} label={v.version_number}
+					handler={this.versionChangeHandler}/>);
 		return (
 			<div className="slds-form-element">
 				<fieldset className="slds-form-element">
 					<legend className="slds-form-element__legend slds-form-element__label">{p.name}</legend>
 					<div className="slds-form-element__control">
-						<div className="slds-radio_button-group">{options}</div>
+						<div className="slds-button-group" role="group">{options}</div>
 					</div>
 				</fieldset>
 			</div>
+		);
+	}
+
+	// Utilities
+	findId(elem) {
+		if (elem.id != null && elem.id !== "")
+			return elem.id;
+		return this.findId(elem.parentElement);
+	}
+}
+
+
+export class VersionButton extends React.Component {
+	UNSELECTED_ICON = <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+		<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#add"/></svg>;
+	SELECTED_ICON = <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+		<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#check"/></svg>;
+	NONE_ICON = <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+		<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/></svg>;
+
+	render() {
+		return (
+			<button id={this.props.id} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
+					onClick={this.props.handler}>
+  				<span className="slds-text-not-selected">
+					{this.props.id === "[[NONE]]" ? this.NONE_ICON : this.UNSELECTED_ICON}
+					{this.props.label}</span>
+				<span className="slds-text-selected">
+					{this.SELECTED_ICON}
+					{this.props.label}</span>
+			</button>
 		);
 	}
 }

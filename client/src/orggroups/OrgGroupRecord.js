@@ -101,7 +101,7 @@ export default class extends React.Component {
 						</div>
 						<div label="Versions">
 							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions" refetchFor={orggroup.id} actions={memberActions}
-													selected={selectedVersions} showSelected={showSelected} onSelect={this.versionSelectionHandler}/>
+													selected={selected} showSelected={showSelected} onSelect={this.versionSelectionHandler}/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>

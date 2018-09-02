@@ -65,7 +65,7 @@ const SELECT_ONE = `
 
 const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
         u.description,
-        pv.version_number, pv.version_id,
+        pv.version_number, pv.version_id, pv.version_sort,
         p.name package_name, p.sfid package_id, p.dependency_tier,
         count(j.*) job_count, 
         count(NULLIF(j.status, 'Ineligible')) eligible_job_count,
@@ -80,7 +80,7 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
 
 const GROUP_BY_ALL_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         u.description,
-        pv.version_number, pv.version_id,
+        pv.version_number, pv.version_id, pv.version_sort,
         p.name, p.sfid`;
 
 const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} WHERE i.upgrade_id = $1 ${GROUP_BY_ALL_ITEMS}`;
@@ -322,6 +322,9 @@ async function findItemsByIds(itemIds) {
 }
 
 async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
+	if (Array.isArray(sortField)) {
+		sortField = sortField.join(",");
+	}
 	let orderBy = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
 	return await db.query(`${SELECT_ALL_ITEMS_BY_UPGRADE} ${orderBy}`, [upgradeId])
 }
@@ -459,7 +462,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 }
 
 async function activateAvailableUpgradeItems(id, username, job = {postMessage: msg => logger.info(msg)}) {
-	let items = await findItemsByUpgrade(id, "dependency_tier", "asc");
+	let items = await findItemsByUpgrade(id, ["dependency_tier", "package_id", "version_sort"], "asc");
 	items = items.filter(i => {
 		if (i.eligible_job_count === "0") {
 			logger.warn("Cannot activate an upgrade item with no eligible jobs", {
@@ -480,22 +483,23 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 	// Build our buckets based on tiers (or biers if that is your thing)
 	const buckets = [];
 	let bucket = {};
-	let tier = null;
+	let tier = null, packageId = null;
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
-		if (item.dependency_tier == null) {
-			// No dependencies, just activate and be done (if not already activated)
-			if (item.status === push.Status.Created) {
-				await push.updatePushRequests([item], push.Status.Pending, username);
-				await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
-				job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
-			}
-			continue;
-		}
+		// if (item.dependency_tier == null) {
+		// 	// No dependencies, just activate and be done (if not already activated)
+		// 	if (item.status === push.Status.Created) {
+		// 		await push.updatePushRequests([item], push.Status.Pending, username);
+		// 		await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
+		// 		job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
+		// 	}
+		// 	continue;
+		// }
 
 		// If this item is in a new tier, add a new bucket.
-		if (tier !== item.dependency_tier) {
+		if (tier !== item.dependency_tier || packageId === item.package_id) {
 			tier = item.dependency_tier;
+			packageId = item.package_id;
 			bucket = {state: State.Ready, items: []};
 			buckets.push(bucket);
 		}
@@ -545,7 +549,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 				// Ready to activate!
 				await push.updatePushRequests([item], push.Status.Pending, username);
 				await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
-				job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
+				job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
 			}
 		}
 	}

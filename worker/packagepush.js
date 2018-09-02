@@ -220,11 +220,17 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	const versions = await packageversions.findByVersionIds(versionIds);
 	
 	const upgradeVersionsByPackage = new Map();
-	versions.forEach(v => upgradeVersionsByPackage.set(v.package_id, v));
+	versions.forEach(v => {
+		let packageVersions = upgradeVersionsByPackage.get(v.package_id);
+		if (packageVersions == null) {
+			packageVersions = [];
+			upgradeVersionsByPackage.set(v.package_id, packageVersions);
+		}
+		packageVersions.push(v);
+	});
 	
-	const currentAndNewer = await findCurrentAndNewerVersions(versions);
-	
-	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), orgGroupIds, currentAndNewer.map(v => v.version_id));
+	const excludedVersions = null; //await findCurrentAndNewerVersions(versions).map(v => v.version_id);
+	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), orgGroupIds, excludedVersions);
 
 	const whitelist = await orggroups.loadWhitelist();
 	if (whitelist.size > 0) {
@@ -274,21 +280,25 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 			}
 		}
 
-		const upgradeVersion = upgradeVersionsByPackage.get(opv.package_id);
-		let reqKey = opv.package_org_id + upgradeVersion.version_id;
+		const upgradeVersions = upgradeVersionsByPackage.get(opv.package_id).filter(v => v.version_sort > opv.version_sort);
 		
-		let pushReq = pushReqs.get(reqKey);
-		if (!pushReq) {
-			pushReq = {
-				item: await createPushRequest(conn, upgrade.id, opv.package_org_id, upgradeVersion.version_id, scheduledDate, createdBy),
-				conn: conn,
-				orgIds: []
-			};
-			pushReqs.set(reqKey, pushReq);
+		for (let i = 0; i < upgradeVersions.length; i++) {
+			const upgradeVersion = upgradeVersions[i];
+			const reqKey = opv.package_org_id + upgradeVersion.version_id;
+			
+			let pushReq = pushReqs.get(reqKey);
+			if (!pushReq) {
+				pushReq = {
+					item: await createPushRequest(conn, upgrade.id, opv.package_org_id, upgradeVersion.version_id, scheduledDate, createdBy),
+					conn: conn,
+					orgIds: []
+				};
+				pushReqs.set(reqKey, pushReq);
+			}
+	
+			// Add this particular org id to the batch
+			pushReq.orgIds.push(opv.org_id);
 		}
-
-		// Add this particular org id to the batch
-		pushReq.orgIds.push(opv.org_id);
 	}
 
 	// Now, create the jobs, asynchronously
