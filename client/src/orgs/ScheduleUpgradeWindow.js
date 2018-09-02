@@ -97,6 +97,7 @@ export default class extends React.Component {
 											<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
 										</svg>Select None</button> : "" }
 								</div>
+								<div className="slds-form-element__label slds-m-bottom--small">Select which version to upgrade for each package.  <b>Command-click</b> to select multiple versions.</div>
 								{versionFields}
 							</div>
 						</div>
@@ -129,11 +130,11 @@ export default class extends React.Component {
 		this.setState({packageMap});
 	}
 	
-	handleVersionChange(packageId, selectedVersion) {
+	handleVersionChange(packageId, selectedVersion, multiselect) {
 		const {packageMap} = this.state;
 		let p = packageMap.get(packageId);
 		const index = p.selectedVersions.indexOf(selectedVersion);
-		if (selectedVersion === "[[NONE]]") {
+		if (!multiselect || selectedVersion === "[[NONE]]") {
 			p.selectedVersions = [selectedVersion];
 		} else {
 			const noneIndex = p.selectedVersions.indexOf("[[NONE]]");
@@ -179,7 +180,7 @@ export default class extends React.Component {
 
 class VersionField extends React.Component {
 	versionChangeHandler = (e) => {
-		this.props.onSelect(this.props.package.id, this.findId(e.target));
+		this.props.onSelect(this.props.package.id, this.findId(e.target), e.metaKey || e.shiftKey || e.ctrlKey);
 	};
 
 	render() {
@@ -221,7 +222,7 @@ export class VersionButton extends React.Component {
 	render() {
 		return (
 			<button id={this.props.id} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
-					onClick={this.props.handler}>
+					onClick={this.props.handler} title="Command-click to select multiple versions">
   				<span className="slds-text-not-selected">
 					{this.props.id === "[[NONE]]" ? this.NONE_ICON : this.UNSELECTED_ICON}
 					{this.props.label}</span>
