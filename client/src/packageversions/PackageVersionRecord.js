@@ -30,7 +30,7 @@ export default class extends React.Component {
 					<HeaderField label="Package" value={packageVersion.package_name}/>
 					<HeaderField label="Number" value={packageVersion.version_number}/>
 					<HeaderField label="Name" value={packageVersion.name}/>
-					<HeaderField label="ID" value={packageVersion.sfid}/>
+					<HeaderField label="ID" value={packageVersion.version_id}/>
 					<HeaderField label="Status" value={packageVersion.status}/>
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
