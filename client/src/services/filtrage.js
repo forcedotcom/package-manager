@@ -247,12 +247,9 @@ function unwrap(filter, node) {
 				break;
 		}
 
-		if (filter.id.indexOf("version_sort") !== -1) {
-			node.sortVal = toVersionSort(fieldVal);
-		}
-		
 		let filterVal = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
 		node.filterVal = filterVal.toLowerCase();
+		node.sortVal = filter.id.indexOf("version_sort") !== -1 ? toVersionSort(fieldVal) : node.filterVal;
 	}
 	
 	return node;
