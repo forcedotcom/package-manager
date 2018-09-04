@@ -5,6 +5,7 @@ import {PACKAGE_VERSION_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as Utils from "../components/Utils";
+import {CSVDownload} from 'react-csv';
 
 export default class extends React.Component {
 	constructor() {
@@ -14,6 +15,7 @@ export default class extends React.Component {
 		this.filterHandler = this.filterHandler.bind(this);
 		this.applySavedFilter = this.applySavedFilter.bind(this);
 		this.linkHandler = this.linkHandler.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 
 	// Lifecycle
@@ -36,6 +38,7 @@ export default class extends React.Component {
 		const actions = [
 			<DataTableSavedFilters id="GroupMemberVersionCard" key="GroupMemberVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		].concat(this.props.actions);
+		actions.push({label: "Export", handler: this.exportHandler});
 		
 		return (
 			<article className="slds-card">
@@ -44,8 +47,9 @@ export default class extends React.Component {
 					<DataTable id="GroupMemberVersionCard" keyField="org_id" columns={columns} 
 								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} 
 								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
-							   selection={this.props.selected} onSelect={this.props.onSelect}/>
+							     selection={this.props.selected} showSelected={this.props.showSelected} onSelect={this.props.onSelect}/>
 				</div>
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 				<footer className="slds-card__footer"/>
 			</article>
 		);
@@ -53,7 +57,7 @@ export default class extends React.Component {
 
 	// Handlers
 	filterHandler(filtered, filterColumns, itemCount) {
-		this.setState({itemCount, filterColumns});
+		this.setState({filtered, itemCount, filterColumns});
 	}
 
 	applySavedFilter(filterColumns) {
@@ -74,5 +78,10 @@ export default class extends React.Component {
 				break;
 			default:
 		}
+	}
+
+	exportHandler() {
+		this.setState({isExporting: true, exportable: this.state.filtered});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
 }

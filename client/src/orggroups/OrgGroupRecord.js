@@ -3,7 +3,6 @@ import React from 'react';
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as notifier from "../services/notifications";
-import {CSVDownload} from 'react-csv';
 
 import {ORG_GROUP_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
@@ -49,7 +48,6 @@ export default class extends React.Component {
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.versionSelectionHandler = this.versionSelectionHandler.bind(this);
 		this.handleShowSelected = this.handleShowSelected.bind(this);
-		this.exportHandler = this.exportHandler.bind(this);
 	}
 
 	// Lifecycle
@@ -76,12 +74,11 @@ export default class extends React.Component {
 		);
 			
 		let memberActions = [
-			{label: `${selected.size} Selected`, toggled: showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
+			{label: `${selected.size} Selected`, toggled: showSelected, icon: "filterList", group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Copy To Group", handler: this.addingToGroupHandler, disabled: selected.size === 0},
-			{label: "Move To Group", handler: this.movingToGroupHandler, disabled: selected.size === 0},
-			{label: "Remove From Group", group: "remove", handler: this.removeMembersHandler, disabled: selected.size === 0},
-			{label: "Export Members", handler: this.exportHandler}
+			{label: "Copy To Group", group: "selection", handler: this.addingToGroupHandler, disabled: selected.size === 0},
+			{label: "Move To Group", group: "selection", handler: this.movingToGroupHandler, disabled: selected.size === 0},
+			{label: "Remove From Group", group: "selection", handler: this.removeMembersHandler, disabled: selected.size === 0},
 		];
 		
 		return (
@@ -118,7 +115,6 @@ export default class extends React.Component {
 									   excludeId={orggroup.id} removeAfterAdd={this.state.removeAfterAdd}
 									   onAdd={this.addToGroupHandler}
 									   onCancel={this.closeGroupWindow}/> : ""}
-				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
 			</div>
 		);
 	}
@@ -260,10 +256,5 @@ export default class extends React.Component {
 
 	handleShowSelected = () => {
 		this.setState({showSelected: !this.state.showSelected});
-	};
-
-	exportHandler = () => {
-		this.setState({isExporting: true, exportable: this.state.members});
-		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	};
 }

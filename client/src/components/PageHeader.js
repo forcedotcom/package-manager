@@ -68,7 +68,9 @@ export class RecordHeader extends React.Component {
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} 
+								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon} 
+								  handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
@@ -149,7 +151,9 @@ export class CardHeader extends React.Component {
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+								  handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
@@ -223,7 +227,9 @@ export class FormHeader extends React.Component {
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+								  handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
@@ -296,7 +302,9 @@ export class HomeHeader extends React.Component {
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(  
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} handler={currentAction.handler}/> :
+					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+								  handler={currentAction.handler}/> :
 					<button data-tip={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
@@ -363,16 +371,18 @@ export class HomeHeader extends React.Component {
 
 export class ToggleButton extends React.Component {
 	render() {
+		const iconOff = this.props.iconOff || "add";
+		const iconOn = this.props.iconOn || "check";
 		return (
 			<button data-tip={this.props.detail} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
 					onClick={this.props.handler}>
   				<span className="slds-text-not-selected">
-					<svg className="slds-button__icon_stateful slds-button__icon_left">
-					  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#add"/>
+					<svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOff}`}/>
 					</svg>{this.props.label}</span>
 				<span className="slds-text-selected">
-					<svg className="slds-button__icon_stateful slds-button__icon_left">
-					  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#check"/>
+					<svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOn}`}/>
 					</svg>{this.props.label}</span>
 				{this.props.detail ?
 					<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
