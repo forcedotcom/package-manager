@@ -103,6 +103,15 @@ function sanitizeValue(value) {
 	return sanitizedValue;
 }
 
+function parseNode(value) {
+	try {
+		return jsep(value);
+	} catch (e1) {
+		const wrapped = `'${value}'`;
+		return jsep(wrapped);
+	}
+}
+
 export const hasChanged = (newFilters, key) => {
 	const storedJson = window.localStorage.getItem(PREFIX + key);
 	return hasChangedFrom(storedJson, newFilters);
@@ -118,7 +127,7 @@ export const filterRows = (filters, rows, key) => {
 	try {
 		let filteredRows = rows;
 		if (filters && filters.length > 0 ) {
-			let filterNodes = filters.map(f => ({id: f.id, node: jsep(sanitizeValue(f.value))}));
+			let filterNodes = filters.map(f => ({id: f.id, node: parseNode(f.value)}));
 			filteredRows = rows.filter(row => {
 				return !filterNodes.some(f => {
 					let fieldElem = row[f.id];
@@ -205,7 +214,12 @@ function matchNode(value, filter, node, neg) {
 }
 
 function matchFilterString(fieldVal, filter, node, neg) {
-	const filterVal = unwrap(filter, node).filterVal;
+	node = unwrap(filter, node);
+	if (node.sortVal) {
+		return (fieldVal != null && fieldVal.startsWith(node.sortVal)) === !neg;
+	}
+	
+	const filterVal = node.filterVal;
 	const first = filterVal.charAt(0);
 	const last = filterVal.charAt(filterVal.length-1);
 	if (first === "$") {
@@ -247,9 +261,9 @@ function unwrap(filter, node) {
 				break;
 		}
 
-		let filterVal = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
-		node.filterVal = filterVal.toLowerCase();
-		node.sortVal = filter.id.indexOf("version_sort") !== -1 ? toVersionSort(fieldVal) : node.filterVal;
+		let unwrapped = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
+		node.filterVal = unwrapped.toLowerCase();
+		node.sortVal = filter.id.indexOf("version_sort") !== -1 ? toVersionSort(unwrapped) : node.filterVal;
 	}
 	
 	return node;
@@ -257,9 +271,6 @@ function unwrap(filter, node) {
 
 function toVersionSort(versionNumber) {
 	let segments = versionNumber.split(".");
-	while (segments.length < 3) {
-		segments.push("0");
-	}
 	let paddedNumbers = segments.map(n => {
 		let s = n;
 		while (s.length < 4) {
