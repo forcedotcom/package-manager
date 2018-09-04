@@ -1,7 +1,6 @@
 import React from 'react';
 import {FormHeader} from "../components/PageHeader";
 import {ORG_ICON} from "../Constants";
-import * as packageOrgService from '../services/PackageOrgService';
 
 export default class extends React.Component {
 	constructor(props) {
@@ -18,13 +17,6 @@ export default class extends React.Component {
 	}
 
 	// Lifecycle
-	componentDidMount() {
-		packageOrgService.requestAll({
-			field: "name",
-			direction: "desc"
-		}).then(packageOrgs => this.setState({packageOrgs}));
-	}
-
 	render() {
 		const actions = [
 			{handler: this.onAdd, spinning: this.state.isAdding, label: "Add"},
