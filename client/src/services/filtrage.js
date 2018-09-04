@@ -2,6 +2,14 @@ import * as h from './h';
 
 const jsep = require('jsep');
 jsep.addUnaryOp("?");
+jsep.addUnaryOp("<");
+jsep.addUnaryOp("<=");
+jsep.addUnaryOp(">");
+jsep.addUnaryOp(">=");
+jsep.removeBinaryOp("<");
+jsep.removeBinaryOp("<=");
+jsep.removeBinaryOp(">");
+jsep.removeBinaryOp(">=");
 
 const PREFIX = "__filtrage";
 const SEL_PREFIX = PREFIX + "__sel";
@@ -165,6 +173,7 @@ function matchNode(value, filter, node, neg) {
 		case Types.CallExpression:
 			break;
 		case Types.UnaryExpression:
+			const sortVal = unwrap(filter, node.argument).sortVal;
 			// Special unary handling of IS NULL: !? (Not Something) and IS NOT NULL: ? (Something) or !! (Not Nothing)
 			switch(node.operator) {
 				case "!":
@@ -180,12 +189,6 @@ function matchNode(value, filter, node, neg) {
 				case "?":
 					// Operator is ? (Something)
 					return value != null && value !== "";
-				default:
-					return false;
-			}
-		case Types.BinaryExpression:
-			const sortVal = unwrap(filter, node.right).sortVal;
-			switch(node.operator) {
 				case "<":
 					return value && value < sortVal;
 				case ">":
@@ -197,6 +200,8 @@ function matchNode(value, filter, node, neg) {
 				default:
 					return false;
 			}
+		case Types.BinaryExpression:
+			break;
 		case Types.LogicalExpression:
 			if (node.operator === "||") {
 				return matchNode(value, filter, node.left) || matchNode(value, filter, node.right);
