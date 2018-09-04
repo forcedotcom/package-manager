@@ -79,17 +79,26 @@ export default class extends React.Component {
 		const menu =
 			<div className={`slds-dropdown-trigger slds-dropdown-trigger_click slds-m-right--medium ${showMenu ? "slds-is-open" : ""}`}
 				 onMouseLeave={() => this.setState({showMenu: null})} onClick={() => this.setState({showMenu: null})}>
-				<button className="slds-button slds-radio_button slds-button_icon slds-button_icon-container-more"
-					onMouseEnter={e => this.setState({showMenu: window.innerWidth - e.clientX > 200 ? "left" : "right"})}>
-					<svg className="slds-button__icon">
-						<use xmlnsXlink="http://www.w3.org/1999/xlink"
-							 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#filter"/>
-					</svg>
-					<svg className="slds-button__icon slds-button__icon_x-small">
-						<use xmlnsXlink="http://www.w3.org/1999/xlink"
-							 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#down"/>
-					</svg>
-				</button>
+				<div style={{display: "inline-flex"}}>
+					<button className="slds-button slds-radio_button slds-button_icon slds-button_icon-container-more"
+						onMouseEnter={e => this.setState({showMenu: window.innerWidth - e.clientX > 200 ? "left" : "right"})}>
+						<svg className="slds-button__icon">
+							<use xmlnsXlink="http://www.w3.org/1999/xlink"
+								 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#filter"/>
+						</svg>
+						<svg className="slds-button__icon slds-button__icon_x-small">
+							<use xmlnsXlink="http://www.w3.org/1999/xlink"
+								 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#down"/>
+						</svg>
+					</button>
+					{this.props.filterColumns && this.props.filterColumns.length > 0 ?
+					<button className="slds-button" onClick={this.clearHandler} title="Clear filters and show everything">
+						<svg className="slds-button__icon">
+							<use xmlnsXlink="http://www.w3.org/1999/xlink"
+								 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#clear"/>
+						</svg>
+					</button> : "" }
+				</div>
 				<div className={`slds-m-around_none slds-dropdown slds-dropdown_${showMenu} slds-dropdown_small`}>
 					<ul className="slds-dropdown__list">
 						{overflow}
@@ -135,7 +144,7 @@ export default class extends React.Component {
 							<a tabIndex="3" onClick={this.clearHandler}>
 							<span className="slds-truncate">
 								<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
-								  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#table"/>
+								  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#clear"/>
 								</svg>Clear filters and show everything
 							</span>
 							</a>

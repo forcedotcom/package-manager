@@ -62,7 +62,7 @@ export default class extends React.Component {
 	}
 
 	render() {
-		const {selected, selectedVersions, showSelected, orggroup} = this.state;
+		const {selected, showSelected, orggroup} = this.state;
 		const actions = [];
 		if (orggroup.type === "Upgrade Group") {
 			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: this.state.upgradeablePackageIds.length === 0});

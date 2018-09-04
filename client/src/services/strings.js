@@ -4,7 +4,7 @@ const englishNums = [
 export let pluralizeIt = (arr, str, pluralSuffix = "s") => {
 	const len = arr.size ? arr.size : arr.length;
 	const num = len < englishNums.length ? englishNums[len] : generalizeIt(len);
-	const suffix = len === 0 ? "" : pluralSuffix;
+	const suffix = len === 0 || len > 1 ? pluralSuffix : "";
 	return {num, str: (str + suffix)}
 };
 
