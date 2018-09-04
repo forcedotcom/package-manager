@@ -124,7 +124,7 @@ export default class extends React.Component {
 	}
 
 	exportHandler() {
-		const exportable = this.state.filtered ? this.state.filtered.map(v => v._original) : this.props.orgs;
+		const exportable = this.state.filtered ? this.state.filtered : this.props.orgs;
 		this.setState({isExporting: true, exportable});
 		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
