@@ -8,7 +8,6 @@ import {getProgress, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
-import {NotificationManager} from "react-notifications";
 import * as notifier from "../services/notifications";
 
 export default class extends React.Component {
@@ -98,7 +97,7 @@ export default class extends React.Component {
 			upgradeItemService.activate(this.state.item.id).then(item => this.loadItemJobs(item))
 			.catch(e => {
 				this.setState({isActivating: false});
-				NotificationManager.error(e.message, "Activation Failed");
+				notifier.error(e.message, "Activation Failed");
 			});
 		}
 	}
@@ -110,7 +109,7 @@ export default class extends React.Component {
 			.then(item => this.loadItemJobs(item))
 			.catch(e => {
 				this.setState({isCancelling: false});
-				NotificationManager.error(e.message, "Cancellation Failed");
+				notifier.error(e.message, "Cancellation Failed");
 			});
 		}
 	}

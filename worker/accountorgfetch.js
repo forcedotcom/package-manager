@@ -28,13 +28,6 @@ async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
 	}
 	let accounts = await db.query(sql);
 	let count = accounts.length;
-	if (count === 0) {
-		logger.info("No accounts found to fetch with");
-		// Ping the org anyway, to keep our love (and, session) alive.
-		await conn.query(SELECT_ALL + ' LIMIT 1');
-		return;
-	}
-
 	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Retrieving org records`, {batch: start, count});
 		await fetchBatch(conn, accounts.slice(start, start += QUERY_BATCH_SIZE));
@@ -95,11 +88,11 @@ async function upsertBatch(recs) {
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, null)`;
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, ${orgsapi.Status.Purchased})`;
 		values.push(rec.org_id, rec.name, rec.edition, rec.modified_date, rec.account_id, rec.features);
 	}
 	sql += ` on conflict (org_id) do update set name = excluded.name, edition = excluded.edition, modified_date = excluded.modified_date, 
-				features = excluded.features, status = null`;
+				features = excluded.features`;
 	await db.insert(sql, values);
 }
 

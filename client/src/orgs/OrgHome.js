@@ -1,9 +1,9 @@
 import React from 'react';
-import {NotificationManager} from 'react-notifications';
 import {CSVDownload} from 'react-csv';
 
 import * as orgService from '../services/OrgService';
 import * as orgGroupService from '../services/OrgGroupService';
+import * as notifier from '../services/notifications';
 
 import {HomeHeader} from '../components/PageHeader';
 import OrgList from './OrgList';
@@ -24,8 +24,8 @@ export default class extends React.Component {
 		this.applySavedFilter = this.applySavedFilter.bind(this);
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.handleShowSelected = this.handleShowSelected.bind(this);
-		this.saveHandler = this.saveHandler.bind(this);
-		this.addingHandler = this.addingHandler.bind(this);
+		this.addOrgHandler = this.addOrgHandler.bind(this);
+		this.importHandler = this.importHandler.bind(this);
 		this.cancelHandler = this.cancelHandler.bind(this);
 		this.addToGroup = this.addToGroup.bind(this);
 		this.addingToGroupHandler = this.addingToGroupHandler.bind(this);
@@ -34,6 +34,14 @@ export default class extends React.Component {
 	}
 
 	// Lifecycle
+	componentDidMount() {
+		notifier.on('orgs', this.cancelHandler);
+	}
+
+	componentWillUnmount() {
+		notifier.on('orgs', this.cancelHandler);
+	}
+	
 	render() {
 		const {selected, filterColumns} = this.state;
 		const actions = [
@@ -41,7 +49,7 @@ export default class extends React.Component {
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.addingToGroupHandler},
-			{label: "Import", handler: this.addingHandler},
+			{label: "Import", handler: this.importHandler},
 			{label: "Export", handler: this.exportHandler}
 		];
 		return (
@@ -52,7 +60,7 @@ export default class extends React.Component {
 				{this.state.showAddToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`} 
 																onAdd={this.addToGroup}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
-				{this.state.isAdding ? <AddOrgWindow onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
+				{this.state.showImportWindow ? <AddOrgWindow onSave={this.addOrgHandler} onCancel={this.cancelHandler}/> : ""}
 				{this.state.isExporting ? <CSVDownload data={this.state.filtered} target="_blank" /> : ""}
 			</div>
 		);
@@ -83,24 +91,26 @@ export default class extends React.Component {
 		this.setState({showSelected: !this.state.showSelected});
 	}
 
-	saveHandler(orgIds) {
+	addOrgHandler(orgIds) {
 		orgService.requestAdd(orgIds)
-		.then(() => this.setState({isAdding: false, showSelected: false}))
-		.catch(e => console.error(e));
+		.then(() => this.setState({showSelected: false}))
+		.catch(e => {
+			notifier.error(e.message, "Failed to Add Org(s)");
+		});
 	}
 
-	addingHandler() {
-		this.setState({isAdding: true});
+	importHandler() {
+		this.setState({showImportWindow: true});
 	}
 
 	cancelHandler() {
-		this.setState({isAdding: false});
+		this.setState({showImportWindow: false});
 	}
 
 	addToGroup(groupId, groupName) {
 		this.setState({showAddToGroup: false, addingToGroup: true});
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
-			NotificationManager.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			this.state.selected.clear();
 			this.setState({showSelected: false, addingToGroup: false});
 		});

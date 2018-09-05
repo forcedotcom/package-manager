@@ -2,10 +2,10 @@ import React from 'react';
 
 import * as packageOrgService from '../services/PackageOrgService';
 
+import * as notifier from "../services/notifications";
 import {HeaderNote, HomeHeader} from '../components/PageHeader';
 import PackageOrgList from './PackageOrgList';
 import * as authService from "../services/AuthService";
-import {NotificationManager} from "react-notifications";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -28,7 +28,7 @@ export default class extends React.Component {
 			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", handler: this.newHandler},
 			{label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
 			{label: "Revoke", handler: this.revokeHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
-			{label: "Delete", handler: this.deleteHandler, disabled: this.state.selected.size === 0, detail: "Revoke access to and delete the selected org"}
+			{label: "Delete", handler: this.deleteHandler, disabled: this.state.selected.size === 0, spinning: this.state.isDeleting, detail: "Revoke access to and delete the selected org entry"}
 		];
 
 		return (
@@ -72,7 +72,7 @@ export default class extends React.Component {
 		.then(() => this.setState({isRefreshing: false}))
 		.catch(e => {
 			this.setState({isRefreshing: false});
-			NotificationManager.error(e, "Refresh Failed");
+			notifier.error(e.message, "Refresh Failed");
 		});
 	}
 
@@ -82,17 +82,18 @@ export default class extends React.Component {
 		.then(() => this.setState({isRevoking: false}))
 		.catch(e => {
 			this.setState({isRevoking: false});
-			NotificationManager.error(e, "Revoke Failed");
+			notifier.error(e.message, "Revoke Failed");
 		});
 	}
 
 	deleteHandler() {
 		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
+			this.setState({isDeleting: true});
 			packageOrgService.requestDelete(Array.from(this.state.selected.keys()))
-			.then(() => this.setState({isRevoking: false}))
+			.then(() => this.setState({isDeleting: false}))
 			.catch(e => {
-				this.setState({isRevoking: false});
-				NotificationManager.error(e, "Delete Failed");
+				this.setState({isDeleting: false});
+				notifier.error(e.message, "Delete Failed");
 			});
 		}
 	}

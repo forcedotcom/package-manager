@@ -180,7 +180,7 @@ async function requestDelete(req, res, next) {
 		await revokeByOrgIds(orgIds);
 
 		let n = 1;
-		let params = orgIds.map(v => `$${n++}`);
+		let params = orgIds.map(() => `$${n++}`);
 		await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
 		admin.emit(admin.Events.PACKAGE_ORGS);
 		return res.send({result: 'OK'});

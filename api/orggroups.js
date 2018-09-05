@@ -78,19 +78,20 @@ async function requestMembers(req, res, next) {
 	}
 }
 
-async function requestAddMembers(req, res, next) {
-	try {
-		let results = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
+function requestAddMembers(req, res, next) {
+	const groupId = req.params.id;
+	insertOrgMembers(req.params.id, req.body.name, req.body.orgIds).then(() => {
 		admin.emit(admin.Events.ORGS);
-		return res.json(results);
-	} catch (e) {
-		next(e);
-	}
+		admin.emit(admin.Events.GROUP_MEMBERS, groupId);
+		admin.emit(admin.Events.GROUP_VERSIONS, groupId);
+	}).catch(next);
+	return res.json({result: "OK"});
 }
 
 async function requestRemoveMembers(req, res, next) {
 	try {
-		await deleteOrgMembers(req.params.id, req.body.orgIds);
+		const groupId = req.params.id;
+		await deleteOrgMembers(groupId, req.body.orgIds);
 		admin.emit(admin.Events.GROUP_MEMBERS);
 		admin.emit(admin.Events.GROUP_VERSIONS);
 	} catch (e) {
@@ -100,11 +101,16 @@ async function requestRemoveMembers(req, res, next) {
 
 async function requestCreate(req, res, next) {
 	try {
-		let og = req.body;
+		const og = req.body;
 		let i = 0;
-		let rows = await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++i}, $${++i}, $${++i}, NOW())`, [og.name, og.type || GroupType.UpgradeGroup, og.description || '']);
+		const rows = await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++i}, $${++i}, $${++i}, NOW())`, [og.name, og.type || GroupType.UpgradeGroup, og.description || '']);
+		const groupId = rows[0].id;
 		if (og.orgIds && og.orgIds.length > 0) {
-			await insertOrgMembers(rows[0].id, rows[0].name, og.orgIds);
+			insertOrgMembers(groupId, og.name, og.orgIds).then(() => {
+				admin.emit(admin.Events.ORGS);
+				admin.emit(admin.Events.GROUP_MEMBERS, groupId);
+				admin.emit(admin.Events.GROUP_VERSIONS, groupId);
+			}).catch(next);
 		}
 		return res.json(rows[0]);
 	} catch (e) {
@@ -114,24 +120,21 @@ async function requestCreate(req, res, next) {
 
 async function requestUpdate(req, res, next) {
 	try {
-		let og = req.body;
+		const og = req.body;
+		const groupId = og.id;
 		let i = 0;
 		await db.update(`UPDATE org_group SET name=$${++i}, type=$${++i}, description=$${++i} WHERE id=$${++i}`, [og.name, og.type, og.description, og.id]);
-
 		if (og.orgIds && og.orgIds.length > 0) {
-			insertOrgMembers(og.id, og.name, og.orgIds)
-			.then(() => {
-				admin.emit(admin.Events.GROUP, og.id);
-				admin.emit(admin.Events.GROUP_MEMBERS, og.id);
-				admin.emit(admin.Events.GROUP_VERSIONS, og.id);
+			insertOrgMembers(og.id, og.name, og.orgIds).then(() => {
+				admin.emit(admin.Events.ORGS);
+				admin.emit(admin.Events.GROUP_MEMBERS, groupId);
+				admin.emit(admin.Events.GROUP_VERSIONS, groupId);
 			})
 			.catch(e => {
 				admin.emit(admin.Events.FAIL, {subject: "Org Import Failed", message: e.message});
 			});
-		} else {
-			// No members, so emit right away.
-			admin.emit(admin.Events.GROUP, og.id);
 		}
+		admin.emit(admin.Events.GROUP, groupId);
 		return res.send({result: 'ok'});
 	} catch (e) {
 		next(e);
@@ -180,19 +183,16 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
         LEFT JOIN org ON t.org_id = org.org_id
         WHERE org.org_id IS NULL`, orgIds);
 	
-	let message = null;
-	if (missingOrgs.length > 0) {
-		message = `${missingOrgs.length} org(s) were not found. We'll search for them and add them if possible. <p>(${missingOrgs.map(o => o.org_id).join(", ")})</p>`;
-		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {}).catch(e => admin.emit(admin.Events.FAIL, e));
-	}
-
 	let n = 2;
 	let params = orgIds.map(() => `($1,$${n++})`);
 	let values = [orggroup.id].concat(orgIds);
 	let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
 	await db.insert(sql, values);
-	return {message, ...orggroup};
+	
+	if (missingOrgs.length > 0) {
+		await orgs.addOrgsByIds(missingOrgs.map(o => o.org_id));
+	}
 }
 
 async function deleteOrgMembers(groupId, orgIds) {

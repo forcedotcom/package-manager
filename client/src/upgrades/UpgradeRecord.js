@@ -9,7 +9,6 @@ import UpgradeItemCard from "./UpgradeItemCard";
 import ProgressBar from "../components/ProgressBar";
 import UpgradeJobCard from "./UpgradeJobCard";
 import Tabs from "../components/Tabs";
-import {NotificationManager} from "react-notifications";
 import moment from "moment";
 import * as notifier from "../services/notifications";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
@@ -122,7 +121,7 @@ export default class extends React.Component {
 			this.setState({isActivating: true});
 			upgradeService.activate(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
 				this.setState({isActivating: false});
-				NotificationManager.error(e.message, "Activation Failed");
+				notifier.error(e.message, "Activation Failed");
 			});
 		}
 	}
@@ -132,7 +131,7 @@ export default class extends React.Component {
 			this.setState({isCancelling: true});
 			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
 				this.setState({isCancelling: false});
-				NotificationManager.error(e.message, "Cancellation Failed");
+				notifier.error(e.message, "Cancellation Failed");
 			});
 		}
 	}
@@ -143,7 +142,7 @@ export default class extends React.Component {
 			upgradeService.retry(this.state.upgrade.id).then((upgrade) => window.location = `/upgrade/${upgrade.id}`)
 			.catch((e) => {
 				this.setState({isRetrying: false});
-				NotificationManager.error(e.message, "Retry Failed");
+				notifier.error(e.message, "Retry Failed");
 			});
 		}
 	}

@@ -10,7 +10,8 @@ const orgpackageversions = require('../api/orgpackageversions');
 const Status = {
 	NotFound: 'Not Found', 
 	Installed: 'Installed', 
-	NotInstalled: 'Not Installed'
+	NotInstalled: 'Not Installed',
+	Purchased: 'Purchased'
 };
 
 const QUERY_DICTIONARY = new Map([
@@ -128,13 +129,11 @@ function requestUpgrade(req, res, next) {
 }
 
 async function requestAdd(req, res, next) {
-	try {
-		await addOrgsByIds(req.body.orgIds);
+	addOrgsByIds(req.body.orgIds).then(() =>{
 		admin.emit(admin.Events.ORGS);
-	} catch (e) {
-		logger.error("Failed to fetch subscriber orgs", {org_ids: req.body.orgIds, error: e.message || e});
-		next(e);
-	}
+	}).catch(next);
+	
+	res.json({result: "OK"});
 }
 
 async function addOrgsByIds(orgIds) {
