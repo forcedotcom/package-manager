@@ -173,11 +173,10 @@ function matchNode(value, filter, node, neg) {
 		case Types.CallExpression:
 			break;
 		case Types.UnaryExpression:
-			const sortVal = unwrap(filter, node.argument).sortVal;
 			// Special unary handling of IS NULL: !? (Not Something) and IS NOT NULL: ? (Something) or !! (Not Nothing)
 			switch(node.operator) {
 				case "!":
-					if (node.argument.type === Types.UnaryExpression && node.argument.operator === "?")  {
+					if (node.argument.type === Types.UnaryExpression && node.argument.operator === "?") {
 						// Operator is actually !? (Not Something)
 						return value == null || value === "";
 					} else if (!node.argument) {
@@ -189,6 +188,16 @@ function matchNode(value, filter, node, neg) {
 				case "?":
 					// Operator is ? (Something)
 					return value != null && value !== "";
+				default:
+					break;
+			}
+
+			let sortVal;
+			if (node.argument) {
+				const unwrapped = unwrap(filter, node.argument);
+				sortVal = unwrapped.sortVal || unwrapped.filterVal;
+			}
+			switch(node.operator) {
 				case "<":
 					return value && value < sortVal;
 				case ">":
@@ -198,8 +207,9 @@ function matchNode(value, filter, node, neg) {
 				case ">=":
 					return value && value >= sortVal;
 				default:
-					return false;
+					break;
 			}
+			return false;
 		case Types.BinaryExpression:
 			break;
 		case Types.LogicalExpression:
@@ -268,7 +278,7 @@ function unwrap(filter, node) {
 
 		let unwrapped = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
 		node.filterVal = unwrapped.toLowerCase();
-		node.sortVal = filter.id.indexOf("version_sort") !== -1 ? toVersionSort(unwrapped) : node.filterVal;
+		node.sortVal = filter.id.indexOf("version_sort") !== -1 ? toVersionSort(unwrapped) : null;
 	}
 	
 	return node;
