@@ -24,6 +24,8 @@ const MAX_ERROR_COUNT = 20;
 
 const ITEM_STATUS_SOQL = `
 	CASE
+		 WHEN -- ALL Created == Inactive
+           count(i.*) = 0 THEN 'Invalid'
 	     WHEN -- ALL Created == Inactive
          count(CASE 
                       WHEN i.status = 'Created' THEN 1
@@ -51,7 +53,7 @@ const SELECT_ALL = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description,
     ${ITEM_STATUS_SOQL}
     FROM upgrade u
-    INNER JOIN upgrade_item i ON i.upgrade_id = u.id`;
+    LEFT JOIN upgrade_item i ON i.upgrade_id = u.id`;
 
 const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
@@ -59,7 +61,7 @@ const SELECT_ONE = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description,
 	${ITEM_STATUS_SOQL}
     FROM upgrade u
-    INNER JOIN upgrade_item i ON i.upgrade_id = u.id
+    LEFT JOIN upgrade_item i ON i.upgrade_id = u.id
     WHERE u.id = $1
     GROUP by u.id, u.start_time, u.created_by, u.description`;
 
@@ -117,7 +119,9 @@ async function createUpgrade(scheduledDate, createdBy, description) {
 	return recs[0];
 }
 
-async function failUpgrade(upgrade) {
+async function failUpgrade(upgrade, error) {
+	logger.error("Failed to schedule upgrade", {message: error.message || error});
+	upgrade.message = error.message || error;
 	upgrade.status = UpgradeStatus.Failed;
 	await db.update(`UPDATE upgrade set status = $1 WHERE id = $2`, [upgrade.status, upgrade.id]);
 	admin.emit(admin.Events.UPGRADE, upgrade);

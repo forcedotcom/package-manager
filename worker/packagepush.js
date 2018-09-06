@@ -199,19 +199,9 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 			await createPushJob(conn, upgrade.id, item.id, item.version_id, item.push_request_id, orgIds);
 		}
 	} catch (e) {
-		await upgrades.failUpgrade(upgrade);
-		throw e;
+		await upgrades.failUpgrade(upgrade, e);
 	}
 	return upgrade;
-}
-
-async function findCurrentAndNewerVersions(versions) {
-	let newer = [];
-	for (let i = 0; i < versions.length; i++) {
-		const v = versions[i];
-		newer = newer.concat(await packageversions.findNewerVersions(v.package_id, v.version_sort));
-	}
-	return newer;
 }
 
 async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description) {
@@ -309,6 +299,9 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	Promise.all(reqs).then(results => {})
 		.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));
 
+	if (pushReqs.size === 0) {
+		await upgrades.failUpgrade(upgrade, "No valid requests for upgrade");
+	}
 	// Return our upgrade (before our jobs) so we can redirect and wait for the jobs to finish scheduling.
 	return upgrade;
 }

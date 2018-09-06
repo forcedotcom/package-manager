@@ -90,7 +90,7 @@ export default class extends React.Component {
 		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
 			this.setState({schedulingUpgrade: false});
 			if (res.message) {
-				notifier.error(res.message, "Upgrade failed");
+				notifier.error(res.message, "Failed to Schedule", 7000, () => window.location = `/upgrade/${res.id}`);
 			} else {
 				window.location = `/upgrade/${res.id}`;
 			}

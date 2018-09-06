@@ -78,14 +78,13 @@ async function requestMembers(req, res, next) {
 	}
 }
 
-function requestAddMembers(req, res, next) {
-	const groupId = req.params.id;
-	insertOrgMembers(req.params.id, req.body.name, req.body.orgIds).then(() => {
-		admin.emit(admin.Events.ORGS);
-		admin.emit(admin.Events.GROUP_MEMBERS, groupId);
-		admin.emit(admin.Events.GROUP_VERSIONS, groupId);
-	}).catch(next);
-	return res.json({result: "OK"});
+async function requestAddMembers(req, res, next) {
+	try {
+		const orggroup = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
+		return res.json(orggroup);
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function requestRemoveMembers(req, res, next) {
@@ -106,11 +105,7 @@ async function requestCreate(req, res, next) {
 		const rows = await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++i}, $${++i}, $${++i}, NOW())`, [og.name, og.type || GroupType.UpgradeGroup, og.description || '']);
 		const groupId = rows[0].id;
 		if (og.orgIds && og.orgIds.length > 0) {
-			insertOrgMembers(groupId, og.name, og.orgIds).then(() => {
-				admin.emit(admin.Events.ORGS);
-				admin.emit(admin.Events.GROUP_MEMBERS, groupId);
-				admin.emit(admin.Events.GROUP_VERSIONS, groupId);
-			}).catch(next);
+			await insertOrgMembers(groupId, og.name, og.orgIds);
 		}
 		return res.json(rows[0]);
 	} catch (e) {
@@ -123,19 +118,12 @@ async function requestUpdate(req, res, next) {
 		const og = req.body;
 		const groupId = og.id;
 		let i = 0;
-		await db.update(`UPDATE org_group SET name=$${++i}, type=$${++i}, description=$${++i} WHERE id=$${++i}`, [og.name, og.type, og.description, og.id]);
+		const updatedGroup = await db.update(`UPDATE org_group SET name=$${++i}, type=$${++i}, description=$${++i} WHERE id=$${++i}`, [og.name, og.type, og.description, og.id]);
 		if (og.orgIds && og.orgIds.length > 0) {
-			insertOrgMembers(og.id, og.name, og.orgIds).then(() => {
-				admin.emit(admin.Events.ORGS);
-				admin.emit(admin.Events.GROUP_MEMBERS, groupId);
-				admin.emit(admin.Events.GROUP_VERSIONS, groupId);
-			})
-			.catch(e => {
-				admin.emit(admin.Events.FAIL, {subject: "Org Import Failed", message: e.message});
-			});
+			await insertOrgMembers(og.id, og.name, og.orgIds);
 		}
 		admin.emit(admin.Events.GROUP, groupId);
-		return res.send({result: 'ok'});
+		return res.send(updatedGroup);
 	} catch (e) {
 		next(e);
 	}
@@ -191,8 +179,13 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	await db.insert(sql, values);
 	
 	if (missingOrgs.length > 0) {
-		await orgs.addOrgsByIds(missingOrgs.map(o => o.org_id));
+		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {
+			admin.emit(admin.Events.ORGS);
+			admin.emit(admin.Events.GROUP_MEMBERS, orggroup.id);
+			admin.emit(admin.Events.GROUP_VERSIONS, orggroup.id);
+		}).catch(e => admin.emit(admin.Events.FAIL, {subject: "Failed to import orgs", message: e.message || e}));
 	}
+	return orggroup;
 }
 
 async function deleteOrgMembers(groupId, orgIds) {
