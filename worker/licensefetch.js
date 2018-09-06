@@ -51,7 +51,7 @@ async function load(result, conn) {
 			expiration: v.sfLma__Expiration__c,
 			used_license_count: v.sfLma__Used_Licenses__c,
 			package_id: v.sfLma__Package__c,
-			version_id: v.sfLma__Package_Version__r.sfLma__Version_ID__c
+			version_id: v.sfLma__Package_Version__r ? v.sfLma__Package_Version__r.sfLma__Version_ID__c : null
 		};
 	});
 	if (!result.done && !adminJob.canceled) {
