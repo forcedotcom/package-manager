@@ -97,8 +97,8 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status, j.message,
         i.start_time, i.created_by,
         pv.version_number, pv.version_id,
-        pvc.version_number current_version_number, pvc.version_id current_version_id,
-        pvo.version_number original_version_number, pvo.version_id original_version_id,
+        pvc.version_number current_version_number, pvc.version_id current_version_id, pvc.version_sort current_version_sort,
+        pvo.version_number original_version_number, pvo.version_id original_version_id, pvo.version_sort original_version_sort,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
         a.account_name
         FROM upgrade_job j
@@ -486,16 +486,6 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 	let tier = null, packageId = null;
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
-		// if (item.dependency_tier == null) {
-		// 	// No dependencies, just activate and be done (if not already activated)
-		// 	if (item.status === push.Status.Created) {
-		// 		await push.updatePushRequests([item], push.Status.Pending, username);
-		// 		await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
-		// 		job.postMessage(`Activated item ${item.id} for ${item.package_name}`);
-		// 	}
-		// 	continue;
-		// }
-
 		// If this item is in a new tier, add a new bucket.
 		if (tier !== item.dependency_tier || packageId === item.package_id) {
 			tier = item.dependency_tier;
