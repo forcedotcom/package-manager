@@ -134,6 +134,7 @@ async function updateOrgsFromAccounts(job) {
 		SET instance = a.instance 
 		FROM account a
 		WHERE a.instance IS NOT NULL 
+		AND o.is_sandbox = false
 		AND o.account_id = a.account_id
 		AND o.instance != a.instance`;
 	let res = await db.update(sql);
