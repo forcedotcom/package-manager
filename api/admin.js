@@ -74,7 +74,9 @@ class AdminJob {
 		if (e) {
 			this.errors.push(String(e));
 		}
-		this.stepIndex = stepIndex;
+		if (stepIndex > 0) {
+			this.stepIndex = stepIndex;
+		}
 		this.modifiedDate = new Date();
 		logger.info(message, e ? {error: e.message} : {});
 		emit(Events.JOBS, Array.from(activeJobs.values()));

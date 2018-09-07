@@ -115,15 +115,34 @@ async function upsertBatch(recs) {
 	await db.insert(sql, values);
 }
 
-async function mark(isSandbox) {
+async function mark(isSandbox, job) {
+	adminJob = job;
+
 	let sql = `update org set account_id = $1, status = '${orgsapi.Status.NotFound}', modified_date = now() where account_id is null
                 and is_sandbox = $2`;
 	let res = await db.update(sql, [sfdc.INVALID_ID, isSandbox]);
 	if (res.length > 0) {
-		logger.info(`Marked org records as invalid accounts`, {count: res.length});
+		adminJob.postMessage(`Marked ${res.length} orgs as having invalid accounts`);
+	}
+}
+
+async function updateOrgsFromAccounts(job) {
+	adminJob = job;
+
+	let sql = `
+		UPDATE org o
+		SET instance = a.instance 
+		FROM account a
+		WHERE a.instance IS NOT NULL 
+		AND o.account_id = a.account_id
+		AND o.instance != a.instance`;
+	let res = await db.update(sql);
+	if (res.length > 0) {
+		adminJob.postMessage(`Updated ${res.length} orgs with with account instances`);
 	}
 }
 
 exports.fetch = fetch;
 exports.refetchInvalid = refetchInvalid;
 exports.mark = mark;
+exports.updateOrgsFromAccounts = updateOrgsFromAccounts;

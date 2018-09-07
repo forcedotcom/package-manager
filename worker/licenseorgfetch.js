@@ -4,7 +4,6 @@ const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox, modified_date FROM license 
                     WHERE status in ('Trial','Active') 
-                    AND instance IS NOT NULL
                     AND (expiration IS NULL OR expiration > DATE 'tomorrow')`;
 
 let adminJob;

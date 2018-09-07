@@ -48,8 +48,7 @@ function requestAll(req, res, next) {
 }
 
 async function findAll(orgId, status, orderByField, orderByDir, filters) {
-	let whereParts = ["o.instance IS NOT NULL"],
-		values = [];
+	let whereParts = [], values = [];
 
 	if (orgId) {
 		values.push(orgId);
