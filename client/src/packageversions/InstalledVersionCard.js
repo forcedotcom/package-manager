@@ -19,11 +19,14 @@ export default class extends React.Component {
 	// Lifecycle
 	render() {
 		let columns = [
-			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
-			{Header: "License", accessor: "license_status", sortable: true},
-			{Header: "Version Number", minWidth: 170, id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true, clickable: true},
-			{Header: "Status", accessor: "status", sortable: true},
-			{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false}
+			{Header: "Org Information", columns: [
+				{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
+				{Header: "License", accessor: "license_status", sortable: true},
+				{Header: "Install Date", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: false}]},
+			{Header: "Version Information", columns: [
+				{Header: "Number", minWidth: 170, id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true, clickable: true},
+				{Header: "Status", accessor: "status", sortable: true},
+				{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false}]}
 		];
 
 		return (

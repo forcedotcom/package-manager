@@ -13,7 +13,7 @@ const SELECT_ALL_IN_ORG =
         p.package_org_id, p.name as package_name, p.dependency_tier,
         pvl.version_number latest_version_number, pvl.version_id latest_version_id, pvl.version_sort latest_version_sort, 
         	pvl.limited_version_number latest_limited_version_number, pvl.limited_version_id latest_limited_version_id, pvl.limited_version_sort latest_limited_version_sort,
-        op.org_id, op.license_status,
+        op.org_id, op.license_status, op.install_date, op.modified_date,
         o.instance, o.type, o.edition,
         a.account_name
     FROM package_version pv

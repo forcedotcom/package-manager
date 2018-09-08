@@ -70,6 +70,7 @@ create table if not exists org_package_version (
   package_id         varchar(18),
   version_id         varchar(18),
   license_status     varchar(40),
+  install_date       timestamp with time zone,
   modified_date      timestamp with time zone,
   constraint org_package_version_org_id_package_id_pk
   unique (org_id, package_id)
@@ -227,6 +228,9 @@ alter table upgrade
 
 alter table upgrade_item
   add if not exists created_by varchar(255) null;
+
+alter table org_package_version
+  add if not exists install_date timestamp with time zone;
 
 alter table package_version
   add if not exists version_sort varchar(12) null,

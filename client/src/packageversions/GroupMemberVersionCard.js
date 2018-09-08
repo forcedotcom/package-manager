@@ -23,17 +23,22 @@ export default class extends React.Component {
 		const {filterColumns} = this.state;
 
 		const columns = [
-			{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
-			{Header: "Account Name", accessor: "account_name", clickable: true},
-			{Header: "Package", accessor: "package_name", clickable: true},
-			{Header: "License", accessor: "license_status"},
-			{Header: "Version", id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true, clickable: true},
-			{Header: "Instance", accessor: "instance", sortable: true},
-			{Header: "Type", accessor: "type", sortable: true},
-			{Header: "Edition", accessor: "edition", sortable: true},
-			{Header: "Status", accessor: "status", sortable: true},
-			{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false},
-		];
+			{Header: "Org Information", columns: [
+				{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
+				{Header: "Type", accessor: "type", sortable: true},
+				{Header: "Edition", accessor: "edition", sortable: true},
+				{Header: "Instance", accessor: "instance", sortable: true}]},
+			{Header: "Account Information", columns: [
+				{Header: "Account Name", accessor: "account_name", clickable: true},
+				{Header: "License", accessor: "license_status"},
+				{Header: "Install Date", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: false},
+			]},
+			{Header: "Version Information", columns: [
+				{Header: "Package", accessor: "package_name", clickable: true},
+				{Header: "Version", id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true, clickable: true},
+				{Header: "Status", accessor: "status", sortable: true},
+				{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false}]},
+			];
 
 		const actions = [
 			<DataTableSavedFilters id="GroupMemberVersionCard" key="GroupMemberVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
