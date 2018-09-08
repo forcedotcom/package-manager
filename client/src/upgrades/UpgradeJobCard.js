@@ -71,9 +71,9 @@ export default class extends React.Component {
 					filterable: true
 				}]
 			},
-			{Header: "Upgrade Status", columns: [
+			{Header: "Upgrade Information", columns: [
 				{
-					accessor: "status", sortable: true, filterable: true,
+					Header: "Status", accessor: "status", sortable: true, filterable: true,
 					Cell: row => (
 						<div>
 							<span data-subject={row.value} data-message={row.original.message}
