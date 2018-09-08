@@ -32,61 +32,156 @@ async function createPushRequest(conn, upgradeId, packageOrgId, versionId, sched
 	return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, versionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
 }
 
-async function createPushJob(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
+const JOB_CREATION_BATCH_SIZE = 200;
+
+async function createPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
+	return new Promise((resolve, reject) => {
+		batchPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds).then(batchResult => {
+			if (batchResult.failed) {
+				createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionId, pushReqId, batchResult.failed)
+				.then(results => {
+					resolve(batchResult.created.concat(results));
+				}).catch(reject);
+			} else {
+				resolve(batchResult.created);
+			}
+		}).catch(reject);
+	});
+}
+
+async function batchPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
 	return new Promise((resolve, reject) => {
 		let pushJobs = [];
 		for (let i = 0; i < orgIds.length; i++) {
 			pushJobs.push({PackagePushRequestId: pushReqId, SubscriberOrganizationKey: orgIds[i]});
 		}
 
-		// Create job and batch, and execute it
+		// FIRST STEP: 
+		// Create the bulk job.  We need to loop through our jobs and divide them into batches.
 		let job = conn.bulk.createJob("PackagePushJob", "insert");
-		let batch = job.createBatch();
-		batch.execute(pushJobs);
 
-		// listen for events
-		batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
-			logger.error('Failed to batch load PushUpgradeJob records', batchInfo);
-			reject({message: `Failed to batch load PushUpgradeJob records`, details: batchInfo});
-		});
-		batch.on("queue", function (batchInfo) { // fired when batch request is queued in server.
-			logger.debug('Queued batch of PushUpgradeJob records', {...batchInfo});
-			batch.poll(3000 /* interval(ms) */, 240000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
-		});
-		batch.on("response", async function (results) { // fired when batch finished and result retrieved
-			let jobs = [];
+		const batchPromises = [];
+		let count = pushJobs.length;
+		for (let start = 0; start < count;) {
+			// NEXT STEP: 
+			// Create a promise that will slice off one allocation of jobs and batch them. The promise
+			// will return both successful jobs AND jobs that fail to schedule.  We want to know about both.
+			// It only rejects (fails) when we have some trouble on our end, where the jobs are scheduled but 
+			// we fail when creating our upgrade job records.
+			batchPromises.push(new Promise((resolve, reject) => {
+				const batch = job.createBatch();
+				const batchJobs = pushJobs.slice(start, start += JOB_CREATION_BATCH_SIZE);
+				batch.execute(batchJobs);
 
-			const opvValues = [versionId, ...orgIds];
-			const opvParams = orgIds.map((v,i) => `$${i+2}`);
-			const opvs = await db.query(
-				`SELECT opv.version_id, opv.org_id FROM org_package_version opv, package_version pv
-				 WHERE pv.version_id = $1 AND pv.package_id = opv.package_id AND opv.org_id IN (${opvParams.join(",")})`, opvValues);
-            const opvMap = new Map();
-            opvs.forEach(v => opvMap.set(v.org_id, v));
-            
-			for (let i = 0; i < results.length; i++) {
-				const res = results[i];
-				const opv = opvMap.get(orgIds[i]);
-				jobs.push({
-					org_id: opv.org_id,
-					job_id: res.id,
-					status: res.success ? Status.Created : Status.Ineligible,
-					message: res.success ? null : res.errors.join(", "),
-					original_version_id: opv.version_id
+				// listen for events
+				batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
+					logger.error('Failed to batch load PushUpgradeJob records', batchInfo);
+					resolve({error: `Failed to batch load PushUpgradeJob records: ${batchInfo}`, jobs: batchJobs});
 				});
-				if (!res.success) {
-					logger.error("Failed to schedule push upgrade job", {org_id: opv.org_id, error: res.errors.join(", ")})
+				batch.on("queue", function (batchInfo) { // fired when batch request is queued in server.
+					logger.debug('Queued batch of PushUpgradeJob records', {...batchInfo});
+					batch.poll(3000 /* interval(ms) */, 240000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
+				});
+				batch.on("response", async function (results) { // fired when batch finished and result retrieved
+					try {
+						let recs = await handleBatchResponse(upgradeId, itemId, versionId, pushReqId, batchJobs.map(j => j.SubscriberOrganizationKey), results);
+						resolve({jobs: recs});
+					} catch (e) {
+						logger.error("Failed to create upgrade jobs", {error: e.message || e});
+						reject({message: e.message || e, jobs: batchJobs});
+					}
+				});
+			}));
+		}
+
+		// NEXT STEP:
+		// Execute our promises and collect our results, then resolve the outer main promise.
+		// We return an object with two arrays: one (jobs) for successful jobs, and another (failed) for jobs that 
+		// failed and need to be dealt with individually.
+		Promise.all(batchPromises).then(results => {
+			let created = [];
+			let failed = [];
+			results.forEach(result => {
+				if (result.error) {
+					failed = failed.concat(result.jobs);
+				} else {
+					created = created.concat(result.jobs);
 				}
-			}
-			try {
-				const recs = await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
-				resolve(recs);
-			} catch (e) {
-				logger.error("Failed to create upgrade jobs", {item: itemId, jobs: jobs.length, error: e.message || e});
-				reject(e);
-			}
+			});
+			resolve({created, failed});
+		}).catch(errors => {
+			let failed = [];
+			let errorSet = new Set();
+			errors.forEach(error => {
+				failed = failed.concat(error.jobs);
+				errorSet.add(error.message);
+			});
+			reject({message: Array.from(errorSet.values()).join("\n"), failed});
 		});
 	});
+}
+
+async function handleBatchResponse(upgradeId, itemId, versionId, pushReqId, orgIds, results) {
+	let jobs = [];
+	const opvValues = [versionId, ...orgIds];
+	const opvParams = orgIds.map((v,i) => `$${i+2}`);
+	const opvs = await db.query(
+		`SELECT opv.version_id, opv.org_id FROM org_package_version opv, package_version pv
+						 WHERE pv.version_id = $1 AND pv.package_id = opv.package_id AND opv.org_id IN (${opvParams.join(",")})`, opvValues);
+	const opvMap = new Map();
+	opvs.forEach(v => opvMap.set(v.org_id, v));
+
+	for (let i = 0; i < results.length; i++) {
+		const res = results[i];
+		const opv = opvMap.get(orgIds[i]);
+		jobs.push({
+			org_id: opv.org_id,
+			job_id: res.id,
+			status: res.success ? Status.Created : Status.Ineligible,
+			message: res.success ? null : res.errors.join(", "),
+			original_version_id: opv.version_id
+		});
+		if (!res.success) {
+			logger.warn("Failed to schedule push upgrade job", {org_id: opv.org_id, error: res.errors.join(", ")})
+		}
+	}
+	return await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
+}
+
+async function createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionId, pushReqId, pushJobs) {
+	let orgIds = pushJobs.map(j => j.SubscriberOrganizationKey);
+	logger.error("Some push job batches failed.  Scheduling org ids now one by one.", {orgIds});
+
+	const opvValues = [versionId, ...orgIds];
+	const opvParams = orgIds.map((v, i) => `$${i + 2}`);
+	const opvs = await db.query(
+		`SELECT opv.version_id, opv.org_id FROM org_package_version opv, package_version pv
+						 WHERE pv.version_id = $1 AND pv.package_id = opv.package_id AND opv.org_id IN (${opvParams.join(",")})`, opvValues);
+	const opvMap = new Map();
+	opvs.forEach(v => opvMap.set(v.org_id, v));
+
+	const jobs = [];
+	for (let i = 0; i < pushJobs.length; i++) {
+		const pushJob = pushJobs[i];
+		const opv = opvMap.get(pushJob.SubscriberOrganizationKey);
+		const job = {
+			org_id: opv.org_id,
+			original_version_id: opv.version_id
+		};
+		try {
+			let pj = await conn.sobject("PackagePushJob").create(pushJobs[i]);
+			job.job_id = pj.id;
+			job.status = Status.Created;
+		} catch (e) {
+			logger.error("Failed to schedule push upgrade job", {org_id: opv.org_id, error: e.message || e});
+			job.status = Status.Invalid;
+			job.message = e.message || e;
+		}
+		
+		jobs.push(job);
+	}
+
+	return await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
 }
 
 async function cancelRequests(packageOrgId) {
@@ -196,7 +291,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 			let version = versions[i];
 			let conn = await sfdc.buildOrgConnection(version.package_org_id);
 			let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.version_id, scheduledDate, createdBy);
-			await createPushJob(conn, upgrade.id, item.id, item.version_id, item.push_request_id, orgIds);
+			await createPushJobs(conn, upgrade.id, item.id, item.version_id, item.push_request_id, orgIds);
 		}
 	} catch (e) {
 		await upgrades.failUpgrade(upgrade, e);
@@ -294,7 +389,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	// Now, create the jobs, asynchronously
 	const reqs = [];
 	pushReqs.forEach(pushReq => 
-		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds))
+		reqs.push(createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds))
 	);
 	Promise.all(reqs).then(results => {})
 		.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));
@@ -313,7 +408,7 @@ async function retryFailedUpgrade(id, createdBy) {
 	const failedJobs = await upgrades.findJobs(id, null, null, null, Status.Failed);
 	
 	if (failedJobs.length === 0) {
-		logger.info("No failed jobs found.  Nothing to retry.", {id})
+		logger.info("No failed jobs found.  Nothing to retry.", {id});
 		return null;
 	}
 
@@ -357,7 +452,7 @@ async function retryFailedUpgrade(id, createdBy) {
 	// Now, create the jobs, asynchronously
 	const reqs = [];
 	pushReqs.forEach(pushReq =>
-		reqs.push(createPushJob(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds))
+		reqs.push(createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds))
 	);
 	Promise.all(reqs).then(results => {})
 	.catch (e => upgrades.failUpgrade(upgrade, e).then(() => {}));
