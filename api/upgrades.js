@@ -448,7 +448,7 @@ async function requestRetryFailedUpgrade(req, res, next) {
 async function activateUpgrade(id, username, job = {postMessage: msg => logger.info(msg)}) {
 	const upgrade = await retrieveById(id);
 	if (upgrade.status !== UpgradeStatus.Ready) {
-		throw `Cannot activate an upgrade (${id}) that is not ready`;
+		throw `Cannot activate an upgrade (${id}) that is not in Ready state`;
 	} 
 	if (username && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
 		if (upgrade.created_by === null) {
@@ -469,10 +469,10 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 	let items = await findItemsByUpgrade(id, ["dependency_tier", "package_id", "version_sort"], "asc");
 	items = items.filter(i => {
 		if (i.eligible_job_count === "0") {
-			logger.warn("Cannot activate an upgrade item with no eligible jobs", {
-				id: i.id,
-				push_request_id: i.push_request_id
-			});
+			changeUpgradeItemStatus(i, push.Status.Ineligible).then(() => 
+				logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id})
+			).catch(err => 
+				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: i.id, push_request_id: i.push_request_id}));
 			return false;
 		} else {
 			return true;
@@ -648,7 +648,10 @@ async function requestActivateUpgradeItem(req, res, next) {
 	try {
 		const item = (await findItemsByIds([id]))[0];
 		if (item.eligible_job_count === "0") {
-			logger.warn("Cannot activate an upgrade item with no eligible jobs", {itemId: item.id});
+			changeUpgradeItemStatus(item, push.Status.Ineligible).then(() =>
+				logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: item.id, push_request_id: item.push_request_id})
+			).catch(err =>
+				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: item.id, push_request_id: item.push_request_id}));
 			return res.json({});
 		}
 		await push.updatePushRequests([item], push.Status.Pending, req.session.username);

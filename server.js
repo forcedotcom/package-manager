@@ -143,7 +143,7 @@ app.get('/*', (req, res) => {
  */
 app.use(function(error, req, res, next) {
 	logger.error(error);
-	return res.status(500).json({subject: "Something isn't right", message: error.message});
+	return res.status(500).json({message: error.message || error});
 });
 
 server.listen(app.get('port'), function () {
