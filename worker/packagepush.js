@@ -37,7 +37,7 @@ const JOB_CREATION_BATCH_SIZE = 200;
 async function createPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
 	return new Promise((resolve, reject) => {
 		batchPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds).then(batchResult => {
-			if (batchResult.failed) {
+			if (batchResult.failed.length > 0) {
 				createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionId, pushReqId, batchResult.failed)
 				.then(results => {
 					resolve(batchResult.created.concat(results));
