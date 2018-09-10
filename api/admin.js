@@ -12,6 +12,8 @@ const db = require("../util/pghelper");
 
 const MAX_HISTORY = 100;
 
+const SUMO_URL = process.env.SUMO_URL;
+
 const Events = {
 	ALERT: "alert",
 	FAIL: "fail",
@@ -361,8 +363,6 @@ async function loadOrgsInSumoFormat(job) {
 	job.postMessage(`Loaded ${orgs.length} orgs for posting to Sumo`);
 	return orgs;
 }
-
-const SUMO_URL = process.env.SUMO_URL;
 
 async function sendOrgsToSumo(orgs, job) {
 	return new Promise((resolve, reject) => {
