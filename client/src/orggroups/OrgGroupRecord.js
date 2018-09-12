@@ -53,12 +53,14 @@ export default class extends React.Component {
 	// Lifecycle
 	componentDidMount() {
 		notifier.on('group', this.groupRefreshed);
+		notifier.on('upgrade', this.upgradeScheduled);
 
 		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => this.setState({orggroup}));
 	}
 	
 	componentWillUnmount() {
 		notifier.remove('group', this.groupRefreshed);
+		notifier.remove('upgrade', this.upgradeScheduled);
 	}
 
 	render() {
@@ -144,13 +146,15 @@ export default class extends React.Component {
 
 	upgradeHandler(versions, startDate, description) {
 		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
-			this.setState({schedulingUpgrade: false});
 			if (res.message) {
 				notifier.error(res.message, "Failed to Schedule", 7000, () => window.location = `/upgrade/${res.id}`);
-			} else {
-				window.location = `/upgrade/${res.id}`;
+				this.setState({schedulingUpgrade: false});
 			}
 		});
+	}
+
+	upgradeScheduled(upgradeId) {
+		window.location = `/upgrade/${upgradeId}`;
 	}
 
 	schedulingWindowHandler() {
