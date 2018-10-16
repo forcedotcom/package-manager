@@ -81,11 +81,12 @@ async function batchPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgI
 				batch.poll(3000 /* interval(ms) */, 240000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
 			});
 			batch.on("response", function (results) { // fired when batch finished and result retrieved
-				handleBatchResponse(upgradeId, itemId, versionId, pushReqId, batchJobs.map(j => j.SubscriberOrganizationKey), results).then(recs =>{
+				const orgKeys = batchJobs.map(j => j.SubscriberOrganizationKey);
+				handleBatchResponse(upgradeId, itemId, versionId, pushReqId, orgKeys, results).then(recs =>{
 					hooray({jobs: recs});
 					processBatch(start, hooray, boom, done);
 				}).catch (e => {
-					logger.error("Failed to create upgrade jobs", {error: e.message || e});
+					logger.error("Failed to create upgrade jobs", {error: e.message || e, org_ids: orgKeys.join(',')});
 					boom({message: e.message || e, jobs: batchJobs});
 				});
 			});

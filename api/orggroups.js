@@ -179,7 +179,7 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
 	await db.insert(sql, values);
-	
+	logger.info("Added orgs to group", {group_id: orggroup.id, org_ids: orgIds.join(',')});
 	if (missingOrgs.length > 0) {
 		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {
 			admin.emit(admin.Events.ORGS);
@@ -195,7 +195,9 @@ async function deleteOrgMembers(groupId, orgIds) {
 	let params = orgIds.map(() => `$${n++}`);
 	let values = [groupId].concat(orgIds);
 	let sql = `DELETE FROM org_group_member WHERE org_group_id = $1 AND org_id IN (${params.join(",")})`;
-	return await db.delete(sql, values);
+	let res = await db.delete(sql, values);
+	logger.info("Removed orgs from group", {group_id: groupId, org_ids: orgIds.join(',')});
+	return res;
 }
 
 async function loadBlacklist() {
