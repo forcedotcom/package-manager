@@ -30,8 +30,7 @@ export default class extends React.Component {
 		if (this.state.id === "OrgJobCard") {
 			upgradeInfoColumns.push({
 				Header: "Start Time",
-				maxWidth: 200,
-				id: "upgrade_id",
+				id: "start_time",
 				accessor: d => moment(d.start_time).format("YYYY-MM-DD HH:mm:ss A"),
 				sortable: true,
 				clickable: true
@@ -134,7 +133,7 @@ export default class extends React.Component {
 			case "account_name":
 				window.location = "/org/" + rowInfo.original.org_id;
 				break;
-			case "upgrade_id":
+			case "start_time":
 				window.location = "/upgrade/" + rowInfo.original.upgrade_id;
 				break;
 			case "package_name":
