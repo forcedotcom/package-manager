@@ -84,7 +84,7 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">
-							<UpgradeItemCard upgrade={upgrade} onFetch={this.fetchItems} refetchOn="upgrade-items"/>
+							<UpgradeItemCard onFetch={this.fetchItems} refetchOn="upgrade-items"/>
 						</div>
 						<div label="Jobs">
 							<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>

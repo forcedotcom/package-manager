@@ -336,7 +336,7 @@ async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
 
 async function requestAllJobs(req, res, next) {
 	try {
-		let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.sort_field, req.query.sort_dir);
+		let upgradeJobs = await findJobs(req.query.upgradeId, req.query.itemId, req.query.orgId, req.query.sort_field, req.query.sort_dir);
 		return res.json(upgradeJobs);
 	} catch (e) {
 		next(e);
@@ -371,9 +371,9 @@ async function fetchJobStatus(upgradeJobs) {
 	await changeUpgradeJobsStatus(activeJobs, pushJobsById);
 }
 
-async function findJobs(upgradeId, itemId, sortField, sortDir, status) {
-	let where = upgradeId ? " WHERE j.upgrade_id = $1" : itemId ? " WHERE j.item_id = $1" : "";
-	let values = [upgradeId || itemId];
+async function findJobs(upgradeId, itemId, orgId, sortField, sortDir, status) {
+	let where = upgradeId ? " WHERE j.upgrade_id = $1" : itemId ? " WHERE j.item_id = $1" : orgId ? " WHERE j.org_id = $1" : "";
+	let values = [upgradeId || itemId || orgId];
 	if (status) {
 		values.push(status);
 		where += ` AND j.status = $${values.length}`;

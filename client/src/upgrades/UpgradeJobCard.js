@@ -7,11 +7,12 @@ import {CSVDownload} from 'react-csv';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import moment from "moment";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {done: false};
+		this.state = {done: false, id: props.id || "UpgradeJobCard"};
 		
 		this.linkHandler = this.linkHandler.bind(this);
 		this.filterHandler = this.filterHandler.bind(this);
@@ -25,6 +26,35 @@ export default class extends React.Component {
 	render() {
 		const {filterColumns} = this.state;
 
+		const upgradeInfoColumns = [];
+		if (this.state.id === "OrgJobCard") {
+			upgradeInfoColumns.push({
+				Header: "Start Time",
+				maxWidth: 200,
+				id: "upgrade_id",
+				accessor: d => moment(d.start_time).format("YYYY-MM-DD HH:mm:ss A"),
+				sortable: true,
+				clickable: true
+			});
+		}
+		upgradeInfoColumns.push(
+			{
+				Header: "Status", accessor: "status", sortable: true, filterable: true,
+				Cell: row => (
+					<div>
+							<span data-subject={row.value} data-message={row.original.message}
+								  onClick={this.openMessageWindow} style={{
+								padding: "2px 10px 2px 10px",
+								backgroundColor: row.original.message ? "#C00" : "inherit",
+								cursor: row.original.message ? "pointer" : "inherit",
+								color: row.original.message ? "white" : "inherit",
+								borderRadius: '10px',
+								transition: 'all .3s ease-in'
+							}}>{row.value}</span>
+					</div>
+				)
+			}
+		);
 		const columns = [
 			{Header: "Org Information", columns: [
 				{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
@@ -71,28 +101,11 @@ export default class extends React.Component {
 					filterable: true
 				}]
 			},
-			{Header: "Upgrade Information", columns: [
-				{
-					Header: "Status", accessor: "status", sortable: true, filterable: true,
-					Cell: row => (
-						<div>
-							<span data-subject={row.value} data-message={row.original.message}
-								  onClick={this.openMessageWindow} style={{
-								padding: "2px 10px 2px 10px",
-								backgroundColor: row.original.message ? "#C00" : "inherit",
-								cursor: row.original.message ? "pointer" : "inherit",
-								color: row.original.message ? "white" : "inherit",
-								borderRadius: '10px',
-								transition: 'all .3s ease-in'
-							}}>{row.value}</span>
-						</div>
-					)
-				}]
-			}
+			{Header: "Upgrade Information", columns: upgradeInfoColumns}
 		];
 
 		const actions = [
-			<DataTableSavedFilters id="UpgradeJobCard" key="UpgradeJobCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id={this.state.id} key={this.state.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: "Export Results", handler: this.exportHandler}
 		];
 
@@ -100,7 +113,7 @@ export default class extends React.Component {
 			<div className="slds-card">
 				<CardHeader title="Upgrade Jobs" icon={UPGRADE_JOB_ICON} count={this.state.itemCount} actions={actions}/>
 				<section className="slds-card__body">
-					<DataTable id="UpgradeJobCard" columns={columns}
+					<DataTable id={this.state.id} columns={columns}
 								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} 
 								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}/>
 				</section>
@@ -120,6 +133,9 @@ export default class extends React.Component {
 			case "org_id":
 			case "account_name":
 				window.location = "/org/" + rowInfo.original.org_id;
+				break;
+			case "upgrade_id":
+				window.location = "/upgrade/" + rowInfo.original.upgrade_id;
 				break;
 			case "package_name":
 				window.location = "/package/" + rowInfo.original.package_id;

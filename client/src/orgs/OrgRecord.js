@@ -1,15 +1,19 @@
 import React from 'react';
 
+import * as notifier from "../services/notifications";
 import * as orgService from '../services/OrgService';
 import * as packageVersionService from "../services/PackageVersionService";
+import * as orgGroupService from "../services/OrgGroupService";
+import * as upgradeJobService from "../services/UpgradeJobService";
 
+import {ORG_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import ScheduleUpgradeWindow from "./ScheduleUpgradeWindow";
-import {ORG_ICON} from "../Constants";
-import * as orgGroupService from "../services/OrgGroupService";
 import SelectGroupWindow from "./SelectGroupWindow";
 import InstalledVersionCard from "../packageversions/InstalledVersionCard";
-import * as notifier from "../services/notifications";
+import UpgradeJobCard from "../upgrades/UpgradeJobCard";
+import Tabs from "../components/Tabs";
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -17,6 +21,7 @@ export default class extends React.Component {
 		this.state = {org: {}, upgradeablePackageIds: []};
 		
 		this.fetchVersions = this.fetchVersions.bind(this);
+		this.fetchJobs = this.fetchJobs.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
 		this.closeSchedulerWindow = this.closeSchedulerWindow.bind(this);
@@ -61,10 +66,18 @@ export default class extends React.Component {
 					<HeaderField label="Features" value={this.state.org.features}/>
 					<HeaderField label="Groups" value={this.state.org.groups}/>
 				</RecordHeader>
-				<div className="slds-form--stacked slds-grid slds-wrap slds-m-top--medium">
-					<div className="slds-col--padded slds-size--1-of-1">
-						<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions" refetchFor={this.state.org.org_id}/>
-					</div>
+
+
+				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
+					<Tabs id="UpgradeRecord">
+						<div label="Versions">
+							<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions" refetchFor={this.state.org.org_id}/>
+						</div>
+						<div label="Upgrade Jobs">
+							<UpgradeJobCard id="OrgJobCard" onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
+						</div>
+					</Tabs>
+					<DataTableFilterHelp/>
 				</div>
 				{this.state.addingToGroup ? <SelectGroupWindow title="Add this org to a group" onAdd={this.addToGroupHandler}
 															   onCancel={this.closeGroupWindow}/> : ""}
@@ -85,7 +98,15 @@ export default class extends React.Component {
 			}).catch(reject);
 		});
 	}
-
+	
+	fetchJobs() {
+		return new Promise((resolve, reject) => {
+			upgradeJobService.requestAllJobsByOrg(this.props.match.params.orgId).then(jobs => {
+				resolve(jobs);
+			}).catch(reject);
+		});
+	}
+	
 	upgradeHandler(versions, startDate, description) {
 		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
 			this.setState({schedulingUpgrade: false});
