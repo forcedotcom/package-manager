@@ -54,25 +54,28 @@ export default class extends React.Component {
 				)
 			}
 		);
-		const columns = [
-			{Header: "Org Information", columns: [
-				{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
-				{
-					Header: "Account",
-					accessor: "account_name",
-					sortable: true,
-					clickable: true,
-					minWidth: 250,
-					filterable: true
-				}]
-			},
-			{Header: "Version Information", columns: [
+		const columns = [];
+		if (this.state.id !== "OrgJobCard") {
+			columns.push({
+				Header: "Org Information", columns: [
+					{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
+					{
+						Header: "Account",
+						accessor: "account_name",
+						sortable: true,
+						clickable: true,
+						minWidth: 250,
+						filterable: true
+					}]
+			});
+		}
+		columns.push({Header: "Version Information", columns: [
 				{
 					Header: "Package Name",
 					accessor: "package_name",
 					sortable: true,
 					clickable: true,
-					maxWidth: 200,
+					minWidth: 200,
 					filterable: true
 				},
 				{
@@ -99,9 +102,8 @@ export default class extends React.Component {
 					maxWidth: 100,
 					filterable: true
 				}]
-			},
-			{Header: "Upgrade Information", columns: upgradeInfoColumns}
-		];
+			});
+		columns.push({Header: "Upgrade Information", columns: upgradeInfoColumns});
 
 		const actions = [
 			<DataTableSavedFilters id={this.state.id} key={this.state.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,

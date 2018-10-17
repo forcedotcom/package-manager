@@ -7,16 +7,16 @@ const SELECT_ALL = `SELECT Id,OrgName,OrgType,InstalledStatus,InstanceName,OrgSt
                     FROM PackageSubscriber`;
 
 
-async function fetch(fetchAll, packageOrgId, batchSize = 100) {
-	return await queryAndStore(packageOrgId, fetchAll, false, batchSize, false);
+async function fetch(fetchAll, packageOrgId, batchSize = 100, instanceNames) {
+	return await queryAndStore(packageOrgId, fetchAll, false, batchSize, false, instanceNames);
 }
 
-async function refetchInvalid(packageOrgId, batchSize = 100) {
-	return await queryAndStore(packageOrgId, false, true, batchSize, false);
+async function refetchInvalid(packageOrgId, batchSize = 100, instanceNames) {
+	return await queryAndStore(packageOrgId, false, true, batchSize, false, instanceNames);
 }
 
-async function queryAndStore(packageOrgId, fetchAll, fetchInvalid, batchSize) {
-	packageOrgId = packageOrgId || '00DA0000000K7g8MAC'; // CPQ org for now.
+async function queryAndStore(packageOrgId, fetchAll, fetchInvalid, batchSize, instanceNames) {
+	packageOrgId = packageOrgId || '00DA0000000K7g8MAC'; // defaults to CPQ org
 
 	let conn = await sfdc.buildOrgConnection(packageOrgId);
 	let fromDate = null;
