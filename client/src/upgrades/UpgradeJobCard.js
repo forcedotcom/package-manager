@@ -83,7 +83,6 @@ export default class extends React.Component {
 					id: "original_version_sort", accessor: "original_version_number",
 					sortable: true,
 					clickable: true,
-					maxWidth: 100,
 					filterable: true
 				},
 				{
@@ -91,7 +90,6 @@ export default class extends React.Component {
 					id: "current_version_sort", accessor: "current_version_number",
 					sortable: true,
 					clickable: true,
-					maxWidth: 100,
 					filterable: true
 				},
 				{
@@ -99,7 +97,6 @@ export default class extends React.Component {
 					id: "version_sort", accessor: "version_number",
 					sortable: true,
 					clickable: true,
-					maxWidth: 100,
 					filterable: true
 				}]
 			});
