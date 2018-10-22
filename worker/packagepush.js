@@ -405,7 +405,7 @@ async function retryFailedUpgrade(id, createdBy) {
 	let conns = new Map(), pushReqs = new Map();
 
 	const failedUpgrade = await upgrades.retrieveById(id);
-	const failedJobs = await upgrades.findJobs(id, null, null, null, Status.Failed);
+	const failedJobs = await upgrades.findJobs(id, null, null, null, null, Status.Failed);
 	
 	if (failedJobs.length === 0) {
 		logger.info("No failed jobs found.  Nothing to retry.", {id});
