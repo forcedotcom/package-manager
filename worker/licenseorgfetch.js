@@ -72,7 +72,7 @@ async function upsertBatch(recs) {
 		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
 		values.push(rec.org_id, rec.instance, rec.is_sandbox, rec.is_sandbox ? "Sandbox" : "Production", rec.modified_date);
 	}
-	sql += ` on conflict (org_id) do update set modified_date = excluded.modified_date`;
+	sql += ` on conflict (org_id) do update set modified_date = excluded.modified_date, instance = excluded.instance`;
 	await db.insert(sql, values);
 }
 
