@@ -34,6 +34,7 @@ const Events = {
 	GROUP_VERSIONS: "group-versions",
 	GROUP_MEMBERS: "group-members",
 	REFRESH_GROUP_VERSIONS: "refresh-group-versions",
+	UPGRADES: "upgrades",
 	UPGRADE: "upgrade",
 	UPGRADE_ITEMS: "upgrade-items",
 	UPGRADE_JOBS: "upgrade-jobs",

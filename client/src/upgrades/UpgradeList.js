@@ -31,8 +31,9 @@ export default class extends React.Component {
 		];
 		return (
 			<div>
-				<DataTable id="UpgradeList" onFetch={this.props.onFetch} columns={columns}
-						    onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filters}/>
+				<DataTable id="UpgradeList" onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} columns={columns} onClick={this.linkHandler} 
+						   onFilter={this.props.onFilter} filters={this.props.filters}
+						   showSelected={this.props.showSelected} selection={this.props.selected} onSelect={this.props.onSelect}/>
 				<DataTableFilterHelp/>
 			</div>
 		);

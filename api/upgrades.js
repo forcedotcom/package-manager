@@ -644,6 +644,21 @@ async function requestCancelUpgrade(req, res, next) {
 	}
 }
 
+async function requestPurge(req, res, next) {
+	try {
+		let ids = req.body.upgradeIds;
+		let n = 1;
+		let params = ids.map(() => `$${n++}`);
+		await db.delete(`DELETE FROM upgrade_job WHERE upgrade_id IN (${params.join(",")})`, ids);
+		await db.delete(`DELETE FROM upgrade_item WHERE upgrade_id IN (${params.join(",")})`, ids);
+		await db.delete(`DELETE FROM upgrade WHERE id IN (${params.join(",")})`, ids);
+		admin.emit(admin.Events.UPGRADES);
+		return res.send({result: 'ok'});
+	} catch (e) {
+		next(e);
+	}
+}
+
 async function requestActivateUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
@@ -695,6 +710,7 @@ exports.createUpgradeJobs = createUpgradeJobs;
 exports.requestActivateUpgrade = requestActivateUpgrade;
 exports.requestCancelUpgrade = requestCancelUpgrade;
 exports.requestRetryFailedUpgrade = requestRetryFailedUpgrade;
+exports.requestPurge = requestPurge;
 exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
 exports.requestCancelUpgradeItem = requestCancelUpgradeItem;
 exports.findItemsByIds = findItemsByIds;
