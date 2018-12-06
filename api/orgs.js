@@ -4,6 +4,7 @@ const push = require('../worker/packagepush');
 const logger = require('../util/logger').logger;
 const sfdc = require('../api/sfdcconn');
 const packageorgs = require('../api/packageorgs');
+const orggroups = require('../api/orggroups');
 const admin = require('../api/admin');
 const orgpackageversions = require('../api/orgpackageversions');
 
@@ -111,8 +112,10 @@ function requestById(req, res, next) {
 	let id = req.params.id;
 	let where = " WHERE o.org_id = $1";
 	db.query(SELECT_ALL + where + GROUP_BY, [id])
-		.then(function (org) {
-			return res.json(org[0]);
+		.then(async function (orgs) {
+			const org = orgs[0];
+			org.blacklisted = await orggroups.isBlacklisted(id);
+			return res.json(org);
 		})
 		.catch(next);
 }

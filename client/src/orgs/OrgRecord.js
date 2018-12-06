@@ -58,7 +58,9 @@ export default class extends React.Component {
 		return (
 			<div>
 				<RecordHeader type="Org" icon={ORG_ICON} title={this.state.org.account_name} actions={actions}
-							  parent={{label: "Orgs", location: `/orgs`}}>
+							  parent={{label: "Orgs", location: `/orgs`}}
+								notes={this.state.org.blacklisted ? <div className="slds-pill" style={{color: "white", padding: 7, backgroundColor: "black"}}>
+									This org is currently blacklisted and will be automatically excluded from future upgrades.</div> : ""}>
 					<HeaderField label="Name" value={this.state.org.name}/>
 					<HeaderField label="Org ID" value={this.state.org.org_id}/>
 					<HeaderField label="Instance" value={this.state.org.instance}/>
@@ -66,7 +68,6 @@ export default class extends React.Component {
 					<HeaderField label="Features" value={this.state.org.features}/>
 					<HeaderField label="Groups" value={this.state.org.groups}/>
 				</RecordHeader>
-
 
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
