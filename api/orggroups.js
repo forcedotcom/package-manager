@@ -146,7 +146,7 @@ async function requestDelete(req, res, next) {
 function requestUpgrade(req, res, next) {
 	push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
 		.then((upgrade) => {
-			admin.emit(admin.Events.UPGRADE, upgrade.id);
+			admin.emit(admin.Events.UPGRADE, upgrade);
 		})
 		.catch((e) => {
 			logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e});
@@ -258,3 +258,6 @@ exports.loadBlacklist = loadBlacklist;
 exports.loadWhitelist = loadWhitelist;
 exports.isBlacklisted = isBlacklisted;
 exports.isWhitelisted = isWhitelisted;
+exports.GroupType = GroupType;
+exports.EXPAND_BLACKLIST = EXPAND_BLACKLIST;
+exports.EXPAND_WHITELIST = EXPAND_WHITELIST;

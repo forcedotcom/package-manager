@@ -260,11 +260,13 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 		});
 	}
 
+	const blacklisted = [];
 	const blacklist = await orggroups.loadBlacklist();
 	if (blacklist.size > 0) {
 		orgIds = orgIds.filter(orgId => {
 			if (blacklist.has(orgId)) {
 				logger.warn("Skipping blacklisted org", {org_id: orgId});
+				blacklisted.push(orgId);
 				return false;
 			} else {
 				return true;
@@ -277,7 +279,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 		return {message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
-	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
+	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted);
 	
 	let versions = await packageversions.findByVersionIds(versionIds);
 	try {
@@ -288,8 +290,9 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 			await createPushJobs(conn, upgrade.id, item.id, item.version_id, item.push_request_id, orgIds);
 		}
 	} catch (e) {
-		await upgrades.failUpgrade(upgrade, e);
+		return await upgrades.failUpgrade(upgrade, e);
 	}
+	
 	return upgrade;
 }
 
@@ -323,11 +326,13 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		});
 	}
 
+	const blacklisted = [];
 	const blacklist = await orggroups.loadBlacklist();
 	if (blacklist.size > 0) {
 		opvs = opvs.filter(opv => {
 			if (blacklist.has(opv.org_id)) {
 				logger.warn("Skipping blacklisted org", {org_id: opv.org_id});
+				blacklisted.push(opv.org_id);
 				return false;
 			} else {
 				return true;
@@ -340,7 +345,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		return {message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
-	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description);
+	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted);
 	for (let i = 0; i < opvs.length; i++) {
 		let opv = opvs[i];
 		let conn = conns.get(opv.package_org_id);
@@ -367,14 +372,18 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 			
 			let pushReq = pushReqs.get(reqKey);
 			if (!pushReq) {
-				pushReq = {
-					item: await createPushRequest(conn, upgrade.id, opv.package_org_id, upgradeVersion.version_id, scheduledDate, createdBy),
-					conn: conn,
-					orgIds: []
-				};
-				pushReqs.set(reqKey, pushReq);
+				try {
+					pushReq = {
+						item: await createPushRequest(conn, upgrade.id, opv.package_org_id, upgradeVersion.version_id, scheduledDate, createdBy),
+						conn: conn,
+						orgIds: []
+					};
+					pushReqs.set(reqKey, pushReq);
+				} catch (e) {
+					return await upgrades.failUpgrade(upgrade, e);
+				}
 			}
-	
+
 			// Add this particular org id to the batch
 			pushReq.orgIds.push(opv.org_id);
 		}
@@ -382,8 +391,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 	// Fail fast if invalid
 	if (pushReqs.size === 0) {
-		await upgrades.failUpgrade(upgrade, "No valid requests for upgrade");
-		return upgrade;
+		return await upgrades.failUpgrade(upgrade, "No valid requests for upgrade");
 	}
 	
 	// Now, create the jobs, synchronously
@@ -393,7 +401,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		try {
 			await createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds)
 		} catch (e) {
-			upgrades.failUpgrade(upgrade, e).then(() => {})			
+			return upgrades.failUpgrade(upgrade, e).then(() => {})			
 		}
 	}
 	
@@ -456,7 +464,7 @@ async function retryFailedUpgrade(id, createdBy) {
 		try {
 			await createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds);
 		} catch (e) {
-			upgrades.failUpgrade(upgrade, e).then(() => {})
+			return upgrades.failUpgrade(upgrade, e).then(() => {})
 		}
 	}
 	

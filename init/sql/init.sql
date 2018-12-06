@@ -84,6 +84,12 @@ create table if not exists upgrade (
   created_by  varchar(255)
 );
 
+create table if not exists upgrade_blacklist (
+   id                  serial primary key,
+   upgrade_id          integer,
+   org_id              varchar(18)
+);
+
 create table if not exists upgrade_item (
   id              serial primary key,
   upgrade_id      integer,

@@ -62,15 +62,15 @@ const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, pv.version_sort, 
 
 async function requestAll(req, res, next) {
 	try {
-		let orgs = await findAll(req.query.packageId, req.query.versionId, req.query.sort_field, req.query.sort_dir, 
-			req.query.filterColumns ? JSON.parse(req.query.filterColumns) : null, req.query.page, req.query.pageSize);
+		let orgs = await findAll(req.query.packageId, req.query.versionId, req.query.relatedOrgId, req.query.blacklistUpgradeId, req.query.sort_field, req.query.sort_dir, 
+			req.query.filterColumns ? JSON.parse(req.query.filterColumns) : null, req.query.blacklisted);
 		return res.send(JSON.stringify(orgs));
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function findAll(packageId, versionId, orderByField, orderByDir, filterColumns) {
+async function findAll(packageId, versionId, relatedOrgId, blacklistUpgradeId, orderByField, orderByDir, filterColumns, blacklisted) {
 	let select = SELECT_ALL;
 	let groupBy = GROUP_BY;
 	let whereParts = [`o.status != '${Status.NotFound}'`];
@@ -82,20 +82,44 @@ async function findAll(packageId, versionId, orderByField, orderByDir, filterCol
 
 		if (packageId) {
 			values.push(packageId);
-			whereParts.push("opv.package_id = $" + values.length);
+			whereParts.push(`opv.package_id = $${values.length}`);
 			whereParts.push(`o.status != '${Status.NotInstalled}'`)
 		}
 
 		if (versionId) {
 			values.push(versionId);
-			whereParts.push("opv.version_id = $" + values.length);
+			whereParts.push(`opv.version_id = $${values.length}`);
 			whereParts.push(`o.status != '${Status.NotInstalled}'`)
 		}
 	}
 
+	if (relatedOrgId) {
+		values.push(relatedOrgId);
+		whereParts.push(`o.org_id != $${values.length} AND o.account_id IN (
+							SELECT ro.account_id FROM org ro WHERE ro.org_id = $${values.length}
+						)`);
+	}
+	
+	if (blacklistUpgradeId) {
+		values.push(blacklistUpgradeId);
+		whereParts.push(`o.org_id IN (
+							SELECT ub.org_id FROM upgrade_blacklist ub WHERE ub.upgrade_id = $${values.length}
+						)`);
+	}
+	
 	if (filterColumns && filterColumns.length > 0) {
 		whereParts.push(...filters.parseSQLExpressions(QUERY_DICTIONARY, filterColumns));
 	} 
+	
+	if (blacklisted) {
+		whereParts.push(orggroups.EXPAND_BLACKLIST ? 
+			`o.account_id IN (
+				SELECT DISTINCT bo.account_id FROM org bo
+				INNER JOIN org_group_member m ON m.org_id = bo.org_id AND bo.account_id != '${sfdc.INTERNAL_ID}'
+				INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = '${orggroups.GroupType.Blacklist}'
+			 )` :
+			`g.type = '${orggroups.GroupType.Blacklist}'`);
+	}
 	
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
 	let sort = `ORDER BY ${orderByField || "id"} ${orderByDir || "desc"}`;
@@ -122,13 +146,15 @@ function requestById(req, res, next) {
 
 function requestUpgrade(req, res, next) {
 	push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
-		.then((result) => {
-			return res.json(result)
+		.then((upgrade) => {
+			admin.emit(admin.Events.UPGRADE, upgrade);
 		})
 		.catch(e => {
 			logger.error("Failed to upgrade org", {org_id: req.params.id, error: e.message || e});
 			next(e);
 		});
+	
+	return res.json({result: "OK"});
 }
 
 async function requestAdd(req, res, next) {

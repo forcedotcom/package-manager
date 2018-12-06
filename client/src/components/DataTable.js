@@ -60,8 +60,13 @@ export default class extends React.Component {
 			filterColumns = filterColumns.filter(c => c.id !== defaultFilter.id);
 			filterColumns.push(defaultFilter);
 		}
-		const force = props.showSelected !== this.props.showSelected;
-		this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSortColumns(tableId), 0, sortage.getPageSize(tableId), false, force);
+		if (props.onFetch.name !== this.props.onFetch.name) {
+			// If fetch function changed, call it to refetch data.
+			this.refetchData(null, props.onFetch);
+		} else {
+			const force = props.showSelected !== this.props.showSelected;
+			this.dataChanged(tableId, data, showSelected, filterColumns, sortage.getSortColumns(tableId), 0, sortage.getPageSize(tableId), false, force);
+		}
 	}
 
 	render() {
@@ -225,7 +230,7 @@ export default class extends React.Component {
 		}
 	}
 
-	refetchData(keys) {
+	refetchData(keys, onFetch) {
 		if (keys && this.props.refetchFor) {
 			// Only proceed if one of refetchFor is contained in keys
 			const ourKeys = Array.isArray(this.props.refetchFor) ? this.props.refetchFor : [this.props.refetchFor];
@@ -237,7 +242,7 @@ export default class extends React.Component {
 
 		const {tableId, showSelected, page, pageSize} = this.state;
 
-		this.props.onFetch().then(data => {
+		(onFetch || this.props.onFetch)().then(data => {
 			const filterColumns = filtrage.getFilterColumns(tableId);
 			const sortColumns = sortage.getSortColumns(tableId);
 			this.dataChanged(tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, false, true);

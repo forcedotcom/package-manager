@@ -20,10 +20,12 @@ export default class extends React.Component {
 		};
 		
 		this.fetchData = this.fetchData.bind(this);
+		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 		this.filterHandler = this.filterHandler.bind(this);
 		this.applySavedFilter = this.applySavedFilter.bind(this);
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.handleShowSelected = this.handleShowSelected.bind(this);
+		this.handleShowBlacklisted = this.handleShowBlacklisted.bind(this);
 		this.addOrgHandler = this.addOrgHandler.bind(this);
 		this.importHandler = this.importHandler.bind(this);
 		this.cancelHandler = this.cancelHandler.bind(this);
@@ -46,8 +48,10 @@ export default class extends React.Component {
 		const {selected, filterColumns} = this.state;
 		const actions = [
 			<DataTableSavedFilters id="OrgList" key="OrgList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
-			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
+			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "special", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
+			{label: `Blacklisted`, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
+				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
 			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.addingToGroupHandler},
 			{label: "Import", handler: this.importHandler},
 			{label: "Export", handler: this.exportHandler}
@@ -55,7 +59,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="orgs" title="Orgs" actions={actions} count={this.state.itemCount}/>
-				<OrgList onFetch={this.fetchData} refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
+				<OrgList onFetch={this.state.showBlacklisted ? this.fetchBlacklist : this.fetchData} refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
 						 showSelected={this.state.showSelected} onSelect={this.selectionHandler} selected={selected} />
 				{this.state.showAddToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`} 
 																onAdd={this.addToGroup}
@@ -69,6 +73,10 @@ export default class extends React.Component {
 	// Handlers
 	fetchData() {
 		return orgService.requestAll();
+	}
+
+	fetchBlacklist() {
+		return orgService.requestAll(true);
 	}
 
 	filterHandler(filtered, filterColumns, itemCount) {
@@ -90,10 +98,14 @@ export default class extends React.Component {
 	handleShowSelected() {
 		this.setState({showSelected: !this.state.showSelected});
 	}
+	
+	handleShowBlacklisted() {
+		this.setState({showBlacklisted: !this.state.showBlacklisted});
+	}
 
 	addOrgHandler(orgIds) {
 		orgService.requestAdd(orgIds)
-		.then(() => this.setState({showSelected: false}))
+		.then(() => this.setState({showSelected: false, showBlacklisted: false}))
 		.catch(e => {
 			notifier.error(e.message, "Failed to Add Org(s)");
 		});
@@ -112,7 +124,7 @@ export default class extends React.Component {
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
 			notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
 			this.state.selected.clear();
-			this.setState({showSelected: false, addingToGroup: false});
+			this.setState({showSelected: false, showBlacklisted: false, addingToGroup: false});
 		});
 	}
 

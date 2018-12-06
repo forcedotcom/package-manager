@@ -38,6 +38,7 @@ const Events = {
 	UPGRADE: "upgrade",
 	UPGRADE_ITEMS: "upgrade-items",
 	UPGRADE_JOBS: "upgrade-jobs",
+	UPGRADE_BLACKLIST: "upgrade-blacklist",
 	ORGS: "orgs",
 	PACKAGE_ORGS: "package-orgs"
 };

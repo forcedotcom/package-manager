@@ -37,6 +37,7 @@ export default class extends React.Component {
 		this.saveHandler = this.saveHandler.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
 		this.groupRefreshed = this.groupRefreshed.bind(this);
+		this.upgradeScheduled = this.upgradeScheduled.bind(this);
 		this.editHandler = this.editHandler.bind(this);
 		this.cancelHandler = this.cancelHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
@@ -147,14 +148,19 @@ export default class extends React.Component {
 	upgradeHandler(versions, startDate, description) {
 		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
 			if (res.message) {
-				notifier.error(res.message, "Failed to Schedule", 7000, () => window.location = `/upgrade/${res.id}`);
+				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
 				this.setState({schedulingUpgrade: false});
 			}
 		});
 	}
 
-	upgradeScheduled(upgradeId) {
-		window.location = `/upgrade/${upgradeId}`;
+	upgradeScheduled(res) {
+		if (res.message) {
+			notifier.error(res.message, "Failed to Schedule", 7000);
+			return this.setState({schedulingUpgrade: false});
+		}
+		
+		window.location = `/upgrade/${res.id}`;
 	}
 
 	schedulingWindowHandler() {

@@ -14,6 +14,7 @@ import InstalledVersionCard from "../packageversions/InstalledVersionCard";
 import UpgradeJobCard from "../upgrades/UpgradeJobCard";
 import Tabs from "../components/Tabs";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import OrgCard from "./OrgCard";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -22,7 +23,9 @@ export default class extends React.Component {
 		
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
+		this.fetchRelatedOrgs = this.fetchRelatedOrgs.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
+		this.upgradeScheduled = this.upgradeScheduled.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
 		this.closeSchedulerWindow = this.closeSchedulerWindow.bind(this);
 		this.openSchedulerWindow = this.openSchedulerWindow.bind(this);
@@ -33,9 +36,14 @@ export default class extends React.Component {
 
 	// Lifecycle
 	componentDidMount() {
+		notifier.on('upgrade', this.upgradeScheduled);
 		orgService.requestById(this.props.match.params.orgId).then(org => this.setState({org}));
 	}
-	
+
+	componentWillUnmount() {
+		notifier.remove('upgrade', this.upgradeScheduled);
+	}
+
 	render() {
 		const actions = [
 			{
@@ -77,6 +85,9 @@ export default class extends React.Component {
 						<div label="Upgrade Jobs">
 							<UpgradeJobCard id="OrgJobCard" onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 						</div>
+						<div label="Related Orgs">
+							<OrgCard id="RelatedOrgCard" title="Orgs" onFetch={this.fetchRelatedOrgs} refetchOn="orgs"/>
+						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
@@ -107,18 +118,29 @@ export default class extends React.Component {
 			}).catch(reject);
 		});
 	}
-	
+
+	fetchRelatedOrgs() {
+		return orgService.requestByRelatedOrg(this.props.match.params.orgId);
+	}
+
 	upgradeHandler(versions, startDate, description) {
 		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
-			this.setState({schedulingUpgrade: false});
 			if (res.message) {
-				notifier.error(res.message, "Failed to Schedule", 7000, () => window.location = `/upgrade/${res.id}`);
-			} else {
-				window.location = `/upgrade/${res.id}`;
+				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
+				this.setState({schedulingUpgrade: false});
 			}
 		});
 	}
 
+	upgradeScheduled(res) {
+		if (res.message) {
+			notifier.error(res.message, "Failed to Schedule", 7000);
+			return this.setState({schedulingUpgrade: false});
+		}
+
+		window.location = `/upgrade/${res.id}`;
+	}
+	
 	refreshHandler() {
 		this.setState({isRefreshing: true});
 		notifier.emit("refresh-org-versions", this.state.org.org_id);

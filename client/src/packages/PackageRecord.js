@@ -23,6 +23,7 @@ export default class extends React.Component {
 		
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchOrgs = this.fetchOrgs.bind(this);
+		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 	}
 
 	// Lifecycle
@@ -43,7 +44,7 @@ export default class extends React.Component {
 							<PackageVersionCard onFetch={this.fetchVersions.bind(this)}/>
 						</div>
 						<div label="Customers">
-							<OrgCard id="PackageMembers" title="Customers" onFetch={this.fetchOrgs.bind(this)} />
+							<OrgCard id="PackageMembers" title="Customers" onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
@@ -60,4 +61,9 @@ export default class extends React.Component {
 	fetchOrgs() {
 		return orgService.requestByPackage(this.props.match.params.packageId)
 	}
+
+	fetchBlacklist() {
+		return orgService.requestByPackage(this.props.match.params.packageId, true)
+	}
+
 }

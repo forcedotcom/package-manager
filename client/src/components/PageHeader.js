@@ -65,6 +65,10 @@ export class RecordHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
+			if (currentAction.hidden) {
+				continue;
+			}
+			
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
@@ -148,6 +152,9 @@ export class CardHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
+			if (currentAction.hidden) {
+				continue;
+			}
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
@@ -224,6 +231,10 @@ export class FormHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
+			if (currentAction.hidden) {
+				continue;
+			}
+			
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
@@ -299,6 +310,10 @@ export class HomeHeader extends React.Component {
 		let currentGroup = null;
 		for (let i = 0; i < actions.length; i++) {
 			const currentAction = actions[i];
+			if (currentAction.hidden) {
+				continue;
+			}
+			
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(  
 				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :

@@ -113,10 +113,30 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;
 
-async function createUpgrade(scheduledDate, createdBy, description) {
+async function createUpgrade(scheduledDate, createdBy, description, blacklisted) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status) VALUES ($1,$2,$3,$4)', [isoTime, createdBy, description, UpgradeStatus.Ready]);
+	if (blacklisted && blacklisted.length !== 0) {
+		createUpgradeBlacklist(recs[0].id, blacklisted).then(() => {});
+	}
 	return recs[0];
+}
+
+async function createUpgradeBlacklist(upgradeId, orgIds) {
+	let sql = `INSERT INTO upgrade_blacklist (upgrade_id, org_id) VALUES`;
+	let values = [upgradeId];
+	for (let i = 0, n = 1 + values.length; i < orgIds.length; i++) {
+		const orgId = orgIds[i];
+		if (i > 0) {
+			sql += ','
+		}
+		sql += `($1,$${n++})`;
+		values.push(orgId);
+	}
+
+	const recs = await db.insert(sql, values);
+	admin.emit(admin.Events.UPGRADE_BLACKLIST, recs);
+	return recs;
 }
 
 async function failUpgrade(upgrade, error) {
@@ -124,7 +144,7 @@ async function failUpgrade(upgrade, error) {
 	upgrade.message = error.message || error;
 	upgrade.status = UpgradeStatus.Failed;
 	await db.update(`UPDATE upgrade set status = $1 WHERE id = $2`, [upgrade.status, upgrade.id]);
-	admin.emit(admin.Events.UPGRADE, upgrade);
+	return upgrade;
 }
 
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {

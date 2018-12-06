@@ -1,6 +1,7 @@
 import React from 'react';
 
 import * as upgradeService from '../services/UpgradeService';
+import * as orgService from '../services/OrgService';
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import * as upgradeItemService from "../services/UpgradeItemService";
@@ -13,6 +14,7 @@ import moment from "moment";
 import * as notifier from "../services/notifications";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import {getProgress, UPGRADE_ICON} from "../Constants";
+import OrgCard from "../orgs/OrgCard";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -22,6 +24,7 @@ export default class extends React.Component {
 			progress: getProgress([])
 		};
 		
+		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 		this.fetchItems = this.fetchItems.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
 		this.upgradeUpdated = this.upgradeUpdated.bind(this);
@@ -89,6 +92,9 @@ export default class extends React.Component {
 						<div label="Jobs">
 							<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 						</div>
+						<div label="Blacklist">
+							<OrgCard id="UpgradeBlacklistCard" title="Orgs" onFetch={this.fetchBlacklist} refetchOn="upgrade-blacklist"/>
+						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
@@ -97,6 +103,10 @@ export default class extends React.Component {
 	}
 	
 	// Handlers
+	fetchBlacklist() {
+		return orgService.requestByUpgradeBlacklist(this.props.match.params.upgradeId);
+	};
+
 	fetchItems() {
 		return upgradeItemService.findByUpgrade(this.props.match.params.upgradeId);
 	};

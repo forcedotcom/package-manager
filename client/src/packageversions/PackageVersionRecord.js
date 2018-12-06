@@ -18,6 +18,7 @@ export default class extends React.Component {
 		}).catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.history.back()}));
 		
 		this.fetchOrgs = this.fetchOrgs.bind(this);
+		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 	}
 
 	// Lifecycle
@@ -34,7 +35,7 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={packageVersion.status}/>
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<OrgCard id="PackageVersionMembers" title="Customers" onFetch={this.fetchOrgs.bind(this)}/>
+					<OrgCard id="PackageVersionMembers" title="Customers" onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
 					<DataTableFilterHelp/>
 				</div>
 			</div>
@@ -44,5 +45,9 @@ export default class extends React.Component {
 	// Handlers
 	fetchOrgs() {
 		return orgService.requestByPackageVersion(this.props.match.params.versionId);
+	}
+	
+	fetchBlacklist() {
+		return orgService.requestByPackageVersion(this.props.match.params.versionId, true);
 	}
 }

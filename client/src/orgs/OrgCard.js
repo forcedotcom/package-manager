@@ -22,6 +22,7 @@ export default class extends React.Component {
 		this.applySavedFilter = this.applySavedFilter.bind(this);
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.handleShowSelected = this.handleShowSelected.bind(this);
+		this.handleShowBlacklisted = this.handleShowBlacklisted.bind(this);
 		this.removeMembersHandler = this.removeMembersHandler.bind(this);
 		this.addToGroupHandler = this.addToGroupHandler.bind(this);
 		this.openGroupWindow = this.openGroupWindow.bind(this);
@@ -47,8 +48,10 @@ export default class extends React.Component {
 
 		const actions = [
 			<DataTableSavedFilters id={this.props.id} key={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
-			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
+			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "special", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
+			{label: `Blacklisted`, hidden: !this.props.onFetchBlacklist, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
+				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
 			{label: "Add To Group", handler: this.openGroupWindow, disabled: selected.size === 0},
 			{label: "Export", handler: this.exportHandler}
 		];
@@ -64,10 +67,11 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable id={this.props.id} keyField="org_id" columns={columns} onFetch={this.props.onFetch}
-								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
-								 showSelected={this.props.showSelected} selection={selected}
-								 onSelect={this.selectionHandler}/>
+					<DataTable id={this.props.id} keyField="org_id" 
+					 	onFetch={this.props.onFetchBlacklist && this.state.showBlacklisted ? this.props.onFetchBlacklist : this.props.onFetch}
+					  	columns={columns} onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
+						showSelected={this.props.showSelected} selection={selected}
+						onSelect={this.selectionHandler}/>
 				</div>
 				<footer className="slds-card__footer"/>
 				{this.state.addingToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`}
@@ -103,13 +107,17 @@ export default class extends React.Component {
 	handleShowSelected() {
 		this.setState({showSelected: !this.state.showSelected});
 	}
+	
+	handleShowBlacklisted() {
+		this.setState({showBlacklisted: !this.state.showBlacklisted});
+	}
 
 	removeMembersHandler() {
 		this.props.onRemove(Array.from(this.state.selected.keys()));
 	}
 
 	addToGroupHandler(groupId, groupName) {
-		this.setState({addingToGroup: false, showSelected: false});
+		this.setState({addingToGroup: false, showSelected: false, showBlacklisted: false});
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
 			window.location = `/orggroup/${orggroup.id}`;
 		});
