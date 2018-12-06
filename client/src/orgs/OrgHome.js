@@ -59,7 +59,8 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="orgs" title="Orgs" actions={actions} count={this.state.itemCount}/>
-				<OrgList onFetch={this.state.showBlacklisted ? this.fetchBlacklist : this.fetchData} refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
+				<OrgList onFetch={this.state.showBlacklisted ? this.fetchBlacklist : this.fetchData} fetchName={this.state.showBlacklisted ? "blacklist" : "data"} 
+						 refetchOn="orgs" onFilter={this.filterHandler} filters={filterColumns}
 						 showSelected={this.state.showSelected} onSelect={this.selectionHandler} selected={selected} />
 				{this.state.showAddToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`} 
 																onAdd={this.addToGroup}

@@ -60,8 +60,9 @@ export default class extends React.Component {
 			filterColumns = filterColumns.filter(c => c.id !== defaultFilter.id);
 			filterColumns.push(defaultFilter);
 		}
-		if (props.onFetch.name !== this.props.onFetch.name) {
-			// If fetch function changed, call it to refetch data.
+		if (props.fetchName !== this.props.fetchName) {
+			// If fetch name changed, call onFetch again
+			this.setState({loading: true});
 			this.refetchData(null, props.onFetch);
 		} else {
 			const force = props.showSelected !== this.props.showSelected;

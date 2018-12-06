@@ -68,7 +68,8 @@ export default class extends React.Component {
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
 					<DataTable id={this.props.id} keyField="org_id" 
-					 	onFetch={this.props.onFetchBlacklist && this.state.showBlacklisted ? this.props.onFetchBlacklist : this.props.onFetch}
+					 	onFetch={this.state.showBlacklisted ? this.props.onFetchBlacklist : this.props.onFetch} 
+						fetchName={this.state.showBlacklisted ? "blacklist" : "data"}
 					  	columns={columns} onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
 						showSelected={this.props.showSelected} selection={selected}
 						onSelect={this.selectionHandler}/>
