@@ -95,7 +95,7 @@ async function findAll(packageId, versionId, relatedOrgId, blacklistUpgradeId, o
 
 	if (relatedOrgId) {
 		values.push(relatedOrgId);
-		whereParts.push(`o.org_id != $${values.length} AND o.account_id IN (
+		whereParts.push(`o.account_id IN (
 							SELECT ro.account_id FROM org ro WHERE ro.org_id = $${values.length}
 						)`);
 	}
