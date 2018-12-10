@@ -62,7 +62,8 @@ export default class extends React.Component {
 								 className={item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={item.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={progress.percentage} status={progress.status}/>
+				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled} 
+							 progressError={progress.percentageError}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 				</div>

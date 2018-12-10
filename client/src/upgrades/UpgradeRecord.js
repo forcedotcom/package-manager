@@ -83,7 +83,8 @@ export default class extends React.Component {
 					<HeaderField label="Request Status" value={upgrade.item_status}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
-				<ProgressBar progress={progress.percentage} status={progress.status}/>
+				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled}
+							 progressError={progress.percentageError}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Requests">

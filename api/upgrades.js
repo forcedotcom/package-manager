@@ -44,9 +44,9 @@ const ITEM_STATUS_SOQL = `
          count(CASE 
                       WHEN i.status = 'Failed' THEN 1
                       WHEN i.status = 'Ineligible' THEN 1
-                      ELSE NULL END) > 0 THEN 'Failed'
+                      ELSE NULL END) > 0 THEN 'Complete with failures'
          ELSE -- All done and succeeded == Succeeded
-         'Succeeded' 
+         'Complete' 
 	END item_status`;
 
 const SELECT_ALL = `

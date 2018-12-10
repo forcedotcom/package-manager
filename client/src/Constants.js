@@ -18,9 +18,9 @@ export const Status = {
 
 export const getProgress = statusRecs => {
 	if (!statusRecs || statusRecs.length === 0)
-		return {count: 0, active: 0, started: 0, completed: 0, errors: 0, canceled: 0, percentage: 0, done: 0};
+		return {count: 0, active: 0, started: 0, completed: 0, succeeded: 0, errors: 0, canceled: 0, percentage: 0, done: 0};
 
-	let count = statusRecs.length, active = 0, started = 0, completed = 0, errors = 0, canceled = 0;
+	let count = statusRecs.length, active = 0, started = 0, completed = 0, succeeded = 0, errors = 0, canceled = 0;
 	for (let i = 0; i < statusRecs.length; i++) {
 		let rec = statusRecs[i];
 		switch (rec.status) {
@@ -52,6 +52,7 @@ export const getProgress = statusRecs => {
 				active++;
 				started++;
 				completed++;
+				succeeded++;
 				break;
 			case Status.Invalid:
 				started++;
@@ -62,9 +63,12 @@ export const getProgress = statusRecs => {
 		}
 	}
 	const percentage = (started + completed) / (count * 2);
+	const percentageSuccess = Math.ceil(succeeded * 100 / count) / 100;
+	const percentageCanceled = Math.floor(canceled * 100 / count) / 100;
+	const percentageError = Math.floor(errors * 100 / count) / 100;
 	const done = percentage === 1 || count === 0;
-	const status = canceled > 0 ? "canceled" : errors > 0 ? "error" : "success";
-	return {count, active, started, completed, errors, canceled, percentage, done, status};
+	return {count, active, started, completed, errors, canceled, percentage,
+		percentageSuccess, percentageCanceled, percentageError, done};
 };
 
 export const GroupTypes = [
