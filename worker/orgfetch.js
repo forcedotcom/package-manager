@@ -5,7 +5,8 @@ const orgsapi = require('../api/orgs');
 
 
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,
-					PermissionsCpq,PermissionsCpqProvisioned,PreferencesOrdersEnabled 
+					PermissionsCpq,PermissionsCpqProvisioned,PreferencesOrdersEnabled,
+					PermissionsUsageBasedPricing 
 					FROM AllOrganization`;
 
 const QUERY_BATCH_SIZE = 500;
@@ -83,6 +84,9 @@ function extractFeatures(rec) {
 	}
 	if (rec.PreferencesOrdersEnabled === true) {
 		features.push("Orders");
+	}
+	if (rec.PermissionsUsageBasedPricing === true) {
+		features.push("UBP");
 	}
 	return features.join(",");
 }
