@@ -43,6 +43,15 @@ const Events = {
 	PACKAGE_ORGS: "package-orgs"
 };
 
+const JobTypes = {
+	UPLOAD_ORGS: "upload-orgs",
+	UPGRADE: "upgrade",
+	FETCH: "fetch",
+	FETCH_INVALID: "fetch-invalid",
+	FETCH_ACCOUNT_ORGS: "fetch-account-orgs",
+	REFRESH_GROUP_VERSIONS: "refresh-group-versions",
+};
+
 let jobQueue = [];
 let jobHistory = [];
 let activeJobs = new Map();
@@ -337,7 +346,8 @@ async function fetchInvalidOrgs(interval) {
 }
 
 async function uploadOrgsToSumo(interval) {
-	let job = new AdminJob("upload-orgs", "Upload org data to sumologic",
+	let job = new AdminJob(
+		JobTypes.UPLOAD_ORGS, "Upload org data to sumologic",
 		[
 			{
 				name: "Loading org data",
@@ -434,3 +444,4 @@ exports.requestSettings = requestSettings;
 exports.requestJobs = requestJobs;
 exports.requestCancel = requestCancel;
 exports.AdminJob = AdminJob;
+exports.JobTypes = JobTypes;

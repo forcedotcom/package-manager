@@ -41,7 +41,7 @@ const packageorgs = require('../api/packageorgs');
  */
 function fetchAccountOrgs(fetchAll) {
 	return new admin.AdminJob(
-		fetchAll ? "fetch-all-account-orgs" : "fetch-latest-account-orgs",
+		admin.JobTypes.FETCH_ACCOUNT_ORGS,
 		fetchAll ? "Fetch all account orgs" : "Fetch latest account orgs",
 		[
 			{
@@ -71,7 +71,7 @@ function fetchAccountOrgs(fetchAll) {
 
 function fetch(fetchAll) {
 	return new admin.AdminJob(
-		fetchAll ? "fetch-all" : "fetch-latest",
+		admin.JobTypes.FETCH,
 		fetchAll ? "Fetch all data" : "Fetch latest data",
 		[
 			{
@@ -166,7 +166,8 @@ function fetch(fetchAll) {
  * @returns {Promise<void>}
  */
 function fetchInvalid() {
-	return new admin.AdminJob("fetch-invalid", "Fetch invalid org data",
+	return new admin.AdminJob(
+		admin.JobTypes.FETCH_INVALID, "Fetch invalid org data",
 		[
 			{
 				name: "Populating production org data",
@@ -214,7 +215,7 @@ function fetchInvalid() {
 }
 
 function fetchOrgVersions(orgId, packageOrgIds) {
-	return new admin.AdminJob(admin.Events.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
+	return new admin.AdminJob(admin.JobTypes.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
 		[
 			{
 				name: "Fetching package versions from subscribers",
@@ -228,7 +229,7 @@ function fetchOrgVersions(orgId, packageOrgIds) {
 }
 
 function fetchOrgGroupVersions(groupId, orgIds, packageOrgIds) {
-	return new admin.AdminJob(admin.Events.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
+	return new admin.AdminJob(admin.JobTypes.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
 		[
 			{
 				name: "Fetching package versions from subscribers",
