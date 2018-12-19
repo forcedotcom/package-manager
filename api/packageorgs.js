@@ -4,11 +4,12 @@ const sfdc = require('./sfdcconn');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
 
-const Status = {Connected: "Connected", Invalid: "Invalid", Missing: "Missing"};
+const Status = {Connected: "Connected", Unprotected: "Unprotected", Invalid: "Invalid", Missing: "Missing"};
 
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
-
+const PACKAGE_ORG_IP_RANGES = JSON.parse(process.env.PACKAGE_ORG_IP_RANGES) || [];
 const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
+const STEELBRICK_PM_PROFILE = "SteelBrick Package Manager Admin";
 
 const SELECT_ALL = 
 	`SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
@@ -49,8 +50,6 @@ async function requestById(req, res, next) {
 			return next(new Error(`Cannot find any record with id ${id}`));
 		}
 		await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
-		applyLoginIPAccessControls(id).then(() => {});
-
 		return res.json(recs[0]);
 	} catch (err) {
 		next(err);
@@ -76,7 +75,19 @@ async function initOrg(conn, org_id) {
 	if (org.status === Status.Invalid) {
 		return await updateOrgStatus(org_id, org.status);
 	}
-	applyLoginIPAccessControls(org_id).then(() => {});
+	try {
+		let result = await applyLoginIPAccessControls(org_id);
+		if (!result) {
+			logger.warn(`Did not find named profile`, {orgName: org.name, orgId: org_id, profileName: STEELBRICK_PM_PROFILE});
+			org.status = Status.Unprotected;
+			admin.emit(admin.Events.ALERT, {subject: "Profile Not Found",
+				message: `Head's up.  We did not find a profile named ${STEELBRICK_PM_PROFILE} found in org ${org_id}.  We recommend you create one, so we can apply our IP access control ranges the next time you refresh.`});
+		}
+	} catch (e) {
+		logger.warn(`Profile not updated for org ${org.name} (${org_id}).  Error: ${e.message}`);
+		admin.emit(admin.Events.ALERT, {subject: 'Profile Not Updated',
+			message: `Profile not updated for org ${org.name} (${org_id}).  Error: ${e.message}`});
+	}
 
 	await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
 	let sql = `INSERT INTO package_org 
@@ -89,38 +100,17 @@ async function initOrg(conn, org_id) {
             status = excluded.status`;
 	return await db.insert(sql,
 		[org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status]);
-	
 }
 
 async function applyLoginIPAccessControls(packageOrgId) {
 	let conn = await sfdc.buildOrgConnection(packageOrgId);
-	let profileName = "SteelBrick Package Manager Admin";
 	let metadata = {
-		fullName: profileName,
-		loginIpRanges: [
-			{description: "SFDC Network", startAddress: "204.14.232.0", endAddress: "204.14.239.255"},
-			{description: "SteelBrick Heroku NA", startAddress: "35.165.148.180", endAddress: "35.165.148.180"},
-			{description: "SteelBrick Heroku NA", startAddress: "35.165.168.63", endAddress: "35.165.168.63"},
-			{description: "SteelBrick Heroku NA", startAddress: "35.165.214.66", endAddress: "35.165.214.66"},
-			{description: "SteelBrick Heroku NA", startAddress: "35.165.214.102", endAddress: "35.165.214.102"},
-			{description: "SFDC Phoenix (PRD)", startAddress: "136.146.0.0", endAddress: "136.147.255.255"}
-		]
+		fullName: STEELBRICK_PM_PROFILE,
+		loginIpRanges: PACKAGE_ORG_IP_RANGES
 	};
 	
-	conn.metadata.update('Profile', metadata).then( (result, err) => {
-		if (err) {
-			admin.emit(admin.Events.ALERT, {subject: 'Profile Not Updated',
-				message: `Profile not updated for org ${packageOrgId}.  Error: ${err.message}`});
-		} else {
-			if (result.success) {
-				logger.info(`Updated Profile with login IP ranges`, {profileName: profileName});
-			} else {
-				logger.warn(`Did not find named profile to apply login IP ranges`, {profileName: profileName});
-				admin.emit(admin.Events.ALERT, {subject: "Profile Not Found", 
-					message: `Head's up.  We did not find a profile named ${profileName} found in org ${packageOrgId}.  We recommend you create one, so we can apply our IP access control ranges the next time you refresh.`});
-			}
-		}
-	}).catch(e => logger.warn(e.message));
+	let result = await conn.metadata.update('Profile', metadata);
+	return result.success;
 }
 
 async function updateOrgStatus(orgId, status) {

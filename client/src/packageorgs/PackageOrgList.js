@@ -25,7 +25,7 @@ export default class extends React.Component {
 				accessor: "status",
 				style: {fontWeight: "bold", textTransform: "uppercase"},
 				Cell: row => (
-					<b className={row.value === "Connected" ? "slds-text-color_success" : "slds-text-color_error"}>{row.value}</b>)
+					<b className={row.value === "Connected" || row.value === "Unprotected" ? "slds-text-color_success" : "slds-text-color_error"}>{row.value}</b>)
 			}
 		];
 
