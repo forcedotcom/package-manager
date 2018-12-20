@@ -254,7 +254,7 @@ function requestJobs(req, res) {
 
 function requestCancel(req, res) {
 	cancelJobs(req.body.jobIds);
-	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: jobHistory});
+	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}});
 }
 
 function cancelJobs(data) {
