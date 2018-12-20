@@ -10,7 +10,7 @@ const upgrades = require("./upgrades");
 const sfdc = require("./sfdcconn");
 const db = require("../util/pghelper");
 
-const MAX_HISTORY = 100;
+const MAX_HISTORY = 200;
 
 const SUMO_URL = process.env.SUMO_URL;
 
@@ -54,6 +54,7 @@ const JobTypes = {
 
 let jobQueue = [];
 let jobHistory = [];
+let latestJobs = new Map();
 let activeJobs = new Map();
 let socket = null;
 
@@ -124,11 +125,12 @@ class AdminJob {
 			logger.error("Admin Job Failed", {error: e.message || e, stack: e.stack, steps: this.stepCount, errors: this.errors.length})
 		} finally {
 			activeJobs.delete(this.type);
+			latestJobs.set(this.type, this)
 			jobHistory.push(this);
 			if (jobHistory.length > MAX_HISTORY) {
 				jobHistory.shift();
 			}
-			emit(Events.JOB_HISTORY, jobHistory);
+			emit(Events.JOB_HISTORY, {latest: Array.from(latestJobs.values()), all: jobHistory});
 			let nextJob = jobQueue.pop();
 			emit(Events.JOB_QUEUE, jobQueue);
 			if (nextJob) {
@@ -247,7 +249,7 @@ function requestSettings(req, res) {
 }
 
 function requestJobs(req, res) {
-	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: jobHistory});
+	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}});
 }
 
 function requestCancel(req, res) {

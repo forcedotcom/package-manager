@@ -101,7 +101,7 @@ function fetch(fetchAll) {
 				steps: [
 					{
 						name: "Fetching production orgs",
-						handler: (job) => orgs.fetch(sfdc.NamedOrgs.bt.orgId, fetchAll, job)
+						handler: (job) => orgs.fetch(sfdc.NamedOrgs.bt.orgId, false, fetchAll, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => orgs.mark(false, job)}],
 				fail: (e) => {
@@ -115,7 +115,7 @@ function fetch(fetchAll) {
 				steps: [
 					{
 						name: "Fetching sandbox orgs",
-						handler: (job) => orgs.fetch(sfdc.NamedOrgs.sbt.orgId, fetchAll, job)
+						handler: (job) => orgs.fetch(sfdc.NamedOrgs.sbt.orgId, true, fetchAll, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => orgs.mark(true, job)}],
 				fail: (e) => {
@@ -174,7 +174,7 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid production orgs",
-						handler: (job) => orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId, job)
+						handler: (job) => orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId, false, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => orgs.mark(false, job)}],
 				fail: (e) => {
@@ -188,7 +188,7 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid sandbox orgs",
-						handler: (job) => orgs.fetch(sfdc.NamedOrgs.sbt.orgId, job)
+						handler: (job) => orgs.refetchInvalid(sfdc.NamedOrgs.sbt.orgId, true, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => orgs.mark(true, job)}],
 				fail: (e) => {

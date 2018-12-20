@@ -11,15 +11,13 @@ import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
 import {Helmet} from "react-helmet";
 
-const DEFAULT_HISTORY_LIMIT = 10;
-
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			jobs: [],
 			queue: [],
-			history: [],
+			history: {latest: [], all: []},
 			settings: {},
 			isMini: window.innerWidth < 1000
 		};
@@ -106,14 +104,33 @@ export default class extends React.Component {
 			);
 		}
 
-
+		let latestHistoryCards = [];
+		if (this.state.history.latest.length > 0) {
+			for (let i = this.state.history.latest.length - 1; i >= 0; i--) {
+				let job = this.state.history.latest[i];
+				latestHistoryCards.push(
+					<AdminCard key={`${job.id}-history-${i}`} title={job.name}>
+						<div className="slds-m-top--medium slds-m-bottom--medium">
+							<ProgressBar message={moment(job.modifiedDate).format("lll")} progress={1}
+									 status={job.errors.length > 0 ? "error" : "success"}/></div>
+						{job.errors.length > 0 ?
+							<Section title="Errors"><Results lines={job.errors}
+															 divider="slds-has-dividers_bottom-space"/></Section> : ""}
+						{job.messages.length > 0 ?
+							<Section closed="true" title="Results"><Results lines={job.messages}/></Section> : ""}
+					</AdminCard>);
+			}
+		} else {
+			latestHistoryCards.push(
+				<div key="no-history" className="slds-text-body_regular slds-m-around--x-small slds-text-color--weak">No
+					job history</div>
+			);
+		}
+		
 		let historyCards = [];
-		let historyCount = Math.min(this.state.history.length, DEFAULT_HISTORY_LIMIT);
-		if (this.state.showAllHistory)
-			historyCount = this.state.history.length;
-		if (historyCount) {
-			for (let i = this.state.history.length - 1; i >= this.state.history.length - historyCount; i--) {
-				let job = this.state.history[i];
+		if (this.state.history.all.length > 0) {
+			for (let i = this.state.history.all.length - 1; i >= 0; i--) {
+				let job = this.state.history.all[i];
 				historyCards.push(
 					<TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval}
 								   error={job.errors.length > 0} timestamp={moment(job.modifiedDate).format("lll")}>
@@ -129,10 +146,6 @@ export default class extends React.Component {
 				<div key="no-history" className="slds-text-body_regular slds-m-around--x-small slds-text-color--weak">No
 					job history</div>
 			);
-		}
-		if (!this.state.showAllHistory && this.state.history.length > historyCount) {
-			historyCards.push(<a key="no-history" className="slds-text-link slds-m-around--small"
-								 onClick={this.showAllHistoryHandler}>Show all ({this.state.history.length})</a>);
 		}
 
 		let actions = [
@@ -164,7 +177,10 @@ export default class extends React.Component {
 								<div label={`Queue (${this.state.queue.length})`}>
 									{queueCards}
 								</div>
-								<div label={`History (${this.state.history.length})`}>
+								<div label={`Recent Jobs (${this.state.history.latest.length})`}>
+									{latestHistoryCards}
+								</div>
+								<div label={`All History (${this.state.history.all.length})`}>
 									{historyCards}
 								</div>
 							</Tabs>
@@ -182,10 +198,15 @@ export default class extends React.Component {
 								</div>
 							</Tabs>
 						</div>
-						<div className="slds-col slds-size_2-of-5 slds-p-around_x-small">
-							<ul className="slds-timeline">
-								{historyCards}
-							</ul>
+						<div className="slds-col slds-size_2-of-5">
+							<Tabs id="Content">
+								<div label={`Recent Jobs (${this.state.history.latest.length})`}>
+									{latestHistoryCards}
+								</div>
+								<div label={`History (${this.state.history.all.length})`}>
+									{historyCards}
+								</div>
+							</Tabs>
 						</div>
 					</div>
 				}
@@ -276,9 +297,9 @@ class Results extends React.Component {
 	render() {
 		let lines = this.props.lines.map((r, i) => <li key={i} className="slds-item">{r}</li>);
 		return (
-			<ul className={this.props.divider ? this.props.divider : "slds-list_ordered"}>
+			<div className={this.props.divider ? this.props.divider : "slds-list_ordered"}>
 				{lines}
-			</ul>
+			</div>
 		);
 	}
 }
@@ -317,7 +338,6 @@ class TimelineEntry extends React.Component {
 		}
 
 		return (
-			<li>
 				<div
 					className={`slds-timeline__item_expandable slds-timeline__item_${this.state.type} ${this.state.isopen}`}>
 					<span className="slds-assistive-text">{this.state.type}</span>
@@ -359,7 +379,6 @@ class TimelineEntry extends React.Component {
 						</div>
 					</div>
 				</div>
-			</li>
 		);
 	}
 }
@@ -400,8 +419,7 @@ class AdminCard extends React.Component {
 				<div className="slds-card__header slds-grid">
 					<header className="slds-media slds-media_center slds-has-flexi-truncate">
 						<div className="slds-media__figure">
-                            <span className="slds-icon_container slds-icon-standard-bot"
-								  title="description of icon when needed">
+                            <span className="slds-icon_container slds-icon-standard-bot">
                               <svg className="slds-icon slds-icon_small" aria-hidden="true">
                                 <use xlinkHref="/assets/icons/standard-sprite/svg/symbols.svg#bot"
 									 xmlnsXlink="http://www.w3.org/1999/xlink"/>

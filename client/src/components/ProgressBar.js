@@ -11,7 +11,7 @@ export default class extends React.Component {
 		return (
 			<div style={{lineHeight: 0}}>
 				{this.props.message ?
-					<div className="slds-grid slds-grid_align-spread slds-p-bottom_x-small"
+					<div className="slds-grid slds-grid_align-spread slds-p-bottom_small"
 						 id="progress-bar-label-id-1">
 						<span>{this.props.message}</span>
 						<span aria-hidden="true">

@@ -13,29 +13,30 @@ const QUERY_BATCH_SIZE = 500;
 
 let adminJob;
 
-async function fetch(btOrgId, fetchAll, job) {
+async function fetch(btOrgId, isSandbox, fetchAll, job) {
 	adminJob = job;
-	return await queryAndStore(btOrgId, fetchAll, false, false);
+	return await queryAndStore(btOrgId, isSandbox, fetchAll, false, false);
 }
 
-async function refetchInvalid(btOrgId, job) {
+async function refetchInvalid(btOrgId, isSandbox, job) {
 	adminJob = job;
-	return await queryAndStore(btOrgId, false, true, false);
+	return await queryAndStore(btOrgId, isSandbox,false, true, false);
 }
 
-async function queryAndStore(btOrgId, fetchAll, fetchInvalid) {
+async function queryAndStore(btOrgId, isSandbox, fetchAll, fetchInvalid) {
 	let conn = await sfdc.buildOrgConnection(btOrgId);
-	let sql = `select org_id, modified_date from org`;
+	let sql = `select org_id, name, edition, account_id, modified_date, features, '${orgsapi.Status.NotFound}' as status 
+			from org where is_sandbox = $1`;
 	if (fetchInvalid) {
-		sql += ` where status = '${orgsapi.Status.NotFound}'`
+		sql += ` and status = '${orgsapi.Status.NotFound}'`
 	} else if (!fetchAll) {
-		sql += ` where account_id is null order by modified_date desc`
+		sql += ` and account_id is null order by modified_date desc`
 	}
-	let orgs = await db.query(sql);
+	let orgs = await db.query(sql, [isSandbox]);
 	let count = orgs.length;
 	if (count === 0) {
 		logger.info("No orgs found to update");
-		// Ping the org anyway, to keep our love (and, session) alive.
+		// Ping the org anyway, to keep our session alive.
 		await conn.query(SELECT_ALL + ' LIMIT 1');
 		return;
 	}
@@ -56,7 +57,6 @@ async function fetchBatch(conn, orgs) {
 		orgMap[org.org_id] = org;
 	}
 	soql += ` WHERE Id IN ('${orgIds.join("','")}')`;
-	let updated = [];
 	let query = conn.query(soql)
 	.on("record", rec => {
 		let org = orgMap[rec.Id.substring(0, 15)];
@@ -64,11 +64,11 @@ async function fetchBatch(conn, orgs) {
 		org.edition = rec.OrganizationType;
 		org.account_id = rec.Account;
 		org.modified_date = new Date(rec.LastModifiedDate).toISOString();
+		org.status = orgsapi.Status.Installed;
 		org.features = extractFeatures(rec);
-		updated.push(org);
 	})
 	.on("end", async () => {
-		await upsert(updated, 2000);
+		await upsert(orgs, 2000);
 	})
 	.on("error", error => {
 		logger.error("Failed to retrieve orgs", error);
@@ -111,11 +111,11 @@ async function upsertBatch(recs) {
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, '${orgsapi.Status.Installed}')`;
-		values.push(rec.org_id, rec.name, rec.edition, rec.modified_date, rec.account_id, rec.features);
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, $${n++})`;
+		values.push(rec.org_id, rec.name, rec.edition, rec.modified_date, rec.account_id, rec.features, rec.status);
 	}
 	sql += ` on conflict (org_id) do update set name = excluded.name, edition = excluded.edition, modified_date = excluded.modified_date, 
-            account_id = excluded.account_id, features = excluded.features, status = '${orgsapi.Status.Installed}'`;
+            account_id = excluded.account_id, features = excluded.features, status = excluded.status`;
 	await db.insert(sql, values);
 }
 
