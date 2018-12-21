@@ -6,6 +6,7 @@ const url = require('url');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
 const orgs = require("./orgs");
+const packageorgs = require("./packageorgs");
 const upgrades = require("./upgrades");
 const sfdc = require("./sfdcconn");
 const db = require("../util/pghelper");
@@ -16,6 +17,7 @@ const SUMO_URL = process.env.SUMO_URL;
 
 const Events = {
 	ALERT: "alert",
+	ALERT_INVALID_ORG: "alert-invalid-org",
 	FAIL: "fail",
 	JOBS: "jobs",
 	JOB_QUEUE: "job-queue",
@@ -44,6 +46,7 @@ const Events = {
 };
 
 const JobTypes = {
+	MONITOR_ORGS: "monitor-orgs",
 	UPLOAD_ORGS: "upload-orgs",
 	UPGRADE: "upgrade",
 	FETCH: "fetch",
@@ -275,6 +278,12 @@ function cancelJobs(data) {
 
 function scheduleJobs() {
 	const schedules = JSON.parse(process.env.JOB_SCHEDULES || {});
+	if (schedules.org_monitor_interval_seconds != null && schedules.org_monitor_interval_seconds !== -1) {
+		let interval = schedules.org_monitor_interval_seconds * 1000;
+		setInterval(() => {monitorOrgs(interval).then(() => {})}, interval);
+		logger.info(`Scheduled org monitor for every ${schedules.org_monitor_interval_seconds} seconds`)
+	}
+	
 	if (schedules.upgrade_monitor_interval_seconds != null && schedules.upgrade_monitor_interval_seconds !== -1) {
 		let interval = schedules.upgrade_monitor_interval_seconds * 1000;
 		setInterval(() => {monitorUpgrades(interval).then(() => {})}, interval);
@@ -321,6 +330,12 @@ function scheduleJobs() {
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled fetching of account orgs starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
 	}
+}
+
+async function monitorOrgs(interval) {
+	const job = packageorgs.monitorOrgs();
+	job.interval = interval;
+	await job.run();
 }
 
 async function monitorUpgrades(interval) {
