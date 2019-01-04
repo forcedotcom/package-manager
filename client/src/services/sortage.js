@@ -34,38 +34,10 @@ const setSortColumns = (key, sorts) => {
 
 export let sortRows = (sortColumns, rows, key) => {
 	if (sortColumns && sortColumns.length > 0) {
-		let sortColumn = sortColumns[0].id;
-		if (sortColumns[0].desc) {
-			sort(rows).desc(r => getSortValue(r, sortColumn));
-		} else {
-			sort(rows).asc(r => getSortValue(r, sortColumn));
-		}
+		// Note: return "" instead of null, as null is always sorted last (and thus out of sight)
+		sort(rows).by(sortColumns.map(sc => sc.desc ? {desc: r => r[sc.id] || ""} : {asc: r => r[sc.id] || ""}));
 	}
 	setSortColumns(key, sortColumns);
-};
-
-const getSortValue = (rec, colName) => {
-	const val = rec[colName];
-	// Being expedient here.  If the colName contains version_number...it is a version number.
-	const sortVal = [val == null ? "" : val];
-	if (rec.id) {
-		sortVal.push(rec.id);
-	}
-	return sortVal;
-};
-
-export let getSortableVersion = (dotVersion) => {
-	if (!dotVersion)
-		return 0;
-	let realVersionNumber = dotVersion.split(".");
-	return realVersionNumber.map(v => {
-		let value = v;
-		let missingZeroes = 4 - value.length;
-		for (let z = 0; z < missingZeroes; z++) {
-			value = '0' + value;
-		}
-		return value;
-	}).join("");
 };
 
 export let getPageSize = (contextKey, def = 25) => {

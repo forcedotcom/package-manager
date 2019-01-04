@@ -4,9 +4,7 @@ const logger = require('../util/logger').logger;
 const orgsapi = require('../api/orgs');
 
 
-const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,
-					PermissionsCpq,PermissionsCpqProvisioned,PreferencesOrdersEnabled,
-					PermissionsUsageBasedPricing 
+const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,PreferencesOrdersEnabled
 					FROM AllOrganization`;
 
 const QUERY_BATCH_SIZE = 500;
@@ -79,14 +77,8 @@ async function fetchBatch(conn, orgs) {
 
 function extractFeatures(rec) {
 	let features = [];
-	if (rec.PermissionsCpq === true || rec.PermissionsCpqProvisioned === true) {
-		features.push("CPQ");
-	}
 	if (rec.PreferencesOrdersEnabled === true) {
 		features.push("Orders");
-	}
-	if (rec.PermissionsUsageBasedPricing === true) {
-		features.push("UBP");
 	}
 	return features.join(",");
 }
