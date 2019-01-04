@@ -7,7 +7,20 @@ export default class extends React.Component {
 		super(props);
 		sessionStorage.removeItem('user');
 
+		let goodDay = () => {
+			const hour = parseFloat(moment().format("HH"));
+			return "good " + hour < 5 ? "night" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+		};
+
 		const WELCOMONING = [
+			"How many roads must a man walk down?",
+			"Welcome to the jungle.",
+			"Get that corn outta my face!",
+			`${goodDay()}, Dave.`,
+			"'All you need is love' - the Beatles.",
+			"'All you need is food and shelter' - the Beetles.",
+			"Winter is coming.",
+			"What is the sound of someone trying to gargle while fighting off a pack of wolves?",
 			"Welcome to the machine.",
 			"Do not make me regret this.",
 			"Look both ways before crossing.",
