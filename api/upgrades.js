@@ -96,14 +96,14 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
         INNER JOIN package_version pv on pv.version_id = i.version_id
         INNER JOIN package p on p.sfid = pv.package_id`;
 
-const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, j.status, j.message,
+const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, o.instance, j.status,
         i.start_time, i.created_by,
         pv.version_number, pv.version_id, pv.version_sort,
         pvc.version_number current_version_number, pvc.version_id current_version_id, pvc.version_sort current_version_sort,
         pvo.version_number original_version_number, pvo.version_id original_version_id, pvo.version_sort original_version_sort,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
         a.account_name,
-        o.instance
+        j.message
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
         INNER JOIN package_version pv on pv.version_id = i.version_id
