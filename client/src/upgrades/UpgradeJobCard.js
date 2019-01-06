@@ -119,7 +119,7 @@ export default class extends React.Component {
 				{this.state.showMessage ?
 					<MessageWindow subject={this.state.messageSubject} message={this.state.messageDetail}
 								   onClose={this.closeMessageWindow}/> : ""}
-				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} separator={"\t"} target="_blank" /> : ""}
 				<DataTableFilterHelp/>
 			</div>
 		);
