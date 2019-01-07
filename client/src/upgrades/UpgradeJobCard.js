@@ -59,6 +59,7 @@ export default class extends React.Component {
 			columns.push({
 				Header: "Org Information", columns: [
 					{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
+					{Header: "Instance", accessor: "instance", clickable: true, filterable: true},
 					{
 						Header: "Account",
 						accessor: "account_name",
@@ -129,6 +130,7 @@ export default class extends React.Component {
 	linkHandler(e, column, rowInfo) {
 		switch (column.id) {
 			case "org_id":
+			case "instance":
 			case "account_name":
 				window.location = "/org/" + rowInfo.original.org_id;
 				break;
