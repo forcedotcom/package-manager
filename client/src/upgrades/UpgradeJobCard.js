@@ -38,18 +38,26 @@ export default class extends React.Component {
 		}
 		upgradeInfoColumns.push(
 			{
-				Header: "Status", accessor: "status", sortable: true, filterable: true,
+				Header: "Status", accessor: "status", maxWidth: 90, sortable: true, filterable: true,
 				Cell: row => (
-					<div>
-							<span data-subject={row.value} data-message={row.original.message}
+					<div style={{
+						textAlign: "center", 
+						color: row.original.message ? "#C00" : "inherit",
+						fontWeight: row.original.message ? "bold" : "inherit"
+					}}>{row.value}</div>)
+			},
+			{
+				Header: "Message", maxWidth: 90, accessor: "message", sortable: true, filterable: true,
+				Cell: row => (
+					<div className="slds-text-align--center">
+							<span data-subject={row.original.status} data-message={row.value}
 								  onClick={this.openMessageWindow} style={{
 								padding: "2px 10px 2px 10px",
 								backgroundColor: row.original.message ? "#C00" : "inherit",
 								cursor: row.original.message ? "pointer" : "inherit",
 								color: row.original.message ? "white" : "inherit",
-								borderRadius: '10px',
-								transition: 'all .3s ease-in'
-							}}>{row.value}</span>
+								borderRadius: '10px'
+							}}>{!row.value || 'Error'}</span>
 					</div>
 				)
 			}

@@ -401,7 +401,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		try {
 			await createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds)
 		} catch (e) {
-			return upgrades.failUpgrade(upgrade, e).then(() => {})			
+			return await upgrades.failUpgrade(upgrade, e);
 		}
 	}
 	
