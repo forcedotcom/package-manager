@@ -78,7 +78,7 @@ export default class extends React.Component {
 				{this.state.addingToGroup ? <SelectGroupWindow title={`Add ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to group`}
 															   onAdd={this.addToGroupHandler}
 															   onCancel={this.closeGroupWindow}/> : ""}
-				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} separator={"\t"} target="_blank" /> : ""}
 
 			</article>
 		);

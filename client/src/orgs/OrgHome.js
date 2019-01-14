@@ -66,7 +66,7 @@ export default class extends React.Component {
 																onAdd={this.addToGroup}
 															   onCancel={this.cancelAddingToGroupHandler}/> : ""}
 				{this.state.showImportWindow ? <AddOrgWindow onSave={this.addOrgHandler} onCancel={this.cancelHandler}/> : ""}
-				{this.state.isExporting ? <CSVDownload data={this.state.filtered} target="_blank" /> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.filtered} separator={"\t"} target="_blank" /> : ""}
 			</div>
 		);
 	}

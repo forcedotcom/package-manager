@@ -54,7 +54,7 @@ export default class extends React.Component {
 								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
 							     selection={this.props.selected} showSelected={this.props.showSelected} onSelect={this.props.onSelect}/>
 				</div>
-				{this.state.isExporting ? <CSVDownload data={this.state.exportable} target="_blank" /> : ""}
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} separator={"\t"} target="_blank" /> : ""}
 				<footer className="slds-card__footer"/>
 			</article>
 		);
