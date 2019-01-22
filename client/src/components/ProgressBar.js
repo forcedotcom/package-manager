@@ -36,7 +36,7 @@ export default class extends React.Component {
 						 id="progress-bar-label-id-1">
 						<span>{this.props.message}</span>
 						<span aria-hidden="true">
-                          <strong>{parseInt((progressSuccess + progressWarning + progressError)*100, 10)}% complete</strong>
+                          <strong>{parseInt(progressSuccess + progressWarning + progressError, 10)}% complete</strong>
                         </span>
 					</div>
 					: ""}
