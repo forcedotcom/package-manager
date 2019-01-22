@@ -5,7 +5,7 @@ async function requestByTerm(req, res, next) {
 		const term = req.query.term;
 		let orgResults = await orgs.findByTerm(term, 20);
 		let results = orgResults.map(o => {
-			return {id: o.org_id, type: "org", title: o.name, detail: `${o.account_name} • ${o.org_id}`}
+			return {id: o.org_id, type: "org", title: o.name, detail: `${o.account_name} • ${o.org_id} • ${o.status}`}
 		});
 		return res.send(JSON.stringify(results));
 	} catch (err) {
