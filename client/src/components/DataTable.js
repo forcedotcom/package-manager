@@ -125,6 +125,7 @@ export default class extends React.Component {
 				ref={r => (this.checkboxTable = r)}
 				filterable
 				defaultPageSize={pageSize}
+				pageSizeOptions={[5, 10, 15, 20, 25, 50, 100]}
 				defaultFiltered={filterColumns}
 				defaultSorted={sortColumns}
 				keyField={keyField}
