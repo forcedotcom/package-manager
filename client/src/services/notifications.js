@@ -1,10 +1,13 @@
+import io from 'socket.io-client';
+
 import {NotificationManager} from 'react-notifications';
-import socketIOClient from "socket.io-client";
 
 import * as authService from "./AuthService";
 
-const socket = socketIOClient();
-	
+// const apiUrl = process.env.NODE_ENV === 'production' ? process.env.API_URL : process.env.REACT_APP_DEV_API_URL;
+const apiUrl = process.env.API_URL || 'http://localhost:5000';
+const socket = io(apiUrl);
+
 // Global admin events
 socket.on("fail", e => error(e.message, e.subject));
 socket.on("alert", e => info(e.message, e.subject));

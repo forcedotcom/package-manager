@@ -82,7 +82,7 @@ export const getProgress = statusRecs => {
 	const percentageError = errors / count;
 	const percentageSuccess = 1 - (percentageCanceled + percentageError);
 	const done = percentage === 1 || count === 0;
-	return {count, active, started, completed, errors, canceled, percentage,
+	return {count, active, started, completed, succeeded, errors, canceled, percentage,
 		percentageSuccess, percentageCanceled, percentageError, done};
 };
 

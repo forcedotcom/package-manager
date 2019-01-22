@@ -70,7 +70,7 @@ function fetchAccountOrgs(fetchAll) {
 		]);
 }
 
-function fetch1(fetchAll) {
+function fetch(fetchAll) {
 	return new admin.AdminJob(
 		admin.JobTypes.FETCH,
 		fetchAll ? "Fetch all data" : "Fetch latest data",
@@ -167,7 +167,7 @@ function fetch1(fetchAll) {
  * 2. Query org62 for all org ids to retrieve account ids and names for each.
  * 3. Fill in account ids on sandbox org records using data from parent production org.
  */
-function fetch(fetchAll) {
+function fetch2(fetchAll) {
 	return new admin.AdminJob(
 		admin.JobTypes.FETCH,
 		fetchAll ? "Fetch all data" : "Fetch latest data",
