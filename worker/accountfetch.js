@@ -15,7 +15,7 @@ async function fetch(org62Id, fetchAll, job) {
 async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
 	let sql = `SELECT account_id, modified_date FROM account WHERE account_id NOT IN($1, $2)`;
 	if (!fetchAll) {
-		sql += ` AND account_name IS NULL ORDER BY modified_date asc`
+		sql += ` AND account_name IS NULL ORDER BY modified_date desc`
 	}
 	let accounts = await db.query(sql, [sfdc.INVALID_ID, sfdc.INTERNAL_ID]);
 	let count = accounts.length;

@@ -62,7 +62,7 @@ const GROUP_BY_WITH_LICENSE = `${GROUP_BY}, pv.version_number, pv.version_sort, 
 
 async function requestAll(req, res, next) {
 	try {
-		let orgs = await findAll(req.query.packageId, req.query.versionId, req.query.relatedOrgId, req.query.blacklistUpgradeId, req.query.sort_field, req.query.sort_dir, 
+		let orgs = await findAll(req.query.packageId, req.query.versionId, req.query.relatedOrgId, req.query.blacklistUpgradeId, req.query.sort_field, req.query.sort_dir,
 			req.query.filterColumns ? JSON.parse(req.query.filterColumns) : null, req.query.blacklisted);
 		return res.send(JSON.stringify(orgs));
 	} catch (err) {
@@ -221,6 +221,11 @@ async function findByIds(orgIds) {
 	return await db.query(SELECT_ALL + where + GROUP_BY, orgIds)
 }
 
+async function findByTerm(term, limit = 10) {
+	let where = "WHERE o.org_id = $1 OR o.name ILIKE $2 OR o.account_id = $1 OR a.account_name ILIKE $2";
+	return await db.query(`${SELECT_ALL} ${where} ${GROUP_BY} ORDER BY o.name LIMIT ${limit}`, [`${term}`, `%${term}%`])
+}
+
 
 exports.Status = Status;
 exports.requestAll = requestAll;
@@ -229,4 +234,5 @@ exports.requestById = requestById;
 exports.requestUpgrade = requestUpgrade;
 exports.findByGroup = findByGroup;
 exports.findByIds = findByIds;
+exports.findByTerm = findByTerm;
 exports.addOrgsByIds = addOrgsByIds;

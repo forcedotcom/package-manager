@@ -13,6 +13,7 @@ const express = require('express'),
 	bodyParser = require('body-parser'),
 	cookieSession = require('cookie-session'),
 	compression = require('compression'),
+	search = require('./api/search'),
 	orgs = require('./api/orgs'),
 	orggroups = require('./api/orggroups'),
 	packages = require('./api/packages'),
@@ -84,6 +85,8 @@ app.delete('/api/filters/:id', filters.requestDeleteFilter);
 app.get('/api/admin/settings', admin.requestSettings);
 app.get('/api/admin/jobs', admin.requestJobs);
 app.post('/api/admin/jobs/cancel', admin.requestCancel);
+
+app.get('/api/search', search.requestByTerm);
 
 app.get('/api/orgs', orgs.requestAll);
 app.put('/api/orgs', orgs.requestAdd);

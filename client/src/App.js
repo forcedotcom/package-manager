@@ -30,6 +30,7 @@ import UpgradeItemRecord from "./upgrades/UpgradeItemRecord";
 
 import Login from "./auth/Login";
 import Logout from "./auth/Logout";
+import Search from "./components/Search";
 
 import * as authService from "./services/AuthService";
 import "./services/notifications";
@@ -96,7 +97,10 @@ class App extends Component {
 								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name}
 																					   category={ADMIN_ICON.category}/>Administration</Link>
 							</li>
-							<li style={{width: "100%"}}>&nbsp;</li>
+
+							<li style={{width: "100%"}} className="slds-list__item">
+								<Search/>
+							</li>
 
 							{this.state.username ?
 								<li className="slds-list__item">

@@ -11,6 +11,7 @@ const admin = require('../api/admin');
 
 const assetaccounts = require('./assetaccountfetch');
 const accountorgs = require('./accountorgfetch');
+const subs = require('./subscriberfetch');
 
 const packageorgs = require('../api/packageorgs');
 
@@ -22,17 +23,17 @@ const packageorgs = require('../api/packageorgs');
  * 4. Query org62 to retrieve account names for each orgs using org's account id
  * 5. Populate org package versions from license data
  *
- * New way 1:
+ * alternative 1: fetch2
  * 1. For each packaging org, fetch all subscribers.  Get both sandbox and production org ids, with link between them, along with org package version data.
  * 2. Query org62 for all org ids to retrieve account ids and names for each.
  * 3. Fill in account ids on sandbox org records using data from parent production org.
  *
- * BLOCKING the new way:
+ * BLOCKING this:
  * 1. Need to query subscribers by last modified date, and the subscriber API in general cannot timeout
  * 2. Subscriber API needs to expose Parent Org (aka Cloned From) field to link sandbox to production
  * Result: does not retrieve orgs that are licensed but not yet installed our package
  * 
- * New way 2:
+ * alternative 2: fetchAccountOrgs
  * 1. Query licensed accounts from org62 using asset lines
  * 2. Query BT in batches to retrieve production and sandbox org info for all of our accounts
  * 3. Fetch all license records and populate org package versions from license data
@@ -69,7 +70,7 @@ function fetchAccountOrgs(fetchAll) {
 		]);
 }
 
-function fetch(fetchAll) {
+function fetch1(fetchAll) {
 	return new admin.AdminJob(
 		admin.JobTypes.FETCH,
 		fetchAll ? "Fetch all data" : "Fetch latest data",
@@ -155,6 +156,33 @@ function fetch(fetchAll) {
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
 						packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
+					}
+				}
+			}
+		]);
+}
+
+/**
+ * 1. For each packaging org, fetch all subscribers.  Get both sandbox and production org ids, with link between them, along with org package version data.
+ * 2. Query org62 for all org ids to retrieve account ids and names for each.
+ * 3. Fill in account ids on sandbox org records using data from parent production org.
+ */
+function fetch(fetchAll) {
+	return new admin.AdminJob(
+		admin.JobTypes.FETCH,
+		fetchAll ? "Fetch all data" : "Fetch latest data",
+		[
+			{
+				name: "Fetch subscriber orgs",
+				steps: [
+					{
+						name: "Fetching CPQ subscribers",
+						handler: (job) => subs.fetch(true, job)
+					}
+					],
+				fail: (e) => {
+					if (e.name === "invalid_grant") {
+						packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}

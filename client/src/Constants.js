@@ -3,12 +3,27 @@ export const UPGRADE_ITEM_ICON = {name: "custom25", category: "custom"};
 export const UPGRADE_JOB_ICON = {name: "custom44", category: "custom"};
 export const ORG_ICON = {name: "account", category: "standard"};
 export const ORG_GROUP_ICON = {name: "groups", category: "standard"};
-export const PACKAGE_ORG_ICON = {name: "process", category: "standard"};
 export const LICENSE_ICON = {name: "drafts", category: "standard"};
+export const PACKAGE_ORG_ICON = {name: "process", category: "standard"};
 export const PACKAGE_ICON = {name: "thanks", category: "standard"};
 export const PACKAGE_VERSION_ICON = {name: "custom72", category: "custom"};
 export const ADMIN_ICON = {name: "calibration", category: "standard"};
 export const AUTH_ICON = {name: "people", category: "standard"};
+
+const typeMap = {
+	org: ORG_ICON,
+	org_group: ORG_GROUP_ICON,
+	upgrade: UPGRADE_ICON,
+	upgrade_item: UPGRADE_ITEM_ICON,
+	upgrade_job: UPGRADE_JOB_ICON,
+	license: LICENSE_ICON,
+	package_org: PACKAGE_ORG_ICON,
+	package_version: PACKAGE_VERSION_ICON
+};
+
+export const iconForType = (type) => {
+	return typeMap[type] || AUTH_ICON;
+};
 
 export const Status = {
 	Created: "Created", Pending: "Pending", InProgress: "InProgress", 
