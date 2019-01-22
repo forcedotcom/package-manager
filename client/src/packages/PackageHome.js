@@ -19,7 +19,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<HomeHeader type="packages" title="Packages" count={this.state.itemCount}/>
-				<PackageList onFetch={this.fetchData.bind(this)} onFilter={this.filterHandler}/>
+				<PackageList onFetch={this.fetchData} onFilter={this.filterHandler}/>
 			</div>
 		);
 	}

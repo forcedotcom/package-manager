@@ -4,18 +4,24 @@ import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
 import {Status, UPGRADE_ITEM_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
+import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import {CSVDownload} from "react-csv";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {};
+		this.state = {id: props.id || "UpgradeItemCard"};
 		
 		this.linkHandler = this.linkHandler.bind(this);
 		this.filterHandler = this.filterHandler.bind(this);
+		this.applySavedFilter = this.applySavedFilter.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 
 	// Lifecycle
 	render() {
+		const {filterColumns} = this.state;
+
 		let columns = [
 			{
 				Header: "Scheduled Start Time",
@@ -45,18 +51,24 @@ export default class extends React.Component {
 			}
 		];
 
+		const actions = [
+			<DataTableSavedFilters id={this.state.id} key={this.state.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			{label: "Export Results", handler: this.exportHandler}
+		];
+
 		return (
 			<div className="slds-card">
-				<CardHeader title="Upgrade Requests" icon={UPGRADE_ITEM_ICON} actions={this.props.actions} count={this.state.itemCount}>
+				<CardHeader title="Upgrade Requests" icon={UPGRADE_ITEM_ICON} count={this.state.itemCount} actions={actions}>
 					{this.props.notes}
 				</CardHeader>
 				<section className="slds-card__body">
 					<DataTable id="UpgradeItemCard" columns={columns}
 								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
-								 onClick={this.linkHandler} onFilter={this.filterHandler} 
+								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
 								 onSelect={this.props.onSelect}/>
 				</section>
 				<footer className="slds-card__footer"/>
+				{this.state.isExporting ? <CSVDownload data={this.state.exportable} separator={"\t"} target="_blank" /> : ""}
 			</div>
 		);
 	}
@@ -79,6 +91,16 @@ export default class extends React.Component {
 	}
 
 	filterHandler(filtered, filterColumns, itemCount) {
-		this.setState({itemCount});
+		this.setState({filtered, itemCount, filterColumns});
+	}
+
+	applySavedFilter(filterColumns) {
+		this.setState({filterColumns});
+	}
+
+	exportHandler() {
+		const exportable = this.state.filtered;
+		this.setState({isExporting: true, exportable});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
 }

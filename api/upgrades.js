@@ -321,9 +321,16 @@ async function findAll(sortField, sortDir) {
 	return await db.query(`${SELECT_ALL} ${GROUP_BY_ALL} ${orderBy}`, [])
 }
 
-async function requestItemsByUpgrade(req, res, next) {
+async function requestItems(req, res, next) {
 	try {
-		let items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
+		let items;
+		if (req.query.upgradeId) {
+			items = await findItemsByUpgrade(req.query.upgradeId, req.query.sort_field, req.query.sort_dir);
+		} else if (req.query.packageId) {
+			items = await findItemsByPackage(req.query.packageId, req.query.sort_field, req.query.sort_dir);
+		} else if (req.query.packageOrgId) {
+			items = await findItemsByPackageOrg(req.query.packageOrgId, req.query.sort_field, req.query.sort_dir);
+		}
 		return res.json(items);
 	} catch (e) {
 		next(e);
@@ -353,6 +360,24 @@ async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
 	}
 	let orderBy = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
 	return await db.query(`${SELECT_ALL_ITEMS_BY_UPGRADE} ${orderBy}`, [upgradeId])
+}
+
+async function findItemsByPackage(packageId, sortField, sortDir) {
+	if (Array.isArray(sortField)) {
+		sortField = sortField.join(",");
+	}
+	let order = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
+	let where = `WHERE p.sfid = $1`;
+	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ALL_ITEMS} ${order}`, [packageId])
+}
+
+async function findItemsByPackageOrg(packageOrgId, sortField, sortDir) {
+	if (Array.isArray(sortField)) {
+		sortField = sortField.join(",");
+	}
+	let order = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
+	let where = `WHERE i.package_org_id = $1`;
+	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ALL_ITEMS} ${order}`, [packageOrgId])
 }
 
 async function requestAllJobs(req, res, next) {
@@ -723,7 +748,7 @@ exports.retrieveById = retrieveById;
 exports.requestItemById = requestItemById;
 exports.requestJobById = requestJobById;
 exports.requestAll = requestAll;
-exports.requestItemsByUpgrade = requestItemsByUpgrade;
+exports.requestItems = requestItems;
 exports.requestAllJobs = requestAllJobs;
 exports.createUpgrade = createUpgrade;
 exports.failUpgrade = failUpgrade;

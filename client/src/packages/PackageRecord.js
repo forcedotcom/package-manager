@@ -2,14 +2,17 @@ import React from 'react';
 
 import * as packageService from '../services/PackageService';
 
-import {HeaderField, RecordHeader} from '../components/PageHeader';
+import * as packageVersionService from "../services/PackageVersionService";
+import * as upgradeItemService from "../services/UpgradeItemService";
+import * as orgService from "../services/OrgService";
+
 import {PACKAGE_ICON} from "../Constants";
 import Tabs from "../components/Tabs";
+import {HeaderField, RecordHeader} from '../components/PageHeader';
+import {DataTableFilterHelp} from "../components/DataTableFilter";
 import PackageVersionCard from "../packageversions/PackageVersionCard";
 import OrgCard from "../orgs/OrgCard";
-import * as packageVersionService from "../services/PackageVersionService";
-import * as orgService from "../services/OrgService";
-import {DataTableFilterHelp} from "../components/DataTableFilter";
+import UpgradeItemCard from "../upgrades/UpgradeItemCard";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -22,6 +25,7 @@ export default class extends React.Component {
 		packageService.requestById(props.match.params.packageId).then(pkg => this.setState({pkg}));
 		
 		this.fetchVersions = this.fetchVersions.bind(this);
+		this.fetchUpgradeItems = this.fetchUpgradeItems.bind(this);
 		this.fetchOrgs = this.fetchOrgs.bind(this);
 		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 	}
@@ -41,10 +45,13 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="PackageView">
 						<div label="Versions">
-							<PackageVersionCard onFetch={this.fetchVersions.bind(this)}/>
+							<PackageVersionCard onFetch={this.fetchVersions}/>
 						</div>
 						<div label="Customers">
 							<OrgCard id="PackageMembers" title="Customers" onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
+						</div>
+						<div label="Upgrades">
+							<UpgradeItemCard id="PackageUpgradeItemCard" onFetch={this.fetchUpgradeItems} refetchOn="upgrade-items"/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
@@ -57,6 +64,10 @@ export default class extends React.Component {
 	fetchVersions() {
 		return packageVersionService.findByPackage(this.props.match.params.packageId)
 	}
+
+	fetchUpgradeItems() {
+		return upgradeItemService.findByPackage(this.props.match.params.packageId);
+	};
 
 	fetchOrgs() {
 		return orgService.requestByPackage(this.props.match.params.packageId)

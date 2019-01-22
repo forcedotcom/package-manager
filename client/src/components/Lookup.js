@@ -72,7 +72,7 @@ export default class extends React.Component {
 
 	// Lifecycle
 	componentWillReceiveProps(props) {
-		this.setState({opened: props.items.length > 0 ? true : false});
+		this.setState({opened: props.items.length > 0});
 	}
 
 	render() {
@@ -87,7 +87,7 @@ export default class extends React.Component {
 					<ListBox valueField={this.props.valueField} opened={this.state.opened}
 							 labelField={this.props.labelField}
 							 descriptionField={this.props.descriptionField} items={this.props.items}
-							 onChange={this.changeHandler.bind(this)}
+							 onChange={this.changeHandler}
 							 icon={this.props.icon}/>
 				</div>
 			</div>
