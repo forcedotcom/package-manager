@@ -78,9 +78,9 @@ export const getProgress = statusRecs => {
 		}
 	}
 	const percentage = (started + completed) / (count * 2);
-	const percentageSuccess = Math.ceil(succeeded * 100 / count) / 100;
-	const percentageCanceled = Math.floor(canceled * 100 / count) / 100;
-	const percentageError = Math.floor(errors * 100 / count) / 100;
+	const percentageCanceled = canceled / count;
+	const percentageError = errors / count;
+	const percentageSuccess = 1 - (percentageCanceled + percentageError);
 	const done = percentage === 1 || count === 0;
 	return {count, active, started, completed, errors, canceled, percentage,
 		percentageSuccess, percentageCanceled, percentageError, done};
