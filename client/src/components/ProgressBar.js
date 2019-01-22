@@ -2,12 +2,33 @@ import React from 'react';
 
 export default class extends React.Component {
 	render() {
-		let progressSuccess = this.props.progressSuccess || this.props.progress;
-		let progressWarning = this.props.progressWarning || 0;
-		let progressError = this.props.progressError || 0;
-		let pctSuccess = `${progressSuccess * 100}%`;
-		let pctWarning = `${progressWarning * 100}%`;
-		let pctError = `${progressError * 100}%`;
+		let buffer = 0, threshold = .5;
+		let progressSuccess = (this.props.progressSuccess || this.props.progress) * 100;
+		let progressWarning = (this.props.progressWarning || 0) * 100;
+		let progressError = (this.props.progressError || 0) * 100;
+		if (progressSuccess > 0 && progressSuccess < threshold) {
+			progressSuccess += threshold;
+			buffer += threshold;
+		}
+		if (progressWarning > 0 && progressWarning < threshold) {
+			progressWarning += threshold;
+			buffer += threshold;
+		}
+		if (progressError > 0 && progressError < threshold) {
+			progressError += threshold;
+			buffer += threshold;
+		}
+		if (buffer > 0) {
+			if (progressSuccess > 50)
+				progressSuccess -= buffer;
+			else if (progressWarning > 50)
+				progressWarning -= buffer;
+			else
+				progressError -= buffer;
+		}
+		let pctSuccess = `${progressSuccess}%`;
+		let pctWarning = `${progressWarning}%`;
+		let pctError = `${progressError}%`;
 		return (
 			<div style={{lineHeight: 0}}>
 				{this.props.message ?
