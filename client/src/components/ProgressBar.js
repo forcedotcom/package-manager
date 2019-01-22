@@ -5,9 +5,9 @@ export default class extends React.Component {
 		let progressSuccess = this.props.progressSuccess || this.props.progress;
 		let progressWarning = this.props.progressWarning || 0;
 		let progressError = this.props.progressError || 0;
-		let pctSuccess = `${Math.floor(progressSuccess * 100)}%`;
-		let pctWarning = `${Math.floor(progressWarning * 100)}%`;
-		let pctError = `${Math.floor(progressError * 100)}%`;
+		let pctSuccess = `${progressSuccess * 100}%`;
+		let pctWarning = `${progressWarning * 100}%`;
+		let pctError = `${progressError * 100}%`;
 		return (
 			<div style={{lineHeight: 0}}>
 				{this.props.message ?
