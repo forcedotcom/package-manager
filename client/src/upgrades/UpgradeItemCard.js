@@ -22,7 +22,13 @@ export default class extends React.Component {
 	render() {
 		const {filterColumns} = this.state;
 
-		let columns = [
+		let columns = [];
+		if (this.state.id !== "UpgradeItemCard") {
+			columns.push(
+				{Header: "Description", accessor: "description", clickable: true, minWidth: 160, filterable: true}
+			);
+		}
+		columns.push(
 			{
 				Header: "Scheduled Start Time",
 				id: "start_time",
@@ -49,7 +55,7 @@ export default class extends React.Component {
 					</div>
 				)
 			}
-		];
+		);
 
 		const actions = [
 			<DataTableSavedFilters id={this.state.id} key={this.state.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
@@ -76,6 +82,7 @@ export default class extends React.Component {
 	// Handlers
 	linkHandler(e, column, rowInfo) {
 		switch (column.id) {
+			case "description":
 			case "start_time":
 				window.location = "/upgradeitem/" + rowInfo.original.id;
 				break;
