@@ -4,7 +4,9 @@ import {NotificationManager} from 'react-notifications';
 
 import * as authService from "./AuthService";
 
-const apiUrl = process.env.NODE_ENV === 'production' ? process.env.API_URL : 'http://localhost:5000';
+// Note: API_URL is only set in production builds.  REACT_APP_xyz is only set in dev builds.  If neither is set, defaults
+// to the browser url (which is good for production).
+const apiUrl = process.env.API_URL || process.env.REACT_APP_API_URL;
 const socket = io(apiUrl);
 
 // Global admin events
