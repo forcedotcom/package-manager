@@ -4,9 +4,9 @@ import {NotificationManager} from 'react-notifications';
 
 import * as authService from "./AuthService";
 
-// Note: API_URL is only set in production builds.  REACT_APP_xyz is only set in dev builds.  If neither is set, defaults
+// Note: REACT_APP_xyz is only set in dev builds.  If it is undefined we just default
 // to the browser url (which is good for production).
-const apiUrl = process.env.API_URL || process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_API_URL;
 const socket = io(apiUrl);
 
 // Global admin events
