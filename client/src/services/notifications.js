@@ -4,8 +4,7 @@ import {NotificationManager} from 'react-notifications';
 
 import * as authService from "./AuthService";
 
-// const apiUrl = process.env.NODE_ENV === 'production' ? process.env.API_URL : process.env.REACT_APP_DEV_API_URL;
-const apiUrl = process.env.API_URL || 'http://localhost:5000';
+const apiUrl = process.env.NODE_ENV === 'production' ? process.env.API_URL : 'http://localhost:5000';
 const socket = io(apiUrl);
 
 // Global admin events
