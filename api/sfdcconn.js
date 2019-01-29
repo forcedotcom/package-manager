@@ -39,6 +39,7 @@ const NamedOrgs = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : 
 };
 
 const PORT = process.env.PORT || 5000;
+const SFDC_API_VERSION = "44.0";
 
 const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/oauth2/callback';
 
@@ -57,6 +58,7 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 				clientSecret: CLIENT_SECRET,
 				redirectUri: CALLBACK_URL
 			},
+			version: SFDC_API_VERSION,
 			instanceUrl: instanceUrl,
 			accessToken: accessToken,
 			refreshToken: refreshToken,
