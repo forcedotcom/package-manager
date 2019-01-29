@@ -1,5 +1,6 @@
 import React from 'react';
 import DataTable from "../components/DataTable";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -41,7 +42,7 @@ export default class extends React.Component {
 		if (rowInfo.original.status !== "Connected") {
 			this.props.onConnect(rowInfo.original.instance_url);
 		} else {
-			window.location = "/packageorg/" + rowInfo.row.org_id;
+			nav.toPath("packageorg", rowInfo.row.org_id);
 		}
 	}
 }

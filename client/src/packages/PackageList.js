@@ -1,6 +1,7 @@
 import React from 'react';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -33,10 +34,10 @@ export default class extends React.Component {
 		switch (column.id) {
 			case "name":
 			case "ID":
-				window.location = "/package/" + rowInfo.row.sfid;
+				nav.toPath("package", rowInfo.row.sfid);
 				break;
 			case "package_org_id":
-				window.location = "/packageorg/" + rowInfo.row.package_org_id;
+				nav.toPath("packageorg", rowInfo.row.package_org_id);
 				break;
 			default:
 		}

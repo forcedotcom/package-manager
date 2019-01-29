@@ -3,6 +3,7 @@ import debounce from "lodash.debounce";
 import {Icon} from "./Icons";
 import {iconForType} from "../Constants";
 import * as searchService from "../services/SearchService";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -31,7 +32,7 @@ export default class extends React.Component {
 	}
 
 	openResult(result) {
-		window.location = `/${result.type}/${result.id}`;
+		nav.toPath(result.type, result.id);
 	}
 
 	changeHandler(event) {

@@ -8,6 +8,7 @@ import SelectGroupWindow from "./SelectGroupWindow";
 import DataTable from "../components/DataTable";
 import * as strings from "../services/strings";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor() {
@@ -94,7 +95,7 @@ export default class extends React.Component {
 	}
 
 	linkHandler(e, column, rowInfo) {
-		window.location = "/org/" + rowInfo.row.org_id;
+		nav.toPath("org", rowInfo.row.org_id);
 	}
 
 	selectionHandler(selected) {
@@ -120,7 +121,7 @@ export default class extends React.Component {
 	addToGroupHandler(groupId, groupName) {
 		this.setState({addingToGroup: false, showSelected: false, showBlacklisted: false});
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
-			window.location = `/orggroup/${orggroup.id}`;
+			nav.toPath("orggroup", orggroup.id);
 		});
 	}
 

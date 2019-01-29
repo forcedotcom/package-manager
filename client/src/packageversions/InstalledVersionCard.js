@@ -6,6 +6,7 @@ import {PACKAGE_VERSION_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import * as Utils from "../components/Utils";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor() {
@@ -47,11 +48,9 @@ export default class extends React.Component {
 	linkHandler = (e, column, rowInfo) => {
 		switch (column.id) {
 			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
+				return nav.toPath("package", rowInfo.original.package_id);
 			case "version_sort":
-				window.location = "/packageversion/" + rowInfo.original.latest_version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.latest_version_id);
 			default:
 		}
 	};

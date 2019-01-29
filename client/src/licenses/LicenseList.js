@@ -1,5 +1,6 @@
 import React from 'react';
 import moment from "moment";
+import * as nav from "../services/nav";
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 
@@ -36,14 +37,11 @@ export default class extends React.Component {
 		switch (column.id) {
 			case "name":
 			case "account_name":
-				window.location = "/license/" + rowInfo.original.sfid;
-				break;
+				return nav.toPath("license", rowInfo.original.sfid)
 			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
+				return nav.toPath("package", rowInfo.original.package_id);
 			case "version_sort":
-				window.location = "/packageversion/" + rowInfo.original.version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.version_id);
 			default:
 			// Nothing...
 		}

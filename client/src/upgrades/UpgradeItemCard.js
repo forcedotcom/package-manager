@@ -6,6 +6,7 @@ import {Status, UPGRADE_ITEM_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import {CSVDownload} from "react-csv";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -84,14 +85,11 @@ export default class extends React.Component {
 		switch (column.id) {
 			case "description":
 			case "start_time":
-				window.location = "/upgradeitem/" + rowInfo.original.id;
-				break;
+				return nav.toPath("upgradeitem", rowInfo.original.id);
 			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
+				return nav.toPath("package", rowInfo.original.package_id);
 			case "version_sort":
-				window.location = "/packageversion/" + rowInfo.original.version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.version_id);
 			default:
 			// Nothing...
 		}

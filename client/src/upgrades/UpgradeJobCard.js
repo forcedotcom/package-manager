@@ -8,6 +8,7 @@ import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import moment from "moment";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -140,23 +141,17 @@ export default class extends React.Component {
 			case "org_id":
 			case "instance":
 			case "account_name":
-				window.location = "/org/" + rowInfo.original.org_id;
-				break;
+				return nav.toPath("org", rowInfo.original.org_id);
 			case "start_time":
-				window.location = "/upgrade/" + rowInfo.original.upgrade_id;
-				break;
+				return nav.toPath("upgrade", rowInfo.original.upgrade_id);
 			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
+				return nav.toPath("package", rowInfo.original.package_id);
 			case "original_version_sort":
-				window.location = "/packageversion/" + rowInfo.original.original_version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.original_version_id);
 			case "current_version_sort":
-				window.location = "/packageversion/" + rowInfo.original.current_version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.current_version_id);
 			case "version_sort":
-				window.location = "/packageversion/" + rowInfo.original.version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.version_id);
 			default:
 			// Nothing...
 		}

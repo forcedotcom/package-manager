@@ -2,6 +2,7 @@ import React from 'react';
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import {Redirect} from "react-router-dom";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -43,6 +44,6 @@ export default class extends React.Component {
 	// Handlers
 	linkHandler(e, column, rowInfo) {
 		// this.setState({goto: "/org/" + rowInfo.row.org_id});
-		window.location = "/org/" + rowInfo.row.org_id;
+		nav.toPath("org", rowInfo.row.org_id);
 	}
 }

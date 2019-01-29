@@ -6,6 +6,7 @@ import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as Utils from "../components/Utils";
 import {CSVDownload} from 'react-csv';
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor() {
@@ -73,14 +74,11 @@ export default class extends React.Component {
 		switch (column.id) {
 			case "org_id":
 			case "account_name":
-				window.location = "/org/" + rowInfo.row.org_id;
-				break;
+				return nav.toPath("org", rowInfo.row.org_id);
 			case "package_name":
-				window.location = "/package/" + rowInfo.original.package_id;
-				break;
+				return nav.toPath("package", rowInfo.original.package_id);
 			case "version_sort":
-				window.location = "/packageversion/" + rowInfo.original.latest_version_id;
-				break;
+				return nav.toPath("packageversion", rowInfo.original.latest_version_id);
 			default:
 		}
 	}

@@ -2,6 +2,7 @@ import React from 'react';
 import moment from "moment";
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -32,6 +33,6 @@ export default class extends React.Component {
 	
 	// Handlers
 	linkHandler(e, column, rowInfo) {
-		window.location = "/orggroup/" + rowInfo.original.id;
+		nav.toPath("orggroup", rowInfo.original.id);
 	}
 }

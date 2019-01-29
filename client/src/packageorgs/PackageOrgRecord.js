@@ -7,6 +7,7 @@ import {HeaderField, RecordHeader} from '../components/PageHeader';
 import PackageOrgView from "./PackageOrgView";
 import {PACKAGE_ORG_ICON} from "../Constants";
 import EditPackageOrgWindow from "./EditPackageOrgWindow";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -68,7 +69,7 @@ export default class extends React.Component {
 	deleteHandler() {
 		if (window.confirm(`Are you sure you want to remove this packaging org?`)) {
 			packageOrgService.requestDelete([this.state.packageorg.org_id]).then(() => {
-				window.location = '/packageorgs';
+				nav.toPath("packageorgs");
 			});
 		}
 	}

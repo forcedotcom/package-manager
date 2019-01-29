@@ -9,6 +9,7 @@ import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
 import * as notifier from "../services/notifications";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor() {
@@ -85,7 +86,7 @@ export default class extends React.Component {
 
 	saveHandler(orggroup) {
 		orgGroupService.requestCreate(orggroup).then((orggroup) => {
-			window.location = `/orggroup/${orggroup.id}`;
+			nav.toPath("orggroup", orggroup.id);
 		});
 	}
 

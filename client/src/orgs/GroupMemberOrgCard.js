@@ -5,6 +5,7 @@ import {ORG_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import {CSVDownload} from 'react-csv';
+import * as nav from "../services/nav";
 
 
 export default class extends React.Component {
@@ -62,7 +63,7 @@ export default class extends React.Component {
 	}
 
 	linkHandler(e, column, rowInfo) {
-		window.location = "/org/" + rowInfo.row.org_id;
+		nav.toPath("org", rowInfo.row.org_id);
 	}
 
 	exportHandler() {

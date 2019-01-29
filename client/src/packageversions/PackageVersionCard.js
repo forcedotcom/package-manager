@@ -5,6 +5,7 @@ import {CardHeader} from "../components/PageHeader";
 import {PACKAGE_VERSION_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor() {
@@ -51,7 +52,7 @@ export default class extends React.Component {
 
 	// Handlers
 	linkHandler(e, column, rowInfo) {
-		window.location = "/packageversion/" + rowInfo.original.version_id;
+		nav.toPath("packageversion", rowInfo.original.version_id);
 	}
 
 	filterHandler(filtered, filterColumns, itemCount) {

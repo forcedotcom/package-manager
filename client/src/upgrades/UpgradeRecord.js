@@ -15,6 +15,7 @@ import * as notifier from "../services/notifications";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import {getProgress, UPGRADE_ICON} from "../Constants";
 import OrgCard from "../orgs/OrgCard";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -38,7 +39,7 @@ export default class extends React.Component {
 
 		upgradeService.requestById(this.props.match.params.upgradeId)
 			.then(upgrade => this.setState({upgrade}))
-			.catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.location = `/upgrades`}));
+			.catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => nav.toPath("upgrades")));
 	}
 
 	componentWillUnmount() {
@@ -151,7 +152,7 @@ export default class extends React.Component {
 	retryHandler() {
 		if (window.confirm(`Are you sure you want to retry this upgrade?  Only failed jobs will be rescheduled.`)) {
 			this.setState({isRetrying: true});
-			upgradeService.retry(this.state.upgrade.id).then((upgrade) => window.location = `/upgrade/${upgrade.id}`)
+			upgradeService.retry(this.state.upgrade.id).then(upgrade => nav.toPath("upgrade", upgrade.id))
 			.catch((e) => {
 				this.setState({isRetrying: false});
 				notifier.error(e.message, "Retry Failed");
