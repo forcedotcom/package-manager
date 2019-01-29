@@ -1,6 +1,7 @@
 import React from 'react';
 import DataTable from "../components/DataTable";
 import * as nav from "../services/nav";
+import {Colors} from "../Constants";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -26,7 +27,7 @@ export default class extends React.Component {
 				accessor: "status",
 				style: {fontWeight: "bold", textTransform: "uppercase"},
 				Cell: row => (
-					<b className={row.value === "Connected" || row.value === "Unprotected" ? "slds-text-color_success" : "slds-text-color_error"}>{row.value}</b>)
+					<b style={{backgroundColor: row.value === "Connected" || row.value === "Unprotected" ? Colors.Success : Colors.Error}}>{row.value}</b>)
 			}
 		];
 

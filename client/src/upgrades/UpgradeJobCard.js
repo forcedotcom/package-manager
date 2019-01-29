@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {CardHeader} from "../components/PageHeader";
-import {UPGRADE_JOB_ICON} from "../Constants";
+import {Colors, UPGRADE_JOB_ICON} from "../Constants";
 import MessageWindow from "../components/MessageWindow";
 import {CSVDownload} from 'react-csv';
 import DataTable from "../components/DataTable";
@@ -43,7 +43,7 @@ export default class extends React.Component {
 				Cell: row => (
 					<div style={{
 						textAlign: "center", 
-						color: row.original.message ? "#C00" : "inherit",
+						color: row.original.message ? Colors.Error : "inherit",
 						fontWeight: row.original.message ? "bold" : "inherit"
 					}}>{row.value}</div>)
 			},
@@ -54,7 +54,7 @@ export default class extends React.Component {
 							<span data-subject={row.original.status} data-message={row.value}
 								  onClick={this.openMessageWindow} style={{
 								padding: "2px 10px 2px 10px",
-								backgroundColor: row.original.message ? "#C00" : "inherit",
+								backgroundColor: row.original.message ? Colors.Error : "inherit",
 								cursor: row.original.message ? "pointer" : "inherit",
 								color: row.original.message ? "white" : "inherit",
 								borderRadius: '10px'

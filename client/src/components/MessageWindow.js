@@ -1,5 +1,6 @@
 import React from 'react';
 import {NotificationManager} from 'react-notifications';
+import {Colors} from "../Constants";
 
 
 export default class extends React.Component {
@@ -24,7 +25,7 @@ export default class extends React.Component {
 				if (typeof m === "object") {
 					return <li className="slds-item" key={`error-${i}`}>
 						<div className="slds-text-title_caps">{m.title}</div>
-						<div className="slds-text-color_error">{m.details}</div>
+						<div style={{color: Colors.Error}}>{m.details}</div>
 						<pre>{m.message}</pre>
 					</li>;
 				} else {
@@ -39,7 +40,7 @@ export default class extends React.Component {
 			<div onClick={this.props.onClose} tabIndex="0" onKeyDown={this.handleKeyDown}>
 				<section className="slds-modal slds-fade-in-open slds-modal_prompt">
 					<div onClick={this.dontCloseHandler} className="slds-modal__container">
-						<header className="slds-modal__header slds-theme_error slds-theme_alert-texture">
+						<header className="slds-modal__header" style={{color: "white", backgroundColor: Colors.Error}}>
 							<button className="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
 									title="Close">
 								<svg className="slds-button__icon slds-button__icon_large">

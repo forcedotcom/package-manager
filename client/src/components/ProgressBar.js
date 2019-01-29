@@ -1,11 +1,19 @@
 import React from 'react';
+import {Colors} from "../Constants";
 
 export default class extends React.Component {
 	render() {
+		const colorSuccess = this.props.colorSuccess || Colors.Success;
+		const colorWarning = Colors.Warning;
+		const colorError = Colors.Error;
 		let buffer = 0, threshold = .5;
-		let progressSuccess = (this.props.progressSuccess || this.props.progress) * 100;
+
+		let height = this.props.height || ".5em";
+
+		let progressSuccess = (this.props.progressSuccess || this.props.progress || 0) * 100;
 		let progressWarning = (this.props.progressWarning || 0) * 100;
 		let progressError = (this.props.progressError || 0) * 100;
+
 		if (progressSuccess > 0 && progressSuccess < threshold) {
 			progressSuccess += threshold;
 			buffer += threshold;
@@ -30,20 +38,17 @@ export default class extends React.Component {
 		let pctWarning = `${progressWarning}%`;
 		let pctError = `${progressError}%`;
 		return (
-			<div style={{lineHeight: 0}}>
+			<div style={{lineHeight: this.props.message ? 1 : 0}}>
 				{this.props.message ?
-					<div className="slds-grid slds-grid_align-spread slds-p-bottom_small"
-						 id="progress-bar-label-id-1">
+					<div className="slds-grid slds-grid_align-spread">
 						<span>{this.props.message}</span>
-						<span aria-hidden="true">
-                          <strong>{parseInt(progressSuccess + progressWarning + progressError, 10)}% complete</strong>
-                        </span>
+						<span>&nbsp;<strong>{parseInt(progressSuccess + progressWarning + progressError, 10)}% complete</strong></span>
 					</div>
 					: ""}
-				<div className="slds-progress-bar" style={{display: "inline-flex"}}>
-					<span className="slds-progress-bar__value slds-progress-bar__value_success" style={{width: pctSuccess}}/>
-					<span className="slds-progress-bar__value slds-theme--warning" style={{width: pctWarning}}/>
-					<span className="slds-progress-bar__value slds-theme--error" style={{width: pctError}}/>
+				<div className="slds-progress-bar" style={{display: "inline-flex", height}}>
+					<span className="slds-progress-bar__value" style={{backgroundColor: colorSuccess, width: pctSuccess}}/>
+					<span className="slds-progress-bar__value" style={{backgroundColor: colorWarning, width: pctWarning}}/>
+					<span className="slds-progress-bar__value" style={{backgroundColor: colorError, width: pctError}}/>
 				</div>
 			</div>
 		);

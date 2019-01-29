@@ -31,6 +31,12 @@ export const Status = {
 	Ineligible: "Ineligible"
 };
 
+export const Colors = {
+	Success: "#BFD641",
+	Warning: "#FFD662",
+	Error: "#DD4132"
+};
+
 export const getProgress = statusRecs => {
 	if (!statusRecs || statusRecs.length === 0)
 		return {count: 0, active: 0, started: 0, completed: 0, succeeded: 0, errors: 0, canceled: 0, percentage: 0, done: 0};
