@@ -86,7 +86,7 @@ export default class extends React.Component {
 	}
 
 	upgradeItemsUpdated(items) {
-		const mine = items.find(i => i.id === this.state.item.id);
+		const mine = items.find(i => (i.id || i) === this.state.item.id);
 		if (mine) {
 			this.setState({item: items[0]});
 		}
