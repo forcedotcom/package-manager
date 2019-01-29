@@ -107,8 +107,10 @@ export default class extends React.Component {
 							handleOriginal();
 						}
 					},
-					style: {"color": clickable ? "#0070d2" : "inherit", "cursor": clickable ? "pointer" : "inherit"}
-				} : {};
+					style: {margin: "auto", "color": clickable ? "#0070d2" : "inherit", "cursor": clickable ? "pointer" : "inherit"}
+				} : {
+					style: {margin: "auto"}
+				};
 			}
 		};
 
