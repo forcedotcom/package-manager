@@ -20,7 +20,17 @@ function request(obj) {
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
 				if (xhr.status === 401) {
-					window.location = AUTH_ROUTE;
+					const path = window.location.pathname;
+					const segments = path.split("/", 10);
+					// Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
+					for (let i = 1; i < segments.length; i++) {
+						if (segments[i].match(/[\W]+/g)) {
+							return window.location = AUTH_ROUTE;
+						}
+					}
+
+					// We are safe to include the return-to parameter
+					window.location = `${AUTH_ROUTE}${path}`;
 				} else if (xhr.status > 199 && xhr.status < 300) {
 					resolve(xhr.responseText ? JSON.parse(xhr.responseText) : undefined);
 				} else {

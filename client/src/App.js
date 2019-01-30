@@ -139,7 +139,7 @@ class App extends Component {
 					<Route path="/packageorg/:packageorgId" component={PackageOrgRecord}/>
 					<Route path="/admin" component={AdminHome}/>
 
-					<Route path="/login" component={Login}/>
+					<Route path="/login/:returnType/:returnId" component={Login}/>
 					<Route path="/logout" component={Logout}/>
 					<Route path="/authresponse" component={AuthResponse}/>
 					<NotificationContainer/>

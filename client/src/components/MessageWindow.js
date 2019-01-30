@@ -20,21 +20,22 @@ export default class extends React.Component {
 		} catch (e) {
 			messages = this.props.message;
 		}
-		let messageBody = messages.map ?
+		let messageBody = Array.isArray(messages) ?
 			<ol className="slds-has-dividers_top-space">{messages.map((m, i) => {
 				if (typeof m === "object") {
 					return <li className="slds-item" key={`error-${i}`}>
 						<div className="slds-text-title_caps">{m.title}</div>
 						<div style={{color: Colors.Error}}>{m.details}</div>
-						<pre>{m.message}</pre>
+						{m.message && m.message.match(/Class(.*):/) ? <pre>{m.message}</pre> : <div>{m.message}</div>}
 					</li>;
 				} else {
 					return <li key={`error-${i}`}>
-						<pre>{m}</pre>
+						{m && m.match(/Class(.*):/)? <pre>{m}</pre> : <div>{m}</div>}
 					</li>
 				}
-			})}</ol> :
-			<p>{messages}</p>;
+			})}</ol>
+			:
+			messages && messages.match(/Class(.*):/) ? <pre>{messages}</pre> : <div>{messages}</div>;
 
 		return (
 			<div onClick={this.props.onClose} tabIndex="0" onKeyDown={this.handleKeyDown}>
@@ -58,7 +59,7 @@ export default class extends React.Component {
 							<button className="slds-button slds-button_neutral" onClick={this.copyHandler}>Copy to
 								clipboard
 							</button>
-							<button autoFocus="true" className="slds-button slds-button_neutral"
+							<button autoFocus={true} className="slds-button slds-button_neutral"
 									onClick={this.props.onClose}>Close
 							</button>
 						</footer>

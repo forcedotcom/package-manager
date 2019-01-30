@@ -67,7 +67,7 @@ export default class extends React.Component {
 	
 	// Handlers
 	loginHandler() {
-		authService.oauthLoginURL().then(url => {
+		authService.oauthLoginURL(this.props.match.params.returnType, this.props.match.params.returnId).then(url => {
 			window.location.href = url;
 		});
 	}

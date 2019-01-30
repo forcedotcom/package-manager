@@ -93,6 +93,7 @@ create table if not exists upgrade_blacklist (
 create table if not exists upgrade_item (
   id              serial primary key,
   upgrade_id      integer,
+  total_job_count integer,
   push_request_id varchar(18),
   package_org_id  varchar(18),
   version_id      varchar(18),
@@ -205,9 +206,10 @@ alter table account
   add if not exists instance varchar(6) null;
 
 alter table filter
-  add if not exists id serial not null;
+  add if not exists id serial;
 
 alter table upgrade_item
+  add if not exists total_job_count integer,
   drop column if exists parent__item_id;
 
 alter table org
@@ -268,4 +270,7 @@ update org set status = 'Installed' where status is null;
 -- Added type field to group with default of Upgrade Group
 update org_group set type = 'Upgrade Group' where type is null;
 
-update org set edition = type where edition is null and status != 'Not Found'
+update org set edition = type where edition is null and status != 'Not Found';
+
+update upgrade_item set total_job_count = (select count (*) from upgrade_job j where j.item_id = upgrade_item.id)
+where total_job_count is null;

@@ -27,7 +27,7 @@ export default class extends React.Component {
 				accessor: "status",
 				style: {fontWeight: "bold", textTransform: "uppercase"},
 				Cell: row => (
-					<b style={{backgroundColor: row.value === "Connected" || row.value === "Unprotected" ? Colors.Success : Colors.Error}}>{row.value}</b>)
+					<b style={{filter: "brightness(65%)", color: row.value === "Connected" || row.value === "Unprotected" ? Colors.Success : Colors.Error}}>{row.value}</b>)
 			}
 		];
 

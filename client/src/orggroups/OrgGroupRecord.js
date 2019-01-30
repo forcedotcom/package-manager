@@ -3,6 +3,8 @@ import React from 'react';
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as notifier from "../services/notifications";
+import * as strings from "../services/strings";
+import * as nav from "../services/nav";
 
 import {ORG_GROUP_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
@@ -14,13 +16,13 @@ import Tabs from "../components/Tabs";
 import GroupMemberVersionCard from "../packageversions/GroupMemberVersionCard";
 import GroupMemberOrgCard from "../orgs/GroupMemberOrgCard";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
-import * as strings from "../services/strings";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
+			transid: nav.transid(),
 			isEditing: false,
 			orggroup: {},
 			selected: new Map(),
@@ -36,8 +38,7 @@ export default class extends React.Component {
 		this.cancelSchedulingHandler = this.cancelSchedulingHandler.bind(this);
 		this.saveHandler = this.saveHandler.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
-		this.groupRefreshed = this.groupRefreshed.bind(this);
-		this.upgradeScheduled = this.upgradeScheduled.bind(this);
+		this.upgradeUpdated = this.upgradeUpdated.bind(this);
 		this.editHandler = this.editHandler.bind(this);
 		this.cancelHandler = this.cancelHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
@@ -53,15 +54,12 @@ export default class extends React.Component {
 
 	// Lifecycle
 	componentDidMount() {
-		notifier.on('group', this.groupRefreshed);
-		notifier.on('upgrade', this.upgradeScheduled);
-
+		notifier.on('upgrade', this.upgradeUpdated);
 		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => this.setState({orggroup}));
 	}
 	
 	componentWillUnmount() {
-		notifier.remove('group', this.groupRefreshed);
-		notifier.remove('upgrade', this.upgradeScheduled);
+		notifier.remove('upgrade', this.upgradeUpdated);
 	}
 
 	render() {
@@ -96,7 +94,7 @@ export default class extends React.Component {
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
 						<div label="Members">
-							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members" actions={memberActions}
+							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members" refetchFor={orggroup.id} actions={memberActions}
 												selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
 						</div>
 						<div label="Versions">
@@ -146,7 +144,7 @@ export default class extends React.Component {
 	}
 
 	upgradeHandler(versions, startDate, description) {
-		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description).then((res) => {
+		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description, this.state.transid).then((res) => {
 			if (res.message) {
 				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
 				this.setState({schedulingUpgrade: false});
@@ -154,13 +152,20 @@ export default class extends React.Component {
 		});
 	}
 
-	upgradeScheduled(res) {
-		if (res.message) {
-			notifier.error(res.message, "Failed to Schedule", 7000);
-			return this.setState({schedulingUpgrade: false});
+	upgradeUpdated(res) {
+		if (res.transid !== this.state.transid) {
+			notifier.info( `The upgrade ${res.description} changed.  Click here to see what is new.`, "Upgrade Status Update", 7000, () => {
+				nav.toPath("upgrade", res.id);
+			});
+			return;  // Otherwise, not our concern.
 		}
-		
-		window.location = `/upgrade/${res.id}`;
+
+		if (res.message) {
+			notifier.error(res.message, "Upgrade System Failure", 10000);
+		} else {
+			nav.toPath("upgrade", res.id);
+		}
+		this.setState({schedulingUpgrade: false});
 	}
 
 	schedulingWindowHandler() {
@@ -183,17 +188,6 @@ export default class extends React.Component {
 		notifier.emit("refresh-group-versions", this.state.orggroup.id);
 	}
 
-	groupRefreshed(groupId) {
-		if (this.state.orggroup.id === groupId) {
-			try {
-				this.setState({isProcessing: false, isEditing: false});
-			} catch(e) {
-				this.setState({isProcessing: false, isEditing: false});
-				notifier.error(e.message, "Refresh Failed");
-			}
-		}
-	}
-
 	editHandler() {
 		this.setState({isEditing: true});
 	}
@@ -205,7 +199,7 @@ export default class extends React.Component {
 	deleteHandler() {
 		if (window.confirm(`Are you sure you want to delete this group?`)) {
 			orgGroupService.requestDelete([this.state.orggroup.id]).then(() => {
-				window.location = '/orggroups';
+				nav.toPath("orggroups");
 			}).catch(e => notifier.error(e.message, "Delete Failed"));
 		}
 	}
@@ -222,9 +216,9 @@ export default class extends React.Component {
 				moved = this.removeMembersHandler(true);
 			}
 			if (moved) {
-				notifier.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+				notifier.success(`Moved ${this.state.selected.size} org(s) to ${orggroup.name}`, "Moved orgs", 7000, () => nav.toPath("orggroup", orggroup.id));
 			} else {
-				notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+				notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => nav.toPath("orggroup", orggroup.id));
 			}
 			this.state.selected.clear();
 			this.setState({showSelected: false, removeAfterAdd: false});

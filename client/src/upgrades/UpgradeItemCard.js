@@ -2,11 +2,13 @@ import React from 'react';
 
 import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
-import {Status, UPGRADE_ITEM_ICON} from "../Constants";
+import {Colors, getProgressFromUpgradeItem, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import ProgressBar from "../components/ProgressBar";
 import {CSVDownload} from "react-csv";
 import * as nav from "../services/nav";
+import * as strings from "../services/strings";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -42,19 +44,7 @@ export default class extends React.Component {
 			{Header: "Orgs", accessor: "job_count", sortable: true},
 			{
 				Header: "Status", accessor: "status", sortable: true,
-				Cell: row => (
-					<div>
-                    <span style={{
-						padding: "2px 10px 2px 10px",
-						backgroundColor: row.value === "Failed" ? "#C00" : row.value === "Canceled" || (row.original.job_count !== "0" && row.original.eligible_job_count === "0") ? "#d0a600" : "inherit",
-						color: (row.value === "Failed" || (row.original.job_count !== "0" && row.original.eligible_job_count === "0") || row.value === "Canceled") ? "white" : "inherit",
-						borderRadius: '10px',
-						transition: 'all .3s ease-in'
-					}}>
-                        {(row.original.job_count !== "0" && row.original.eligible_job_count === "0") ? Status.Ineligible : row.value}
-                    </span>
-					</div>
-				)
+				Cell: row => <ProgressCell status={row.value} progress={getProgressFromUpgradeItem(row.original)} />
 			}
 		);
 
@@ -107,5 +97,23 @@ export default class extends React.Component {
 		const exportable = this.state.filtered;
 		this.setState({isExporting: true, exportable});
 		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
+	}
+}
+
+class ProgressCell extends React.Component {
+	render() {
+		let status = this.props.status;
+		let progress = this.props.progress;
+		let p;
+		if (progress.percentageReady < 1) {
+			p = <ProgressBar message="Scheduling" height=".25em" colorSuccess={Colors.Neutral} progress={progress.percentageReady}/>;
+		} else {
+			let plural = strings.pluralizeIt(progress.errors, "failure");
+			let message = (progress.count === 0) ? Status.Ineligible :
+				progress.done && progress.errors > 0 ? `Complete with ${plural.num} ${plural.str}` : status;
+			p = <ProgressBar message={message} height=".25em" progressSuccess={progress.percentageSuccess}
+							progressWarning={progress.percentageCanceled} progressError={progress.percentageError}/>;
+		}
+		return (p);
 	}
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import * as notifier from "../services/notifications";
+import * as nav from "../services/nav";
 import * as orgService from '../services/OrgService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as orgGroupService from "../services/OrgGroupService";
@@ -19,13 +20,13 @@ import OrgCard from "./OrgCard";
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {org: {}, upgradeablePackageIds: []};
+		this.state = {transid: nav.transid(), org: {}, upgradeablePackageIds: []};
 		
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
 		this.fetchRelatedOrgs = this.fetchRelatedOrgs.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
-		this.upgradeScheduled = this.upgradeScheduled.bind(this);
+		this.upgradeUpdated = this.upgradeUpdated.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
 		this.closeSchedulerWindow = this.closeSchedulerWindow.bind(this);
 		this.openSchedulerWindow = this.openSchedulerWindow.bind(this);
@@ -36,12 +37,12 @@ export default class extends React.Component {
 
 	// Lifecycle
 	componentDidMount() {
-		notifier.on('upgrade', this.upgradeScheduled);
+		notifier.on('upgrade', this.upgradeUpdated);
 		orgService.requestById(this.props.match.params.orgId).then(org => this.setState({org}));
 	}
 
 	componentWillUnmount() {
-		notifier.remove('upgrade', this.upgradeScheduled);
+		notifier.remove('upgrade', this.upgradeUpdated);
 	}
 
 	render() {
@@ -125,7 +126,7 @@ export default class extends React.Component {
 	}
 
 	upgradeHandler(versions, startDate, description) {
-		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description).then((res) => {
+		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description, this.state.transid).then((res) => {
 			if (res.message) {
 				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
 				this.setState({schedulingUpgrade: false});
@@ -133,13 +134,20 @@ export default class extends React.Component {
 		});
 	}
 
-	upgradeScheduled(res) {
-		if (res.message) {
-			notifier.error(res.message, "Failed to Schedule", 7000);
-			return this.setState({schedulingUpgrade: false});
+	upgradeUpdated(res) {
+		if (res.transid !== this.state.transid) {
+			notifier.info( `The upgrade ${res.description} changed.  Click here to see what is new.`, "Upgrade Status Update", 7000, () => {
+				nav.toPath("upgrade", res.id);
+			});
+			return;  // Otherwise, not our concern.
 		}
 
-		window.location = `/upgrade/${res.id}`;
+		if (res.message) {
+			notifier.error(res.message, "Upgrade System Failure", 10000);
+		} else {
+			nav.toPath("upgrade", res.id);
+		}
+		this.setState({schedulingUpgrade: false});
 	}
 	
 	refreshHandler() {
@@ -158,7 +166,8 @@ export default class extends React.Component {
 	addToGroupHandler(groupId, groupName) {
 		this.setState({addingToGroup: false});
 		orgGroupService.requestAddMembers(groupId, groupName, [this.state.org.org_id]).then((orggroup) => {
-			notifier.success(`Added org to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			notifier.success(`Added org to ${orggroup.name}`, "Added orgs", 7000,
+				() => nav.toPath("orggroup", orggroup.id));
 			orgService.requestById(this.state.org.org_id).then(org => this.setState({org}));
 		});
 	}

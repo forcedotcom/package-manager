@@ -145,7 +145,7 @@ function requestById(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-	push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
+	push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
 		.then((upgrade) => {
 			admin.emit(admin.Events.UPGRADE, upgrade);
 		})
@@ -159,7 +159,7 @@ function requestUpgrade(req, res, next) {
 
 async function requestAdd(req, res, next) {
 	addOrgsByIds(req.body.orgIds).then(() =>{
-		admin.emit(admin.Events.ORGS);
+		admin.emit(admin.Events.ORGS, req.body.transid);
 	}).catch(next);
 	
 	res.json({result: "OK"});

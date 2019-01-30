@@ -65,36 +65,78 @@ const SELECT_ONE = `
     WHERE u.id = $1
     GROUP by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count,
         u.description,
         pv.version_number, pv.version_id, pv.version_sort,
         p.name package_name, p.sfid package_id, p.dependency_tier,
-        count(j.*) job_count, 
-        count(NULLIF(j.status, 'Ineligible')) eligible_job_count,
-	  	count(CASE
+        CAST (count(j.*) AS INTEGER) job_count, 
+        CAST (count(NULLIF(j.status, 'Ineligible')) AS INTEGER) eligible_job_count,
+        CAST (count(CASE
+			WHEN j.status = 'Created' THEN 1
+			ELSE NULL END) AS INTEGER) created_job_count,		
+	  	CAST (count(CASE
 			WHEN j.status = 'Failed' THEN 1
-			ELSE NULL END) failed_job_count
+			ELSE NULL END) AS INTEGER) failed_job_count,
+	  	CAST (count(CASE
+			WHEN j.status = 'Invalid' THEN 1
+			ELSE NULL END) AS INTEGER) invalid_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Canceled' THEN 1
+			ELSE NULL END) AS INTEGER) canceled_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Pending' THEN 1
+			ELSE NULL END) AS INTEGER) pending_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'InProgress' THEN 1
+			ELSE NULL END) AS INTEGER) inprogress_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Succeeded' THEN 1
+			ELSE NULL END) AS INTEGER) succeeded_job_count
         FROM upgrade_item i
         inner join upgrade u on u.id = i.upgrade_id
         inner join package_version pv on pv.version_id = i.version_id
         inner join package p on p.sfid = pv.package_id
         left join upgrade_job j on j.item_id = i.id`;
 
-const GROUP_BY_ALL_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+const GROUP_BY_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
         u.description,
         pv.version_number, pv.version_id, pv.version_sort,
         p.name, p.sfid`;
 
-const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} WHERE i.upgrade_id = $1 ${GROUP_BY_ALL_ITEMS}`;
+const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} WHERE i.upgrade_id = $1 ${GROUP_BY_ITEMS}`;
 
-const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by,
+const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count,
         u.description,
         pv.version_number, pv.version_id,
-        p.name package_name, p.dependency_tier
+        p.name package_name, p.dependency_tier,
+                CAST (count(j.*) AS INTEGER) job_count, 
+        CAST (count(NULLIF(j.status, 'Ineligible')) AS INTEGER) eligible_job_count,		
+	  	CAST (count(CASE
+			WHEN j.status = 'Created' THEN 1
+			ELSE NULL END) AS INTEGER) created_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Failed' THEN 1
+			ELSE NULL END) AS INTEGER) failed_job_count,
+	  	CAST (count(CASE
+			WHEN j.status = 'Invalid' THEN 1
+			ELSE NULL END) AS INTEGER) invalid_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Canceled' THEN 1
+			ELSE NULL END) AS INTEGER) canceled_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Pending' THEN 1
+			ELSE NULL END) AS INTEGER) pending_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'InProgress' THEN 1
+			ELSE NULL END) AS INTEGER) inprogress_job_count,
+		CAST (count(CASE
+			WHEN j.status = 'Succeeded' THEN 1
+			ELSE NULL END) AS INTEGER) succeeded_job_count
         FROM upgrade_item i
         INNER JOIN upgrade u on u.id = i.upgrade_id
         INNER JOIN package_version pv on pv.version_id = i.version_id
-        INNER JOIN package p on p.sfid = pv.package_id`;
+        INNER JOIN package p on p.sfid = pv.package_id
+		left join upgrade_job j on j.item_id = i.id`;
 
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, o.instance, j.status,
         i.start_time, i.created_by,
@@ -109,7 +151,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN package_version pv on pv.version_id = i.version_id
         INNER JOIN org_package_version opv on opv.package_id = pv.package_id AND opv.org_id = j.org_id
         INNER JOIN package_version pvc on pvc.version_id = opv.version_id
-        INNER JOIN package_version pvo on pvo.version_id = j.original_version_id
+        LEFT JOIN package_version pvo on pvo.version_id = j.original_version_id
         INNER JOIN package p on p.sfid = pv.package_id
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;
@@ -148,12 +190,12 @@ async function failUpgrade(upgrade, error) {
 	return upgrade;
 }
 
-async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy) {
+async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy, expectedJobCount) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let recs = await db.insert('INSERT INTO upgrade_item' +
-		' (upgrade_id, push_request_id, package_org_id, version_id, start_time, status, created_by)' +
-		' VALUES ($1,$2,$3,$4,$5,$6,$7)',
-		[upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy]);
+		' (upgrade_id, push_request_id, package_org_id, version_id, start_time, status, created_by, total_job_count)' +
+		' VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+		[upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy, expectedJobCount]);
 	return recs[0];
 }
 
@@ -165,6 +207,15 @@ async function changeUpgradeItemStatus(item, status) {
 		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 	} catch (error) {
 		logger.error("Failed to update upgrade item", {itemId: item.id, status, error: error.message || error});
+	}
+}
+
+async function changeUpgradeItemTotalJobCount(itemId, count) {
+	try {
+		await db.update(`UPDATE upgrade_item SET total_job_count = $1 WHERE id = $2`, [count, itemId]);
+		admin.emit(admin.Events.UPGRADE_ITEMS, [itemId]);
+	} catch (error) {
+		logger.error("Failed to update upgrade item", {itemId, count, error: error.message || error});
 	}
 }
 
@@ -289,6 +340,7 @@ async function createUpgradeJobs(upgradeId, itemId, requestId, jobs) {
 
 	const recs = await db.insert(sql, values);
 	admin.emit(admin.Events.UPGRADE_JOBS, recs);
+	admin.emit(admin.Events.UPGRADE_ITEMS, [itemId]);
 	return recs;
 }
 
@@ -351,7 +403,7 @@ async function findItemsByIds(itemIds) {
 
 	const where = `WHERE ${whereParts.join(" AND")}`;
 	const order = `ORDER BY dependency_tier`;
-	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ALL_ITEMS} ${order}`, values)
+	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ITEMS} ${order}`, values)
 }
 
 async function findItemsByUpgrade(upgradeId, sortField, sortDir) {
@@ -368,7 +420,7 @@ async function findItemsByPackage(packageId, sortField, sortDir) {
 	}
 	let order = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
 	let where = `WHERE p.sfid = $1`;
-	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ALL_ITEMS} ${order}`, [packageId])
+	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ITEMS} ${order}`, [packageId])
 }
 
 async function findItemsByPackageOrg(packageOrgId, sortField, sortDir) {
@@ -377,7 +429,7 @@ async function findItemsByPackageOrg(packageOrgId, sortField, sortDir) {
 	}
 	let order = `ORDER BY  ${sortField || "push_request_id"} ${sortDir || "asc"}`;
 	let where = `WHERE i.package_org_id = $1`;
-	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ALL_ITEMS} ${order}`, [packageOrgId])
+	return await db.query(`${SELECT_ALL_ITEMS} ${where} ${GROUP_BY_ITEMS} ${order}`, [packageOrgId])
 }
 
 async function requestAllJobs(req, res, next) {
@@ -453,8 +505,8 @@ function requestItemById(req, res, next) {
 }
 
 async function retrieveItemById(id) {
-	let where = " WHERE i.id = $1";
-	let recs = await db.query(SELECT_ONE_ITEM + where, [id]);
+	let where = "WHERE i.id = $1";
+	let recs = await db.query(`${SELECT_ONE_ITEM} ${where} ${GROUP_BY_ITEMS}`, [id]);
 	return recs[0];
 }
 
@@ -641,7 +693,7 @@ async function monitorActiveUpgrades(job) {
 
 async function monitorActiveUpgradeItems(job) {
 	let i = 0;
-	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($${++i},$${++i}) AND i.start_time <= NOW() ${GROUP_BY_ALL_ITEMS}`, 
+	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($${++i},$${++i}) AND i.start_time <= NOW() ${GROUP_BY_ITEMS}`,
 		[push.Status.Pending, push.Status.InProgress]);
 	if (activeItems.length === 0) {
 		return; // Nothing to do
@@ -760,6 +812,7 @@ exports.requestRetryFailedUpgrade = requestRetryFailedUpgrade;
 exports.requestPurge = requestPurge;
 exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
 exports.requestCancelUpgradeItem = requestCancelUpgradeItem;
+exports.changeUpgradeItemTotalJobCount = changeUpgradeItemTotalJobCount;
 exports.findItemsByIds = findItemsByIds;
 exports.findJobs = findJobs;
 exports.monitorUpgrades = monitorUpgrades;

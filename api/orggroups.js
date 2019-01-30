@@ -91,8 +91,8 @@ async function requestRemoveMembers(req, res, next) {
 	try {
 		const groupId = req.params.id;
 		await deleteOrgMembers(groupId, req.body.orgIds);
-		admin.emit(admin.Events.GROUP_MEMBERS);
-		admin.emit(admin.Events.GROUP_VERSIONS);
+		admin.emit(admin.Events.GROUP_MEMBERS, groupId);
+		admin.emit(admin.Events.GROUP_VERSIONS, groupId);
 	} catch (e) {
 		next(e);
 	}
@@ -144,7 +144,7 @@ async function requestDelete(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-	push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description)
+	push.upgradeOrgGroups([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
 		.then((upgrade) => {
 			admin.emit(admin.Events.UPGRADE, upgrade);
 		})

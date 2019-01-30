@@ -32,9 +32,33 @@ export const Status = {
 };
 
 export const Colors = {
-	Success: "#BFD641",
-	Warning: "#FFD662",
-	Error: "#DD4132"
+	Success: "#BFD641", // Pantone Lime Punch Spring '18
+	Warning: "#FFD662", // Pantone Aspen Gold Summer '19
+	Error: "#DD4132", // Pantone Fiesta Summer '19
+	Neutral: "#6B5B95" // Pantone Ultra Violet COTY '19
+};
+
+export const getProgressFromUpgradeItem = item => {
+	let count = item.eligible_job_count; // Use eligible count as progress count
+	let errors = item.failed_job_count;
+	let invalid = item.invalid_job_count;
+	let canceled = item.canceled_job_count;
+	let pending = item.pending_job_count;
+	let inprogress = item.inprogress_job_count;
+	let succeeded = item.succeeded_job_count;
+	let active = errors + canceled + pending + inprogress + succeeded;
+	let started = errors + canceled + inprogress + succeeded + invalid;
+	let completed = errors + canceled + succeeded + invalid;
+	let percentage = (started + completed) / (count * 2);
+	let percentageReady = item.job_count / item.total_job_count;
+	let percentageCanceled = canceled / count;
+	let percentageError = errors / count;
+	let percentageSuccess = percentage - (percentageCanceled + percentageError);
+	let done = percentage === 1 || count === 0;
+	return {
+		count, succeeded, errors, canceled, active, started, completed,
+		percentage, percentageReady, percentageSuccess, percentageCanceled, percentageError, done
+	};
 };
 
 export const getProgress = statusRecs => {

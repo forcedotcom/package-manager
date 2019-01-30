@@ -11,11 +11,13 @@ import SelectGroupWindow from "./SelectGroupWindow";
 import AddOrgWindow from "../orggroups/AddOrgWindow";
 import * as strings from "../services/strings";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
+import * as nav from "../services/nav";
 
 export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {
+			transid: nav.transid(),
 			selected: new Map()
 		};
 		
@@ -105,7 +107,7 @@ export default class extends React.Component {
 	}
 
 	addOrgHandler(orgIds) {
-		orgService.requestAdd(orgIds)
+		orgService.requestAdd(orgIds, this.state.transid)
 		.then(() => this.setState({showSelected: false, showBlacklisted: false}))
 		.catch(e => {
 			notifier.error(e.message, "Failed to Add Org(s)");
@@ -116,14 +118,16 @@ export default class extends React.Component {
 		this.setState({showImportWindow: true});
 	}
 
-	cancelHandler() {
-		this.setState({showImportWindow: false});
+	cancelHandler(res) {
+		if (res === this.state.transid) {
+			this.setState({showImportWindow: false});
+		}
 	}
 
 	addToGroup(groupId, groupName) {
 		this.setState({showAddToGroup: false, addingToGroup: true});
 		orgGroupService.requestAddMembers(groupId, groupName, Array.from(this.state.selected.keys())).then((orggroup) => {
-			notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => window.location = `/orggroup/${orggroup.id}`);
+			notifier.success(`Added ${this.state.selected.size} org(s) to ${orggroup.name}`, "Added orgs", 7000, () => nav.toPath("orggroup", orggroup.id));
 			this.state.selected.clear();
 			this.setState({showSelected: false, showBlacklisted: false, addingToGroup: false});
 		});

@@ -27,11 +27,11 @@ const ActiveStatus = {
 };
 let isActiveStatus = (status) => typeof ActiveStatus[status] !== "undefined";
 
-async function createPushRequest(conn, upgradeId, packageOrgId, versionId, scheduledDate, createdBy) {
+async function createPushRequest(conn, upgradeId, packageOrgId, versionId, scheduledDate, createdBy, expectedJobCount) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let body = {PackageVersionId: versionId, ScheduledStartTime: isoTime};
 	let pushReq = await conn.sobject("PackagePushRequest").create(body);
-	return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, versionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy);
+	return await upgrades.createUpgradeItem(upgradeId, pushReq.id, packageOrgId, versionId, scheduledDate, pushReq.success ? Status.Created : pushReq.errors, createdBy, expectedJobCount);
 }
 
 async function createPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
@@ -40,8 +40,8 @@ async function createPushJobs(conn, upgradeId, itemId, versionId, pushReqId, org
 		const moreResults = await createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionId, pushReqId, batchResult.failed);
 		batchResult.created.concat(moreResults);
 	}
-	
-	return batchResult.created;
+
+	await upgrades.changeUpgradeItemTotalJobCount(itemId, batchResult.created);
 }
 
 async function batchPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgIds) {
@@ -71,7 +71,7 @@ async function batchPushJobs(conn, upgradeId, itemId, versionId, pushReqId, orgI
 			batch.execute(batchJobs);
 
 			// listen for events
-			batch.on("error", function (batchInfo) { // fired when batch request is queued in server.
+			batch.on("error", function (batchInfo) {
 				logger.error('Failed to batch load PushUpgradeJob records', batchInfo);
 				hooray({error: `Failed to batch load PushUpgradeJob records: ${batchInfo}`, jobs: batchJobs});
 				processBatch(start, hooray, boom, done);
@@ -247,7 +247,7 @@ async function updatePushRequests(items, status, currentUser) {
 	}
 }
 
-async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description) {
+async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description, transid) {
 	const whitelist = await orggroups.loadWhitelist();
 	if (whitelist.size > 0) {
 		orgIds = orgIds.filter(orgId => {
@@ -276,29 +276,67 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
 
 	if (orgIds.length === 0) {
 		// Orgs were stripped above, nothing to do 
-		return {message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
+		return {transid, message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted);
-	
-	let versions = await packageversions.findByVersionIds(versionIds);
-	try {
-		for (let i = 0; i < versions.length; i++) {
-			let version = versions[i];
+
+	// Collect the information we need up front to create our push requests
+	const versions = await packageversions.findByVersionIds(versionIds);
+	const reqInfoMap = new Map();
+	for (let i = 0; i < versions.length; i++) {
+		let version = versions[i];
+		const reqKey = version.package_org_id + version.version_id;
+
+		let reqInfo = reqInfoMap.get(reqKey);
+		if (!reqInfo) {
 			let conn = await sfdc.buildOrgConnection(version.package_org_id);
-			let item = await createPushRequest(conn, upgrade.id, version.package_org_id, version.version_id, scheduledDate, createdBy);
-			await createPushJobs(conn, upgrade.id, item.id, item.version_id, item.push_request_id, orgIds);
+			reqInfo = {
+				package_org_id: version.package_org_id, version_id: version.version_id, conn, orgIds
+			};
+			reqInfoMap.set(reqKey, reqInfo);
+		}
+	}
+
+	// Fail fast if all requests are invalid
+	if (reqInfoMap.size === 0) {
+		return await upgrades.failUpgrade(upgrade, "No valid requests for upgrade");
+	}
+
+	const reqs = Array.from(reqInfoMap.values());
+
+	// Now, create all of our request items synchronously
+	await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
+
+	// Lastly, create all of the jobs asynchronously
+	createJobsForPushRequests(upgrade, reqs).then(() => {});
+
+	return upgrade;
+}
+
+async function createPushRequests(reqs, upgrade, scheduledDate, createdBy) {
+	try {
+		for (let i = 0; i < reqs.length; i++) {
+			const reqInfo = reqs[i];
+			reqInfo.item = await createPushRequest(reqInfo.conn, upgrade.id, reqInfo.package_org_id, reqInfo.version_id, scheduledDate, createdBy, reqInfo.orgIds.length);
 		}
 	} catch (e) {
 		return await upgrades.failUpgrade(upgrade, e);
 	}
-	
-	return upgrade;
 }
 
-async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description) {
-	const conns = new Map(), pushReqs = new Map();
+async function createJobsForPushRequests(upgrade, reqs) {
+	for (let i = 0; i < reqs.length; i++) {
+		const reqInfo = reqs[i];
+		try {
+			await createPushJobs(reqInfo.conn, upgrade.id, reqInfo.item.id, reqInfo.item.version_id, reqInfo.item.push_request_id, reqInfo.orgIds)
+		} catch (e) {
+			return await upgrades.failUpgrade(upgrade, e);
+		}
+	}
+}
 
+async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description, transid) {
 	const versions = await packageversions.findByVersionIds(versionIds);
 	
 	const upgradeVersionsByPackage = new Map();
@@ -342,17 +380,23 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 	if (opvs.length === 0) {
 		// Orgs were stripped above, nothing to do 
-		return {message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
+		return {transid, message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
 	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted);
+
+	// Set transient transaction id given by the caller.
+	upgrade.transid = transid;
+
+	// Build all required org connections and info about our requests up front
+	const connMap = new Map(), reqInfoMap = new Map();
 	for (let i = 0; i < opvs.length; i++) {
 		let opv = opvs[i];
-		let conn = conns.get(opv.package_org_id);
+		let conn = connMap.get(opv.package_org_id);
 		if (!conn) {
 			try {
 				conn = await sfdc.buildOrgConnection(opv.package_org_id);
-				conns.set(opv.package_org_id, conn);
+				connMap.set(opv.package_org_id, conn);
 			} catch (e) {
 				logger.error("No valid package org found for version", {
 					id: opv.version_id,
@@ -364,54 +408,42 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 			}
 		}
 
+		// Collect the information we need up front to create our push requests
 		const upgradeVersions = upgradeVersionsByPackage.get(opv.package_id).filter(v => v.version_sort > opv.version_sort);
-		
 		for (let i = 0; i < upgradeVersions.length; i++) {
 			const upgradeVersion = upgradeVersions[i];
 			const reqKey = opv.package_org_id + upgradeVersion.version_id;
-			
-			let pushReq = pushReqs.get(reqKey);
-			if (!pushReq) {
-				try {
-					pushReq = {
-						item: await createPushRequest(conn, upgrade.id, opv.package_org_id, upgradeVersion.version_id, scheduledDate, createdBy),
-						conn: conn,
-						orgIds: []
-					};
-					pushReqs.set(reqKey, pushReq);
-				} catch (e) {
-					return await upgrades.failUpgrade(upgrade, e);
-				}
+
+			let reqInfo = reqInfoMap.get(reqKey);
+			if (!reqInfo) {
+				reqInfo = {
+					package_org_id: opv.package_org_id, version_id: upgradeVersion.version_id, conn, orgIds: []
+				};
+				reqInfoMap.set(reqKey, reqInfo);
 			}
 
 			// Add this particular org id to the batch
-			pushReq.orgIds.push(opv.org_id);
+			reqInfo.orgIds.push(opv.org_id);
 		}
 	}
 
-	// Fail fast if invalid
-	if (pushReqs.size === 0) {
+	// Fail fast if all requests are invalid
+	if (reqInfoMap.size === 0) {
 		return await upgrades.failUpgrade(upgrade, "No valid requests for upgrade");
 	}
-	
-	// Now, create the jobs, synchronously
-	const reqs = Array.from(pushReqs.values());
-	for (let i = 0; i < reqs.length; i++) {
-		const pushReq = reqs[i];
-		try {
-			await createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds)
-		} catch (e) {
-			return await upgrades.failUpgrade(upgrade, e);
-		}
-	}
-	
-	// Return our upgrade (before our jobs) so we can redirect and wait for the jobs to finish scheduling.
+
+	const reqs = Array.from(reqInfoMap.values());
+
+	// Now, create all of our request items synchronously
+	await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
+
+	// Lastly, create all of the jobs asynchronously
+	createJobsForPushRequests(upgrade, reqs).then(() => {});
+
 	return upgrade;
 }
 
-async function retryFailedUpgrade(id, createdBy) {
-	let conns = new Map(), pushReqs = new Map();
-
+async function retryFailedUpgrade(id, createdBy, transid) {
 	const failedUpgrade = await upgrades.retrieveById(id);
 	const failedJobs = await upgrades.findJobs(id, null, null, null, null, Status.Failed);
 	
@@ -420,16 +452,21 @@ async function retryFailedUpgrade(id, createdBy) {
 		return null;
 	}
 
-	let items = [];
 	const scheduledDate = new Date();
 	const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`);
+
+	// Set transient transaction id given by the caller.
+	upgrade.transid = transid;
+
+	let connMap = new Map(), reqInfoMap = new Map();
+
 	for (let i = 0; i < failedJobs.length; i++) {
 		let job = failedJobs[i];
-		let conn = conns.get(job.package_org_id);
+		let conn = connMap.get(job.package_org_id);
 		if (!conn) {
 			try {
 				conn = await sfdc.buildOrgConnection(job.package_org_id);
-				conns.set(job.package_org_id, conn);
+				connMap.set(job.package_org_id, conn);
 			} catch (e) {
 				logger.error("No valid package org found for job", {
 					id: job.id,
@@ -440,34 +477,34 @@ async function retryFailedUpgrade(id, createdBy) {
 			}
 		}
 
+		// Collect the information we need up front to create our push requests
 		let reqKey = job.package_org_id + job.version_id;
 		
-		let pushReq = pushReqs.get(reqKey);
-		if (!pushReq) {
-			pushReq = {
-				item: await createPushRequest(conn, upgrade.id, job.package_org_id, job.version_id, scheduledDate, createdBy),
-				conn: conn,
-				orgIds: []
+		let reqInfo = reqInfoMap.get(reqKey);
+		if (!reqInfo) {
+			reqInfo = {
+				package_org_id: job.package_org_id, version_id: job.version_id, conn, orgIds: []
 			};
-			pushReqs.set(reqKey, pushReq);
+			reqInfoMap.set(reqKey, reqInfo);
 		}
 
-		items.push(pushReq.item);
 		// Add this particular org id to the batch
-		pushReq.orgIds.push(job.org_id);
+		reqInfo.orgIds.push(job.org_id);
 	}
 
-	// Now, create the jobs, synchronously
-	const reqs = Array.from(pushReqs.values());
-	for (let i = 0; i < reqs.length; i++) {
-		const pushReq = reqs[i];
-		try {
-			await createPushJobs(pushReq.conn, upgrade.id, pushReq.item.id, pushReq.item.version_id, pushReq.item.push_request_id, pushReq.orgIds);
-		} catch (e) {
-			return upgrades.failUpgrade(upgrade, e).then(() => {})
-		}
+	// Fail fast if all requests are invalid
+	if (reqInfoMap.size === 0) {
+		return await upgrades.failUpgrade(upgrade, "No valid requests for upgrade");
 	}
-	
+
+	const reqs = Array.from(reqInfoMap.values());
+
+	// Now, create all of our request items synchronously
+	await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
+
+	// Lastly, create all of the jobs asynchronously
+	createJobsForPushRequests(upgrade, reqs).then(() => {});
+
 	return upgrade;
 }
 
