@@ -2,7 +2,7 @@ import * as h from './h';
 
 let url = "/oauth2";
 
-export let oauthLoginURL = (returnType, returnId) => h.get(url + "/loginurl", {returnType, returnId});
+export let oauthLoginURL = (returnTo) => h.get(url + "/loginurl", {returnTo});
 
 export let oauthOrgURL = (instanceUrl) => h.get(url + "/orgurl", {instanceUrl});
 

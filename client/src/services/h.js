@@ -10,6 +10,20 @@ function toQueryString(obj) {
 	return parts.join("&");
 }
 
+function sanitizeReturnTo(path) {
+	if (!path)
+		return null;
+
+	const segments = path.split("/", 10);
+	// Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
+	for (let i = 1; i < segments.length; i++) {
+		if (segments[i].match(/[\W]+/g)) {
+			return null;
+		}
+	}
+	return segments.join('/');
+}
+
 function request(obj) {
 	return new Promise((resolve, reject) => {
 		if (obj.params) {
@@ -20,17 +34,9 @@ function request(obj) {
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
 				if (xhr.status === 401) {
-					const path = window.location.pathname;
-					const segments = path.split("/", 10);
-					// Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
-					for (let i = 1; i < segments.length; i++) {
-						if (segments[i].match(/[\W]+/g)) {
-							return window.location = AUTH_ROUTE;
-						}
-					}
-
-					// We are safe to include the return-to parameter
-					window.location = `${AUTH_ROUTE}${path}`;
+					const returnTo = sanitizeReturnTo(window.location.pathname);
+					window.location = returnTo ?
+						`${AUTH_ROUTE}?r=${returnTo}` : AUTH_ROUTE;
 				} else if (xhr.status > 199 && xhr.status < 300) {
 					resolve(xhr.responseText ? JSON.parse(xhr.responseText) : undefined);
 				} else {

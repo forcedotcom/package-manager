@@ -1,4 +1,6 @@
 import React from 'react';
+import qs from 'query-string';
+
 import * as authService from "../services/AuthService";
 import moment from "moment";
 
@@ -67,7 +69,8 @@ export default class extends React.Component {
 	
 	// Handlers
 	loginHandler() {
-		authService.oauthLoginURL(this.props.match.params.returnType, this.props.match.params.returnId).then(url => {
+		const params = qs.parse(this.props.location.search);
+		authService.oauthLoginURL(params.r).then(url => {
 			window.location.href = url;
 		});
 	}

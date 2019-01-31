@@ -20,6 +20,20 @@ const CALLBACK_URL = process.env.CALLBACK_URL || `${API_URL}/oauth2/callback`;
 // Constants
 const PROD_LOGIN = "https://login.salesforce.com";
 
+function sanitizeReturnTo(path) {
+	if (!path)
+		return null;
+
+	const segments = path.split("/", 10);
+	// Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
+	for (let i = 1; i < segments.length; i++) {
+		if (segments[i].match(/[\W]+/g)) {
+			return null;
+		}
+	}
+	return segments.join('/');
+}
+
 function requestLogout(req, res, next) {
 	try {
 		req.session = null;
@@ -31,7 +45,7 @@ function requestLogout(req, res, next) {
 
 function oauthLoginURL(req, res, next) {
 	try {
-		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL, returnType: req.query.returnType, returnId: req.query.returnId});
+		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL, returnTo: req.query.returnTo});
 		res.json(url);
 	} catch (e) {
 		next(e);
@@ -70,7 +84,12 @@ async function oauthCallback(req, res, next) {
 				req.session.username = user.username;
 				req.session.display_name = user.display_name;
 				req.session.access_token = conn.accessToken;
-				res.redirect(`${CLIENT_URL}/${state.returnType}/${state.returnId}`);
+				let url = CLIENT_URL;
+				let returnTo = sanitizeReturnTo(state.returnTo);
+				if (returnTo) {
+					url += returnTo;
+				}
+				res.redirect(url);
 		}
 	} catch (error) {
 		logger.error("Failed to authorize user", error);
