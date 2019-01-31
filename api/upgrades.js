@@ -1,3 +1,5 @@
+import * as strings from "../util/strings";
+
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const admin = require('./admin');
@@ -565,20 +567,31 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 
 async function activateAvailableUpgradeItems(id, username, job = {postMessage: msg => logger.info(msg)}) {
 	let items = await findItemsByUpgrade(id, ["dependency_tier", "package_id", "version_sort"], "asc");
+	let ineligible = [], incomplete = [];
 	items = items.filter(i => {
 		if (i.eligible_job_count === "0") {
-			changeUpgradeItemStatus(i, push.Status.Ineligible).then(() => 
+			changeUpgradeItemStatus(i, push.Status.Ineligible).then(() =>
 				logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id})
 			).catch(err => 
 				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: i.id, push_request_id: i.push_request_id}));
+			ineligible.push(i);
+			return false;
+		} else if (i.job_count !== i.total_job_count) {
+			incomplete.push(i);
 			return false;
 		} else {
 			return true;
 		}
 	});
 
+	if (incomplete.length > 0) {
+		let pl = strings.pluralizeIt(incomplete, "upgrade item");
+		admin.alert("Cannot activate upgrade", `${pl.num} ${pl.str} are still scheduling jobs.`);
+		return items;
+	}
+
 	if (items.length === 0) {
-		// Nothing to do, leave now.
+		admin.alert("Cannot activate upgrade", `None of the selected orgs are eligible for upgrades.`);
 		return items;
 	}
 	

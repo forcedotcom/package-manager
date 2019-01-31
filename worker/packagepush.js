@@ -320,19 +320,21 @@ async function createPushRequests(reqs, upgrade, scheduledDate, createdBy) {
 			const reqInfo = reqs[i];
 			reqInfo.item = await createPushRequest(reqInfo.conn, upgrade.id, reqInfo.package_org_id, reqInfo.version_id, scheduledDate, createdBy, reqInfo.orgIds.length);
 		}
+		return upgrade;
 	} catch (e) {
 		return await upgrades.failUpgrade(upgrade, e);
 	}
 }
 
 async function createJobsForPushRequests(upgrade, reqs) {
-	for (let i = 0; i < reqs.length; i++) {
-		const reqInfo = reqs[i];
-		try {
+	try {
+		for (let i = 0; i < reqs.length; i++) {
+			const reqInfo = reqs[i];
 			await createPushJobs(reqInfo.conn, upgrade.id, reqInfo.item.id, reqInfo.item.version_id, reqInfo.item.push_request_id, reqInfo.orgIds)
-		} catch (e) {
-			return await upgrades.failUpgrade(upgrade, e);
 		}
+		return upgrade;
+	} catch (e) {
+		return await upgrades.failUpgrade(upgrade, e);
 	}
 }
 
@@ -502,8 +504,8 @@ async function retryFailedUpgrade(id, createdBy, transid) {
 	// Now, create all of our request items synchronously
 	await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
 
-	// Lastly, create all of the jobs asynchronously
-	createJobsForPushRequests(upgrade, reqs).then(() => {});
+	// Lastly, create all of the jobs, also synchronously, because for retries we want to activate automatically
+	await createJobsForPushRequests(upgrade, reqs);
 
 	return upgrade;
 }

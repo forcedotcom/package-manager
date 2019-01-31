@@ -240,6 +240,10 @@ function emit(key, data) {
 	}
 }
 
+function alert(key, subject, message) {
+	emit(Events.ALERT, {subject, message});
+}
+
 function requestEmit(req, res, next) {
 	emit(req.params.key);
 	res.json({result: "ok"});
@@ -455,6 +459,7 @@ const BinaryIdLookup = {
 exports.Events = Events;
 exports.connect = connect;
 exports.emit = emit;
+exports.alert = alert;
 exports.requestEmit = requestEmit;
 exports.scheduleJobs = scheduleJobs;
 exports.requestSettings = requestSettings;
