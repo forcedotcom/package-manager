@@ -2,6 +2,7 @@ import React from 'react';
 
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
+import * as upgradeService from "../services/UpgradeService";
 import * as notifier from "../services/notifications";
 import * as strings from "../services/strings";
 import * as nav from "../services/nav";
@@ -15,6 +16,7 @@ import moment from "moment";
 import Tabs from "../components/Tabs";
 import GroupMemberVersionCard from "../packageversions/GroupMemberVersionCard";
 import GroupMemberOrgCard from "../orgs/GroupMemberOrgCard";
+import UpgradeCard from "../upgrades/UpgradeCard";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 
 export default class extends React.Component {
@@ -32,6 +34,7 @@ export default class extends React.Component {
 		
 		this.fetchMembers = this.fetchMembers.bind(this);
 		this.fetchVersions = this.fetchVersions.bind(this);
+		this.fetchUpgrades = this.fetchUpgrades.bind(this);
 		this.resolveUpgradeablePackages = this.resolveUpgradeablePackages.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 		this.schedulingWindowHandler = this.schedulingWindowHandler.bind(this);
@@ -81,7 +84,26 @@ export default class extends React.Component {
 			{label: "Move To Group", group: "selection", handler: this.movingToGroupHandler, disabled: selected.size === 0},
 			{label: "Remove From Group", group: "selection", handler: this.removeMembersHandler, disabled: selected.size === 0},
 		];
-		
+
+		const tabs = [
+			<div label="Members">
+				<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members"
+									refetchFor={orggroup.id} actions={memberActions}
+									selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
+			</div>,
+			<div label="Versions">
+				<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions"
+										refetchFor={orggroup.id} actions={memberActions}
+										selected={selected} showSelected={showSelected}
+										onSelect={this.versionSelectionHandler}/>
+			</div>
+		];
+		if (orggroup.type === "Upgrade Group") {
+			tabs.push(
+				<div label="Upgrades">
+					<UpgradeCard onFetch={this.fetchUpgrades} refetchOn="upgrades"/>
+				</div>);
+		}
 		return (
 			<div>
 				<RecordHeader type="Org Group" icon={ORG_GROUP_ICON} title={orggroup.name} actions={actions}
@@ -93,14 +115,7 @@ export default class extends React.Component {
 
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="OrgGroupView">
-						<div label="Members">
-							<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members" refetchFor={orggroup.id} actions={memberActions}
-												selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
-						</div>
-						<div label="Versions">
-							<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions" refetchFor={orggroup.id} actions={memberActions}
-													selected={selected} showSelected={showSelected} onSelect={this.versionSelectionHandler}/>
-						</div>
+						{tabs}
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
@@ -132,6 +147,10 @@ export default class extends React.Component {
 				resolve(versions);
 			}).catch(reject);
 		});
+	}
+
+	fetchUpgrades() {
+		return upgradeService.requestByGroup(this.props.match.params.orgGroupId);
 	}
 
 	resolveUpgradeablePackages(versions) {

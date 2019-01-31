@@ -76,12 +76,15 @@ create table if not exists org_package_version (
   unique (org_id, package_id)
 );
 
-create table if not exists upgrade (
-  id          serial primary key,
-  start_time  timestamp with time zone,
-  description text,
-  status      varchar(40),
-  created_by  varchar(255)
+create table if not exists upgrade
+(
+  id           serial primary key,
+  start_time   timestamp with time zone,
+  description  text,
+  status       varchar(40),
+  parent_id    varchar(18),
+  org_group_id varchar(18),
+  created_by   varchar(255)
 );
 
 create table if not exists upgrade_blacklist (
@@ -231,6 +234,8 @@ alter table package_org
   add if not exists refreshed_date timestamp with time zone;
 
 alter table upgrade
+  add if not exists org_group_id varchar(18) null,
+  add if not exists parent_id varchar(18) null,
   add if not exists status varchar(80) null,
   add if not exists created_by varchar(255) null;
 

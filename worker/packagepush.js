@@ -338,7 +338,7 @@ async function createJobsForPushRequests(upgrade, reqs) {
 	}
 }
 
-async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdBy, description, transid) {
+async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy, description, transid) {
 	const versions = await packageversions.findByVersionIds(versionIds);
 	
 	const upgradeVersionsByPackage = new Map();
@@ -352,7 +352,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	});
 	
 	const excludedVersions = null; //await findCurrentAndNewerVersions(versions).map(v => v.version_id);
-	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), orgGroupIds, excludedVersions);
+	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), [orgGroupId], excludedVersions);
 
 	const whitelist = await orggroups.loadWhitelist();
 	if (whitelist.size > 0) {
@@ -385,7 +385,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 		return {transid, message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."};
 	}
 
-	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted);
+	let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId);
 
 	// Set transient transaction id given by the caller.
 	upgrade.transid = transid;
@@ -420,17 +420,13 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 			let reqInfo = reqInfoMap.get(reqKey);
 			if (!reqInfo) {
 				reqInfo = {
-					package_org_id: opv.package_org_id, version_id: upgradeVersion.version_id, conn, orgIds: [], orgIdMap: new Map()
+					package_org_id: opv.package_org_id, version_id: upgradeVersion.version_id, conn, orgIds: []
 				};
 				reqInfoMap.set(reqKey, reqInfo);
 			}
 
 			// Add this particular org id to the batch
 			reqInfo.orgIds.push(opv.org_id);
-			if (reqInfo.orgIdMap.get(opv.org_id)) {
-				throw Error("Duplicate org id found, this should never happen " + opv.org_id + " in upgrade to " + upgradeVersion.version_id);
-			}
-			reqInfo.orgIdMap.set(opv.org_id, opv);
 		}
 	}
 
@@ -450,17 +446,17 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 	return upgrade;
 }
 
-async function retryFailedUpgrade(id, createdBy, transid) {
-	const failedUpgrade = await upgrades.retrieveById(id);
-	const failedJobs = await upgrades.findJobs(id, null, null, null, null, Status.Failed);
+async function retryFailedUpgrade(failedId, createdBy, transid) {
+	const failedUpgrade = await upgrades.retrieveById(failedId);
+	const failedJobs = await upgrades.findJobs(failedId, null, null, null, null, Status.Failed);
 	
 	if (failedJobs.length === 0) {
-		logger.info("No failed jobs found.  Nothing to retry.", {id});
+		logger.info("No failed jobs found.  Nothing to retry.", {failedId});
 		return null;
 	}
 
 	const scheduledDate = new Date();
-	const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`);
+	const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedId);
 
 	// Set transient transaction id given by the caller.
 	upgrade.transid = transid;
@@ -698,7 +694,7 @@ exports.findErrorsByJobIds = findErrorsByJobIds;
 exports.updatePushRequests = updatePushRequests;
 exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
-exports.upgradeOrgGroups = upgradeOrgGroups;
+exports.upgradeOrgGroup = upgradeOrgGroup;
 exports.retryFailedUpgrade = retryFailedUpgrade;
 exports.Status = Status;
 exports.isActiveStatus = isActiveStatus;

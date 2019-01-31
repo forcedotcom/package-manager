@@ -51,7 +51,7 @@ const ITEM_STATUS_SOQL = `
 	END item_status`;
 
 const SELECT_ALL = `
-    SELECT u.id, u.status, u.start_time, u.created_by, u.description,
+    SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id,
     ${ITEM_STATUS_SOQL}
     FROM upgrade u
     LEFT JOIN upgrade_item i ON i.upgrade_id = u.id`;
@@ -59,7 +59,7 @@ const SELECT_ALL = `
 const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ONE = `
-    SELECT u.id, u.status, u.start_time, u.created_by, u.description,
+    SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id,
 	${ITEM_STATUS_SOQL}
     FROM upgrade u
     LEFT JOIN upgrade_item i ON i.upgrade_id = u.id
@@ -157,9 +157,9 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN org o on o.org_id = j.org_id
         INNER JOIN account a ON a.account_id = o.account_id`;
 
-async function createUpgrade(scheduledDate, createdBy, description, blacklisted) {
+async function createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId, parentId) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status) VALUES ($1,$2,$3,$4)', [isoTime, createdBy, description, UpgradeStatus.Ready]);
+	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status,org_group_id,parent_id) VALUES ($1,$2,$3,$4,$5,$6)', [isoTime, createdBy, description, UpgradeStatus.Ready, orgGroupId, parentId]);
 	if (blacklisted && blacklisted.length !== 0) {
 		createUpgradeBlacklist(recs[0].id, blacklisted).then(() => {});
 	}
@@ -361,16 +361,22 @@ async function updateUpgradeJobsStatus(jobs) {
 
 async function requestAll(req, res, next) {
 	try {
-		let upgrades = await findAll(req.query.sort_field, req.query.sort_dir);
+		let upgrades = await findAll(req.query.groupId, req.query.sort_field, req.query.sort_dir);
 		return res.json(upgrades);
 	} catch (e) {
 		next(e);
 	}
 }
 
-async function findAll(sortField, sortDir) {
+async function findAll(groupId, sortField, sortDir) {
+	let where = '';
+	let values = [];
+	if (groupId) {
+		values.push(groupId);
+		where = 'WHERE org_group_id = $${values.length}';
+	}
 	let orderBy = `ORDER BY ${sortField || "start_time"} ${sortDir || "asc"}`;
-	return await db.query(`${SELECT_ALL} ${GROUP_BY_ALL} ${orderBy}`, [])
+	return await db.query(`${SELECT_ALL} ${GROUP_BY_ALL} ${where} ${orderBy}`, values)
 }
 
 async function requestItems(req, res, next) {
