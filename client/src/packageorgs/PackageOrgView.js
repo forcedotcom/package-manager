@@ -99,7 +99,7 @@ export default class extends React.Component {
 								<PackageVersionCard onFetch={this.fetchVersions}/>
 							</div>
 							<div label="Package Upgrades">
-								<UpgradeItemCard id="PackageUpgradeItemCard" onFetch={this.fetchUpgradeItems} refetchOn="upgrade-items"/>
+								<UpgradeItemCard id="PackageUpgradeItemCard" onFetch={this.fetchUpgradeItems} refetchOn="upgrade-items,upgrade-jobs"/>
 							</div>
 						</Tabs>
 						<DataTableFilterHelp/>

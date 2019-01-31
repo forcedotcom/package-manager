@@ -41,13 +41,19 @@ export default class extends React.Component {
 
 	// Lifecycle
 	componentDidMount() {
-		if (this.props.refetchOn)
-			notifier.on(this.props.refetchOn, this.refetchData.bind(this));
+		if (this.props.refetchOn) {
+			let keys = this.props.refetchOn.split(",");
+			keys.forEach(k => notifier.on(k, this.refetchData));
+		}
 	}
 
 	componentWillUnmount() {
-		if (this.props.refetchOn)
-			notifier.remove(this.props.refetchOn, this.refetchData);
+		if (this.props.refetchOn) {
+			let keys = this.props.refetchOn.split(",");
+			keys.forEach(k =>
+				notifier.remove(k, this.refetchData)
+			);
+		}
 	}
 
 	componentWillReceiveProps(props) {

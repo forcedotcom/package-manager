@@ -340,7 +340,6 @@ async function createUpgradeJobs(upgradeId, itemId, requestId, jobs) {
 
 	const recs = await db.insert(sql, values);
 	admin.emit(admin.Events.UPGRADE_JOBS, recs);
-	admin.emit(admin.Events.UPGRADE_ITEMS, [itemId]);
 	return recs;
 }
 

@@ -51,7 +51,7 @@ export default class extends React.Component {
 							<OrgCard id="PackageMembers" title="Customers" onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
 						</div>
 						<div label="Upgrades">
-							<UpgradeItemCard id="PackageUpgradeItemCard" onFetch={this.fetchUpgradeItems} refetchOn="upgrade-items"/>
+							<UpgradeItemCard id="PackageUpgradeItemCard" onFetch={this.fetchUpgradeItems} refetchOn="upgrade-items,upgrade-jobs"/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
