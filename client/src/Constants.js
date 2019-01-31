@@ -52,7 +52,7 @@ export const getProgressFromUpgradeItem = item => {
 	let percentage = (started + completed) / (count * 2);
 	let percentageReady = item.job_count / item.total_job_count;
 	let percentageCanceled = canceled / count;
-	let percentageError = errors / count;
+	let percentageError = (errors + invalid) / count;
 	let percentageSuccess = percentage - (percentageCanceled + percentageError);
 	let done = percentage === 1 || count === 0;
 	return {
@@ -65,7 +65,7 @@ export const getProgress = statusRecs => {
 	if (!statusRecs || statusRecs.length === 0)
 		return {count: 0, active: 0, started: 0, completed: 0, succeeded: 0, errors: 0, canceled: 0, percentage: 0, done: 0};
 
-	let count = statusRecs.length, active = 0, started = 0, completed = 0, succeeded = 0, errors = 0, canceled = 0;
+	let count = statusRecs.length, active = 0, started = 0, completed = 0, succeeded = 0, errors = 0, invalid = 0, canceled = 0;
 	for (let i = 0; i < statusRecs.length; i++) {
 		let rec = statusRecs[i];
 		switch (rec.status) {
@@ -100,6 +100,7 @@ export const getProgress = statusRecs => {
 				succeeded++;
 				break;
 			case Status.Invalid:
+				invalid++;
 				started++;
 				completed++;
 				break;
@@ -109,7 +110,7 @@ export const getProgress = statusRecs => {
 	}
 	const percentage = (started + completed) / (count * 2);
 	const percentageCanceled = canceled / count;
-	const percentageError = errors / count;
+	const percentageError = (errors + invalid) / count;
 	const percentageSuccess = percentage - (percentageCanceled + percentageError);
 	const done = percentage === 1 || count === 0;
 	return {count, active, started, completed, succeeded, errors, canceled, percentage,

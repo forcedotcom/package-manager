@@ -8,7 +8,7 @@ const orgpackageversions = require('../api/orgpackageversions');
 const upgrades = require('../api/upgrades');
 const logger = require('../util/logger').logger;
 
-const JOB_CREATION_BATCH_SIZE = process.env.JOB_CREATION_BATCH_SIZE || 2000;
+const JOB_CREATION_BATCH_SIZE = process.env.JOB_CREATION_BATCH_SIZE || (13*13);
 
 const Status = {
 	Created: "Created",
@@ -412,6 +412,7 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 
 		// Collect the information we need up front to create our push requests
 		const upgradeVersions = upgradeVersionsByPackage.get(opv.package_id).filter(v => v.version_sort > opv.version_sort);
+
 		for (let i = 0; i < upgradeVersions.length; i++) {
 			const upgradeVersion = upgradeVersions[i];
 			const reqKey = opv.package_org_id + upgradeVersion.version_id;
@@ -419,13 +420,17 @@ async function upgradeOrgGroups(orgGroupIds, versionIds, scheduledDate, createdB
 			let reqInfo = reqInfoMap.get(reqKey);
 			if (!reqInfo) {
 				reqInfo = {
-					package_org_id: opv.package_org_id, version_id: upgradeVersion.version_id, conn, orgIds: []
+					package_org_id: opv.package_org_id, version_id: upgradeVersion.version_id, conn, orgIds: [], orgIdMap: new Map()
 				};
 				reqInfoMap.set(reqKey, reqInfo);
 			}
 
 			// Add this particular org id to the batch
 			reqInfo.orgIds.push(opv.org_id);
+			if (reqInfo.orgIdMap.get(opv.org_id)) {
+				throw Error("Duplicate org id found, this should never happen " + opv.org_id + " in upgrade to " + upgradeVersion.version_id);
+			}
+			reqInfo.orgIdMap.set(opv.org_id, opv);
 		}
 	}
 
