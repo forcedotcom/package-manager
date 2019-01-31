@@ -1,9 +1,8 @@
-import * as strings from "../util/strings";
-
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
+const strings = require('../util/strings');
 const orgpackageversions = require('./orgpackageversions');
 
 const State = {
