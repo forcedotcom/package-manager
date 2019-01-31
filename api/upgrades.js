@@ -373,7 +373,7 @@ async function findAll(groupId, sortField, sortDir) {
 	let values = [];
 	if (groupId) {
 		values.push(groupId);
-		where = 'WHERE org_group_id = $${values.length}';
+		where = `WHERE org_group_id = $${values.length}`;
 	}
 	let orderBy = `ORDER BY ${sortField || "start_time"} ${sortDir || "asc"}`;
 	return await db.query(`${SELECT_ALL} ${where} ${GROUP_BY_ALL} ${orderBy}`, values)
