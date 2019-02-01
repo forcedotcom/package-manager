@@ -42,13 +42,17 @@ export default class extends React.Component {
 	
 	render() {
 		const versionFields = this.state.packageMap ? this.props.packageIds.map(packageId =>
-			<VersionField key={packageId} package={this.state.packageMap.get(packageId)} onSelect={this.handleVersionChange}/> 
+			this.state.packageMap.has(packageId) ?
+				<VersionField key={packageId} package={this.state.packageMap.get(packageId)} onSelect={this.handleVersionChange}/> : ""
 		) : [];
 		
 		return (
 			<div>
+				<style dangerouslySetInnerHTML={{__html: `
+				  .date_picker_wide { width: 16em}
+				`}} />
 				<div className="slds-modal slds-fade-in-open">
-					<div className="slds-modal__container">
+					<div className="slds-modal__container" style={{maxWidth: "60em", width: "60%"}}>
 						<div className="slds-modal__header">
 							<h2 className="slds-text-heading--medium">Schedule Upgrade</h2>
 							<button className="slds-button slds-modal__close">
@@ -66,7 +70,7 @@ export default class extends React.Component {
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="text-input-id-1">Start
 										Date</label>
-									<DatePicker className="slds-input slds-m-right--xx-small"
+									<DatePicker className="date_picker_wide slds-input slds-m-right--xx-small"
 												selected={this.state.startDate}
 												onChange={this.handleDateChange}
 												showTimeSelect
