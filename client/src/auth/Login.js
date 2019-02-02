@@ -20,7 +20,7 @@ export default class extends React.Component {
 			"Get that corn outta my face!",
 			`${goodDay()}, Dave.`,
 			"'All you need is love' - the Beatles.",
-			"'All you need is food and shelter' - the Beetles.",
+			"'All you need is dung' - the Beetles.",
 			"Winter is coming.",
 			"What is the sound of someone trying to gargle while fighting off a pack of wolves?",
 			"Welcome to the machine.",

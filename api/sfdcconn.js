@@ -26,26 +26,31 @@ const INVALID_ID = '000000000000001';
 
 const TRACE_FUNCTIONS = ["query", "sobject", "retrieve", "insert", "update", "upsert"];
 
+const DEFAULT_ORGS = {
+	bt: {
+		type: OrgTypes.AllProductionOrgs,
+		instanceUrl: "https://bt1.my.salesforce.com"
+	},
+	sbt: {
+		type: OrgTypes.AllSandboxOrgs,
+		instanceUrl: "https://sbt2.cs10.my.salesforce.com"
+	},
+	org62: {
+		type: OrgTypes.Accounts,
+		instanceUrl: "https://org62.my.salesforce.com"
+	},
+	lma: {
+		type: OrgTypes.Licenses,
+		instanceUrl: "https://login.salesforce.com"
+	}
+};
+
 async function init() {
-	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {
-		bt: {
-			type: OrgTypes.AllProductionOrgs,
-			instanceUrl: "https://bt1.my.salesforce.com"
-		},
-		sbt: {
-			type: OrgTypes.AllSandboxOrgs,
-			instanceUrl: "https://sbt2.cs10.my.salesforce.com"
-		},
-		org62: {
-			type: OrgTypes.Accounts,
-			instanceUrl: "https://org62.my.salesforce.com"
-		},
-		lma: {
-			type: OrgTypes.Licenses,
-			instanceUrl: "https://login.salesforce.com"
-		}
-	};
-	Object.entries(orgsConfig).forEach(([key, orgConfig]) => KnownOrgs[key] = orgConfig);
+	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {};
+	// Loop through default orgs, setting the given configured org if found, otherwise using the default
+	Object.entries(DEFAULT_ORGS).forEach(([key, defaultOrg]) => {
+		KnownOrgs[key] = orgsConfig[key] || defaultOrg;
+	});
 
 	let orgs = await packageorgs.retrieveAll();
 	orgs.forEach(org => initOrg(org.type, org.org_id, org.instance_url));
