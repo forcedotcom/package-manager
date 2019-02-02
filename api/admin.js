@@ -3,6 +3,7 @@
 const moment = require("moment");
 const https = require("https");
 const url = require('url');
+const sqlinit = require('../init/sqlinit');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
 const orgs = require("./orgs");
@@ -280,6 +281,17 @@ function cancelJobs(data) {
 	}
 }
 
+async function startup() {
+	// Ensure our database is alive and initialized
+	await sqlinit.init();
+
+	// Ensure our sfdx connections and orgs are ready
+	await sfdc.init();
+
+	// Kick off our scheduled jobs
+	scheduleJobs();
+}
+
 function scheduleJobs() {
 	const schedules = JSON.parse(process.env.JOB_SCHEDULES || {});
 	if (schedules.org_monitor_interval_seconds != null && schedules.org_monitor_interval_seconds !== -1) {
@@ -461,7 +473,7 @@ exports.connect = connect;
 exports.emit = emit;
 exports.alert = alert;
 exports.requestEmit = requestEmit;
-exports.scheduleJobs = scheduleJobs;
+exports.startup = startup;
 exports.requestSettings = requestSettings;
 exports.requestJobs = requestJobs;
 exports.requestCancel = requestCancel;

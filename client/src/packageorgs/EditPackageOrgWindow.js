@@ -23,7 +23,7 @@ export default class extends React.Component {
 			<div>
 				<div className="slds-modal slds-fade-in-open">
 					<div className="slds-modal__container">
-						<FormHeader type="Package Org" icon={PACKAGE_ORG_ICON} title={this.props.packageorg.name}
+						<FormHeader type="Org Connection" icon={PACKAGE_ORG_ICON} title={this.props.packageorg.name}
 									onSave={this.saveHandler} onCancel={this.props.onCancel}>
 							<HeaderField label="Instance URL" value={this.props.packageorg.instance_url}/>
 							<HeaderField label="Status" value={this.props.packageorg.status}/>

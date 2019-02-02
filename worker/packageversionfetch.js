@@ -1,5 +1,6 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
+const Status = require('../api/packageversions').Status;
 const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
@@ -7,7 +8,7 @@ const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c
 
 let adminJob;
 
-async function fetch(sb62Id, fetchAll, job) {
+async function fetch(lmaOrgId, fetchAll, job) {
 	adminJob = job;
 	let fromDate = null;
 	if (!fetchAll) {
@@ -17,12 +18,12 @@ async function fetch(sb62Id, fetchAll, job) {
 		}
 	}
 
-	let recs = await query(sb62Id, fromDate);
+	let recs = await query(lmaOrgId, fromDate);
 	return upsert(recs, 2000);
 }
 
-async function query(sb62Id, fromDate) {
-	let conn = await sfdc.buildOrgConnection(sb62Id);
+async function query(lmaOrgId, fromDate) {
+	let conn = await sfdc.buildOrgConnection(lmaOrgId);
 	let whereParts = [`sfLma__Version_Number__c != null`];
 	if (fromDate) {
 		whereParts.push(`LastModifiedDate > ${fromDate.toISOString()}`);
@@ -109,7 +110,7 @@ async function upsertBatch(recs) {
 async function fetchLatest(job) {
 	adminJob = job;
 
-	let latest = await queryLatest(['Pre-Release', 'Verified', 'Limited', 'Preview']);
+	let latest = await queryLatest([Status.PreRelease, Status.Verified, Status.Limited, Status.Preview]);
 	const latestByPackage = new Map(
 		latest.map(l => [l.package_id, {
 			package_id: l.package_id,
@@ -118,7 +119,7 @@ async function fetchLatest(job) {
 			limited_version_sort: l.version_sort
 	}]));
 	
-	let latestValid = await queryLatest(['Pre-Release', 'Verified']);
+	let latestValid = await queryLatest([Status.PreRelease, Status.Verified]);
 	latestValid.forEach(l => {
 		const pvl = latestByPackage.get(l.package_id);
 		pvl.version_id = l.version_id;

@@ -24,16 +24,12 @@ const express = require('express'),
 	auth = require('./api/auth'),
 	admin = require('./api/admin'),
 	filters = require('./api/filters'),
-	sqlinit = require('./init/sqlinit'),
 	logger = require('./util/logger').logger,
 	helmet = require('helmet');
 
 const http = require('http');
 const socketIo = require('socket.io');
 
-
-// Ensure our database is alive and initialized
-sqlinit.init();
 
 // Setup express and socket.io
 const app = express();
@@ -166,4 +162,4 @@ io.on('connection', function (socket) {
 });
 
 // Set job intervals
-admin.scheduleJobs();
+admin.startup().then(() => logger.info("\n============= Server Initialized and Ready, Set, Go!\n"));

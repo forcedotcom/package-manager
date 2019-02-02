@@ -103,7 +103,7 @@ async function fetchFromSubscribers(orgId, packageOrgIds, job) {
 	}
 	const missingOrgIds = new Set(orgIds);
 
-	job.postMessage(`Querying ${packageOrgIds.length} package orgs`);
+	job.postMessage(`Querying ${packageOrgIds.length} org connections`);
 	let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
 	let opvs = [];
 	for (let i = 0; i < arrs.length; i++) {

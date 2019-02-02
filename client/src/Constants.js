@@ -31,6 +31,10 @@ export const Status = {
 	Ineligible: "Ineligible"
 };
 
+export const PackageVersionStatus = {
+	Verified: "Verified", PreRelease: "Pre-Release", Preview: "Preview", Limited: "Limited",
+};
+
 export const Colors = {
 	Success: "#BFD641", // Pantone Lime Punch Spring '18
 	Warning: "#FFD662", // Pantone Aspen Gold Summer '19

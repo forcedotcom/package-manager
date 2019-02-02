@@ -2,7 +2,7 @@ import React from 'react';
 
 import moment from "moment/moment";
 import {CardHeader} from "../components/PageHeader";
-import {Status, UPGRADE_ICON} from "../Constants";
+import {UPGRADE_ICON} from "../Constants";
 import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import {CSVDownload} from "react-csv";

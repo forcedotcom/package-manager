@@ -11,32 +11,7 @@ const OrgTypes = {
 	Licenses: "Licenses"
 };
 
-const NamedOrgs = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {
-	bt: {
-		orgId: "00DA0000000gYotMAE",
-		type: OrgTypes.AllProductionOrgs,
-		name: "BT2 Black Tab",
-		instanceUrl: "https://bt2.my.salesforce.com"
-	},
-	sbt: {
-		orgId: "00DJ00000001ECoMAM",
-		type: OrgTypes.AllSandboxOrgs,
-		name: "SBT2 Black Tab",
-		instanceUrl: "https://sbt2.cs10.my.salesforce.com"
-	},
-	org62: {
-		orgId: "00D000000000062EAA",
-		type: OrgTypes.Accounts,
-		name: "Org 62",
-		instanceUrl: "https://org62.my.salesforce.com"
-	},
-	sb62: {
-		orgId: "00D300000008V7fEAE",
-		type: OrgTypes.Licenses,
-		name: "SteelBrick 62",
-		instanceUrl: "https://steelbrick.my.salesforce.com"
-	}
-};
+const KnownOrgs = {};
 
 const PORT = process.env.PORT || 5000;
 const SFDC_API_VERSION = "44.0";
@@ -50,6 +25,39 @@ const INTERNAL_ID = '000000000000000';
 const INVALID_ID = '000000000000001';
 
 const TRACE_FUNCTIONS = ["query", "sobject", "retrieve", "insert", "update", "upsert"];
+
+async function init() {
+	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {
+		bt: {
+			type: OrgTypes.AllProductionOrgs,
+			instanceUrl: "https://bt1.my.salesforce.com"
+		},
+		sbt: {
+			type: OrgTypes.AllSandboxOrgs,
+			instanceUrl: "https://sbt2.cs10.my.salesforce.com"
+		},
+		org62: {
+			type: OrgTypes.Accounts,
+			instanceUrl: "https://org62.my.salesforce.com"
+		},
+		lma: {
+			type: OrgTypes.Licenses,
+			instanceUrl: "https://login.salesforce.com"
+		}
+	};
+	Object.entries(orgsConfig).forEach(([key, orgConfig]) => KnownOrgs[key] = orgConfig);
+
+	let orgs = await packageorgs.retrieveAll();
+	orgs.forEach(org => initOrg(org.type, org.org_id));
+}
+
+function initOrg(type, orgId) {
+	Object.entries(KnownOrgs).forEach(([key, orgConfig]) => {
+		if (orgConfig.type === type) {
+			orgConfig.orgId = orgId;
+		}
+	});
+}
 
 function buildConnection(accessToken, refreshToken, instanceUrl) {
 	const target = new jsforce.Connection({
@@ -99,6 +107,8 @@ async function buildOrgConnection(packageOrgId) {
 }
 
 exports.buildOrgConnection = buildOrgConnection;
+exports.init = init;
+exports.initOrg = initOrg;
 exports.INTERNAL_ID = INTERNAL_ID;
 exports.INVALID_ID = INVALID_ID;
-exports.NamedOrgs = NamedOrgs;
+exports.KnownOrgs = KnownOrgs;

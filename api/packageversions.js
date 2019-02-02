@@ -1,5 +1,10 @@
 const db = require('../util/pghelper');
 
+
+const Status = {
+	Verified: "Verified", PreRelease: "Pre-Release", Preview: "Preview", Limited: "Limited",
+};
+
 const SELECT_ALL =
 	`SELECT 
         pv.id, pv.sfid, pv.name, pv.version_number, pv.version_sort, pv.package_id, pv.release_date, pv.status, pv.version_id, 
@@ -118,3 +123,4 @@ exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.findByVersionIds = findByVersionIds;
 exports.findNewerVersions = findNewerVersions;
+exports.Status = Status;

@@ -47,23 +47,23 @@ function fetchAccountOrgs(fetchAll) {
 		[
 			{
 				name: "Fetching accounts from assets",
-				handler: (job) => assetaccounts.fetch(sfdc.NamedOrgs.org62.orgId, fetchAll, job)
+				handler: (job) => assetaccounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job)
 			},
 			{
 				name: "Fetching production org data",
-				handler: (job) => accountorgs.fetch(sfdc.NamedOrgs.bt.orgId, fetchAll, job),
+				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs.bt.orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
 			{
 				name: "Fetching sandbox org data",
-				handler: (job) => accountorgs.fetch(sfdc.NamedOrgs.sbt.orgId, fetchAll, job),
+				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs.sbt.orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}
@@ -78,22 +78,22 @@ function fetch(fetchAll) {
 			{
 				name: "Populating license data",
 				steps: [
-					{name: "Fetching packages", handler: (job) => ps.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll, job)},
+					{name: "Fetching packages", handler: (job) => ps.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)},
 					{
 						name: "Fetching package versions",
-						handler: (job) => pvs.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll, job)
+						handler: (job) => pvs.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
 					},
 					{name: "Fetching latest package versions", handler: (job) => pvs.fetchLatest(job)},
 
 					{
 						name: "Fetching licenses",
-						handler: (job) => licenses.fetch(sfdc.NamedOrgs.sb62.orgId, fetchAll, job)
+						handler: (job) => licenses.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
 					},
 					{name: "Invalidating conflicting licenses", handler: (job) => licenses.markInvalid(job)},
 					{name: "Deriving orgs from licenses", handler: (job) => licenseorgs.fetch(fetchAll, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.sb62.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.lma.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -102,12 +102,12 @@ function fetch(fetchAll) {
 				steps: [
 					{
 						name: "Fetching production orgs",
-						handler: (job) => orgs.fetch(sfdc.NamedOrgs.bt.orgId, false, fetchAll, job)
+						handler: (job) => orgs.fetch(sfdc.KnownOrgs.bt.orgId, false, fetchAll, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => orgs.mark(false, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -116,12 +116,12 @@ function fetch(fetchAll) {
 				steps: [
 					{
 						name: "Fetching sandbox orgs",
-						handler: (job) => orgs.fetch(sfdc.NamedOrgs.sbt.orgId, true, fetchAll, job)
+						handler: (job) => orgs.fetch(sfdc.KnownOrgs.sbt.orgId, true, fetchAll, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => orgs.mark(true, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -146,7 +146,7 @@ function fetch(fetchAll) {
 					},
 					{
 						name: "Fetching account names",
-						handler: (job) => accounts.fetch(sfdc.NamedOrgs.org62.orgId, fetchAll, job)
+						handler: (job) => accounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job)
 					},
 					{
 						name: "Updating orgs from accounts",
@@ -155,7 +155,7 @@ function fetch(fetchAll) {
 					],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}
@@ -182,7 +182,7 @@ function fetch2(fetchAll) {
 					],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}
@@ -202,12 +202,12 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid production orgs",
-						handler: (job) => orgs.refetchInvalid(sfdc.NamedOrgs.bt.orgId, false, job)
+						handler: (job) => orgs.refetchInvalid(sfdc.KnownOrgs.bt.orgId, false, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => orgs.mark(false, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -216,12 +216,12 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid sandbox orgs",
-						handler: (job) => orgs.refetchInvalid(sfdc.NamedOrgs.sbt.orgId, true, job)
+						handler: (job) => orgs.refetchInvalid(sfdc.KnownOrgs.sbt.orgId, true, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => orgs.mark(true, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -231,11 +231,11 @@ function fetchInvalid() {
 					{name: "Deriving accounts from orgs", handler: (job) => orgaccounts.fetch(true, job)},
 					{
 						name: "Fetching account names",
-						handler: (job) => accounts.fetch(sfdc.NamedOrgs.org62.orgId, true, job)
+						handler: (job) => accounts.fetch(sfdc.KnownOrgs.org62.orgId, true, job)
 					}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.NamedOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}

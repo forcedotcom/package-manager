@@ -8,7 +8,7 @@ const SELECT_ALL = `SELECT Id, LastModifiedDate, Name, sfLma__Subscriber_Org_ID_
 
 let adminJob;
 
-async function fetch(sb62Id, fetchAll, job) {
+async function fetch(lmaOrgId, fetchAll, job) {
 	adminJob = job;
 	let fromDate = null;
 	if (!fetchAll) {
@@ -17,12 +17,12 @@ async function fetch(sb62Id, fetchAll, job) {
 			fromDate = latest[0].max;
 		}
 	}
-	let recs = await query(sb62Id, fromDate);
+	let recs = await query(lmaOrgId, fromDate);
 	return upsert(recs, 2000);
 }
 
-async function query(sb62Id, fromDate) {
-	let conn = await sfdc.buildOrgConnection(sb62Id);
+async function query(lmaOrgId, fromDate) {
+	let conn = await sfdc.buildOrgConnection(lmaOrgId);
 	let soql = SELECT_ALL;
 	if (fromDate) {
 		soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;
@@ -63,10 +63,10 @@ async function load(result, conn) {
 async function upsert(recs, batchSize) {
 	let count = recs.length;
 	if (count === 0) {
-		logger.info("No new licenses found in sb62");
+		logger.info("No new licenses found in LMA");
 		return; // nothing to see here
 	}
-	logger.info(`New licenses found in sb62`, {count});
+	logger.info(`New licenses found in LMA`, {count});
 	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Batch upserting license records`, {batch: Math.min(start + batchSize, count), count: count});
 		await upsertBatch(recs.slice(start, start += batchSize));

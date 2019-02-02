@@ -56,7 +56,7 @@ export default class extends React.Component {
 							</div>
 							<div className="slds-media__body slds-text-color--inverse">
 								<h2 className="slds-text-heading_large">{this.state.message}</h2>
-								<div className="slds-text-heading_medium">Click to authenticate through SB62.</div>
+								<div className="slds-text-heading_medium">Click to authenticate through your LMA org.</div>
 							</div>
 						</div>
 						<footer className="menu slds-modal__footer slds-p-around_xxx-small">.</footer>

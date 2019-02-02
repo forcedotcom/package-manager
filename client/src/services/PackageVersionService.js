@@ -1,11 +1,13 @@
 import * as h from './h';
 
+import {PackageVersionStatus} from "../Constants";
+
 let url = "/api/packageversions";
 
 export let requestAll = (sort_field, sort_dir) => h.get(url, {sort_field, sort_dir});
 
 export let requestAllValid = (packageIds) => h.get(url, {packageIds, 
-	status: ['Verified','Pre-Release','Preview','Limited'], sort_field: 'version_number', sort_dir: 'desc'});
+	status: [PackageVersionStatus.Verified,PackageVersionStatus.PreRelease,PackageVersionStatus.Preview,PackageVersionStatus.Limited], sort_field: 'version_number', sort_dir: 'desc'});
 
 export let findByPackage = (packageIds, sort_field, sort_dir) => h.get(url, {
 	packageIds, sort_field: sort_field, sort_dir: sort_dir});

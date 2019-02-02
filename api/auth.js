@@ -56,6 +56,7 @@ function oauthOrgURL(req, res, next) {
 	try {
 		const url = buildURL("api id web refresh_token", {
 			operation: "org",
+			type: req.query.type,
 			loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN
 		});
 		res.json(url);
@@ -76,7 +77,7 @@ async function oauthCallback(req, res, next) {
 		let userInfo = await conn.authorize(req.query.code);
 		switch (state.operation) {
 			case "org":
-				await packageorgs.initOrg(conn, userInfo.organizationId);
+				await packageorgs.initOrg(conn, userInfo.organizationId, state.type);
 				res.redirect(`${CLIENT_URL}/packageorgs`);
 				break;
 			default:

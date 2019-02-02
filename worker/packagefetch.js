@@ -7,7 +7,7 @@ const SELECT_ALL = `SELECT Id, Name, sflma__Developer_Org_ID__c, sfLma__Package_
 
 let adminJob;
 
-async function fetch(sb62Id, fetchAll, job) {
+async function fetch(lmaOrgId, fetchAll, job) {
 	adminJob = job;
 
 	let fromDate = null;
@@ -18,12 +18,12 @@ async function fetch(sb62Id, fetchAll, job) {
 		}
 	}
 
-	const recs = await query(sb62Id, fromDate);
+	const recs = await query(lmaOrgId, fromDate);
 	return upsert(recs, 2000);
 }
 
-async function query(sb62Id, fromDate) {
-	let conn = await sfdc.buildOrgConnection(sb62Id);
+async function query(lmaOrgId, fromDate) {
+	let conn = await sfdc.buildOrgConnection(lmaOrgId);
 	let soql = SELECT_ALL;
 	soql += ` WHERE Status__c = 'Active'`;
 	if (fromDate) {

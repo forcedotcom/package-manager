@@ -121,7 +121,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS
   upgrade_job_job_id_uindex
   ON upgrade_job (job_id);
 
--- sb62 data
+-- LMA data
 create table if not exists package
 (
   id              serial      not null,

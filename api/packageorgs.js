@@ -25,6 +25,18 @@ const SELECT_ALL_WITH_REFRESH_TOKEN =
 async function requestAll(req, res, next) {
 	try {
 		let recs = await retrieveAll(req.query.sort_field, req.query.sort_dir);
+
+		// Add missing orgs
+		Object.entries(sfdc.KnownOrgs).forEach(([key, val]) => {
+			if (!recs.find(o => val.type === o.type)) {
+				let org = {status: Status.Missing, name: "Click to register missing org", type: val.type, instance_url: val.instanceUrl};
+				recs.push(org);
+				admin.emit(admin.Events.ALERT_INVALID_ORG, {subject: `Missing ${org.type} org`, org,
+					message: `Missing connection for the ${org.type} org.  Click to add one now.`})
+
+			}
+		});
+
 		return res.send(JSON.stringify(recs));
 	} catch (err) {
 		next(err);
@@ -35,14 +47,6 @@ async function retrieveAll(sortField, sortDir) {
 	let sort = ` ORDER BY ${sortField || "name"} ${sortDir || "asc"}`;
 	let recs = await db.query(SELECT_ALL + sort, []);
 	await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token"]);
-
-	let ids = recs.map(o => o.org_id);
-	Object.entries(sfdc.NamedOrgs).forEach(([key, val]) => {
-		if (ids.indexOf(val.orgId) === -1) {
-			recs.push({org_id: val.orgId, status: Status.Missing, name: val.name, instance_url: val.instanceUrl})
-		}
-	});
-
 	return recs;
 }
 
@@ -75,7 +79,7 @@ async function retrieveByOrgId(org_id) {
 	return recs[0];
 }
 
-async function initOrg(conn, org_id) {
+async function initOrg(conn, org_id, type) {
 	let org = await refreshOrgConnection(conn, org_id);
 	if (org.status === Status.Invalid) {
 		return await updateOrgStatus(org_id, org.status);
@@ -96,15 +100,18 @@ async function initOrg(conn, org_id) {
 
 	await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
 	let sql = `INSERT INTO package_org 
-            (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status)
+            (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status, type)
            VALUES 
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            on conflict (org_id) do update set
             name = excluded.name, division = excluded.division, namespace = excluded.namespace, instance_name = excluded.instance_name, 
             instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token,
-            status = excluded.status`;
-	return await db.insert(sql,
-		[org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status]);
+            status = excluded.status, type = excluded.type`;
+	await db.insert(sql,
+		[org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status, type]);
+
+	// Keep our known org info up to date
+	sfdc.initOrg(type, org_id);
 }
 
 async function refreshOrg(conn, org) {
@@ -154,6 +161,7 @@ async function updateOrgStatus(orgId, status) {
 async function refreshOrgConnection(conn, org_id) {
 	try {
 		let org = await conn.sobject("Organization").retrieve(org_id);
+
 		return {
 			org_id,
 			status: Status.Connected,
@@ -298,6 +306,7 @@ exports.requestUpdate = requestUpdate;
 exports.requestRefresh = requestRefresh;
 exports.requestRevoke = requestRevoke;
 exports.requestDelete = requestDelete;
+exports.retrieveAll = retrieveAll;
 exports.retrieveById = retrieve;
 exports.retrieveByOrgId = retrieveByOrgId;
 exports.initOrg = initOrg;

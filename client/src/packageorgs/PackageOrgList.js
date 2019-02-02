@@ -16,11 +16,11 @@ export default class extends React.Component {
 		const columns = [
 			{Header: "Name", accessor: "name", minWidth: 160, sortable: true, clickable: true},
 			{Header: "Description", accessor: "description", minWidth: 270, clickable: true},
-			{Header: "Instance URL", minWidth: 200, accessor: "instance_url", clickable: true},
-			{Header: "Package Namespace", accessor: "namespace", clickable: true},
 			{Header: "Org ID", accessor: "org_id", minWidth: 120, clickable: true},
-			{Header: "Instance Name", accessor: "instance_name"},
 			{Header: "Type", accessor: "type"},
+			{Header: "Instance URL", minWidth: 200, accessor: "instance_url"},
+			{Header: "Package Namespace", accessor: "namespace"},
+			{Header: "Instance Name", accessor: "instance_name"},
 			{
 				Header: "Status",
 				minWidth: 100,
@@ -41,7 +41,7 @@ export default class extends React.Component {
 	// Handlers
 	linkHandler(e, column, rowInfo, instance) {
 		if (rowInfo.original.status !== "Connected") {
-			this.props.onConnect(rowInfo.original.instance_url);
+			this.props.onConnect(rowInfo.original.instance_url, rowInfo.original.type);
 		} else {
 			nav.toPath("packageorg", rowInfo.row.org_id);
 		}

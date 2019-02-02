@@ -2,6 +2,7 @@ import React from 'react';
 import DatePicker from "react-datepicker";
 import moment from 'moment';
 
+import {PackageVersionStatus} from "../Constants";
 import 'react-datepicker/dist/react-datepicker.css';
 import '../components/datepicker.css';
 import * as packageVersionService from "../services/PackageVersionService";
@@ -31,7 +32,7 @@ export default class extends React.Component {
 					p = {id: v.package_id, name: v.package_name, selectedVersions: [], versions: []};
 					packageMap.set(p.id, p);
 				}
-				if (p.selectedVersions.length === 0 && v.status === "Verified") {
+				if (p.selectedVersions.length === 0 && v.status === PackageVersionStatus.Verified) {
 					p.selectedVersions.push(v.version_id);
 				}
 				p.versions.push(v);

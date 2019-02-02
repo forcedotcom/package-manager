@@ -33,7 +33,7 @@ export default class extends React.Component {
 
 		return (
 			<div>
-				<HomeHeader type="package orgs" title="Package Orgs" newLabel="Add Package Org" actions={actions} count={this.state.itemCount}>
+				<HomeHeader type="org connections" title="Org Connections" newLabel="Add Org Connection" actions={actions} count={this.state.itemCount}>
 					<HeaderNote>Remember that packaging orgs must have the <b>Packaging Push</b> permissions as well
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
@@ -56,8 +56,8 @@ export default class extends React.Component {
 		this.connectHandler(event.shiftKey ? "https://test.salesforce.com" : "https://login.salesforce.com");
 	}
 
-	connectHandler(instanceUrl) {
-		authService.oauthOrgURL(instanceUrl).then(url => {
+	connectHandler(instanceUrl, type) {
+		authService.oauthOrgURL(instanceUrl, type).then(url => {
 			window.location.href = url;
 		});
 	}
