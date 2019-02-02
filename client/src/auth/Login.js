@@ -69,7 +69,7 @@ export default class extends React.Component {
 	
 	// Handlers
 	loginHandler() {
-		const params = qs.parse(this.props.location.search);
+		const params = this.props.location ? qs.parse(this.props.location.search): {};
 		authService.oauthLoginURL(params.r).then(url => {
 			window.location.href = url;
 		});

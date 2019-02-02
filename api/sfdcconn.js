@@ -48,13 +48,14 @@ async function init() {
 	Object.entries(orgsConfig).forEach(([key, orgConfig]) => KnownOrgs[key] = orgConfig);
 
 	let orgs = await packageorgs.retrieveAll();
-	orgs.forEach(org => initOrg(org.type, org.org_id));
+	orgs.forEach(org => initOrg(org.type, org.org_id, org.instance_url));
 }
 
-function initOrg(type, orgId) {
+function initOrg(type, orgId, instanceUrl) {
 	Object.entries(KnownOrgs).forEach(([key, orgConfig]) => {
 		if (orgConfig.type === type) {
 			orgConfig.orgId = orgId;
+			orgConfig.instanceUrl = instanceUrl;
 		}
 	});
 }

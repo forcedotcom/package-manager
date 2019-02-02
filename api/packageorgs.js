@@ -9,7 +9,7 @@ const Status = {Connected: "Connected", Unprotected: "Unprotected", Invalid: "In
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 const PACKAGE_ORG_IP_RANGES = JSON.parse(process.env.PACKAGE_ORG_IP_RANGES) || [];
 const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
-const STEELBRICK_PM_PROFILE = "SteelBrick Package Manager Admin";
+const PACKAGE_MANAGER_ADMIN_PROFILE = process.env.PACKAGE_MANAGER_ADMIN_PROFILE;
 
 const SELECT_ALL = 
 	`SELECT id, name, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
@@ -86,11 +86,11 @@ async function initOrg(conn, org_id, type) {
 	}
 	try {
 		let result = await applyLoginIPAccessControls(org_id);
-		if (!result) {
-			logger.warn(`Did not find named profile`, {orgName: org.name, orgId: org_id, profileName: STEELBRICK_PM_PROFILE});
+		if (!result && PACKAGE_MANAGER_ADMIN_PROFILE) {
+			logger.warn(`Did not find named profile`, {orgName: org.name, orgId: org_id, profileName: PACKAGE_MANAGER_ADMIN_PROFILE});
 			org.status = Status.Unprotected;
 			admin.emit(admin.Events.ALERT, {subject: "Profile Not Found",
-				message: `Head's up.  We did not find a profile named ${STEELBRICK_PM_PROFILE} found in org ${org_id}.  We recommend you create one, so we can apply our IP access control ranges the next time you refresh.`});
+				message: `Head's up.  We did not find a profile named ${PACKAGE_MANAGER_ADMIN_PROFILE} found in org ${org_id}.  We recommend you create one, so we can apply our IP access control ranges the next time you refresh.`});
 		}
 	} catch (e) {
 		logger.warn(`Profile not updated for org ${org.name} (${org_id}).  Error: ${e.message}`);
@@ -111,7 +111,7 @@ async function initOrg(conn, org_id, type) {
 		[org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status, type]);
 
 	// Keep our known org info up to date
-	sfdc.initOrg(type, org_id);
+	sfdc.initOrg(type, org_id, org.instance_url);
 }
 
 async function refreshOrg(conn, org) {
@@ -144,9 +144,14 @@ async function refreshOrg(conn, org) {
 }
 
 async function applyLoginIPAccessControls(packageOrgId) {
+	if (!PACKAGE_MANAGER_ADMIN_PROFILE) {
+		logger.warn('No PACKAGE_MANAGER_ADMIN_PROFILE name given.  Login IP Access control helper cannot help you.');
+		return false;
+	}
+
 	let conn = await sfdc.buildOrgConnection(packageOrgId);
 	let metadata = {
-		fullName: STEELBRICK_PM_PROFILE,
+		fullName: PACKAGE_MANAGER_ADMIN_PROFILE,
 		loginIpRanges: PACKAGE_ORG_IP_RANGES
 	};
 	

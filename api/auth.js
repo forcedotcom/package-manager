@@ -2,6 +2,7 @@
 
 const jsforce = require('jsforce');
 const qs = require('query-string');
+const sfdc = require('./sfdcconn');
 const packageorgs = require('./packageorgs');
 const logger = require('../util/logger').logger;
 
@@ -13,9 +14,9 @@ const LOCAL_URL = process.env.LOCAL_URL || 'http://localhost';
 const PORT = process.env.PORT || 5000;
 const CLIENT_PORT = process.env.CLIENT_PORT || PORT;
 const API_URL = process.env.API_URL || `${LOCAL_URL}:${PORT}`;
-const AUTH_URL = process.env.AUTH_URL || 'https://steelbrick.my.salesforce.com';
 const CLIENT_URL = process.env.CLIENT_URL || `${LOCAL_URL}:${CLIENT_PORT}`;
 const CALLBACK_URL = process.env.CALLBACK_URL || `${API_URL}/oauth2/callback`;
+const AUTH_URL = process.env.AUTH_URL;
 
 // Constants
 const PROD_LOGIN = "https://login.salesforce.com";
@@ -45,7 +46,7 @@ function requestLogout(req, res, next) {
 
 function oauthLoginURL(req, res, next) {
 	try {
-		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL, returnTo: req.query.returnTo});
+		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL || sfdc.KnownOrgs.lma.instanceUrl, returnTo: req.query.returnTo});
 		res.json(url);
 	} catch (e) {
 		next(e);
@@ -129,7 +130,7 @@ function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
 				clientSecret: CLIENT_SECRET,
 				redirectUri: CALLBACK_URL
 			},
-			instanceUrl: AUTH_URL,
+			instanceUrl: AUTH_URL || sfdc.KnownOrgs.lma.instanceUrl,
 			accessToken: accessToken,
 			refreshToken: refreshToken
 		}
