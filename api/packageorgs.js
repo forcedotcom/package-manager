@@ -219,6 +219,7 @@ async function requestDelete(req, res, next) {
 		let n = 1;
 		let params = orgIds.map(() => `$${n++}`);
 		await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
+		await sfdc.invalidateOrgs(orgIds);
 		admin.emit(admin.Events.PACKAGE_ORGS);
 		return res.send({result: 'OK'});
 	} catch (err) {

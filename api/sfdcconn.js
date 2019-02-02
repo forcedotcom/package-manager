@@ -49,7 +49,12 @@ async function init() {
 	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {};
 	// Loop through default orgs, setting the given configured org if found, otherwise using the default
 	Object.entries(DEFAULT_ORGS).forEach(([key, defaultOrg]) => {
-		KnownOrgs[key] = orgsConfig[key] || defaultOrg;
+		if (orgsConfig[key]) {
+			KnownOrgs[key] = orgsConfig[key];
+		} else {
+			// Clone the default
+			KnownOrgs[key] = Object.assign({}, defaultOrg);
+		}
 	});
 
 	let orgs = await packageorgs.retrieveAll();
@@ -63,6 +68,16 @@ function initOrg(type, orgId, instanceUrl) {
 			orgConfig.instanceUrl = instanceUrl;
 		}
 	});
+}
+
+async function invalidateOrgs(orgIds) {
+	Object.entries(KnownOrgs).forEach(([key, orgConfig]) => {
+		if (orgIds.find(id => id === orgConfig.orgId)) {
+			delete KnownOrgs[key];
+		}
+	});
+
+	await init();
 }
 
 function buildConnection(accessToken, refreshToken, instanceUrl) {
@@ -115,6 +130,7 @@ async function buildOrgConnection(packageOrgId) {
 exports.buildOrgConnection = buildOrgConnection;
 exports.init = init;
 exports.initOrg = initOrg;
+exports.invalidateOrgs = invalidateOrgs;
 exports.INTERNAL_ID = INTERNAL_ID;
 exports.INVALID_ID = INVALID_ID;
 exports.KnownOrgs = KnownOrgs;
