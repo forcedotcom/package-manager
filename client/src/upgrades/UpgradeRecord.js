@@ -1,5 +1,6 @@
 import React from 'react';
 
+import * as authService from '../services/AuthService';
 import * as upgradeService from '../services/UpgradeService';
 import * as orgService from '../services/OrgService';
 
@@ -51,7 +52,7 @@ export default class extends React.Component {
 		
 		
 		let userCanActivate = true;
-		let user = JSON.parse(sessionStorage.getItem("user"));
+		let user = authService.getSessionUser();
 		if (user) {
 			userCanActivate = user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username);
 		}

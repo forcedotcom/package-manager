@@ -7,7 +7,7 @@ import moment from "moment";
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		sessionStorage.removeItem('user');
+		authService.invalidateUser();
 
 		let goodDay = () => {
 			const hour = parseFloat(moment().format("HH"));

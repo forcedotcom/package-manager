@@ -50,14 +50,12 @@ class App extends Component {
 	state = {};
 
 	componentDidMount() {
-		let u = sessionStorage.getItem("user");
-		if (!u) {
+		let user = authService.getSessionUser();
+		if (!user) {
 			authService.requestUser().then(user => {
-				sessionStorage.setItem("user", JSON.stringify(user));
 				this.setState({...user});
 			}).catch(e => this.setState({display_name: "Invalid", username: e.message}));
 		} else {
-			let user = JSON.parse(u);
 			this.setState({username: user.username, display_name: user.display_name});
 		}
 	}

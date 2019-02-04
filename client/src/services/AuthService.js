@@ -8,4 +8,11 @@ export let oauthOrgURL = (instanceUrl, type) => h.get(url + "/orgurl", {instance
 
 export let requestLogout = () => h.get(url + "/logout");
 
-export let requestUser = () => h.get(url + "/user");
+export let requestUser = () => h.get(url + "/user").then(user => {
+    sessionStorage.setItem("user", JSON.stringify(user));
+    return user;
+});
+
+export let getSessionUser = () => JSON.parse(sessionStorage.getItem("user"));
+
+export let invalidateUser = () => sessionStorage.removeItem('user');

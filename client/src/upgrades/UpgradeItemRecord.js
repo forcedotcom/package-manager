@@ -2,6 +2,7 @@ import React from 'react';
 
 import * as upgradeItemService from '../services/UpgradeItemService';
 import * as upgradeJobService from "../services/UpgradeJobService";
+import * as authService from "../services/AuthService";
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import {getProgress, Status, UPGRADE_ITEM_ICON} from "../Constants";
@@ -34,7 +35,7 @@ export default class extends React.Component {
 	render() {
 		const {item, progress} = this.state;
 		let userCanActivate = true;
-		let user = JSON.parse(sessionStorage.getItem("user"));
+		let user = authService.getSessionUser();
 		if (user) {
 			userCanActivate = user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username);
 		}

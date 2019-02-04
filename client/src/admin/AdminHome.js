@@ -10,6 +10,7 @@ import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
 import {Helmet} from "react-helmet";
+import * as authService from "../services/AuthService";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -152,9 +153,11 @@ export default class extends React.Component {
 			{label: "Fetch Latest", handler: this.fetchHandler},
 			{label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
 			{label: "Re-Fetch All", handler: this.refetchAllHandler},
-			{label: "Fetch Account Orgs", group: "accounts", handler: () => notifier.emit("fetch-all-account-orgs", {})},
-			{label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler}
 		];
+
+		let user = authService.getSessionUser();
+		if (user.enable_sumo)
+			actions.push({label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler});
 
 		if (this.state.settings.HEROKU_APP_NAME) {
 			actions.push({label: "Open Heroku", handler: this.goToHerokuHandler, group: "external"});

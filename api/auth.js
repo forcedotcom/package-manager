@@ -113,8 +113,9 @@ async function requestUser(req, res, next) {
 	const conn = buildAuthConnection(req.session.access_token);
 	try {
 		let user = await conn.identity();
-		// Store policy details on user session object
+		// Store additional settings on user session object that the UI may need
 		user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
+		user.enable_sumo = !!process.env.SUMO_URL;
 		res.json(user);
 	} catch (e) {
 		logger.error("Failed to identify current user", {...e});

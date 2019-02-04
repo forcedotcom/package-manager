@@ -162,13 +162,10 @@ io.on('connection', function (socket) {
 });
 
 // Set job intervals
-admin.startup().then(() => logger.info(`
-_
-
--
-=
-============= Server Initialized and Ready, Set, Go!
-=
--
-_
-`));
+admin.startup().then(() => {
+	logger.info("-");
+	logger.info("=");
+	logger.info("============= Server Initialized and Ready, Set, Go!");
+	logger.info("=");
+	logger.info("-");
+});
