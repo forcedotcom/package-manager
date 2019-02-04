@@ -67,8 +67,8 @@ export default class extends React.Component {
 		if (this.state.id !== "OrgJobCard") {
 			columns.push({
 				Header: "Org Information", columns: [
-					{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 160, filterable: true},
-					{Header: "Instance", accessor: "instance", clickable: true, filterable: true},
+					{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 120, maxWidth: 160, filterable: true},
+					{Header: "Instance", accessor: "instance", clickable: true, filterable: true, maxWidth: 70},
 					{
 						Header: "Account",
 						accessor: "account_name",
@@ -76,10 +76,19 @@ export default class extends React.Component {
 						clickable: true,
 						minWidth: 250,
 						filterable: true
+					},
+					{
+						Header: "Date Installed",
+						id: "install_date",
+						accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"),
+						minWidth: 120,
+						sortable: true,
+						filterable: true
 					}]
 			});
 		}
-		columns.push({Header: "Version Information", columns: [
+		columns.push(
+			{Header: "Version Information", columns: [
 				{
 					Header: "Package Name",
 					accessor: "package_name",
@@ -88,7 +97,7 @@ export default class extends React.Component {
 					minWidth: 200,
 					filterable: true
 				},
-				{
+					{
 					Header: "Original",
 					id: "original_version_sort", accessor: "original_version_number",
 					sortable: true,

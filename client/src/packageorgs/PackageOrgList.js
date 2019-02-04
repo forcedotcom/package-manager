@@ -16,7 +16,7 @@ export default class extends React.Component {
 		const columns = [
 			{Header: "Name", accessor: "name", minWidth: 160, sortable: true, clickable: true},
 			{Header: "Description", accessor: "description", minWidth: 270, clickable: true},
-			{Header: "Org ID", accessor: "org_id", minWidth: 120, clickable: true},
+			{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, clickable: true},
 			{Header: "Type", accessor: "type"},
 			{Header: "Instance URL", minWidth: 200, accessor: "instance_url"},
 			{Header: "Package Namespace", accessor: "namespace"},

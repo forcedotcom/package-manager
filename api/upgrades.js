@@ -142,6 +142,7 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, o.instance, j.status,
         i.start_time, i.created_by,
         pv.version_number, pv.version_id, pv.version_sort,
+        opv.install_date,
         pvc.version_number current_version_number, pvc.version_id current_version_id, pvc.version_sort current_version_sort,
         pvo.version_number original_version_number, pvo.version_id original_version_id, pvo.version_sort original_version_sort,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,

@@ -25,10 +25,10 @@ export default class extends React.Component {
 
 		const columns = [
 			{Header: "Org Information", columns: [
-				{Header: "Org ID", accessor: "org_id", sortable: true, clickable: true},
+				{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, sortable: true, clickable: true},
 				{Header: "Type", accessor: "type", sortable: true},
 				{Header: "Edition", accessor: "edition", sortable: true},
-				{Header: "Instance", accessor: "instance", sortable: true}]},
+				{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true}]},
 			{Header: "Account Information", columns: [
 				{Header: "Account Name", accessor: "account_name", clickable: true},
 				{Header: "License", accessor: "license_status"},
