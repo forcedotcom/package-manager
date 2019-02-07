@@ -39,7 +39,8 @@ export const Colors = {
 	Success: "#BFD641", // Pantone Lime Punch Spring '18
 	Warning: "#FFD662", // Pantone Aspen Gold Summer '19
 	Error: "#DD4132", // Pantone Fiesta Summer '19
-	Neutral: "#6B5B95" // Pantone Ultra Violet COTY '19
+	Neutral: "#6B5B95", // Pantone Ultra Violet COTY '19
+	Subtle: "#77777E" // Bluey gray
 };
 
 export const getProgressFromUpgradeItem = item => {
