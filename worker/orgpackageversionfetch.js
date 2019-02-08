@@ -1,6 +1,7 @@
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 const orgsapi = require('../api/orgs');
+const sfdc = require('../api/sfdcconn');
 const orgpackageversions = require('../api/orgpackageversions');
 const push = require('./packagepush');
 
@@ -103,20 +104,20 @@ async function fetchFromSubscribers(orgId, packageOrgIds, job) {
 	}
 	const missingOrgIds = new Set(orgIds);
 
-	job.postMessage(`Querying ${packageOrgIds.length} org connections`);
+	job.postDetail(`Querying ${packageOrgIds.length} org connections`);
 	let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
 	let opvs = [];
 	for (let i = 0; i < arrs.length; i++) {
 		const arr = arrs[i];
 		if (!Array.isArray(arr)) {
 			// Error!
-			job.postMessage(`Error: ${arr}`);
+			job.postDetail(`Error: ${arr}`);
 			continue;
 		}
 
 		opvs = opvs.concat(arr.map(rec => {
 			// Found! So remove from missing list and add as an Active license
-			const orgId = rec.OrgKey.substring(0, 15);
+			const orgId = sfdc.normalizeId(rec.OrgKey);
 			missingOrgIds.delete(orgId);
 			return {
 				org_id: orgId,
@@ -125,13 +126,13 @@ async function fetchFromSubscribers(orgId, packageOrgIds, job) {
 			}
 		}));
 	}
-	job.postMessage(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
+	job.postDetail(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
 	missingOrgIds.forEach((value) => {
 		opvs.push({version_id: null, org_id: value, license_status: orgpackageversions.LicenseStatus.NotFound});
 	});
 	if (opvs.length > 0) {
 		let res = await orgpackageversions.insertOrgPackageVersions(opvs);
-		job.postMessage(`Updated ${res.length} org package versions`);
+		job.postDetail(`Updated ${res.length} org package versions`);
 	}
 }
 

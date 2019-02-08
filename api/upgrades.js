@@ -3,6 +3,7 @@ const push = require('../worker/packagepush');
 const admin = require('./admin');
 const logger = require('../util/logger').logger;
 const strings = require('../util/strings');
+const sfdc = require('./sfdcconn');
 const orgpackageversions = require('./orgpackageversions');
 
 const State = {
@@ -270,7 +271,7 @@ async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
 			continue;
 		}
 		
-		if (pushJob.Id.substring(0, 15) !== upgradeJob.job_id) {
+		if (sfdc.normalizeId(pushJob.Id) !== upgradeJob.job_id) {
 			throw Error("Something is very wrong. Push Job id does not match upgrade job id: " + upgradeJob.job_id);
 		}
 
@@ -472,7 +473,7 @@ async function fetchJobStatus(upgradeJobs) {
 	
 	let pushJobsById = new Map();
 	const promisesResults = await Promise.all(promisesArr);
-	promisesResults.forEach(arr => arr.forEach(pj => pushJobsById.set(pj.Id.substring(0,15), pj)));
+	promisesResults.forEach(arr => arr.forEach(pj => pushJobsById.set(sfdc.normalizeId(pj.Id), pj)));
 	await changeUpgradeJobsStatus(activeJobs, pushJobsById);
 }
 

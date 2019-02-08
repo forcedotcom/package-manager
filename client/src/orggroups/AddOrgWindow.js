@@ -59,8 +59,8 @@ export default class extends React.Component {
 	}
 
 	orgsBlurHandler(event) {
-		let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0, 15));
-		let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length === 15 && elem.startsWith("00D"))));
+		let vals = event.target.value.replace(/[ \t\r\n\f'"]/g, ",").split(",").map(v => v.substring(0, 18));
+		let orgIdSet = new Set(vals.filter(elem => elem !== "" && (elem.length <= 18 && elem.startsWith("00D"))));
 		let orgIds = Array.from(orgIdSet);
 		this.setState({orgIds: orgIds, orgs: orgIds.join(", ")});
 	}

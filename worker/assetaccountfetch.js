@@ -42,7 +42,7 @@ async function load(result, conn) {
 	let recs = result.records.map(v => {
 		return {
 			org_id: v.Apttus_Config2__AccountId__r.OrgId,
-			account_id: v.Apttus_Config2__AccountId__c.substring(0,15),
+			account_id: sfdc.normalizeId(v.Apttus_Config2__AccountId__c),
 			account_name: v.Apttus_Config2__AccountId__r.Name,
 			modified_date: v.Apttus_Config2__AccountId__r.LastModifiedDate,
 			status: 'Purchased'

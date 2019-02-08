@@ -45,9 +45,9 @@ async function fetchBatch(conn, accounts, useBulkAPI) {
 	let query = (useBulkAPI ? conn.bulk.query(soql) : conn.query(soql))
 	.on("record", rec => {
 		count++;
-		let account = accountMap[rec.Id.substring(0, 15)];
+		let account = accountMap[sfdc.normalizeId(rec.Id)];
 		account.account_name = rec.Name;
-		account.org_id = rec.OrgId ? rec.OrgId.substring(0, 15) : null;
+		account.org_id = rec.OrgId ? sfdc.normalizeId(rec.OrgId) : null;
 		account.instance = normalizeInstanceName(rec.Instance__c);
 		account.modified_date = new Date(rec.LastModifiedDate).toISOString();
 	})

@@ -127,7 +127,15 @@ async function buildOrgConnection(packageOrgId) {
 	return conn;
 }
 
+/**
+ * TODO we should not be converting from 18 to 15, but the other way around.  Switch and migrate when possible.
+ */
+function normalizeId(id) {
+	return id.substring(0, 15);
+}
+
 exports.buildOrgConnection = buildOrgConnection;
+exports.normalizeId = normalizeId;
 exports.init = init;
 exports.initOrg = initOrg;
 exports.invalidateOrgs = invalidateOrgs;

@@ -42,7 +42,7 @@ async function fetchBatch(conn, accounts) {
 	let query = conn.query(soql)
 		.on("record", rec => {
 		orgs.push({
-			org_id: rec.Id.substring(0,15),
+			org_id: sfdc.normalizeId(rec.Id),
 			name: rec.Name,
 			edition: rec.OrganizationType,
 			account_id: rec.Account,

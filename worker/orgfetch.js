@@ -57,7 +57,7 @@ async function fetchBatch(conn, orgs) {
 	soql += ` WHERE Id IN ('${orgIds.join("','")}')`;
 	let query = conn.query(soql)
 	.on("record", rec => {
-		let org = orgMap[rec.Id.substring(0, 15)];
+		let org = orgMap[sfdc.normalizeId(rec.Id)];
 		org.name = rec.Name;
 		org.edition = rec.OrganizationType;
 		org.account_id = rec.Account;
@@ -118,7 +118,7 @@ async function mark(isSandbox, job) {
                 and is_sandbox = $2`;
 	let res = await db.update(sql, [sfdc.INVALID_ID, isSandbox]);
 	if (res.length > 0) {
-		adminJob.postMessage(`Marked ${res.length} orgs as having invalid accounts`);
+		adminJob.postDetail(`Marked ${res.length} orgs as having invalid accounts`);
 	}
 }
 
