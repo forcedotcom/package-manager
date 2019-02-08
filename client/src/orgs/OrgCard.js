@@ -43,7 +43,6 @@ export default class extends React.Component {
 			{Header: "License", accessor: "license_status", sortable: true},
 			{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true},
 			{Header: "Type", accessor: "type", sortable: true},
-			{Header: "Features", accessor: "features", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true}
 		];
 

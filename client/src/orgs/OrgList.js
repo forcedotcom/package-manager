@@ -25,7 +25,6 @@ export default class extends React.Component {
 			{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true},
 			{Header: "Edition", accessor: "edition", sortable: true},
 			{Header: "Type", accessor: "type", sortable: true},
-			{Header: "Features", accessor: "features", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true},
 			{Header: "Status", accessor: "status", sortable: true}
 		];
