@@ -11,7 +11,7 @@ export default class extends React.Component {
 
 		let goodDay = () => {
 			const hour = parseFloat(moment().format("HH"));
-			return "good " + hour < 5 ? "night" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+			return "Good " + hour < 5 ? "night" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 		};
 
 		const WELCOMONING = [
@@ -22,7 +22,7 @@ export default class extends React.Component {
 			"'All you need is love' - the Beatles.",
 			"'All you need is dung' - the Beetles.",
 			"Winter is coming.",
-			"What is the sound of someone trying to gargle while fighting off a pack of wolves?",
+			"Hear that? That is the sound of a man trying to gargle while fighting off a pack of wolves.",
 			"Welcome to the machine.",
 			"Do not make me regret this.",
 			"Look both ways before crossing.",
