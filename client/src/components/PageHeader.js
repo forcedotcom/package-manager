@@ -392,13 +392,13 @@ export class ToggleButton extends React.Component {
 			<button data-tip={this.props.detail} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
 					onClick={this.props.handler}>
   				<span className="slds-text-not-selected">
-					<svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+					{iconOff !== 'none' ? <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
 					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOff}`}/>
-					</svg>{this.props.label}</span>
+					</svg> : ''}{this.props.label}</span>
 				<span className="slds-text-selected">
-					<svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
+					{iconOn !== 'none' ? <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
 					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOn}`}/>
-					</svg>{this.props.label}</span>
+					</svg> : ''}{this.props.label}</span>
 				{this.props.detail ?
 					<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 			</button>

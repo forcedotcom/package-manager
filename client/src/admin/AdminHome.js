@@ -5,7 +5,7 @@ import debounce from 'lodash.debounce';
 import * as notifier from "../services/notifications";
 import * as adminService from '../services/AdminService';
 
-import {ADMIN_ICON} from "../Constants";
+import {ADMIN_ICON, Colors} from "../Constants";
 import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
@@ -76,10 +76,9 @@ export default class extends React.Component {
 						<ProgressBar message={job.message} progress={job.stepIndex / job.stepCount}
 									 status={job.errors.length > 0 ? "error" : "success"}/>
 						{job.errors.length > 0 ?
-							<Section title="Errors"><Results lines={job.errors}
-															 divider="slds-has-dividers_bottom-space"/></Section> : ""}
-						{job.messages.length > 0 ?
-							<Section closed="true" title="Results"><Results lines={job.messages}/></Section> : ""}
+							<Section title="Errors"><Errors startTime={job.startTime} lines={job.errors}/></Section> : ""}
+						{job.results.length > 0 ?
+							<Section closed="true" title="Results"><Results startTime={job.startTime} lines={job.results}/></Section> : ""}
 					</AdminCard>);
 			}
 		} else {
@@ -112,13 +111,12 @@ export default class extends React.Component {
 				latestHistoryCards.push(
 					<AdminCard key={`${job.id}-history-${i}`} title={job.name}>
 						<div className="slds-m-top--medium slds-m-bottom--medium">
-							<ProgressBar message={moment(job.modifiedDate).format("lll")} progress={1}
-									 status={job.errors.length > 0 ? "error" : "success"}/></div>
+							<ProgressBar message={`${moment(job.modifiedDate).format("lll")} (completed in ${moment.duration(Math.ceil(moment(job.modifiedDate).diff(job.startTime) / 1000), 's').asSeconds()} s)`} progress={1}
+										 status={job.errors.length > 0 ? "error" : "success"}/></div>
 						{job.errors.length > 0 ?
-							<Section title="Errors"><Results lines={job.errors}
-															 divider="slds-has-dividers_bottom-space"/></Section> : ""}
-						{job.messages.length > 0 ?
-							<Section closed="true" title="Results"><Results lines={job.messages}/></Section> : ""}
+							<Section title="Errors"><Errors startTime={job.startTime} lines={job.errors}/></Section> : ""}
+						{job.results.length > 0 ?
+							<Section closed="true" title="Results"><Results startTime={job.startTime} lines={job.results}/></Section> : ""}
 					</AdminCard>);
 			}
 		} else {
@@ -134,12 +132,11 @@ export default class extends React.Component {
 				let job = this.state.history.all[i];
 				historyCards.push(
 					<TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval}
-								   error={job.errors.length > 0} timestamp={moment(job.modifiedDate).format("lll")}>
+								   error={job.errors.length > 0} timestamp={`${moment(job.modifiedDate).format("lll")} (completed in ${moment.duration(Math.ceil(moment(job.modifiedDate).diff(job.startTime) / 1000), 's').asSeconds()} s)`}>
 						{job.errors.length > 0 ?
-							<Section title="Errors"><Results lines={job.errors}
-															 divider="slds-has-dividers_bottom-space"/></Section> : ""}
-						{job.messages.length > 0 ?
-							<Section closed="true" title="Results"><Results lines={job.messages}/></Section> : ""}
+							<Section title="Errors"><Errors startTime={job.startTime} lines={job.errors}/></Section> : ""}
+						{job.results.length > 0 ?
+							<Section closed="true" title="Results"><Results startTime={job.startTime} lines={job.results}/></Section> : ""}
 					</TimelineEntry>);
 			}
 		} else {
@@ -156,7 +153,7 @@ export default class extends React.Component {
 		];
 
 		let user = authService.getSessionUser();
-		if (user.enable_sumo)
+		if (user && user.enable_sumo)
 			actions.push({label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler});
 
 		if (this.state.settings.HEROKU_APP_NAME) {
@@ -168,7 +165,7 @@ export default class extends React.Component {
 				<Helmet>
 					<title>SteelBrick PM: Admin</title>
 				</Helmet>
-				<RecordHeader type="Admin" icon={ADMIN_ICON} title="Administration" actions={actions}/>
+				<RecordHeader type="Admin" icon={ADMIN_ICON} title="Background Jobs" actions={actions}/>
 
 				{this.state.isMini ?
 					<div className="slds-grid slds-gutters">
@@ -298,11 +295,24 @@ class Section extends React.Component {
 
 class Results extends React.Component {
 	render() {
-		let lines = this.props.lines.map((r, i) => <li key={i} className="slds-item">{r}</li>);
+		let startTime = this.props.startTime;
+		let lines = this.props.lines.map((r, i) =>
+			<li key={i} className="slds-item">
+				{r.message}
+				<span style={{float: "right", color: Colors.Subtle, padding: "0 20px 0 20px"}}>{i === 0 ? "mm:ss" : moment(Math.abs(r.timestamp-startTime)).format("mm:ss")}</span>
+				{r.details ? r.details.map((m, i) => <div key={i} style={{color: Colors.Subtle, marginLeft: "1.25em"}}>{m}</div>) : ""}
+			</li>);
 		return (
-			<div className={this.props.divider ? this.props.divider : "slds-list_ordered"}>
-				{lines}
-			</div>
+			<ul className="checklist">{lines}</ul>
+		);
+	}
+}
+
+class Errors extends React.Component {
+	render() {
+		let lines = this.props.lines.map((r, i) => <li key={i} className="slds-item">{r.message}</li>);
+		return (
+			<ul className="checklist errorlist">{lines}</ul>
 		);
 	}
 }

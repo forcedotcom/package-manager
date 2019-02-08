@@ -110,7 +110,7 @@ async function upsertBatch(recs) {
 async function fetchLatest(job) {
 	adminJob = job;
 
-	let latest = await queryLatest([Status.PreRelease, Status.Verified, Status.Limited, Status.Preview]);
+	let latest = await queryLatest();
 	const latestByPackage = new Map(
 		latest.map(l => [l.package_id, {
 			package_id: l.package_id,
@@ -118,7 +118,15 @@ async function fetchLatest(job) {
 			limited_version_number: l.version_number,
 			limited_version_sort: l.version_sort
 	}]));
-	
+
+	let latestLimited = await queryLatest([Status.PreRelease, Status.Verified, Status.Limited, Status.Preview]);
+	latestLimited.forEach(l => {
+		const pvl = latestByPackage.get(l.package_id);
+		pvl.limited_version_id = l.version_id;
+		pvl.limited_version_number = l.version_number;
+		pvl.limited_version_sort = l.version_sort;
+	});
+
 	let latestValid = await queryLatest([Status.PreRelease, Status.Verified]);
 	latestValid.forEach(l => {
 		const pvl = latestByPackage.get(l.package_id);
@@ -134,10 +142,11 @@ async function fetchLatest(job) {
 }
 
 async function queryLatest(status) {
-	let params = status.map((s,i) => '$' + (i+1));
+	let params = status ? status.map((s,i) => '$' + (i+1)) : [];
+	let where = status ? `WHERE status IN (${params.join(",")})` : "";
 	let sql = `SELECT v.package_id, v.version_id, v.version_number, v.version_sort FROM
         (SELECT package_id, MAX(version_sort) version_sort FROM package_version
-         WHERE status IN (${params.join(",")}) 
+         ${where} 
          GROUP BY package_id) x
         INNER JOIN package_version v ON v.package_id = x.package_id AND v.version_sort = x.version_sort`;
 	return db.query(sql, status);

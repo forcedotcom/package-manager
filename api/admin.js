@@ -68,11 +68,12 @@ class AdminJob {
 		this.type = type;
 		this.name = name;
 		this.modifiedDate = new Date();
+		this.startTime = 0;
 		this.status = null;
 		this.steps = Array.from(steps);
 		this.stepIndex = 0;
 		this.stepCount = this.collectSteps(this.steps).length;
-		this.messages = [];
+		this.results = [];
 		this.errors = [];
 		this.canceled = false;
 		this.singleton = false;
@@ -81,22 +82,29 @@ class AdminJob {
 
 	postMessage(message) {
 		this.message = message;
-		this.messages.push(message);
+		this.results.push({message, timestamp: Date.now(), details: []});
 		this.modifiedDate = new Date();
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
 	postProgress(message, stepIndex, e) {
 		this.message = message;
-		this.messages.push(message);
+		this.results.push({message, timestamp: Date.now(), details: []});
 		if (e) {
-			this.errors.push(String(e));
+			this.errors.push({message: String(e), timestamp: Date.now()});
 		}
 		if (stepIndex > 0) {
 			this.stepIndex = stepIndex;
 		}
 		this.modifiedDate = new Date();
 		logger.info(message, e ? {error: e.message} : {});
+		emit(Events.JOBS, Array.from(activeJobs.values()));
+	}
+
+	postDetail(detail) {
+		this.results[this.results.length-1].timestamp = Date.now();
+		this.results[this.results.length-1].details.push(detail);
+		this.modifiedDate = new Date();
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
@@ -115,7 +123,7 @@ class AdminJob {
 		try {
 			activeJobs.set(this.type, this);
 			this.postMessage(`Starting job ${this.name}`);
-
+			this.startTime = Date.now();
 			await this.runSteps(this.steps);
 			this.status = this.canceled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
 			this.postProgress(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.canceled ? this.stepIndex : this.stepCount);

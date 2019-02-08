@@ -64,9 +64,11 @@ async function upsert(recs, batchSize) {
 	let count = recs.length;
 	if (count === 0) {
 		logger.info("No new licenses found in LMA");
+		adminJob.postDetail(`No new licenses found in LMA`);
 		return; // nothing to see here
 	}
-	logger.info(`New licenses found in LMA`, {count});
+
+	adminJob.postDetail(`Storing ${count} license records from LMA`);
 	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Batch upserting license records`, {batch: Math.min(start + batchSize, count), count: count});
 		await upsertBatch(recs.slice(start, start += batchSize));
@@ -121,9 +123,11 @@ async function markInvalid() {
 		prev = curr;
 	}
 
-	const sql = `UPDATE license SET status = 'Invalid' 
-                     WHERE id IN ('${invalidIds.join("','")}')`;
-	await db.update(sql);
+	if (invalidIds.length > 0) {
+		const sql = `UPDATE license SET status = 'Invalid' 
+						 WHERE id IN ('${invalidIds.join("','")}')`;
+		await db.update(sql);
+	}
 }
 
 exports.fetch = fetch;
