@@ -16,3 +16,16 @@
 .menu a:visited {
     color: #eee;
 }
+
+.checklist {list-style: none; margin-left: 2em}
+.checklist li::before, .checklist li>div:before {
+    content: '✓';
+    display: inline-block;
+    width: 1.25em;
+    margin-left: -1em;
+}
+
+.errorlist li::before {
+    content: '✘' !important;
+    color: #91261c !important; /* Darker Pantone Fiesta Summer '19 */
+}
