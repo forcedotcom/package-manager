@@ -22,6 +22,7 @@ create table if not exists account
   id            serial      not null,
   org_id        varchar(18),
   instance      varchar(6),
+  edition       varchar(100),
   account_id    varchar(18) not null
     constraint account_account_id_pk primary key,
   account_name  varchar(256),
@@ -206,6 +207,7 @@ on conflict do nothing;
 drop table if exists admin_job;
 
 alter table account
+  add if not exists edition varchar(100) null,
   add if not exists instance varchar(6) null;
 
 alter table filter

@@ -32,7 +32,7 @@ async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
 }
 
 async function fetchBatch(conn, accounts, useBulkAPI) {
-	let soql = `SELECT Id, Name, OrgId, Instance__c, LastModifiedDate FROM Account`;
+	let soql = `SELECT Id, Name, OrgId, Instance__c, Core_Edition__c, LastModifiedDate FROM Account`;
 	let accountIds = accounts.map(r => r.account_id);
 
 	let accountMap = {};
@@ -49,6 +49,7 @@ async function fetchBatch(conn, accounts, useBulkAPI) {
 		account.account_name = rec.Name;
 		account.org_id = rec.OrgId ? sfdc.normalizeId(rec.OrgId) : null;
 		account.instance = normalizeInstanceName(rec.Instance__c);
+		account.edition = rec.Core_Edition__c;
 		account.modified_date = new Date(rec.LastModifiedDate).toISOString();
 	})
 	.on("end", async () => {
@@ -84,17 +85,17 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
 	let values = [];
-	let sql = "INSERT INTO account (org_id, instance, account_id, account_name, modified_date) VALUES";
+	let sql = "INSERT INTO account (org_id, instance, edition, account_id, account_name, modified_date) VALUES";
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		if (i > 0) {
 			sql += ','
 		}
 		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
-		values.push(rec.org_id, rec.instance, rec.account_id, rec.account_name, rec.modified_date);
+		values.push(rec.org_id, rec.instance, rec.edition, rec.account_id, rec.account_name, rec.modified_date);
 	}
 	sql += ` on conflict (account_id) do update set account_name = excluded.account_name, org_id = excluded.org_id, 
-				instance = excluded.instance, modified_date = excluded.modified_date`;
+				instance = excluded.instance, edition = excluded.edition, modified_date = excluded.modified_date`;
 	await db.insert(sql, values);
 }
 

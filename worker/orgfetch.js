@@ -125,12 +125,10 @@ async function mark(isSandbox, job) {
 async function updateOrgsFromAccounts(job) {
 	adminJob = job;
 
-	let sql = `
-		UPDATE org o SET instance = a.instance 
-		FROM account a WHERE a.instance IS NOT NULL AND o.org_id = a.org_id AND o.instance != a.instance`;
+	let sql = ` UPDATE org o SET account_id = a.account_id, edition = a.edition FROM account a WHERE o.org_id = a.org_id`;
 	let res = await db.update(sql);
 	if (res.length > 0) {
-		adminJob.postMessage(`Updated ${res.length} orgs with with account instances`);
+		adminJob.postDetail(`Updated ${res.length} orgs with with account instances`);
 	}
 }
 
