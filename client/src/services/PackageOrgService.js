@@ -13,3 +13,5 @@ export let requestRefresh = orgIds => h.post(url + "/refresh", {orgIds});
 export let requestRevoke = orgIds => h.post(url + "/revoke", {orgIds});
 
 export let requestDelete = orgIds => h.post(url + "/delete", {orgIds});
+
+export let requestActivation = (orgIds, flag) => h.post(url + "/activation", {orgIds, flag});

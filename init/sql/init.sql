@@ -4,6 +4,7 @@ create table if not exists package_org
   org_id         varchar(18) not null
     constraint package_org_org_id_pk primary key,
   name           varchar(100),
+  active         boolean,
   description    text,
   division       varchar(100),
   namespace      varchar(16),
@@ -46,7 +47,6 @@ create table if not exists org
 
 create table if not exists org_group (
   id           serial primary key,
-  master_id    integer,
   name         varchar(100),
   type         varchar(80),
   description  text,
@@ -221,6 +221,7 @@ alter table org
   add if not exists edition text null;
 
 alter table org_group
+  drop column if exists master_id,
   add if not exists type varchar(80) null;
 
 alter table package
@@ -228,6 +229,7 @@ alter table package
   add if not exists dependency_tier integer;
 
 alter table package_org
+  add if not exists active boolean null,
   add if not exists type varchar(80) null,
   add if not exists status varchar(80) null,
   add if not exists description text null,
@@ -279,3 +281,5 @@ update org set edition = type where edition is null and status != 'Not Found';
 
 update upgrade_item set total_job_count = (select count (*) from upgrade_job j where j.item_id = upgrade_item.id)
 where total_job_count is null;
+
+update package_org set active = true where active is null;

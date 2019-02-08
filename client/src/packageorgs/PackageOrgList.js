@@ -22,13 +22,14 @@ export default class extends React.Component {
 			{Header: "Package Namespace", accessor: "namespace"},
 			{Header: "Instance Name", accessor: "instance_name"},
 			{
-				Header: "Status",
+				Header: "Connection Status",
 				minWidth: 100,
 				accessor: "status",
 				style: {fontWeight: "bold", textTransform: "uppercase"},
 				Cell: row => (
 					<b style={{filter: "brightness(65%)", color: row.value === "Connected" || row.value === "Unprotected" ? Colors.Success : Colors.Error}}>{row.value}</b>)
-			}
+			},
+			{Header: "Status", id: "active", accessor: d => d.active ? 'Active' : 'Inactive'}
 		];
 
 		return (
