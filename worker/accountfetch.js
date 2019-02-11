@@ -4,6 +4,8 @@ const logger = require('../util/logger').logger;
 
 const QUERY_BATCH_SIZE = 500;
 
+const SELECT_ALL = `SELECT Id, Name, OrgId, Instance__c, Core_Edition__c, LastModifiedDate FROM Account`;
+
 let adminJob;
 
 async function fetch(org62Id, fetchAll, job) {
@@ -32,7 +34,7 @@ async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
 }
 
 async function fetchBatch(conn, accounts, useBulkAPI) {
-	let soql = `SELECT Id, Name, OrgId, Instance__c, Core_Edition__c, LastModifiedDate FROM Account`;
+	let soql = SELECT_ALL;
 	let accountIds = accounts.map(r => r.account_id);
 
 	let accountMap = {};
@@ -48,7 +50,7 @@ async function fetchBatch(conn, accounts, useBulkAPI) {
 		let account = accountMap[sfdc.normalizeId(rec.Id)];
 		account.account_name = rec.Name;
 		account.org_id = rec.OrgId ? sfdc.normalizeId(rec.OrgId) : null;
-		account.instance = normalizeInstanceName(rec.Instance__c);
+		account.instance = sfdc.normalizeInstanceName(rec.Instance__c);
 		account.edition = rec.Core_Edition__c;
 		account.modified_date = new Date(rec.LastModifiedDate).toISOString();
 	})
@@ -62,13 +64,6 @@ async function fetchBatch(conn, accounts, useBulkAPI) {
 	if (!useBulkAPI) {
 		await query.run({autoFetch: true, maxFetch: 100000});
 	}
-}
-
-function normalizeInstanceName(name) {
-	if (name && name.indexOf('DB') === 2 && name.length > 4) {
-		return name.replace("DB", "");
-	}
-	return name;
 }
 
 async function upsert(recs, batchSize) {

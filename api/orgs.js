@@ -115,7 +115,7 @@ async function findAll(packageId, versionId, relatedOrgId, blacklistUpgradeId, o
 		whereParts.push(orggroups.EXPAND_BLACKLIST ? 
 			`o.account_id IN (
 				SELECT DISTINCT bo.account_id FROM org bo
-				INNER JOIN org_group_member m ON m.org_id = bo.org_id AND bo.account_id != '${sfdc.INTERNAL_ID}'
+				INNER JOIN org_group_member m ON m.org_id = bo.org_id AND bo.account_id != '${sfdc.AccountIDs.Internal}'
 				INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = '${orggroups.GroupType.Blacklist}'
 			 )` :
 			`g.type = '${orggroups.GroupType.Blacklist}'`);
@@ -186,7 +186,7 @@ async function addOrgsByIds(orgIds) {
 
 	const opvs = recs.map(rec => {
 		return {
-			org_id: rec.OrgKey.substring(0, 15),
+			org_id: sfdc.normalizeId(rec.OrgKey),
 			version_id: rec.MetadataPackageVersionId,
 			license_status: orgpackageversions.LicenseStatus.Active
 		}
@@ -198,14 +198,14 @@ async function insertOrgsFromSubscribers(recs) {
 	let params = [], values = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},NOW())`);
-		values.push(rec.OrgKey.substring(0, 15), rec.OrgName, rec.OrgType, rec.InstanceName, sfdc.INTERNAL_ID, Status.Installed);
+		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},NOW())`);
+		values.push(sfdc.normalizeId(rec.OrgKey), rec.OrgName, rec.OrgType, rec.OrgType === 'Sandbox', rec.InstanceName, Status.Installed);
 	}
 
-	let sql = `INSERT INTO org (org_id, name, edition, instance, account_id, status, modified_date) 
+	let sql = `INSERT INTO org (org_id, name, type, is_sandbox, instance, status, modified_date) 
                        VALUES ${params.join(",")}
-                       on conflict (org_id) do update set status = '${Status.Installed}', 
-                       account_id = excluded.account_id where org.status = '${Status.NotFound}'`;
+                       ON CONFLICT (org_id) DO UPDATE SET status = '${Status.Installed}' 
+                       WHERE org.status = '${Status.NotFound}'`;
 	return db.insert(sql, values);
 }
 

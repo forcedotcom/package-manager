@@ -39,7 +39,7 @@ export default class extends React.Component {
 	render() {
 		let packageorg = this.state.packageorg;
 		let actions = [
-			{label: packageorg.active ? 'Active' : 'Inactive', toggled: packageorg.active, icon: "none", group: "toggle",
+			{label: packageorg.active ? 'Deactivate' : 'Activate', group: "toggle",
 				handler: this.activationHandler, disabled: packageorg.type !== "Package",
 				detail: packageorg.active ? "Click to deactivate this package org" : "Click to activate this package org"},
 			{label: "Refresh", handler: this.refreshHandler, group: "actions", spinning: this.state.isRefreshing},

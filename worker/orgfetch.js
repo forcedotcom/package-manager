@@ -125,10 +125,20 @@ async function mark(isSandbox, job) {
 async function updateOrgsFromAccounts(job) {
 	adminJob = job;
 
-	let sql = ` UPDATE org o SET account_id = a.account_id, edition = a.edition FROM account a WHERE o.org_id = a.org_id`;
+	let sql = `UPDATE org o SET account_id = a.account_id, edition = a.edition FROM account a WHERE o.org_id = a.org_id`;
 	let res = await db.update(sql);
 	if (res.length > 0) {
 		adminJob.postDetail(`Updated ${res.length} orgs with with account instances`);
+	}
+}
+
+async function updateChildrenFromParents(job) {
+	adminJob = job;
+
+	let sql = ` UPDATE org child SET account_id = parent.account_id FROM org parent WHERE child.parent_org_id = parent.org_id`;
+	let res = await db.update(sql);
+	if (res.length > 0) {
+		adminJob.postDetail(`Updated ${res.length} sandbox orgs with with parent org account info`);
 	}
 }
 
@@ -136,3 +146,4 @@ exports.fetch = fetch;
 exports.refetchInvalid = refetchInvalid;
 exports.mark = mark;
 exports.updateOrgsFromAccounts = updateOrgsFromAccounts;
+exports.updateChildrenFromParents = updateChildrenFromParents;

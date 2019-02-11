@@ -39,6 +39,7 @@ create table if not exists org
   instance      varchar(6),
   modified_date timestamp with time zone,
   account_id    varchar(18),
+  parent_org_id varchar(18),
   is_sandbox    boolean,
   status        varchar(20),
   edition       varchar(100),
@@ -192,12 +193,6 @@ create table if not exists filter
   query      text
 );
 
-create index if not exists license_org_version_index
-  on license (org_id, version_id);
-
-create index if not exists license_package_org_version_index
-  on license (org_id, package_id, version_id);
-
 -- Default internal non-account
 insert into account (account_name, account_id)
 values ('Internal', '000000000000000'), ('Unknown/Invalid', '000000000000001')
@@ -219,6 +214,7 @@ alter table upgrade_item
 
 alter table org
   drop column if exists account_name,
+  add if not exists parent_org_id varchar(18) null,
   add if not exists features text null,
   add if not exists edition text null;
 
@@ -264,6 +260,16 @@ alter table package_version_latest
   add if not exists limited_version_id     varchar(18),
   add if not exists limited_version_number varchar(20),
   add if not exists limited_version_sort varchar(12);
+
+-- Indices
+create index if not exists org_parent_index
+  on org (parent_org_id);
+
+create index if not exists license_org_version_index
+  on license (org_id, version_id);
+
+create index if not exists license_package_org_version_index
+  on license (org_id, package_id, version_id);
 
 -- Data fixes
 

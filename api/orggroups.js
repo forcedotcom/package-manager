@@ -217,19 +217,19 @@ async function isWhitelisted(orgId) {
 }
 
 async function loadOrgsOfType(type, defaultsJSON, expandByAccount) {
-	const defaults = defaultsJSON ? JSON.parse(defaultsJSON).map(id => id.substring(0, 15)) : [];
+	const defaults = defaultsJSON ? JSON.parse(defaultsJSON).map(id => sfdc.normalizeId(id)) : [];
 	const l = expandByAccount ?
 		await db.query(`SELECT org_id FROM org WHERE account_id IN (
 			SELECT DISTINCT o.account_id FROM org o
 			INNER JOIN org_group_member m ON m.org_id = o.org_id AND o.account_id != $1
-			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $2)`, [sfdc.INTERNAL_ID, type]) :
+			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $2)`, [sfdc.AccountIDs.Internal, type]) :
 		await db.query(`SELECT m.org_id FROM org_group_member m
 			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $1`, [type]);
 	return new Set(l.map(r => r.org_id).concat(defaults));
 }
 
 async function isOrgOfType(orgId, type, defaultsJSON, expandByAccount) {
-	const defaults = new Set(defaultsJSON ? JSON.parse(defaultsJSON).map(id => id.substring(0, 15)) : []);
+	const defaults = new Set(defaultsJSON ? JSON.parse(defaultsJSON).map(id => sfdc.normalizeId(id)) : []);
 	if (defaults.has(orgId)) {
 		return true;
 	}
@@ -238,7 +238,7 @@ async function isOrgOfType(orgId, type, defaultsJSON, expandByAccount) {
 		await db.query(`SELECT org_id FROM org WHERE org_id = $1 AND account_id IN (
 			SELECT DISTINCT o.account_id FROM org o
 			INNER JOIN org_group_member m ON m.org_id = o.org_id AND o.account_id != $2
-			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $3)`, [orgId, sfdc.INTERNAL_ID, type]) :
+			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $3)`, [orgId, sfdc.AccountIDs.Internal, type]) :
 		await db.query(`SELECT m.org_id FROM org_group_member m WHERE m.org_id = $1 AND 
 			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $2`, [orgId, type]);
 	return l.length > 0;

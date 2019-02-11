@@ -28,8 +28,10 @@ export default class extends React.Component {
 		this.onQueue = this.onQueue.bind(this);
 		this.cancellationHandler = this.cancellationHandler.bind(this);
 		this.fetchHandler = this.fetchHandler.bind(this);
-		this.refetchInvalidHandler = this.refetchInvalidHandler.bind(this);
-		this.refetchAllHandler = this.refetchAllHandler.bind(this);
+		this.fetchSubscribersHandler = this.fetchSubscribersHandler.bind(this);
+		this.fetchAllSubscribersHandler = this.fetchAllSubscribersHandler.bind(this);
+		this.fetchInvalidHandler = this.fetchInvalidHandler.bind(this);
+		this.fetchAllHandler = this.fetchAllHandler.bind(this);
 		this.uploadOrgsHandler = this.uploadOrgsHandler.bind(this);
 		this.goToHerokuHandler = this.goToHerokuHandler.bind(this);
 		this.showAllHistoryHandler = this.showAllHistoryHandler.bind(this);
@@ -147,9 +149,11 @@ export default class extends React.Component {
 		}
 
 		let actions = [
-			{label: "Fetch Latest", handler: this.fetchHandler},
-			{label: "Fetch Invalid Orgs", handler: this.refetchInvalidHandler},
-			{label: "Re-Fetch All", handler: this.refetchAllHandler},
+			{group: "subs", label: "Fetch Subscribers", handler: this.fetchSubscribersHandler},
+			{group: "subs", label: "Fetch All Subscribers", handler: this.fetchAllSubscribersHandler},
+			{group: "fetch", label: "Fetch Latest", handler: this.fetchHandler},
+			{group: "fetch", label: "Fetch All", handler: this.fetchAllHandler},
+			{group: "fetch", label: "Fetch Invalid Orgs", handler: this.fetchInvalidHandler},
 		];
 
 		let user = authService.getSessionUser();
@@ -244,11 +248,19 @@ export default class extends React.Component {
 		notifier.emit("fetch", {});
 	}
 
-	refetchInvalidHandler() {
+	fetchSubscribersHandler() {
+		notifier.emit("fetch-subscribers", {});
+	}
+
+	fetchAllSubscribersHandler() {
+		notifier.emit("fetch-all-subscribers", {});
+	}
+
+	fetchInvalidHandler() {
 		notifier.emit("fetch-invalid", {});
 	}
 
-	refetchAllHandler() {
+	fetchAllHandler() {
 		notifier.emit("fetch-all", {});
 	}
 

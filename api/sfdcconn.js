@@ -5,13 +5,19 @@ const packageorgs = require('./packageorgs');
 const logger = require("../util/logger").logger;
 
 const OrgTypes = {
-	AllProductionOrgs: "All Production Orgs",
-	AllSandboxOrgs: "All Sandbox Orgs",
+	ProductionBlacktab: "Production Blacktab",
+	SandboxBlacktab: "Sandbox Blacktab",
 	Accounts: "Accounts",
-	Licenses: "Licenses"
+	Licenses: "Licenses",
+	Package: "Package"
 };
 
 const KnownOrgs = {};
+
+const AccountIDs = {
+    Internal: '000000000000000',
+    Invalid: '000000000000001'
+};
 
 const PORT = process.env.PORT || 5000;
 const SFDC_API_VERSION = "44.0";
@@ -21,20 +27,17 @@ const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/o
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
-const INTERNAL_ID = '000000000000000';
-const INVALID_ID = '000000000000001';
-
 const TRACE_FUNCTIONS = ["query", "sobject", "retrieve", "insert", "update", "upsert"];
 
 const DEFAULT_ORGS = {
-	bt: {
-		type: OrgTypes.AllProductionOrgs,
-		instanceUrl: "https://bt1.my.salesforce.com"
-	},
-	sbt: {
-		type: OrgTypes.AllSandboxOrgs,
-		instanceUrl: "https://sbt2.cs10.my.salesforce.com"
-	},
+	// bt: {
+	// 	type: OrgTypes.ProductionBlacktab,
+	// 	instanceUrl: "https://bt1.my.salesforce.com"
+	// },
+	// sbt: {
+	// 	type: OrgTypes.SandboxBlacktab,
+	// 	instanceUrl: "https://sbt2.cs10.my.salesforce.com"
+	// },
 	org62: {
 		type: OrgTypes.Accounts,
 		instanceUrl: "https://org62.my.salesforce.com"
@@ -80,14 +83,14 @@ async function invalidateOrgs(orgIds) {
 	await init();
 }
 
-function buildConnection(accessToken, refreshToken, instanceUrl) {
+function buildConnection(accessToken, refreshToken, instanceUrl, apiVersion) {
 	const target = new jsforce.Connection({
 			oauth2: {
 				clientId: CLIENT_ID,
 				clientSecret: CLIENT_SECRET,
 				redirectUri: CALLBACK_URL
 			},
-			version: SFDC_API_VERSION,
+			version: apiVersion || SFDC_API_VERSION,
 			instanceUrl: instanceUrl,
 			accessToken: accessToken,
 			refreshToken: refreshToken,
@@ -111,19 +114,28 @@ function buildConnection(accessToken, refreshToken, instanceUrl) {
 		}) : target;
 }
 
-async function buildOrgConnection(packageOrgId) {
-	let packageOrg = await packageorgs.retrieveByOrgId(packageOrgId);
-	if (!packageOrg) {
+async function buildOrgConnection(packageOrgId, apiVersion) {
+	let orgs = await packageorgs.retrieveByOrgIds([packageOrgId]);
+	if (orgs.length === 0) {
 		throw `No such package org with id ${packageOrgId}`;
 	}
-	// if (!packageOrg.refresh_token) {
-	// 	throw `Package Org ${packageOrgId} cannot be refreshed without a prior connection.`;
-	// }
-	let conn = buildConnection(packageOrg.access_token, packageOrg.refresh_token, packageOrg.instance_url);
+	let packageOrg = orgs[0];
+	let conn = buildConnection(packageOrg.access_token, packageOrg.refresh_token, packageOrg.instance_url, apiVersion);
 	conn.on("refresh", async (accessToken, res) => {
 		packageOrg.accessToken = accessToken;
 		await packageorgs.updateAccessToken(packageOrgId, accessToken);
 	});
+
+	conn.queryWithRetry = async (soql) => {
+		try {
+			return await conn.query(soql);
+		} catch (e) {
+			if (e.errorCode === 'QUERY_TIMEOUT') {
+				return await conn.query(soql);
+			}
+		}
+	};
+
 	return conn;
 }
 
@@ -134,11 +146,19 @@ function normalizeId(id) {
 	return id.substring(0, 15);
 }
 
+function normalizeInstanceName(name) {
+	if (name && name.indexOf('DB') === 2 && name.length > 4) {
+		return name.replace("DB", "");
+	}
+	return name;
+}
+
 exports.buildOrgConnection = buildOrgConnection;
 exports.normalizeId = normalizeId;
+exports.normalizeInstanceName = normalizeInstanceName;
 exports.init = init;
 exports.initOrg = initOrg;
 exports.invalidateOrgs = invalidateOrgs;
-exports.INTERNAL_ID = INTERNAL_ID;
-exports.INVALID_ID = INVALID_ID;
 exports.KnownOrgs = KnownOrgs;
+exports.OrgTypes = OrgTypes;
+exports.AccountIDs = AccountIDs;
