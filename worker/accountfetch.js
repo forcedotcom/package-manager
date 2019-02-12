@@ -86,7 +86,7 @@ async function upsertBatch(recs) {
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
 		values.push(rec.org_id, rec.instance, rec.edition, rec.account_id, rec.account_name, rec.modified_date);
 	}
 	sql += ` on conflict (account_id) do update set account_name = excluded.account_name, org_id = excluded.org_id, 
