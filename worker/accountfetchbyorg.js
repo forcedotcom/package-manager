@@ -19,7 +19,7 @@ async function fetch(accountsOrgId, fetchAll, job) {
 
 async function queryAndStore(accountsOrgId, fetchAll, batchSize, useBulkAPI) {
 	let sql = `SELECT org_id FROM org WHERE is_sandbox = false`;
-	if (false && !fetchAll) {
+	if (!fetchAll) {
 		sql += ` AND account_id IS NULL AND org_id NOT IN 
 			(SELECT org_id FROM account WHERE org_id IS NOT NULL)`
 	}
@@ -58,8 +58,16 @@ async function fetchBatch(conn, orgs, useBulkAPI) {
 			modified_date: new Date(rec.LastModifiedDate).toISOString()});
 	})
 	.on("end", async () => {
-		adminJob.postDetail(`Found ${count} account records in batch`);
-		await upsert(accounts, 2000);
+		if (count > 0) {
+			adminJob.postDetail(`Found ${count} account records in batch`);
+			await upsert(accounts, 2000);
+
+			// Mark this batch of orgs with the accounts we found.
+			let values = accounts.map(a => a.account_id);
+			await db.update(`UPDATE org o SET account_id = a.account_id, edition = a.edition 
+							FROM account a WHERE o.org_id = a.org_id
+							AND a.account_id IN (${accounts.map((o, i) => `$${i + 1}`).join(',')})`, values);
+		}
 
 		// Mark any orgs in this batch where account id is still null as internal
 		let values = [sfdc.AccountIDs.Internal];
