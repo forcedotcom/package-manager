@@ -285,8 +285,6 @@ update org set status = 'Installed' where status is null;
 -- Added type field to group with default of Upgrade Group
 update org_group set type = 'Upgrade Group' where type is null;
 
-update org set edition = type where edition is null and status != 'Not Found';
-
 update upgrade_item set total_job_count = (select count (*) from upgrade_job j where j.item_id = upgrade_item.id)
 where total_job_count is null;
 
