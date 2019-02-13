@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "debug": "node --inspect server.js",
-    "heroku-postbuild": "cd client && yarn --production=false && yarn build"
+    "heroku-postbuild": "cd client && yarn --production=false && yarn build",
+    "test": "jest"
   },
   "repository": "git@git.soma.salesforce.com:Steelbrick/brick-manager.git",
   "dependencies": {
@@ -30,7 +31,10 @@
     "socket.io": "^2.1.1",
     "xml2js": "^0.4.19"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "jest": "^24.1.0",
+    "rewire": "^4.0.1"
+  },
   "author": "Mike Hoefer <mhoefer@salesforce.com>",
   "license": "MIT",
   "private": true
