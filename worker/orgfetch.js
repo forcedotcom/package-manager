@@ -135,7 +135,7 @@ async function updateOrgsFromAccounts(job) {
 async function updateChildrenFromParents(job) {
 	adminJob = job;
 
-	let sql = ` UPDATE org child SET account_id = parent.account_id FROM org parent WHERE child.parent_org_id = parent.org_id`;
+	let sql = ` UPDATE org child SET account_id = parent.account_id, edition = parent.edition FROM org parent WHERE child.parent_org_id = parent.org_id`;
 	let res = await db.update(sql);
 	if (res.length > 0) {
 		adminJob.postDetail(`Updated ${res.length} sandbox orgs with with parent org account info`);

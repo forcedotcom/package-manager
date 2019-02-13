@@ -73,6 +73,7 @@ export default class extends React.Component {
 					<HeaderField label="Name" value={this.state.org.name}/>
 					<HeaderField label="Org ID" value={this.state.org.org_id}/>
 					<HeaderField label="Instance" value={this.state.org.instance}/>
+					<HeaderField label="Edition" value={this.state.org.edition}/>
 					<HeaderField label="Type" value={this.state.org.type}/>
 					<HeaderField label="Status" value={this.state.org.status}/>
 					<HeaderField label="Features" value={this.state.org.features}/>
