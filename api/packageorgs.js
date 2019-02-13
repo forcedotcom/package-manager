@@ -7,7 +7,7 @@ const logger = require('../util/logger').logger;
 const Status = {Connected: "Connected", Unprotected: "Unprotected", Invalid: "Invalid", Missing: "Missing"};
 
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
-const PACKAGE_ORG_IP_RANGES = JSON.parse(process.env.PACKAGE_ORG_IP_RANGES) || [];
+const PACKAGE_ORG_IP_RANGES = process.env.PACKAGE_ORG_IP_RANGES;
 const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
 const PACKAGE_MANAGER_ADMIN_PROFILE = process.env.PACKAGE_MANAGER_ADMIN_PROFILE;
 
@@ -161,7 +161,7 @@ async function applyLoginIPAccessControls(packageOrgId) {
 	let conn = await sfdc.buildOrgConnection(packageOrgId);
 	let metadata = {
 		fullName: PACKAGE_MANAGER_ADMIN_PROFILE,
-		loginIpRanges: PACKAGE_ORG_IP_RANGES
+		loginIpRanges: PACKAGE_ORG_IP_RANGES ? JSON.parse(PACKAGE_ORG_IP_RANGES) : []
 	};
 	
 	let result = await conn.metadata.update('Profile', metadata);
