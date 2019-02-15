@@ -317,10 +317,10 @@ class Results extends React.Component {
 	render() {
 		let startTime = this.props.startTime;
 		let lines = this.props.lines.map((r, i) =>
-			<li key={i} className="slds-item">
+			<li key={i} className={`slds-item ${r.error ? "errorlist" : ""}`}>
 				{r.message}
 				<span style={{float: "right", color: Colors.Subtle, padding: "0 20px 0 20px"}}>{i === 0 ? "mm:ss" : moment(Math.abs(r.timestamp-startTime)).format("mm:ss")}</span>
-				{r.details ? r.details.map((m, i) => <div key={i} style={{color: Colors.Subtle, marginLeft: "1.25em"}}>{m}</div>) : ""}
+				{r.details ? r.details.map((m, i) => <div key={i} className={r.error ? "errorlist" : ""} style={{color: Colors.Subtle, marginLeft: "1.25em"}}>{m}</div>) : ""}
 			</li>);
 		return (
 			<ul className="checklist">{lines}</ul>
@@ -330,9 +330,9 @@ class Results extends React.Component {
 
 class Errors extends React.Component {
 	render() {
-		let lines = this.props.lines.map((r, i) => <li key={i} className="slds-item">{r.message}</li>);
+		let lines = this.props.lines.map((r, i) => <li key={i} className="slds-item errorlist" title={r.stack}>{r.message}</li>);
 		return (
-			<ul className="checklist errorlist">{lines}</ul>
+			<ul className="checklist">{lines}</ul>
 		);
 	}
 }

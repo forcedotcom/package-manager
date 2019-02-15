@@ -25,7 +25,7 @@
     margin-left: -1em;
 }
 
-.errorlist li::before {
+.errorlist::before {
     content: '✘' !important;
     color: #91261c !important; /* Darker Pantone Fiesta Summer '19 */
 }
