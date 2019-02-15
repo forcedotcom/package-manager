@@ -3,18 +3,20 @@ import moment from "moment";
 import * as nav from "../services/nav";
 import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
+import {CardHeader} from "../components/PageHeader";
+
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {};
-		
+
 		this.linkHandler = this.linkHandler.bind(this);
 	}
-
+	
 	// Lifecycle
 	render() {
-		let columns = [
+		const columns = [
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
 			{Header: "Account", accessor: "account_name", sortable: true, clickable: true},
 			{Header: "Package", accessor: "package_name", sortable: true, clickable: true},
@@ -23,12 +25,17 @@ export default class extends React.Component {
 			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true},
 			{Header: "Installed On", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: true}
 		];
+
 		return (
-			<div>
-				<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
-						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}/>
-				<DataTableFilterHelp/>
-			</div>
+			<article className="slds-card">
+				<CardHeader title={this.props.title} count={this.state.itemCount}/>
+				<div className="slds-card__body">
+					<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
+							   onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}/>
+					<DataTableFilterHelp/>
+				</div>
+				<footer className="slds-card__footer"/>
+			</article>
 		);
 	}
 	

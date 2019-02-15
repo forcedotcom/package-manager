@@ -6,6 +6,7 @@ import * as orgService from '../services/OrgService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as orgGroupService from "../services/OrgGroupService";
 import * as upgradeJobService from "../services/UpgradeJobService";
+import * as licenseService from "../services/LicenseService";
 
 import {ORG_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
@@ -16,6 +17,7 @@ import UpgradeJobCard from "../upgrades/UpgradeJobCard";
 import Tabs from "../components/Tabs";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import OrgCard from "./OrgCard";
+import LicenseCard from "./LicenseCard";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -25,6 +27,7 @@ export default class extends React.Component {
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
 		this.fetchRelatedOrgs = this.fetchRelatedOrgs.bind(this);
+		this.fetchLicenses = this.fetchLicenses.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 		this.upgradeUpdated = this.upgradeUpdated.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
@@ -85,6 +88,9 @@ export default class extends React.Component {
 						<div label="Versions">
 							<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions" refetchFor={this.state.org.org_id}/>
 						</div>
+						<div label="Licenses">
+							<LicenseCard title="Licenses" onFetch={this.fetchLicenses} refetchOn="licenses"/>
+						</div>
 						<div label="Upgrade Jobs">
 							<UpgradeJobCard id="OrgJobCard" onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 						</div>
@@ -124,6 +130,10 @@ export default class extends React.Component {
 
 	fetchRelatedOrgs() {
 		return orgService.requestByRelatedOrg(this.props.match.params.orgId);
+	}
+
+	fetchLicenses() {
+		return licenseService.requestByOrg(this.props.match.params.orgId);
 	}
 
 	upgradeHandler(versions, startDate, description) {
