@@ -4,7 +4,7 @@ const licenses = require('./licensefetch');
 const licenseorgs = require('./licenseorgfetch');
 const orgs = require('./orgfetch');
 const orgaccounts = require('./orgaccountfetch');
-const accounts = require('./accountfetch');
+const accounts = require('./accountdetailfetch');
 const accountsbyorg = require('./accountfetchbyorg');
 const sfdc = require('../api/sfdcconn');
 const orgpackageversions = require('./orgpackageversionfetch');
@@ -163,7 +163,8 @@ function fetchBySubscribers(fetchAll) {
 					{
 						name: "Fetching licenses",
 						handler: (job) => licenses.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
-					}/*,
+					},
+					/*,
 					{
 						name: "Invalidating conflicting licenses",
 						handler: (job) => licenses.markInvalid(job)
@@ -212,6 +213,10 @@ function fetchBySubscribers(fetchAll) {
 						handler: (job) => accountsbyorg.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job)
 					},
 					{
+						name: "Updating orgs based on license status",
+						handler: (job) => orgpackageversions.updateOrgStatus(job)
+					},
+					{
 						name: "Updating orgs from accounts",
 						handler: (job) => orgs.updateOrgsFromAccounts(job)
 					},
@@ -224,6 +229,26 @@ function fetchBySubscribers(fetchAll) {
 					if (e.name === "invalid_grant") {
 						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid)
 							.then(() => {});
+					}
+				}
+			}
+		]);
+}
+
+function fetchAccounts(fetchAll) {
+	return new admin.AdminJob(
+		admin.JobTypes.FETCH_ACCOUNTS,
+		fetchAll ? "Fetch all accounts" : "Fetch latest accounts",
+		[
+			{
+				name: "Fetching accounts",
+				// handler: (job) => allaccounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job),
+				handler: (job) => accountsbyorg.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job),
+				fail: (e) => {
+					if (e.name === "invalid_grant") {
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs.org62.orgId, packageorgs.Status.Invalid)
+							.then(() => {
+						});
 					}
 				}
 			}
@@ -348,6 +373,7 @@ function fetchOrgGroupVersions(groupId, orgIds, packageOrgIds) {
 		]);
 }
 
+exports.fetchAccounts = fetchAccounts;
 exports.fetchAccountOrgs = fetchByAccountOrgs;
 exports.fetch = fetch;
 exports.fetchSubscribers = fetchBySubscribers;

@@ -28,6 +28,8 @@ export default class extends React.Component {
 		this.onQueue = this.onQueue.bind(this);
 		this.cancellationHandler = this.cancellationHandler.bind(this);
 		this.fetchHandler = this.fetchHandler.bind(this);
+		this.fetchAccountsHandler = this.fetchAccountsHandler.bind(this);
+		this.fetchAllAccountsHandler = this.fetchAllAccountsHandler.bind(this);
 		this.fetchSubscribersHandler = this.fetchSubscribersHandler.bind(this);
 		this.fetchAllSubscribersHandler = this.fetchAllSubscribersHandler.bind(this);
 		this.fetchInvalidHandler = this.fetchInvalidHandler.bind(this);
@@ -157,6 +159,8 @@ export default class extends React.Component {
 		}
 
 		let actions = [
+			{group: "accounts", label: "Fetch Accounts", handler: this.fetchAccountsHandler},
+			{group: "accounts", label: "Fetch All Accounts", handler: this.fetchAllAccountsHandler},
 			{group: "subs", label: "Fetch Subscribers", handler: this.fetchSubscribersHandler},
 			{group: "subs", label: "Fetch All Subscribers", handler: this.fetchAllSubscribersHandler},
 			{group: "fetch", label: "Fetch Latest", handler: this.fetchHandler},
@@ -258,6 +262,14 @@ export default class extends React.Component {
 
 	fetchSubscribersHandler() {
 		notifier.emit("fetch-subscribers", {});
+	}
+
+	fetchAccountsHandler() {
+		notifier.emit("fetch-accounts", {});
+	}
+
+	fetchAllAccountsHandler() {
+		notifier.emit("fetch-all-accounts", {});
 	}
 
 	fetchAllSubscribersHandler() {

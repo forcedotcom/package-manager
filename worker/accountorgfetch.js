@@ -54,7 +54,7 @@ async function fetchBatch(conn, accounts) {
 		await upsert(orgs, 2000);
 	})
 	.on("error", error => {
-		logger.error("Failed to retrieve orgs", error);
+		adminJob.postDetail("Failed to retrieve orgs", error);
 	});
 
 	await query.run({autoFetch: true, maxFetch: 100000});

@@ -4,7 +4,7 @@ const logger = require('../util/logger').logger;
 
 const QUERY_BATCH_SIZE = 500;
 
-const SELECT_ALL = `SELECT Id, Name, OrgId, Instance__c, Core_Edition__c, LastModifiedDate FROM Account`;
+const SELECT_ALL = `SELECT Id, Name, Organization_ID_DW__c, Instance__c, Core_Edition__c, LastModifiedDate FROM Account`;
 
 let adminJob;
 
@@ -44,7 +44,7 @@ async function fetchBatch(conn, orgs, useBulkAPI) {
 
 	const accounts = [];
 
-	soql += ` WHERE OrgId IN ('${orgIds.join("','")}')`;
+	soql += ` WHERE Organization_ID_DW__c IN ('${orgIds.join("','")}')`;
 	let count = 0;
 	let query = (useBulkAPI ? conn.bulk.query(soql) : conn.query(soql))
 	.on("record", rec => {
@@ -54,7 +54,7 @@ async function fetchBatch(conn, orgs, useBulkAPI) {
 			account_name: rec.Name,
 			instance: sfdc.normalizeInstanceName(rec.Instance__c),
 			edition: rec.Core_Edition__c,
-			org_id: rec.OrgId ? sfdc.normalizeId(rec.OrgId) : null,
+			org_id: rec.Organization_ID_DW__c ? sfdc.normalizeId(rec.Organization_ID_DW__c) : null,
 			modified_date: new Date(rec.LastModifiedDate).toISOString()});
 	})
 	.on("end", async () => {
@@ -76,7 +76,7 @@ async function fetchBatch(conn, orgs, useBulkAPI) {
 			AND org_id IN (${orgIds.map((o, i) => `$${i+2}`).join(',')})`, values);
 	})
 	.on("error", error => {
-		adminJob.postProgress("Failed to query accounts", null, error.message || error);
+		adminJob.postDetail("Failed to query accounts", error);
 	});
 	if (!useBulkAPI) {
 		await query.run({autoFetch: true, maxFetch: 100000});

@@ -33,6 +33,18 @@ async function fetchFromLicenses(fetchAll, job) {
 async function updateOrgStatus(job) {
 	adminJob = job;
 
+	// Flip expired orgs to Expired and non-expired orgs to their license status
+	await db.update(`
+		UPDATE org_package_version opv
+		SET modified_date  = l.modified_date,
+			license_status =
+				CASE
+					WHEN l.expiration <= NOW() THEN 'Expired'
+					ELSE l.status
+					END
+		FROM license l
+		WHERE l.org_id = opv.org_id AND l.version_id = opv.version_id`);
+
 	// Flip orgs MISSING versions to status Not Installed
 	await db.update(`UPDATE org SET status = '${orgsapi.Status.NotInstalled}' WHERE status = '${orgsapi.Status.Installed}' AND org_id IN
 		  (SELECT o.org_id FROM org o 
@@ -122,13 +134,19 @@ async function fetchFromSubscribers(orgId, packageOrgIds, job) {
 			return {
 				org_id: orgId,
 				version_id: rec.MetadataPackageVersionId,
-				license_status: orgpackageversions.LicenseStatus.Active
+				license_status: orgpackageversions.LicenseStatus.Active,
+				modified_date: new Date().toISOString()
 			}
 		}));
 	}
 	job.postDetail(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
 	missingOrgIds.forEach((value) => {
-		opvs.push({version_id: null, org_id: value, license_status: orgpackageversions.LicenseStatus.NotFound});
+		opvs.push({
+			version_id: null,
+			org_id: value,
+			license_status: orgpackageversions.LicenseStatus.NotFound,
+			modified_date: new Date().toISOString()
+		});
 	});
 	if (opvs.length > 0) {
 		let res = await orgpackageversions.insertOrgPackageVersions(opvs);

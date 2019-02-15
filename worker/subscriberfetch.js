@@ -4,23 +4,13 @@ const logger = require('../util/logger').logger;
 const orgpackageversions = require('../api/orgpackageversions');
 const orgs = require('../api/orgs');
 
-const SELECT_ALL_WITH_PARENT_AND_MODSTAMP =
-	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,
-		ParentOrg,SystemModstamp
+const SELECT_ALL =
+	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,ParentOrg,SystemModstamp
 		FROM PackageSubscriber`;
 
-const SELECT_ALL_WITH_PARENT =
+const SELECT_ALL_WITHOUT_MODSTAMP =
 	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,
 		ParentOrg
-		FROM PackageSubscriber`;
-
-const SELECT_ALL_WITH_MODSTAMP =
-	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,
-	 	SystemModstamp 
-		FROM PackageSubscriber`;
-
-const SELECT_ALL =
-	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey 
 		FROM PackageSubscriber`;
 
 let adminJob;
@@ -61,7 +51,7 @@ async function fetchFromOrg(org, fetchAll) {
 	let res;
 	let conn = await sfdc.buildOrgConnection(org.org_id, "45.0");
 	try {
-		res = await conn.queryWithRetry(`${SELECT_ALL_WITH_PARENT_AND_MODSTAMP} ${where}`);
+		res = await conn.queryWithRetry(`${SELECT_ALL} ${where}`);
 		adminJob.postDetail(`Found ${res.totalSize} orgs with parent ${where !== '' ? 'using last modified date' : ''}`);
 		invalidateAll = fetchAll;
 	} catch (e) {
@@ -69,11 +59,12 @@ async function fetchFromOrg(org, fetchAll) {
 			return fail(org, e);
 		}
 
-		logger.warn("Could not query with parent and modstamp", e);
+		// TODO remove after 220 GA when modstamp is available for all
+		logger.warn("Could not query with modstamp", e);
 
 		// Org does not yet support modstamp, so just use parent.
 		try {
-			res = await conn.queryWithRetry(SELECT_ALL_WITH_PARENT);
+			res = await conn.queryWithRetry(SELECT_ALL_WITHOUT_MODSTAMP);
 			adminJob.postDetail(`Found ${res.totalSize} orgs with parent`);
 			invalidateAll = true; // Not using modstamp, so always invalidate
 		} catch (e) {
@@ -81,29 +72,6 @@ async function fetchFromOrg(org, fetchAll) {
 				return fail(org, e);
 			}
 			logger.warn("Could not query with parent", e);
-		}
-	}
-
-	if (!res) { // TODO REMOVE AFTER 2/8 when ParentOrg is GA
-		// Org does not support parent, so try with modstamp
-		conn = await sfdc.buildOrgConnection(org.org_id);
-		try {
-			res = await conn.queryWithRetry(`${SELECT_ALL_WITH_MODSTAMP} ${where}`);
-			adminJob.postDetail(`Found ${res.totalSize} orgs ${where !== '' ? 'using last modified date' : ''}`);
-			invalidateAll = fetchAll;
-		} catch (e) {
-			if (e.errorCode === 'QUERY_TIMEOUT') {
-				return fail(org, e);
-			}
-			logger.warn("Could not query with modstamp", e);
-
-			try { // Org supports neither parent nor modstamp.
-				res = await conn.queryWithRetry(SELECT_ALL);
-				adminJob.postDetail(`Found ${res.totalSize} orgs`);
-				invalidateAll = true; // Not using modstamp, so always invalidate
-			} catch (e) {
-				return fail(org, e);
-			}
 		}
 	}
 
@@ -123,13 +91,7 @@ async function fetchFromOrg(org, fetchAll) {
 }
 
 function fail(org, e) {
-	logger.error("Failed to retrieve orgs", {
-		error: e.message || e,
-		stack: e.stack,
-		org_id: org.org_id,
-		name: org.name
-	});
-	adminJob.postProgress(`Failed to retrieve orgs from ${org.name}`, null, e);
+	adminJob.postDetail(`Failed to retrieve orgs from ${org.name}`, e);
 }
 async function fetchMore(nextRecordsUrl, conn, recs) {
 	let result = await conn.requestGet(nextRecordsUrl);
@@ -185,7 +147,8 @@ async function upsertBatch(recs) {
 		return {
 			org_id: rec.org_id,
 			version_id: rec.package_version_id,
-			license_status: orgpackageversions.LicenseStatus.Active
+			license_status: orgpackageversions.LicenseStatus.Active,
+			modified_date: new Date().toISOString()
 		}
 	});
 	await orgpackageversions.insertOrgPackageVersions(opvs);

@@ -29,6 +29,8 @@ const Events = {
 	FETCH_ALL_ACCOUNT_ORGS: "fetch-all-account-orgs",
 	FETCH_SUBSCRIBERS: "fetch-subscribers",
 	FETCH_ALL_SUBSCRIBERS: "fetch-all-subscribers",
+	FETCH_ACCOUNTS: "fetch-accounts",
+	FETCH_ALL_ACCOUNTS: "fetch-all-accounts",
 	FETCH_INVALID: "fetch-invalid",
 	CANCEL_JOBS: "cancel-jobs",
 	UPLOAD_ORGS: "upload-orgs",
@@ -54,6 +56,7 @@ const JobTypes = {
 	UPGRADE: "upgrade",
 	FETCH: "fetch",
 	FETCH_INVALID: "fetch-invalid",
+	FETCH_ACCOUNTS: "fetch-accounts",
 	FETCH_ACCOUNT_ORGS: "fetch-account-orgs",
 	REFRESH_GROUP_VERSIONS: "refresh-group-versions",
 };
@@ -90,10 +93,12 @@ class AdminJob {
 	}
 
 	postProgress(message, stepIndex, e) {
+		e = !e ? null : e.message ? e : {message: String(e)};
+
 		this.message = message;
-		this.results.push({message, timestamp: Date.now(), details: []});
+		this.results.push({message, timestamp: Date.now(), details: [], error: e});
 		if (e) {
-			this.errors.push({message: String(e), timestamp: Date.now()});
+			this.errors.push({message: e.message, timestamp: Date.now()});
 		}
 		if (stepIndex > 0) {
 			this.stepIndex = stepIndex;
@@ -103,9 +108,17 @@ class AdminJob {
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
-	postDetail(detail) {
-		this.results[this.results.length-1].timestamp = Date.now();
-		this.results[this.results.length-1].details.push(detail);
+	postDetail(detail, e) {
+		e = !e ? null : e.message ? e : {message: String(e)};
+
+		const r = this.results[this.results.length-1];
+		r.timestamp = Date.now();
+		r.details.push(detail);
+		if (e) {
+			r.error = e;
+			this.errors.push({message: e.message, timestamp: Date.now()});
+			logger.error(detail, e);
+		}
 		this.modifiedDate = new Date();
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
@@ -135,8 +148,7 @@ class AdminJob {
 			})
 		} catch (e) {
 			this.status = "Failed";
-			this.postProgress("Admin Job Failed", this.stepCount, `Failed ${this.name.toLowerCase()}: ${e.message || e}`);
-			logger.error("Admin Job Failed", {error: e.message || e, stack: e.stack, steps: this.stepCount, errors: this.errors.length})
+			this.postProgress("Admin Job Failed", this.stepCount, e);
 		} finally {
 			activeJobs.delete(this.type);
 			latestJobs.set(this.type, this)
@@ -180,8 +192,7 @@ class AdminJob {
 					await step.handler(this);
 					this.postProgress(`Completed ${step.name.toLowerCase()}`, this.stepIndex + 1);
 				} catch (e) {
-					this.postProgress(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex + 1,
-						`${step.name.toLowerCase()}: ${e.message || e}`);
+					this.postProgress(`Failed ${step.name.toLowerCase()}`, this.stepIndex + 1, e);
 					if (step.fail) {
 						step.fail(e, this);
 					} else {
@@ -194,7 +205,7 @@ class AdminJob {
 					await this.runSteps(step.steps);
 					this.postProgress(`Completed ${step.name.toLowerCase()}`, this.stepIndex);
 				} catch (e) {
-					this.postProgress(`Failed ${step.name.toLowerCase()}: ${e.message || e}`, this.stepIndex);
+					this.postProgress(`Failed ${step.name.toLowerCase()}`, this.stepIndex, e);
 					if (step.fail) {
 						step.fail(e, this);
 					} else {
@@ -213,6 +224,12 @@ class AdminJob {
 function connect(sock) {
 	socket = sock;
 
+	socket.on(Events.FETCH_ACCOUNTS, function () {
+		fetchAccounts().then(() => {});
+	});
+	socket.on(Events.FETCH_ALL_ACCOUNTS, function () {
+		fetchAccounts(true).then(() => {});
+	});
 	socket.on(Events.FETCH_ACCOUNT_ORGS, function () {
 		fetchAccountOrgs().then(() => {});
 	});
@@ -327,7 +344,12 @@ function scheduleJobs() {
 		setInterval(() => {fetchData(false, interval).then(() => {})}, interval);
 		logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
 	}
-	
+
+	if (schedules.fetch_subscriber_interval_minutes != null && schedules.fetch_subscriber_interval_minutes !== -1) {
+		let interval = schedules.fetch_subscriber_interval_minutes * 60 * 1000;
+		setInterval(() => {fetchSubscribers(false, interval).then(() => {})}, interval);
+		logger.info(`Scheduled fetching of latest subscribers every ${schedules.fetch_subscriber_interval_minutes } minutes`)
+	}
 
 	if (schedules.fetch_invalid_interval_hours != null && schedules.fetch_invalid_interval_hours !== -1) {
 		// Always start heavyweight tasks at the end of the day.
@@ -390,6 +412,12 @@ async function fetchData(fetchAll, interval) {
 
 async function fetchSubscribers(fetchAll, interval) {
 	const job = fetch.fetchSubscribers(fetchAll);
+	job.interval = interval;
+	await job.run();
+}
+
+async function fetchAccounts(fetchAll, interval) {
+	const job = fetch.fetchAccounts(fetchAll);
 	job.interval = interval;
 	await job.run();
 }

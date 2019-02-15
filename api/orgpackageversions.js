@@ -77,8 +77,8 @@ async function insertOrgPackageVersions(opvs) {
 			logger.warn("Org found with unknown package version. Could be a beta, or record was deleted from the LMA.  Skipping.", {org_id: opv.org_id, version_id: opv.version_id});
 			continue;
 		}
-		params.push(`($${n++},$${n++},$${n++},$${n++},NOW())`);
-		values.push(opv.org_id, pv.package_id, pv.version_id, opv.license_status);
+		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++})`);
+		values.push(opv.org_id, pv.package_id, pv.version_id, opv.license_status, opv.modified_date);
 	}
 
 	if (values.length === 0) {
@@ -100,7 +100,7 @@ async function updateOrgPackageVersions(opvs) {
 		params.push(`($${++n},$${++n},$${++n})`);
 		values.push(v.package_id,v.version_id,v.org_id);
 	});
-	let sql = `UPDATE org_package_version as t SET version_id = v.version_id
+	let sql = `UPDATE org_package_version as t SET version_id = v.version_id, modified_date = NOW()
 			FROM ( VALUES ${params.join(",")} ) as v(package_id, version_id, org_id)
 			WHERE v.org_id = t.org_id AND v.package_id = t.package_id`;
 	await db.update(sql, values);
