@@ -8,7 +8,7 @@ import * as nav from "../services/nav";
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {results: [], term: '', selected: 0};
+		this.state = {results: [], term: '', searched: false, selected: 0};
 		this.changeHandler = this.changeHandler.bind(this);
 		this.keyHandler = this.keyHandler.bind(this);
 		this.searchInput = React.createRef();
@@ -39,6 +39,8 @@ export default class extends React.Component {
 		this.setState({term: event.target.value});
 		if (event.target.value) {
 			this.debounceSearchHandler(event.target.value);
+		} else {
+			this.setState({results: [], term: '', searched: false});
 		}
 	}
 
@@ -46,7 +48,7 @@ export default class extends React.Component {
 		let selected = this.state.selected;
 		switch(event.key) {
 			case "Escape":
-				this.setState({results: [], term: ''});
+				this.setState({results: [], term: '', searched: false});
 				break;
 			case "ArrowUp":
 				selected--;
@@ -76,14 +78,30 @@ export default class extends React.Component {
 	searchHandler(value) {
 		searchService.requestByTerm(value).then(results => {
 			results.forEach(result => result.ref = React.createRef());
-			this.setState({results});
+			this.setState({results, searched: true});
 		});
 	}
 
 	debounceSearchHandler = debounce(this.searchHandler, 250);
 
 	render() {
-		const results = this.state.results.map((result, index) =>
+		const results = this.state.results.length === 0 ?
+				this.state.searched ? [<li key="0" className="slds-listbox__item">
+					<div id="option0"
+						 className="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta">
+					<span className="slds-media__figure slds-listbox__option-icon">
+					  <span className="slds-icon_container slds-icon-standard-account">
+						<Icon name={iconForType("org").name} category={iconForType("org").category}/>
+					  </span>
+					</span>
+						<span className="slds-media__body">
+					  <span className="slds-listbox__option-text slds-listbox__option-text_entity">No results</span>
+					  <span className="slds-listbox__option-meta slds-listbox__option-meta_entity">Try a different id or search terms</span>
+					</span>
+					</div>
+				</li>] : []
+			 :
+			this.state.results.map((result, index) =>
 			(<li key={index} className="slds-listbox__item" onClick={e => this.openResult(result)}>
 				<div id={`option${index}`} ref={result.ref}
 					 style={this.state.selected === index ? {backgroundColor: "#f3f3f3"} : {}}
