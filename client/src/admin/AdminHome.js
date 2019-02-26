@@ -173,14 +173,16 @@ export default class extends React.Component {
 			actions.push(
 				{group: "accounts", label: "Fetch Accounts", handler: this.fetchAccountsHandler},
 				{group: "accounts", label: "Fetch All Accounts", handler: this.fetchAllAccountsHandler},
-				{group: "legacy", label: "Fetch Latest", handler: this.fetchHandler},
-				{group: "legacy", label: "Fetch All", handler: this.fetchAllHandler},
-				{group: "legacy", label: "Fetch Invalid Orgs", handler: this.fetchInvalidHandler},
-				{group: "subs", label: "Fetch All Subscribers", handler: this.fetchAllSubscribersHandler}
+				{group: "legacy", label: "Fetch Legacy", handler: this.fetchHandler},
+				{group: "legacy", label: "Fetch All Legacy", handler: this.fetchAllHandler},
+				{group: "legacy", label: "Fetch Invalid Orgs", handler: this.fetchInvalidHandler}
 			);
 		}
 
-		actions.push({group: "subs", label: "Fetch Subscribers", handler: this.fetchSubscribersHandler});
+		actions.push(
+		    {group: "data", label: "Fetch Data", handler: this.fetchSubscribersHandler},
+            {group: "data", label: "Fetch All Data", handler: this.fetchAllSubscribersHandler}
+        );
 
 
 		let user = authService.getSessionUser();
