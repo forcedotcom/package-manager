@@ -16,6 +16,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			advanced: false,
 			jobs: [],
 			queue: [],
 			history: {latest: [], all: []},
@@ -37,11 +38,16 @@ export default class extends React.Component {
 		this.uploadOrgsHandler = this.uploadOrgsHandler.bind(this);
 		this.goToHerokuHandler = this.goToHerokuHandler.bind(this);
 		this.showAllHistoryHandler = this.showAllHistoryHandler.bind(this);
+		this.showAdvancedActionsHandler = this.showAdvancedActionsHandler.bind(this);
+		this.hideAdvancedActionsHandler = this.hideAdvancedActionsHandler.bind(this);
+
 	}
 
-	// Lifecycle	
+	// Lifecycle
 	componentDidMount() {
 		window.addEventListener('resize', this.handleWindowResize);
+		window.addEventListener('keydown', this.showAdvancedActionsHandler);
+		window.addEventListener('keyup', this.hideAdvancedActionsHandler);
 
 		notifier.on('jobs', this.onJobs);
 		notifier.on('job-history', this.onHistory);
@@ -56,7 +62,10 @@ export default class extends React.Component {
 
 	componentWillUnmount() {
 		window.removeEventListener('resize', this.handleWindowResize);
-		
+		window.removeEventListener('keydown', this.showAdvancedActionsHandler);
+		window.removeEventListener('keyup', this.hideAdvancedActionsHandler);
+
+
 		notifier.remove('jobs', this.onJobs);
 		notifier.remove('job-history', this.onHistory);
 		notifier.remove('job-queue', this.onQueue);
@@ -158,15 +167,21 @@ export default class extends React.Component {
 			);
 		}
 
-		let actions = [
-			{group: "accounts", label: "Fetch Accounts", handler: this.fetchAccountsHandler},
-			{group: "accounts", label: "Fetch All Accounts", handler: this.fetchAllAccountsHandler},
-			{group: "subs", label: "Fetch Subscribers", handler: this.fetchSubscribersHandler},
-			{group: "subs", label: "Fetch All Subscribers", handler: this.fetchAllSubscribersHandler},
-			{group: "fetch", label: "Fetch Latest", handler: this.fetchHandler},
-			{group: "fetch", label: "Fetch All", handler: this.fetchAllHandler},
-			{group: "fetch", label: "Fetch Invalid Orgs", handler: this.fetchInvalidHandler},
-		];
+		let actions = [];
+
+		if (this.state.advanced) {
+			actions.push(
+				{group: "accounts", label: "Fetch Accounts", handler: this.fetchAccountsHandler},
+				{group: "accounts", label: "Fetch All Accounts", handler: this.fetchAllAccountsHandler},
+				{group: "legacy", label: "Fetch Latest", handler: this.fetchHandler},
+				{group: "legacy", label: "Fetch All", handler: this.fetchAllHandler},
+				{group: "legacy", label: "Fetch Invalid Orgs", handler: this.fetchInvalidHandler},
+				{group: "subs", label: "Fetch All Subscribers", handler: this.fetchAllSubscribersHandler}
+			);
+		}
+
+		actions.push({group: "subs", label: "Fetch Subscribers", handler: this.fetchSubscribersHandler});
+
 
 		let user = authService.getSessionUser();
 		if (user && user.enable_sumo)
@@ -294,6 +309,18 @@ export default class extends React.Component {
 
 	showAllHistoryHandler = () => {
 		this.setState({showAllHistory: true});
+	};
+
+	showAdvancedActionsHandler = (e) => {
+		if (e.key === "Alt") {
+			this.setState({advanced: true});
+		}
+	};
+
+	hideAdvancedActionsHandler = (e) => {
+		if (this.state.advanced) {
+			this.setState({advanced: false});
+		}
 	};
 }
 
