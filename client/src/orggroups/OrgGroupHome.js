@@ -36,7 +36,7 @@ export default class extends React.Component {
 		const {selected, selectedType, filterColumns} = this.state;
 
 		const actions = [
-			<DataTableSavedFilters id="OrgGroupList" key="OrgGroupList" threshold="3" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id="OrgGroupList" key="OrgGroupList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			<TypeSelect group="types" key="types" types={GroupTypes} selected={selectedType} onSelect={this.typeSelectionHandler}/>,
 			{label: "New", handler: this.newHandler, detail: "Create new org group"},
 			{

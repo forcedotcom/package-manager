@@ -104,7 +104,7 @@ export class RecordHeader extends React.Component {
 		return (
 			<div className="slds-page-header">
 				<div className="slds-grid">
-					<div className="slds-col slds-has-flexi-truncate">
+					<div className="slds-col">
 						<div className="slds-media">
 							<div className="slds-media__figure">
 								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
@@ -272,7 +272,7 @@ export class FormHeader extends React.Component {
 			<div style={{borderLeft: 0, borderRight: 0, borderRadius: "0.25rem 0.25rem 0 0", zIndex: 2}}
 				 className="slds-page-header">
 				<div className="slds-grid">
-					<div className="slds-col slds-has-flexi-truncate">
+					<div className="slds-col">
 						<div className="slds-media">
 							<div className="slds-media__figure">
 								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category}
@@ -353,7 +353,7 @@ export class HomeHeader extends React.Component {
 					<title>SteelBrick PM: {this.props.title}</title>
 				</Helmet>
 				<div className="slds-grid">
-					<div className="slds-col slds-has-flexi-truncate">
+					<div className="slds-col">
 						<p className="slds-text-heading--label">{this.props.type}</p>
 						<div className="slds-grid">
 							<div className="slds-grid slds-type-focus slds-no-space">

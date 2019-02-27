@@ -1,15 +1,27 @@
 import React from 'react';
 import * as filtrage from '../services/filtrage';
 import * as notifier from '../services/notifications';
+import debounce from "lodash.debounce";
 
-const DEFAULT_THRESHOLD = 5;
+const LARGE_THRESHOLD = 8;
+const MED_THRESHOLD = 6;
+const SMALL_THRESHOLD = 4;
+const MICRO_THRESHOLD = 2;
+
+function calcThreshold() {
+	return window.innerWidth > 1600 ? LARGE_THRESHOLD :
+			window.innerWidth > 1300 ? MED_THRESHOLD :
+				window.innerWidth > 1100 ? SMALL_THRESHOLD :
+				window.innerWidth > 800 ? MICRO_THRESHOLD : 0;
+}
+
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		
 		this.state = {
 			filters: [],
-			threshold: props.threshold || DEFAULT_THRESHOLD
+			threshold: calcThreshold()
 		};
 		
 		filtrage.requestFilters(props.id).then(filters => {
@@ -22,7 +34,23 @@ export default class extends React.Component {
 		this.resetHandler = this.resetHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
 		this.clearHandler = this.clearHandler.bind(this);
+		this.handleWindowResize = this.handleWindowResize.bind(this);
 	}
+
+	componentDidMount() {
+		window.addEventListener('resize', this.handleWindowResize);
+	}
+
+	componentWillUnmount() {
+		window.removeEventListener('resize', this.handleWindowResize);
+	}
+
+	handleWindowResize = debounce(() => {
+		let threshold = calcThreshold();
+		if (this.state.threshold !== threshold) {
+			this.setState({threshold})
+		}
+	}, 100);
 
 	// Lifecycle
 	componentWillReceiveProps(props) {

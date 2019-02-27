@@ -40,7 +40,7 @@ export default class extends React.Component {
 		this.showAllHistoryHandler = this.showAllHistoryHandler.bind(this);
 		this.showAdvancedActionsHandler = this.showAdvancedActionsHandler.bind(this);
 		this.hideAdvancedActionsHandler = this.hideAdvancedActionsHandler.bind(this);
-
+		this.handleWindowResize = this.handleWindowResize.bind(this);
 	}
 
 	// Lifecycle
