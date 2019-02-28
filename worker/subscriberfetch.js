@@ -68,10 +68,7 @@ async function fetchFromOrg(org, fetchAll) {
 			adminJob.postDetail(`Found ${res.totalSize} orgs with parent`);
 			invalidateAll = true; // Not using modstamp, so always invalidate
 		} catch (e) {
-			if (e.errorCode === 'QUERY_TIMEOUT') {
-				return fail(org, e);
-			}
-			logger.warn("Could not query with parent", e);
+			return fail(org, e);
 		}
 	}
 
