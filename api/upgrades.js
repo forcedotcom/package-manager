@@ -202,17 +202,6 @@ async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, 
 	return recs[0];
 }
 
-async function changeUpgradeItemStatus(item, status) {
-	try {
-		item.status = status || item.status;
-		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id = $2`, [item.status, item.id]);
-		admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
-		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
-	} catch (error) {
-		logger.error("Failed to update upgrade item", {itemId: item.id, status, error: error.message || error});
-	}
-}
-
 async function changeUpgradeItemTotalJobCount(itemId, count) {
 	try {
 		await db.update(`UPDATE upgrade_item SET total_job_count = $1 WHERE id = $2`, [count, itemId]);
@@ -222,27 +211,45 @@ async function changeUpgradeItemTotalJobCount(itemId, count) {
 	}
 }
 
-async function changeUpgradeItemAndJobStatus(items, status) {
-	try {
-		const values = [status];
-		const params = [];
-		for (let i = 0, p = values.length+1; i < items.length; i++) {
-			items[i].status = status;
-			values.push(items[i].id);
-			params.push(`$${p++}`);
-		}
-		
-		await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
-		// Do NOT change the status if a message is already set, as that means we already have a status and we don't want to lose track of it.
-		await db.update(`UPDATE upgrade_job SET status = $1 WHERE message IS NULL AND item_id IN (${params.join(",")})`, values);
-		admin.emit(admin.Events.UPGRADE, await retrieveById(items[0].upgrade_id));
-		admin.emit(admin.Events.UPGRADE_ITEMS, items);
-	} catch (error) {
-		logger.error("Failed to update upgrade items", {status, error: error.message || error});
+async function changeUpgradeJobStatus(items, toStatus, fromStatus) {
+	const values = [toStatus];
+	const params = [];
+	for (let i = 0, p = values.length+1; i < items.length; i++) {
+		items[i].status = toStatus;
+		values.push(items[i].id);
+		params.push(`$${p++}`);
 	}
+
+	// Only update records where the message is not set. It means the status is already set too.
+	let whereMessage = `AND message IS NULL`;
+
+	// If a fromStatus is provided, only update records with that status.
+	let whereStatus = '';
+	if (fromStatus) {
+		values.push(fromStatus);
+		whereStatus = `AND status = $${values.length}`;
+	}
+
+	let sql = `UPDATE upgrade_job SET status = $1 
+		WHERE item_id IN (${params.join(",")}) 
+		${whereMessage} 
+		${whereStatus}`;
+	await db.update(sql, values);
 }
 
-async function changeUpgradeJobsStatus(upgradeJobs, pushJobsById) {
+async function changeUpgradeItemStatus(items, status) {
+	const values = [status];
+	const params = [];
+	for (let i = 0, p = values.length+1; i < items.length; i++) {
+		items[i].status = status;
+		values.push(items[i].id);
+		params.push(`$${p++}`);
+	}
+
+	await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
+}
+
+async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobsById) {
 	let updated = [];
 	let upgraded = [];
 	let errored = [];
@@ -453,7 +460,12 @@ async function fetchStatus(items) {
 	for (let i = 0; i < items.length; i++) {
 		let item = items[i];
 		let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-		await changeUpgradeItemStatus(item, pushReqs[0].Status);
+		try {
+			await changeUpgradeItemStatus([item], pushReqs[0].Status);
+			admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
+		} catch (e) {
+			logger.error("Failed to update upgrade items", {status, error: e.message || e});
+		}
 	}
 }
 
@@ -474,7 +486,7 @@ async function fetchJobStatus(upgradeJobs) {
 	let pushJobsById = new Map();
 	const promisesResults = await Promise.all(promisesArr);
 	promisesResults.forEach(arr => arr.forEach(pj => pushJobsById.set(sfdc.normalizeId(pj.Id), pj)));
-	await changeUpgradeJobsStatus(activeJobs, pushJobsById);
+	await updateUpgradeJobsFromPushJobs(activeJobs, pushJobsById);
 }
 
 async function findJobs(upgradeId, itemId, orgId, sortField, sortDir, status) {
@@ -574,14 +586,16 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 
 async function activateAvailableUpgradeItems(id, username, job = {postMessage: msg => logger.info(msg)}) {
 	let items = await findItemsByUpgrade(id, ["dependency_tier", "package_id", "version_sort"], "asc");
-	let ineligible = [], incomplete = [];
+	let incomplete = [];
 	items = items.filter(i => {
-		if (i.eligible_job_count === "0") {
-			changeUpgradeItemStatus(i, push.Status.Ineligible).then(() =>
-				logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id})
+		if (i.eligible_job_count === 0) {
+			changeUpgradeItemStatus([i], push.Status.Ineligible).then(() => {
+					logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id});
+					admin.emit(admin.Events.UPGRADE_ITEMS, [i]);
+				}
 			).catch(err => 
-				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: i.id, push_request_id: i.push_request_id}));
-			ineligible.push(i);
+				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: i.id, push_request_id: i.push_request_id})
+			);
 			return false;
 		} else if (i.job_count !== i.total_job_count) {
 			incomplete.push(i);
@@ -602,13 +616,13 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 		return items;
 	}
 	
-	// Build our buckets based on tiers (or biers if that is your thing)
+	// Build our buckets based on tiers
 	const buckets = [];
 	let bucket = {};
 	let tier = null, packageId = null;
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
-		// If this item is in a new tier, add a new bucket.
+		// If this item is in a new tier, or if the same package is being upgraded again, add a new bucket.
 		if (tier !== item.dependency_tier || packageId === item.package_id) {
 			tier = item.dependency_tier;
 			packageId = item.package_id;
@@ -624,7 +638,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 				bucket.state = State.Complete;
 				break;
 			case push.Status.Failed:
-				bucket.state = State.Complete; // TODO State.Blocked if over failure threshold
+				bucket.state = State.Complete;
 				break;
 			case push.Status.Pending:
 			case push.Status.InProgress:
@@ -659,9 +673,16 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 
 			if (activate && item.status === push.Status.Created) {
 				// Ready to activate!
-				await push.updatePushRequests([item], push.Status.Pending, username);
-				await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
-				job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
+				try {
+					await push.updatePushRequests([item], push.Status.Pending, username);
+					await changeUpgradeJobStatus([item], push.Status.Pending);
+					await changeUpgradeItemStatus([item], push.Status.Pending);
+					admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+					admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
+					job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
+				} catch (e) {
+					logger.error("Failed to update", {status, error: e.message || e});
+				}
 			}
 		}
 	}
@@ -753,9 +774,11 @@ async function requestCancelUpgrade(req, res, next) {
 	try {
 		let items = await findItemsByUpgrade(id);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
-		await changeUpgradeItemAndJobStatus(items, push.Status.Canceled);
+		await changeUpgradeJobStatus(items, push.Status.Canceled, push.Status.Pending);
+		await changeUpgradeItemStatus(items, push.Status.Canceled);
 		await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Canceled, id]);
 		admin.emit(admin.Events.UPGRADE, await retrieveById(id));
+		admin.emit(admin.Events.UPGRADE_ITEMS, items);
 		res.json(items);
 	} catch (e) {
 		next(e);
@@ -781,15 +804,20 @@ async function requestActivateUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
 		const item = (await findItemsByIds([id]))[0];
-		if (item.eligible_job_count === "0") {
-			changeUpgradeItemStatus(item, push.Status.Ineligible).then(() =>
-				logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: item.id, push_request_id: item.push_request_id})
+		if (item.eligible_job_count === 0) {
+			changeUpgradeItemStatus([item], push.Status.Ineligible).then(() => {
+					logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: item.id, push_request_id: item.push_request_id});
+					admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
+				}
 			).catch(err =>
 				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: item.id, push_request_id: item.push_request_id}));
 			return res.json({});
 		}
 		await push.updatePushRequests([item], push.Status.Pending, req.session.username);
-		await changeUpgradeItemAndJobStatus([item], push.Status.Pending);
+		await changeUpgradeJobStatus([item], push.Status.Pending);
+		await changeUpgradeItemStatus([item], push.Status.Pending);
+		admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 		res.json(item);
 	} catch (e) {
 		next(e);
@@ -801,7 +829,10 @@ async function requestCancelUpgradeItem(req, res, next) {
 	try {
 		let item = (await findItemsByIds([id]))[0];
 		await push.updatePushRequests([item], push.Status.Canceled, req.session.username);
-		await changeUpgradeItemAndJobStatus([item], push.Status.Canceled);
+		await changeUpgradeJobStatus([item], push.Status.Canceled, push.Status.Pending);
+		await changeUpgradeItemStatus([item], push.Status.Canceled);
+		admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 		res.json(item);
 	} catch (e) {
 		next(e);
