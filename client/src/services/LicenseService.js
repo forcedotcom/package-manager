@@ -7,4 +7,6 @@ export let requestAll = (sort_field, sort_dir, filters, page, pageSize) => h.get
 
 export let requestByOrg = (org_id) => h.get(url, {org_id});
 
+export let requestByGroup = (group_id) => h.get(url, {group_id});
+
 export let requestById = id => h.get(url + "/" + id);

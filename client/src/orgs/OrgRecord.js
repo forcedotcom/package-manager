@@ -17,7 +17,7 @@ import UpgradeJobCard from "../upgrades/UpgradeJobCard";
 import Tabs from "../components/Tabs";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import OrgCard from "./OrgCard";
-import LicenseCard from "./LicenseCard";
+import LicenseCard from "../licenses/LicenseCard";
 
 export default class extends React.Component {
 	constructor(props) {

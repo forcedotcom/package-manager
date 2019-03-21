@@ -101,7 +101,7 @@ export default class extends React.Component {
 								</dt>
 								<dd>
 									<p className="slds-text-body--regular slds-truncate"
-									   title="">{moment(this.props.license.expiration).format("ll")}</p>
+									   title="">{this.props.license.expiration === null ? 'Does not expire' : moment(this.props.license.expiration).format("ll")}</p>
 								</dd>
 							</dl>
 						</div>

@@ -12,6 +12,7 @@ export default class extends React.Component {
 		this.state = {};
 
 		this.linkHandler = this.linkHandler.bind(this);
+		this.filterHandler = this.filterHandler.bind(this);
 	}
 	
 	// Lifecycle
@@ -23,7 +24,8 @@ export default class extends React.Component {
 			{Header: "Version Number", id: "version_sort", accessor: "version_number", sortable: true, clickable: true},
 			{Header: "Status", accessor: "status", sortable: true},
 			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true},
-			{Header: "Installed On", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: true}
+			{Header: "Installed On", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: true},
+			{Header: "Expiration", id: "expiration", accessor: d => d.expiration === null ? null : moment(d.expiration).format("YYYY-MM-DD"), sortable: true}
 		];
 
 		return (
@@ -31,7 +33,7 @@ export default class extends React.Component {
 				<CardHeader title={this.props.title} count={this.state.itemCount}/>
 				<div className="slds-card__body">
 					<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
-							   onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}/>
+							   onClick={this.linkHandler} onFilter={this.filterHandler} filters={this.props.filterColumns}/>
 					<DataTableFilterHelp/>
 				</div>
 				<footer className="slds-card__footer"/>
@@ -52,5 +54,9 @@ export default class extends React.Component {
 			default:
 			// Nothing...
 		}
+	}
+
+	filterHandler(filtered, filterColumns, itemCount) {
+		this.setState({filtered, itemCount, filterColumns});
 	}
 }

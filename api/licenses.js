@@ -36,10 +36,14 @@ const SELECT_ALL = `SELECT
     INNER JOIN package_version as pv on l.version_id = pv.version_id
     INNER JOIN package as p on pv.package_id = p.sfid`;
 
+const SELECT_ALL_IN_GROUP = SELECT_ALL +
+	` INNER JOIN org_group_member gm ON gm.org_id = o.org_id`;
+
 function requestAll(req, res, next) {
 	let orgId = req.query.org_id;
+	let groupId = req.query.group_id;
 
-	findAll(orgId, req.query.status, req.query.sort_field, req.query.sort_dir,
+	findAll(orgId, groupId, req.query.status, req.query.sort_field, req.query.sort_dir,
 		req.query.filters ? JSON.parse(req.query.filters) : null, req.query.page, req.query.pageSize)
 		.then((recs) => {
 			return res.send(JSON.stringify(recs))
@@ -47,12 +51,19 @@ function requestAll(req, res, next) {
 		.catch(next);
 }
 
-async function findAll(orgId, status, orderByField, orderByDir, filters) {
+async function findAll(orgId, groupId, status, orderByField, orderByDir, filters) {
 	let whereParts = [], values = [];
+	let select = SELECT_ALL;
 
 	if (orgId) {
 		values.push(orgId);
 		whereParts.push("o.org_id = $" + values.length);
+	}
+
+	if (groupId) {
+		select = SELECT_ALL_IN_GROUP;
+		values.push(groupId);
+		whereParts.push(`gm.org_group_id = $${values.length}`);
 	}
 
 	if (status) {
@@ -67,7 +78,7 @@ async function findAll(orgId, status, orderByField, orderByDir, filters) {
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";
 	let sort = ` ORDER BY ${orderByField || "name"} ${orderByDir || "asc"}`;
 
-	return db.query(SELECT_ALL + where + sort, values);
+	return db.query(select + where + sort, values);
 }
 
 function requestById(req, res, next) {

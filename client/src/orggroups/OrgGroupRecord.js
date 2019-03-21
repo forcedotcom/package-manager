@@ -3,6 +3,7 @@ import React from 'react';
 import * as orgGroupService from '../services/OrgGroupService';
 import * as packageVersionService from "../services/PackageVersionService";
 import * as upgradeService from "../services/UpgradeService";
+import * as licenseService from "../services/LicenseService";
 import * as notifier from "../services/notifications";
 import * as strings from "../services/strings";
 import * as nav from "../services/nav";
@@ -16,6 +17,7 @@ import moment from "moment";
 import Tabs from "../components/Tabs";
 import GroupMemberVersionCard from "../packageversions/GroupMemberVersionCard";
 import GroupMemberOrgCard from "../orgs/GroupMemberOrgCard";
+import LicenseCard from "../licenses/LicenseCard";
 import UpgradeCard from "../upgrades/UpgradeCard";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 
@@ -35,6 +37,7 @@ export default class extends React.Component {
 		this.fetchMembers = this.fetchMembers.bind(this);
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchUpgrades = this.fetchUpgrades.bind(this);
+		this.fetchLicenses = this.fetchLicenses.bind(this);
 		this.resolveUpgradeablePackages = this.resolveUpgradeablePackages.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 		this.schedulingWindowHandler = this.schedulingWindowHandler.bind(this);
@@ -96,6 +99,9 @@ export default class extends React.Component {
 										refetchFor={orggroup.id} actions={memberActions}
 										selected={selected} showSelected={showSelected}
 										onSelect={this.versionSelectionHandler}/>
+			</div>,
+			<div label="Licenses">
+				<LicenseCard title="Licenses" onFetch={this.fetchLicenses} refetchOn="licenses"/>
 			</div>
 		];
 		if (orggroup.type === "Upgrade Group") {
@@ -151,6 +157,10 @@ export default class extends React.Component {
 
 	fetchUpgrades() {
 		return upgradeService.requestByGroup(this.props.match.params.orgGroupId);
+	}
+
+	fetchLicenses() {
+		return licenseService.requestByGroup(this.props.match.params.orgGroupId);
 	}
 
 	resolveUpgradeablePackages(versions) {
