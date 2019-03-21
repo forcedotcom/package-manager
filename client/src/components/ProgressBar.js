@@ -3,6 +3,12 @@ import {Colors} from "../Constants";
 
 export default class extends React.Component {
 	render() {
+		// If progressTotal is given, but is <= 0, there is nothing to show but the message, if any.
+		let valid = typeof this.props.progressTotal === undefined || this.props.progressTotal > 0;
+		if (!valid) {
+			return (<div><span>{this.props.message}</span></div>);
+		}
+
 		const colorSuccess = this.props.colorSuccess || Colors.Success;
 		const colorWarning = Colors.Warning;
 		const colorError = Colors.Error;
@@ -37,12 +43,14 @@ export default class extends React.Component {
 		let pctSuccess = `${progressSuccess}%`;
 		let pctWarning = `${progressWarning}%`;
 		let pctError = `${progressError}%`;
+
+
 		return (
 			<div style={{lineHeight: this.props.message ? 1 : 0}}>
 				{this.props.message ?
 					<div className="slds-grid slds-grid_align-spread">
 						<span>{this.props.message}</span>
-						<span>&nbsp;<strong>{parseInt(progressSuccess + progressWarning + progressError, 10)}% complete</strong></span>
+						<span style={{paddingLeft: "5px"}}><strong>{parseInt(progressSuccess + progressWarning + progressError, 10)}% complete</strong></span>
 					</div>
 					: ""}
 				<div className="slds-progress-bar" style={{display: "inline-flex", height}}>

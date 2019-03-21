@@ -111,7 +111,7 @@ class ProgressCell extends React.Component {
 			let plural = strings.pluralizeIt(progress.errors, "failure");
 			let message = (progress.count === 0) ? Status.Ineligible :
 				progress.done && progress.errors > 0 ? `Complete with ${plural.num} ${plural.str}` : status;
-			p = <ProgressBar message={message} height=".25em" progressSuccess={progress.percentageSuccess}
+			p = <ProgressBar message={message} height=".25em" progressTotal={progress.count} progressSuccess={progress.percentageSuccess}
 							progressWarning={progress.percentageCanceled} progressError={progress.percentageError}/>;
 		}
 		return (p);

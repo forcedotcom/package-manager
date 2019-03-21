@@ -60,7 +60,7 @@ export default class extends React.Component {
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler,
-				disabled: !userCanActivate || progress.active > 0,
+				disabled: !userCanActivate || progress.active > 0 || progress.done,
 				detail: userCanActivate ? "Activate all items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
 				spinning: this.state.isActivating
 			},
