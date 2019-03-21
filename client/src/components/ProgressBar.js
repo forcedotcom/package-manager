@@ -4,7 +4,7 @@ import {Colors} from "../Constants";
 export default class extends React.Component {
 	render() {
 		// If progressTotal is given, but is <= 0, there is nothing to show but the message, if any.
-		let valid = typeof this.props.progressTotal === undefined || this.props.progressTotal > 0;
+		let valid = typeof this.props.progressTotal === "undefined" || this.props.progressTotal > 0;
 		if (!valid) {
 			return (<div><span>{this.props.message}</span></div>);
 		}
