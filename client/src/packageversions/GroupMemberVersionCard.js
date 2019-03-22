@@ -32,7 +32,7 @@ export default class extends React.Component {
 			{Header: "Account Information", columns: [
 				{Header: "Account Name", accessor: "account_name", clickable: true},
 				{Header: "License", accessor: "license_status"},
-				{Header: "Install Date", id: "install_date", accessor: d => moment(d.install_date).format("YYYY-MM-DD"), sortable: false},
+				{Header: "Install Date", id: "install_date", accessor: d => d.install_date ? moment(d.install_date).format("YYYY-MM-DD") : null, sortable: false},
 			]},
 			{Header: "Version Information", columns: [
 				{Header: "Package", accessor: "package_name", clickable: true},

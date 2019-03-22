@@ -9,8 +9,7 @@ const SELECT_ALL =
 		FROM PackageSubscriber`;
 
 const SELECT_ALL_WITHOUT_MODSTAMP =
-	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,
-		ParentOrg
+	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,ParentOrg
 		FROM PackageSubscriber`;
 
 let adminJob;
@@ -145,7 +144,7 @@ async function upsertBatch(recs) {
 			org_id: rec.org_id,
 			version_id: rec.package_version_id,
 			license_status: orgpackageversions.LicenseStatus.Active,
-			modified_date: new Date().toISOString()
+			modified_date: rec.modified_date
 		}
 	});
 	await orgpackageversions.insertOrgPackageVersions(opvs);

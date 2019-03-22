@@ -101,7 +101,7 @@ export default class extends React.Component {
 										onSelect={this.versionSelectionHandler}/>
 			</div>,
 			<div label="Licenses">
-				<LicenseCard title="Licenses" onFetch={this.fetchLicenses} refetchOn="licenses"/>
+				<LicenseCard title="Licenses" id="GroupLicenseCard" onFetch={this.fetchLicenses} refetchOn="licenses"/>
 			</div>
 		];
 		if (orggroup.type === "Upgrade Group") {

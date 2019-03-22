@@ -37,6 +37,7 @@ async function updateOrgStatus(job) {
 	await db.update(`
 		UPDATE org_package_version opv
 		SET modified_date  = l.modified_date,
+			install_date = l.install_date,
 			license_status =
 				CASE
 					WHEN l.expiration <= NOW() THEN 'Expired'
@@ -106,13 +107,8 @@ async function fetchFromSubscribers(orgId, packageOrgIds, job) {
 	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
 
 	if (!packageOrgIds) {
-		let i = 1;
-		let params = orgIds.map(() => `$${i++}`);
 		packageOrgIds = (await db.query(
-			`SELECT DISTINCT p.package_org_id
-			 FROM package p
-			 INNER JOIN org_package_version opv on opv.package_id = p.sfid
-			 WHERE opv.org_id IN (${params.join(",")})`, orgIds)).map(p => p.package_org_id);
+			`SELECT org_id from package_org where type = $1`, [sfdc.OrgTypes.Package])).map(p => p.org_id);
 	}
 	const missingOrgIds = new Set(orgIds);
 

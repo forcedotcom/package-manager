@@ -58,7 +58,7 @@ const JobTypes = {
 	FETCH_INVALID: "fetch-invalid",
 	FETCH_ACCOUNTS: "fetch-accounts",
 	FETCH_ACCOUNT_ORGS: "fetch-account-orgs",
-	REFRESH_GROUP_VERSIONS: "refresh-group-versions",
+	REFRESH_GROUP_VERSIONS: "refresh-group-versions"
 };
 
 let jobQueue = [];

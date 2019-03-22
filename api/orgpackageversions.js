@@ -88,7 +88,7 @@ async function insertOrgPackageVersions(opvs) {
 	let sql = `INSERT INTO org_package_version (org_id, package_id, version_id, license_status, modified_date) 
                        VALUES ${params.join(",")}
                        on conflict (org_id, package_id) do update set version_id = excluded.version_id,
-                       license_status = excluded.license_status`;
+                       license_status = excluded.license_status, modified_date = excluded.modified_date`;
 	return db.insert(sql, values);
 }
 

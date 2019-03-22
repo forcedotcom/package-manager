@@ -32,7 +32,7 @@ export default class extends React.Component {
 			<article className="slds-card">
 				<CardHeader title={this.props.title} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
+					<DataTable id={this.props.id || "LicenseCard"} keyField="sfid" columns={columns} onFetch={this.props.onFetch}
 							   onClick={this.linkHandler} onFilter={this.filterHandler} filters={this.props.filterColumns}/>
 					<DataTableFilterHelp/>
 				</div>
