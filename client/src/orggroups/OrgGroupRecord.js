@@ -45,6 +45,7 @@ export default class extends React.Component {
 		this.saveHandler = this.saveHandler.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
 		this.upgradeUpdated = this.upgradeUpdated.bind(this);
+		this.processingFinished = this.processingFinished.bind(this);
 		this.editHandler = this.editHandler.bind(this);
 		this.cancelHandler = this.cancelHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
@@ -61,11 +62,13 @@ export default class extends React.Component {
 	// Lifecycle
 	componentDidMount() {
 		notifier.on('upgrade', this.upgradeUpdated);
+		notifier.on('group-members', this.processingFinished);
 		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => this.setState({orggroup}));
 	}
 	
 	componentWillUnmount() {
 		notifier.remove('upgrade', this.upgradeUpdated);
+		notifier.remove('group-members', this.processingFinished);
 	}
 
 	render() {
@@ -197,6 +200,12 @@ export default class extends React.Component {
 		this.setState({schedulingUpgrade: false});
 	}
 
+	processingFinished(groupId) {
+		if (groupId === this.state.orggroup.id) {
+			this.setState({isProcessing: false});
+		}
+	}
+
 	schedulingWindowHandler() {
 		this.setState({schedulingUpgrade: true});
 	}
@@ -207,7 +216,7 @@ export default class extends React.Component {
 
 	saveHandler(orggroup) {
 		this.setState({isProcessing: true});
-		orgGroupService.requestUpdate(orggroup).then(() => {
+		orgGroupService.requestUpdate(orggroup).then((orggroup) => {
 			this.setState({orggroup, isEditing: false});
 		}).catch(e => notifier.error(e.message | e, orggroup.message, "Fail"));
 	}

@@ -1,5 +1,9 @@
 import React from 'react';
 
+function getPath(category, name) {
+	return `/assets/icons/${category}-sprite/svg/symbols.svg#${name}`;
+}
+
 export class Icon extends React.Component {
 	static defaultProps = {
 		name: "account",
@@ -16,7 +20,7 @@ export class Icon extends React.Component {
 		}
 		return (
 			<svg aria-hidden="true" className={className}>;
-				<use xlinkHref={`/assets/icons/${this.props.category}-sprite/svg/symbols.svg#${this.props.name}`}/>
+				<use xlinkHref={getPath(this.props.category, this.props.name)}/>
 			</svg>
 		);
 	}
@@ -40,7 +44,7 @@ export class HeaderIcon extends React.Component {
 		return (
 			<div className={`slds-icon_container slds-icon-${this.props.category}-${iconStyleName}`}>
 				<svg aria-hidden="true" className={className}>;
-					<use xlinkHref={`/assets/icons/${this.props.category}-sprite/svg/symbols.svg#${this.props.name}`}/>
+					<use xlinkHref={getPath(this.props.category, this.props.name)}/>
 				</svg>
 			</div>);
 	}
@@ -48,7 +52,7 @@ export class HeaderIcon extends React.Component {
 
 export class ButtonIcon extends React.Component {
 	render() {
-		let useTag = '<use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#' + this.props.name + '" />';
+		let useTag = `<use xlink:href="${getPath("utility", this.props.name)}"/>`;
 		let className = "slds-button__icon";
 		if (this.props.stateful) {
 			className += "--stateful";
@@ -68,7 +72,7 @@ export class ButtonIcon extends React.Component {
 
 export class InputIcon extends React.Component {
 	render() {
-		let useTag = '<use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#' + this.props.name + '" />';
+		let useTag = `<use xlink:href="${getPath("utility", this.props.name)}"/>`;
 		let className = "slds-input__icon slds-icon-text-default";
 		return <svg aria-hidden="true" className={className} dangerouslySetInnerHTML={{__html: useTag}}/>;
 	}
