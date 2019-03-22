@@ -39,8 +39,7 @@ async function fetchFromOrg(org, fetchAll) {
 	let invalidateAll = false;
 	if (!fetchAll) {
 		let latest = await db.query(
-			`SELECT MAX(org.modified_date) FROM org
-					INNER JOIN org_package_version opv ON opv.org_id = org.org_id AND opv.package_id = $1`, [org.package_id]);
+			`SELECT MAX(modified_date) FROM org_package_version WHERE package_id = $1`, [org.package_id]);
 		if (latest[0].max) {
 			where = `WHERE SystemModstamp > ${latest[0].max.toISOString()}`;
 		}
