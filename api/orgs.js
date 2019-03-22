@@ -189,7 +189,7 @@ async function addOrgsByIds(orgIds) {
 			org_id: sfdc.normalizeId(rec.OrgKey),
 			version_id: rec.MetadataPackageVersionId,
 			license_status: orgpackageversions.LicenseStatus.Active,
-			modified_date: new Date().toISOString()
+			modified_date: rec.SystemModstamp
 		}
 	});
 	await orgpackageversions.insertOrgPackageVersions(opvs);
