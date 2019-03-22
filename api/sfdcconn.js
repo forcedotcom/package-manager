@@ -20,7 +20,7 @@ const AccountIDs = {
 };
 
 const PORT = process.env.PORT || 5000;
-const SFDC_API_VERSION = "44.0";
+const SFDC_API_VERSION = "45.0";
 
 const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/oauth2/callback';
 

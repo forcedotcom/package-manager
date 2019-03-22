@@ -186,6 +186,9 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 			admin.emit(admin.Events.GROUP_MEMBERS, orggroup.id);
 			admin.emit(admin.Events.GROUP_VERSIONS, orggroup.id);
 		}).catch(e => admin.emit(admin.Events.FAIL, {subject: "Failed to import orgs", message: e.message || e}));
+	} else {
+		// Still want to broadcast that we are done adding group members.
+		admin.emit(admin.Events.GROUP_MEMBERS, orggroup.id);
 	}
 	return orggroup;
 }

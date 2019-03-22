@@ -10,6 +10,14 @@ const logger = require('../util/logger').logger;
 
 const JOB_CREATION_BATCH_SIZE = process.env.JOB_CREATION_BATCH_SIZE || (13*13);
 
+const SELECT_ALL_SUBSCRIBERS =
+	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,ParentOrg,SystemModstamp
+		FROM PackageSubscriber`;
+
+const SELECT_ALL_SUBSCRIBERS_WITHOUT_MODSTAMP =
+	`SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,ParentOrg
+		FROM PackageSubscriber`;
+
 const Status = {
 	Created: "Created",
 	Pending: "Pending",
@@ -643,14 +651,16 @@ async function findSubscribersByIds(packageOrgIds, orgIds) {
 	let subs = [];
 	for (let i = 0; i < packageOrgIds.length; i++) {
 		let conn = await sfdc.buildOrgConnection(packageOrgIds[i]);
-		let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
-                    OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber
-                    WHERE OrgKey IN ('${orgIds.join("','")}')`;
 		try {
-			let res = await conn.query(soql);
+			let res = await conn.query(`${SELECT_ALL_SUBSCRIBERS} WHERE OrgKey IN ('${orgIds.join("','")}')`);
 			subs = subs.concat(res.records);
 		} catch (e) {
-			logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], error: e.message || e});
+			try {
+				let res = await conn.query(`${SELECT_ALL_SUBSCRIBERS_WITHOUT_MODSTAMP} WHERE OrgKey IN ('${orgIds.join("','")}')`);
+				subs = subs.concat(res.records);
+			} catch (e) {
+				logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], error: e.message || e});
+			}
 		}
 	}
 	return subs;

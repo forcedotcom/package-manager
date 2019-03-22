@@ -166,7 +166,7 @@ async function requestAdd(req, res, next) {
 }
 
 async function addOrgsByIds(orgIds) {
-	let packageOrgs = await db.query(`SELECT org_id FROM package_org WHERE status = $1 AND namespace is not null`, [packageorgs.Status.Connected]);
+	let packageOrgs = await db.query(`SELECT org_id FROM package_org WHERE status = $1 AND type = $2`, [packageorgs.Status.Connected, sfdc.OrgTypes.Package]);
 	let packageOrgIds = packageOrgs.map(o => o.org_id);
 	let recs = await push.findSubscribersByIds(packageOrgIds, orgIds);
 	let uniqueSet = new Set();
@@ -199,11 +199,12 @@ async function insertOrgsFromSubscribers(recs) {
 	let params = [], values = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},NOW())`);
-		values.push(sfdc.normalizeId(rec.OrgKey), rec.OrgName, rec.OrgType, rec.OrgType === 'Sandbox', rec.InstanceName, Status.Installed);
+		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`);
+		values.push(sfdc.normalizeId(rec.OrgKey), rec.OrgName, rec.OrgType, rec.OrgType === 'Sandbox',
+			rec.InstanceName, Status.Installed, rec.ParentOrg, rec.SystemModstamp);
 	}
 
-	let sql = `INSERT INTO org (org_id, name, type, is_sandbox, instance, status, modified_date) 
+	let sql = `INSERT INTO org (org_id, name, type, is_sandbox, instance, status, parent_org_id, modified_date) 
                        VALUES ${params.join(",")}
                        ON CONFLICT (org_id) DO UPDATE SET status = '${Status.Installed}' 
                        WHERE org.status = '${Status.NotFound}'`;
