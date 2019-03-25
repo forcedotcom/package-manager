@@ -18,31 +18,36 @@ async function fetch(accountsOrgId, fetchAll, job) {
 }
 
 async function queryAndStore(accountsOrgId, fetchAll, batchSize, useBulkAPI) {
-	// Select all prod org ids
-	let sql = `SELECT org_id FROM org WHERE is_sandbox = false`;
-	if (!fetchAll) {
-		// ...but only those that have no account AND whose org id is not already found in our accounts table
-		sql = `${sql} 
-			AND 
-			(account_id IS NULL AND org_id NOT IN 
-				(SELECT org_id FROM account WHERE org_id IS NOT NULL))
-			OR 
-			(account_id IS NOT NULL AND account_id NOT IN 
-				(select account_id from account))`;
-	}
-	// Union it with all sandbox org's parent org ids, for the case where the parent org does not actually have the package
-	// installed (and thus we have no org record for it).  We need to get the account even if we don't have the prod org.
-	sql = `${sql} UNION
-		SELECT parent_org_id as org_id FROM org WHERE parent_org_id IS NOT NULL`;
-	if (!fetchAll) {
-		// ...again, only those that have no account AND whose org id is not already found in our accounts table
-		sql = `${sql} 
-			AND 
-			(account_id IS NULL AND org_id NOT IN 
-				(SELECT org_id FROM account WHERE org_id IS NOT NULL))
-			OR 
-			(account_id IS NOT NULL AND account_id NOT IN 
-				(select account_id from account))`;
+	let sql;
+	if (fetchAll) {
+		// Simple.  Just union all production org ids and fetch their accounts.  Include parent_org_id for the
+		// case where the parent org of a sandbox does not yet have the package installed.
+		sql = `
+		SELECT org_id FROM org WHERE is_sandbox = false
+		UNION
+		SELECT parent_org_id FROM org WHERE parent_org_id IS NOT NULL`
+	} else {
+		// Less Simple.  Query production org ids that do not yet have account ids, or that have account ids but we
+		// have not yet fetched their account records, for whatever reason.  Include parent_org_id for the
+		// case where the parent org of a sandbox does not yet have the package installed.
+		sql = `
+		SELECT org_id
+		FROM org
+		WHERE is_sandbox = false
+		  AND (
+			(account_id IS NULL AND org_id NOT IN (SELECT org_id FROM account WHERE org_id IS NOT NULL))
+			OR
+			(account_id IS NOT NULL AND account_id NOT IN ('000000000000000', '000000000000001') AND account_id NOT IN (SELECT account_id FROM account))
+		  )
+		UNION
+		SELECT parent_org_id
+		FROM org
+		WHERE parent_org_id IS NOT NULL
+		  AND (
+			(account_id IS NULL AND parent_org_id NOT IN (SELECT org_id FROM account WHERE org_id IS NOT NULL))
+			OR
+			(account_id IS NOT NULL AND account_id NOT IN ('000000000000000', '000000000000001') AND account_id NOT IN (SELECT account_id FROM account))
+		  )`
 	}
 
 	let orgs = await db.query(sql);
