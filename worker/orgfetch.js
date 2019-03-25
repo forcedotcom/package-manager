@@ -123,12 +123,13 @@ async function mark(isSandbox, job) {
 }
 
 /**
- * Updates org details from information in the org's account
+ * Updates org details from information in this org's, or its parent org's, account
  */
 async function updateOrgsFromAccounts(job) {
 	adminJob = job;
 
-	let sql = `UPDATE org o SET account_id = a.account_id, edition = a.edition FROM account a WHERE o.org_id = a.org_id`;
+	let sql = `UPDATE org o SET account_id = a.account_id, edition = a.edition FROM account a 
+				WHERE o.org_id = a.org_id OR o.parent_org_id = a.org_id`;
 	let res = await db.update(sql);
 	if (res.length > 0) {
 		adminJob.postDetail(`Updated ${res.length} orgs with with account instances`);
