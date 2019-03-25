@@ -122,6 +122,9 @@ async function mark(isSandbox, job) {
 	}
 }
 
+/**
+ * Updates org details from information in the org's account
+ */
 async function updateOrgsFromAccounts(job) {
 	adminJob = job;
 
@@ -132,6 +135,9 @@ async function updateOrgsFromAccounts(job) {
 	}
 }
 
+/**
+ * Updates sandbox org details from parent production orgs
+ */
 async function updateChildrenFromParents(job) {
 	adminJob = job;
 

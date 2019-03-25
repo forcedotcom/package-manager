@@ -18,10 +18,25 @@ async function fetch(accountsOrgId, fetchAll, job) {
 }
 
 async function queryAndStore(accountsOrgId, fetchAll, batchSize, useBulkAPI) {
+	// Select all prod org ids
 	let sql = `SELECT org_id FROM org WHERE is_sandbox = false`;
 	if (!fetchAll) {
-		sql += ` AND account_id IS NULL AND org_id NOT IN 
-			(SELECT org_id FROM account WHERE org_id IS NOT NULL)`
+		// ...but only those that have no account AND whose org id is not already found in our accounts table
+		sql = `${sql} 
+			AND account_id IS NULL 
+			AND org_id NOT IN 
+				(SELECT org_id FROM account WHERE org_id IS NOT NULL)`
+	}
+	// Union it with all sandbox org's parent org ids, for the case where the parent org does not actually have the package
+	// installed (and thus we have no org record for it).  We need to get the account even if we don't have the prod org.
+	sql = `${sql} UNION
+		SELECT parent_org_id as org_id FROM org WHERE parent_org_id IS NOT NULL`;
+	if (!fetchAll) {
+		// ...again, only those that have no account AND whose org id is not already found in our accounts table
+		sql = `${sql} 
+			AND account_id IS NULL 
+			AND parent_org_id NOT IN
+		  		(SELECT org_id FROM account WHERE org_id IS NOT NULL)`
 	}
 
 	let orgs = await db.query(sql);
