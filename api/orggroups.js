@@ -123,7 +123,7 @@ async function requestUpdate(req, res, next) {
 			await insertOrgMembers(og.id, og.name, og.orgIds);
 		}
 		admin.emit(admin.Events.GROUP, groupId);
-		return res.send(updatedGroup);
+		return res.send(updatedGroup[0]);
 	} catch (e) {
 		next(e);
 	}
