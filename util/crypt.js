@@ -5,11 +5,6 @@ const logger = require('../util/logger').logger;
 const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 const CRYPT_KEY_RSA = process.env.CRYPT_KEY_RSA;
 
-/*
-    crypt.js - wrapper for crypto
-    All taken from thenativeweb/crypto2 (because I couldn't get the full module to work)
- */
-
 const crypto = require('crypto'),
 	NodeRSA = require('node-rsa'),
 	{Readable} = require('stream');
@@ -23,25 +18,21 @@ const createKeyPair = async function () {
 };
 
 const rsaEncrypt = async function (privateKey, text) {
-    logger.info(`Encrypting text ${text} with private key ${privateKey}`);
 	const key = new NodeRSA(privateKey);
 	return key.encrypt(text, 'base64', 'utf8');
 };
 
 const rsaDecrypt = async function (privateKey, text) {
-	logger.info(`Decrypting text ${text} with private key ${privateKey}`);
 	const key = new NodeRSA(privateKey);
 	return key.decrypt(text, 'utf8');
 };
 
 const passwordEncrypt = async function (password, text) {
-	logger.info(`Encrypting text ${text} with password ${password}`);
 	const cipher = crypto.createCipher('aes-256-cbc', password);
 	return processStream(cipher, text, {from: 'utf8', to: 'hex'});
 };
 
 const passwordDecrypt = async function (password, text) {
-	logger.info(`Decrypting text ${text} with password ${password}`);
 	const cipher = crypto.createDecipher('aes-256-cbc', password);
 	return processStream(cipher, text, {from: 'hex', to: 'utf8'});
 };
@@ -62,6 +53,7 @@ const encryptObjects = async function (objects, fields) {
 					try {
 						obj[field] = await rsaEncrypt(CRYPT_KEY_RSA, obj[field]);
 					} catch (e) {
+						logger.warn("RSA encryption not used.  Ensure CRYPT_KEY_RSA configuration variable is set with your private key", e);
 						obj[field] = await passwordEncrypt(CRYPT_KEY, obj[field]);
 					}
 				}
@@ -88,6 +80,7 @@ const decryptObjects = async function (objects, fields) {
 					try {
 						obj[field] = await rsaDecrypt(CRYPT_KEY_RSA, obj[field]);
 					} catch (e) {
+						logger.warn("RSA decryption failed.  Ensure CRYPT_KEY_RSA configuration variable is set with your private key, then refresh your org connection to encrypt with your private key", e);
 						obj[field] = await passwordDecrypt(CRYPT_KEY, obj[field]);
 					}
 				}
