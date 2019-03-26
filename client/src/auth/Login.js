@@ -15,6 +15,12 @@ const WOLF_ICON = `/assets/icons/evil/wolf.png`;
 const MACHINE_ICON = `/assets/icons/evil/machine.png`;
 const DRANK_ICON = `/assets/icons/evil/drank.png`;
 const JUNGLE_ICON = `/assets/icons/evil/jungle.png`;
+const ROADS_ICON = `/assets/icons/evil/roads.png`;
+const REGRET_ICON = `/assets/icons/evil/regret.png`;
+const GAP_ICON = `/assets/icons/evil/gap.png`;
+const SHIPS_ICON = `/assets/icons/evil/ships.png`;
+const CROSSING_ICON = `/assets/icons/evil/crossing.png`;
+const TRUMP_ICON = `/assets/icons/evil/trump.png`;
 
 export default class extends React.Component {
 	constructor(props) {
@@ -27,7 +33,7 @@ export default class extends React.Component {
 		};
 
 		const WELCOMONING = [
-			"How many roads must a man walk down?", DEFAULT_ICON,
+			"How many roads must a man walk down?", ROADS_ICON,
 			"Welcome to the jungle.", JUNGLE_ICON,
 			"Get that corn outta my face!", NACHO_ICON,
 			`${goodDay()}, Dave.`, HAL_ICON,
@@ -36,12 +42,12 @@ export default class extends React.Component {
 			"Winter is coming.", THRONE_ICON,
 			"Hear that? That is the sound of a man trying to gargle while fighting off a pack of wolves.", WOLF_ICON,
 			"Welcome to the machine.", MACHINE_ICON,
-			"Do not make me regret this.", DEFAULT_ICON,
-			"Look both ways before crossing.", DEFAULT_ICON,
-			"Mind the gap.", DEFAULT_ICON,
+			"Do not make me regret this.", REGRET_ICON,
+			"Look both ways before crossing.", CROSSING_ICON,
+			"Mind the gap.", GAP_ICON,
 			"It only takes one drink.", DRANK_ICON,
-			"Loose lips sink ships.", DEFAULT_ICON,
-			"Think twice, Tweet none times.  None more tweets.", DEFAULT_ICON,
+			"Loose lips sink ships.", SHIPS_ICON,
+			"Think twice, Tweet none times.  None more tweets.", TRUMP_ICON,
 			`It is after ${moment().format('h a')}. Do you know where your children are?`, CLOCK_ICON,
 			`${moment().format('h:mm a')} is not Miller Time`,  CLOCK_ICON
 		];
