@@ -37,7 +37,7 @@ const SELECT_ALL = `
     a.account_name,
     STRING_AGG(g.name, ', ') as groups
     FROM org o
-    INNER JOIN account a on a.account_id = o.account_id
+    LEFT JOIN account a on a.account_id = o.account_id
     LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
     LEFT JOIN org_group AS g ON g.id = m.org_group_id`;
 
@@ -52,7 +52,7 @@ const SELECT_WITH_LICENCE = `
     pv.version_number, pv.version_sort,
     opv.license_status
     FROM org o
-    INNER JOIN account a on a.account_id = o.account_id
+    LEFT JOIN account a on a.account_id = o.account_id
     LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
     LEFT JOIN org_group AS g ON g.id = m.org_group_id
     INNER JOIN org_package_version opv ON o.org_id = opv.org_id
