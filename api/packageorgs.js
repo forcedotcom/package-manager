@@ -6,7 +6,6 @@ const logger = require('../util/logger').logger;
 
 const Status = {Connected: "Connected", Unprotected: "Unprotected", Invalid: "Invalid", Missing: "Missing"};
 
-const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
 const PACKAGE_ORG_IP_RANGES = process.env.PACKAGE_ORG_IP_RANGES;
 const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
 const PACKAGE_MANAGER_ADMIN_PROFILE = process.env.PACKAGE_MANAGER_ADMIN_PROFILE;
@@ -16,7 +15,7 @@ const SELECT_ALL =
 	${ENABLE_ACCESS_TOKEN_UI ? ", access_token" : ""}
 	FROM package_org`;
 
-// NOT to be used in UI requests
+// Not to be used outside of the server.  No UI, no API.
 const SELECT_ALL_WITH_REFRESH_TOKEN = 
 	`SELECT id, name, active, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date, 
 		refresh_token, access_token
@@ -46,7 +45,9 @@ async function requestAll(req, res, next) {
 async function retrieveAll(sortField, sortDir) {
 	let sort = ` ORDER BY ${sortField || "name"} ${sortDir || "asc"}`;
 	let recs = await db.query(SELECT_ALL + sort, []);
-	await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token"]);
+	if (ENABLE_ACCESS_TOKEN_UI) {
+		await crypt.decryptObjects(recs, ["access_token"]);
+	}
 	return recs;
 }
 
@@ -58,24 +59,22 @@ async function requestById(req, res, next) {
 		if (recs.length === 0) {
 			return next(new Error(`Cannot find any record with id ${id}`));
 		}
-		await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
+		if (ENABLE_ACCESS_TOKEN_UI) {
+			await crypt.decryptObjects(recs, ["access_token"]);
+		}
 		return res.json(recs[0]);
 	} catch (err) {
 		next(err);
 	}
 }
 
-async function retrieve(id) {
-	let where = " WHERE id = $1";
-	let recs = await db.query(SELECT_ALL_WITH_REFRESH_TOKEN + where, [id]);
-	await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
-	return recs[0];
-}
-
-async function retrieveByOrgIds(orgIds) {
+/**
+ * Not to be used outside of the server.  No UI, no API.
+ */
+async function privateRetrieveByOrgIds(orgIds) {
 	let where = ` WHERE org_id IN (${orgIds.map((o,i) => `$${i+1}`).join(",")})`;
 	let recs = await db.query(SELECT_ALL_WITH_REFRESH_TOKEN + where, orgIds);
-	await crypt.passwordDecryptObjects(CRYPT_KEY, recs, ["access_token", "refresh_token"]);
+	await crypt.decryptObjects(recs, ["access_token", "refresh_token"]);
 	return recs;
 }
 
@@ -99,7 +98,7 @@ async function initOrg(conn, org_id, type) {
 	}
 
 	// Upsert the package_org record and return
-	await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
+	await crypt.encryptObjects([org], ["access_token", "refresh_token"]);
 
 	// Default type to Package automatically when a namespace is found
 	if (!type && org.namespace) {
@@ -139,7 +138,7 @@ async function refreshOrg(conn, org) {
 	// Org status changed, so update our data to match.
 	org = refreshed;
 	
-	await crypt.passwordEncryptObjects(CRYPT_KEY, [org], ["access_token", "refresh_token"]);
+	await crypt.encryptObjects([org], ["access_token", "refresh_token"]);
 	let sql = `INSERT INTO package_org 
             (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status)
            VALUES 
@@ -215,7 +214,7 @@ function parseNameFromMyUrl(instanceUrl) {
 
 async function updateAccessToken(org_id, access_token) {
 	let encrypto = {access_token: access_token};
-	await crypt.passwordEncryptObjects(CRYPT_KEY, [encrypto]);
+	await crypt.encryptObjects([encrypto]);
 	await db.update(`UPDATE package_org set access_token = $1, status = $2, refreshed_date = NOW() WHERE org_id = $3`,
 		[encrypto.access_token, Status.Connected, org_id]);
 }
@@ -270,7 +269,7 @@ async function requestUpdate(req, res, next) {
 
 async function requestRefresh(req, res, next) {
 	try {
-		let orgs = await retrieveByOrgIds(req.body.orgIds);
+		let orgs = await privateRetrieveByOrgIds(req.body.orgIds);
 		for (let i = 0; i < orgs.length; i++) {
 			let org = orgs[i];
 			let conn = await sfdc.buildOrgConnection(org.org_id);
@@ -340,8 +339,7 @@ exports.requestRevoke = requestRevoke;
 exports.requestDelete = requestDelete;
 exports.requestActivation = requestActivation;
 exports.retrieveAll = retrieveAll;
-exports.retrieveById = retrieve;
-exports.retrieveByOrgIds = retrieveByOrgIds;
+exports.retrieveByOrgIds = privateRetrieveByOrgIds;
 exports.initOrg = initOrg;
 exports.updateOrgStatus = updateOrgStatus;
 exports.updateAccessToken = updateAccessToken;

@@ -2,6 +2,9 @@
 
 const logger = require('../util/logger').logger;
 
+const CRYPT_KEY = process.env.CRYPT_KEY || "supercalifragolisticexpialodocious";
+const CRYPT_KEY_RSA = process.env.CRYPT_KEY_RSA;
+
 /*
     crypt.js - wrapper for crypto
     All taken from thenativeweb/crypto2 (because I couldn't get the full module to work)
@@ -12,31 +15,34 @@ const crypto = require('crypto'),
 	{Readable} = require('stream');
 
 const createKeyPair = async function () {
-	const key = new NodeRSA({b: 2048, e: 65537}, {environment: 'node', signingAlgorithm: 'sha256'});
-
-	const privateKey = key.exportKey(),
-		publicKey = key.exportKey('public');
+	const rsa = new NodeRSA({b: 2048, e: 65537}, {environment: 'node', signingAlgorithm: 'sha256'});
+	const privateKey = rsa.exportKey(),
+		publicKey = rsa.exportKey('public');
 
 	return {privateKey, publicKey};
 };
 
-const rsaEncrypt = async function (text, publicKey) {
-	const key = new NodeRSA(publicKey);
+const rsaEncrypt = async function (privateKey, text) {
+	const key = new NodeRSA(privateKey);
 	return key.encrypt(text, 'base64', 'utf8');
 };
 
-const rsaDecrypt = async function (text, privateKey) {
+const rsaDecrypt = async function (privateKey, text) {
 	const key = new NodeRSA(privateKey);
 	return key.decrypt(text, 'utf8');
 };
 
-
 const passwordEncrypt = async function (password, text) {
 	const cipher = crypto.createCipher('aes-256-cbc', password);
-	return await processStream(cipher, text, {from: 'utf8', to: 'hex'});
+	return processStream(cipher, text, {from: 'utf8', to: 'hex'});
 };
 
-const passwordEncryptObjects = async function (password, objects, fields) {
+const passwordDecrypt = async function (password, text) {
+	const cipher = crypto.createDecipher('aes-256-cbc', password);
+	return processStream(cipher, text, {from: 'hex', to: 'utf8'});
+};
+
+const encryptObjects = async function (objects, fields) {
 	if (!objects || objects.length === 0) {
 		return;
 	}
@@ -49,10 +55,11 @@ const passwordEncryptObjects = async function (password, objects, fields) {
 			for (let j = 0; j < fields.length; j++) {
 				let field = fields[j];
 				if (obj[field]) {
-					obj[field] = await processStream(crypto.createCipher('aes-256-cbc', password), obj[field], {
-						from: 'utf8',
-						to: 'hex'
-					});
+					try {
+						obj[field] = await rsaEncrypt(CRYPT_KEY_RSA, obj[field]);
+					} catch (e) {
+						obj[field] = await passwordEncrypt(CRYPT_KEY, obj[field]);
+					}
 				}
 			}
 		}
@@ -61,11 +68,7 @@ const passwordEncryptObjects = async function (password, objects, fields) {
 	}
 };
 
-const passwordDecrypt = async function (password, text) {
-	return await processStream(crypto.createDecipher('aes-256-cbc', password), text, {from: 'hex', to: 'utf8'});
-};
-
-const passwordDecryptObjects = async function (password, objects, fields) {
+const decryptObjects = async function (objects, fields) {
 	if (!objects || objects.length === 0) {
 		return;
 	}
@@ -78,10 +81,11 @@ const passwordDecryptObjects = async function (password, objects, fields) {
 			for (let j = 0; j < fields.length; j++) {
 				let field = fields[j];
 				if (obj[field]) {
-					obj[field] = await processStream(crypto.createDecipher('aes-256-cbc', password), obj[field], {
-						from: 'hex',
-						to: 'utf8'
-					});
+					try {
+						obj[field] = await rsaDecrypt(CRYPT_KEY_RSA, obj[field]);
+					} catch (e) {
+						obj[field] = await passwordDecrypt(CRYPT_KEY, obj[field]);
+					}
 				}
 			}
 		}
@@ -127,13 +131,8 @@ const processStream = function (cipher, text, options) {
 };
 
 const crypt = {
-	createKeyPair,
-	rsaEncrypt,
-	rsaDecrypt,
-	passwordEncrypt,
-	passwordDecrypt,
-	passwordEncryptObjects,
-	passwordDecryptObjects
+	encryptObjects,
+	decryptObjects
 };
 
 module.exports = crypt;

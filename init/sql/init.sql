@@ -10,8 +10,8 @@ create table if not exists package_org
   namespace      varchar(16),
   instance_name  varchar(8),
   instance_url   varchar(100),
-  refresh_token  varchar(256),
-  access_token   varchar(256),
+  refresh_token  varchar(512),
+  access_token   varchar(512),
   type           varchar(80),
   status         varchar(80),
   refreshed_date timestamp with time zone
@@ -227,6 +227,8 @@ alter table package
   add if not exists dependency_tier integer;
 
 alter table package_org
+  alter column access_token type varchar(512),
+  alter column refresh_token type varchar(512),
   add if not exists active boolean null,
   add if not exists type varchar(80) null,
   add if not exists status varchar(80) null,
