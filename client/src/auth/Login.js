@@ -4,8 +4,17 @@ import qs from 'query-string';
 import * as authService from "../services/AuthService";
 import moment from "moment";
 
-const DEFAULT_ICON = `/assets/icons/standard/process_120.png`;
+const DEFAULT_ICON = `/assets/icons/evil/default.png`;
 const HAL_ICON = `/assets/icons/evil/hal_256.png`;
+const BEETLE_ICON = `/assets/icons/evil/beetle.png`;
+const NACHO_ICON = `/assets/icons/evil/nacho.png`;
+const THRONE_ICON = `/assets/icons/evil/throne.png`;
+const LOVE_ICON = `/assets/icons/evil/love.png`;
+const CLOCK_ICON = `/assets/icons/evil/clock.png`;
+const WOLF_ICON = `/assets/icons/evil/wolf.png`;
+const MACHINE_ICON = `/assets/icons/evil/machine.png`;
+const DRANK_ICON = `/assets/icons/evil/drank.png`;
+const JUNGLE_ICON = `/assets/icons/evil/jungle.png`;
 
 export default class extends React.Component {
 	constructor(props) {
@@ -19,25 +28,25 @@ export default class extends React.Component {
 
 		const WELCOMONING = [
 			"How many roads must a man walk down?", DEFAULT_ICON,
-			"Welcome to the jungle.", DEFAULT_ICON,
-			"Get that corn outta my face!", DEFAULT_ICON,
+			"Welcome to the jungle.", JUNGLE_ICON,
+			"Get that corn outta my face!", NACHO_ICON,
 			`${goodDay()}, Dave.`, HAL_ICON,
-			"'All you need is love' - the Beatles.", DEFAULT_ICON,
-			"'All you need is dung' - the Beetles.", DEFAULT_ICON,
-			"Winter is coming.", DEFAULT_ICON,
-			"Hear that? That is the sound of a man trying to gargle while fighting off a pack of wolves.", DEFAULT_ICON,
-			"Welcome to the machine.", DEFAULT_ICON,
+			"'All you need is love' - the Beatles.", LOVE_ICON,
+			"'All you need is dung' - the Beetles.", BEETLE_ICON,
+			"Winter is coming.", THRONE_ICON,
+			"Hear that? That is the sound of a man trying to gargle while fighting off a pack of wolves.", WOLF_ICON,
+			"Welcome to the machine.", MACHINE_ICON,
 			"Do not make me regret this.", DEFAULT_ICON,
 			"Look both ways before crossing.", DEFAULT_ICON,
 			"Mind the gap.", DEFAULT_ICON,
-			"It only takes one drink.", DEFAULT_ICON,
+			"It only takes one drink.", DRANK_ICON,
 			"Loose lips sink ships.", DEFAULT_ICON,
 			"Think twice, Tweet none times.  None more tweets.", DEFAULT_ICON,
-			`It is after ${moment().format('h a')}. Do you know where your children are?`, DEFAULT_ICON,
-			`${moment().format('h:mm a')} is not Miller Time`,  DEFAULT_ICON
+			`It is after ${moment().format('h a')}. Do you know where your children are?`, CLOCK_ICON,
+			`${moment().format('h:mm a')} is not Miller Time`,  CLOCK_ICON
 		];
 
-		const index = 10;//Math.floor(Math.random() * WELCOMONING.length / 2) * 2;
+		const index = Math.floor(Math.random() * WELCOMONING.length / 2) * 2;
 		this.state = {
 			message: WELCOMONING[index],
 			icon: WELCOMONING[index+1]
