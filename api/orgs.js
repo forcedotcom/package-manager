@@ -83,13 +83,11 @@ async function findAll(packageId, versionId, relatedOrgId, blacklistUpgradeId, o
 		if (packageId) {
 			values.push(packageId);
 			whereParts.push(`opv.package_id = $${values.length}`);
-			whereParts.push(`o.status != '${Status.NotInstalled}'`)
 		}
 
 		if (versionId) {
 			values.push(versionId);
 			whereParts.push(`opv.version_id = $${values.length}`);
-			whereParts.push(`o.status != '${Status.NotInstalled}'`)
 		}
 	}
 
