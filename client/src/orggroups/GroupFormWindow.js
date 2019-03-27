@@ -36,7 +36,7 @@ export default class extends React.Component {
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="name">Name</label>
 									<div className="slds-form-element__control">
-										<input className="slds-input" type="text" id="name" value={this.state.name}
+										<input autoFocus={true} className="slds-input" type="text" id="name" value={this.state.name}
 											   onChange={this.nameChangeHandler}/>
 									</div>
 								</div>

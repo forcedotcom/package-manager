@@ -98,12 +98,13 @@ function fetchBySubscribers(fetchAll) {
 		]);
 }
 
-function fetchOrgVersions(orgId, packageOrgIds) {
+function fetchOrgVersions(orgId) {
+	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
 	return new admin.AdminJob(admin.JobTypes.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
 		[
 			{
 				name: "Fetching package versions from subscribers",
-				handler: (job) => subs.fetchOrgVersions(orgId, packageOrgIds, job),
+				handler: (job) => subs.fetchByOrgIds(orgIds, job),
 			},
 			{
 				name: "Finish event",
@@ -112,12 +113,13 @@ function fetchOrgVersions(orgId, packageOrgIds) {
 		]);
 }
 
-function fetchOrgGroupVersions(groupId, orgIds, packageOrgIds) {
+function fetchOrgGroupVersions(groupId, orgId) {
+	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
 	return new admin.AdminJob(admin.JobTypes.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
 		[
 			{
 				name: "Fetching package versions from subscribers",
-				handler: (job) => subs.fetchOrgVersions(orgIds, packageOrgIds, job),
+				handler: (job) => subs.fetchByOrgIds(orgIds, job),
 			},
 			{
 				name: "Finish event",

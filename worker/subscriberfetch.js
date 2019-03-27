@@ -1,6 +1,7 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const push = require('./packagepush');
 const orgpackageversions = require('../api/orgpackageversions');
 const orgs = require('../api/orgs');
 
@@ -14,43 +15,51 @@ const SELECT_ALL_WITHOUT_MODSTAMP =
 
 let adminJob;
 
-/**
- * REQUIRED BEFORE WE CAN USE THIS:
- * 1. Query timeout fix: done in 216 patch
- * 2. ParentOrg: GA in 218
- *
- * Nice to have:
- * 3. SystemModStamp: Behind perm in 216, GA in 220.
- */
 async function fetch(fetchAll, job) {
+	await fetchOrgs(fetchAll, job);
+}
+
+async function fetchByOrgIds(orgIds, job) {
+	await fetchOrgs(true, job, orgIds);
+}
+
+async function fetchOrgs(fetchAll, job, orgIds) {
 	adminJob = job;
-	let packageOrgs = await db.query(`
-		SELECT o.org_id, o.name, o.type, p.sfid package_id
+	const SELECT_PACKAGE_ORGS =
+		`SELECT o.org_id, o.name, o.type, p.sfid package_id
 		FROM package_org o
 		INNER JOIN package p on p.package_org_id = o.org_id
-		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`);
+		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+
+	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
 	for (let i = 0; i < packageOrgs.length; i++) {
-		await fetchFromOrg(packageOrgs[i], fetchAll);
+		await fetchFromOrg(packageOrgs[i], fetchAll, orgIds);
 	}
 }
 
-async function fetchFromOrg(org, fetchAll) {
-	let where = "";
+async function fetchFromOrg(org, fetchAll, orgIds) {
 	let invalidateAll = false;
+	let whereParts = [];
 	if (!fetchAll) {
 		let latest = await db.query(
 			`SELECT MAX(modified_date) FROM org_package_version WHERE package_id = $1`, [org.package_id]);
 		if (latest[0].max) {
-			where = `WHERE SystemModstamp > ${latest[0].max.toISOString()}`;
+			whereParts.push(`SystemModstamp > ${latest[0].max.toISOString()}`);
 		}
 	}
+
+	if (orgIds) {
+		whereParts.push(`OrgKey IN ('${orgIds.join("','")}')`);
+	}
+
 	adminJob.postMessage(`Querying orgs from ${org.name}`);
 
+	const where = whereParts.length > 0 ? `WHERE ${whereParts.join(" AND ")}` : "";
 	let res;
-	let conn = await sfdc.buildOrgConnection(org.org_id, "45.0");
+	let conn = await sfdc.buildOrgConnection(org.org_id);
 	try {
 		res = await conn.queryWithRetry(`${SELECT_ALL} ${where}`);
-		adminJob.postDetail(`Found ${res.totalSize} orgs with parent ${where !== '' ? 'using last modified date' : ''}`);
+		adminJob.postDetail(`Found ${res.totalSize} orgs ${where !== '' ? 'using last modified date' : ''}`);
 		invalidateAll = fetchAll;
 	} catch (e) {
 		if (e.errorCode === 'QUERY_TIMEOUT') {
@@ -59,18 +68,21 @@ async function fetchFromOrg(org, fetchAll) {
 
 		// TODO remove after 220 GA when modstamp is available for all
 		logger.warn("Could not query with modstamp", e);
-
-		// Org does not yet support modstamp, so just use parent.
 		try {
-			res = await conn.queryWithRetry(SELECT_ALL_WITHOUT_MODSTAMP);
-			adminJob.postDetail(`Found ${res.totalSize} orgs with parent`);
+			const where = orgIds ? `WHERE OrgKey IN ('${orgIds.join("','")}')` : "";
+			res = await conn.queryWithRetry(`${SELECT_ALL_WITHOUT_MODSTAMP} ${where}`);
+			adminJob.postDetail(`Found ${res.totalSize} orgs`);
 			invalidateAll = true; // Not using modstamp, so always invalidate
 		} catch (e) {
 			return fail(org, e);
 		}
 	}
 
-	let recs = await load(res, conn);
+	// Only store the modified_date of the org_package_version if we are querying all orgs.  If we are querying orgs
+	// by id, we have to null out the modified date to make sure we do not screw up our fetch-by-date logic above.
+	const storeModifiedDate = !orgIds;
+
+	let recs = await load(res, conn, storeModifiedDate);
 
 	if (recs.length === 0)
 		return;
@@ -88,12 +100,13 @@ async function fetchFromOrg(org, fetchAll) {
 function fail(org, e) {
 	adminJob.postDetail(`Failed to retrieve orgs from ${org.name}`, e);
 }
-async function fetchMore(nextRecordsUrl, conn, recs) {
+
+async function fetchMore(nextRecordsUrl, conn, recs, storeModifiedDate) {
 	let result = await conn.requestGet(nextRecordsUrl);
-	return recs.concat(await load(result, conn));
+	return recs.concat(await load(result, conn, storeModifiedDate));
 }
 
-async function load(result, conn) {
+async function load(result, conn, storeModifiedDate) {
 	let recs = result.records.map(v => {
 		return {
 			org_id: v.OrgKey,
@@ -104,11 +117,11 @@ async function load(result, conn) {
 			type: v.OrgType,
 			status: v.InstalledStatus === "i" ? orgs.Status.Installed : orgs.Status.NotInstalled,
 			package_version_id: v.MetadataPackageVersionId,
-			modified_date: v.SystemModstamp
+			modified_date: storeModifiedDate ? v.SystemModstamp : null
 		};
 	});
 	if (!result.done && !adminJob.canceled) {
-		return await fetchMore(result.nextRecordsUrl, conn, recs);
+		return await fetchMore(result.nextRecordsUrl, conn, recs, storeModifiedDate);
 	}
 	return recs;
 }
@@ -149,51 +162,5 @@ async function upsertBatch(recs) {
 	await orgpackageversions.insertOrgPackageVersions(opvs);
 }
 
-async function fetchOrgVersions(orgIds, packageOrgIds, job) {
-	adminJob = job;
-	orgIds = Array.isArray(orgIds) ? orgIds : [orgIds];
-
-	if (!packageOrgIds) {
-		packageOrgIds = (await db.query(
-			`SELECT org_id from package_org where type = $1`, [sfdc.OrgTypes.Package])).map(p => p.org_id);
-	}
-	const missingOrgIds = new Set(orgIds);
-
-	job.postDetail(`Querying ${packageOrgIds.length} org connections`);
-	let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
-	let opvs = [];
-	for (let i = 0; i < arrs.length; i++) {
-		const arr = arrs[i];
-		if (!Array.isArray(arr)) {
-			// Error!
-			job.postDetail(`Error: ${arr}`);
-			continue;
-		}
-
-		opvs = opvs.concat(arr.map(rec => {
-			// Found! So remove from missing list and add as an Active license
-			const orgId = sfdc.normalizeId(rec.OrgKey);
-			missingOrgIds.delete(orgId);
-			return {
-				org_id: orgId,
-				version_id: rec.MetadataPackageVersionId,
-				license_status: orgpackageversions.LicenseStatus.Active
-			}
-		}));
-	}
-	job.postDetail(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
-	missingOrgIds.forEach((value) => {
-		opvs.push({
-			version_id: null,
-			org_id: value,
-			license_status: orgpackageversions.LicenseStatus.NotFound
-		});
-	});
-	if (opvs.length > 0) {
-		let res = await orgpackageversions.insertOrgPackageVersions(opvs);
-		job.postDetail(`Updated ${res.length} org package versions`);
-	}
-}
-
 exports.fetch = fetch;
-exports.fetchOrgVersions = fetchOrgVersions;
+exports.fetchByOrgIds = fetchByOrgIds;

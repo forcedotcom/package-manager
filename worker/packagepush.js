@@ -647,56 +647,8 @@ async function findErrorsByJobIds(packageOrgId, jobIds, limit = 200) {
 	return recs;
 }
 
-async function findSubscribersByIds(packageOrgIds, orgIds) {
-	let subs = [];
-	for (let i = 0; i < packageOrgIds.length; i++) {
-		let conn = await sfdc.buildOrgConnection(packageOrgIds[i]);
-		try {
-			let res = await conn.query(`${SELECT_ALL_SUBSCRIBERS} WHERE OrgKey IN ('${orgIds.join("','")}')`);
-			subs = subs.concat(res.records);
-		} catch (e) {
-			try {
-				let res = await conn.query(`${SELECT_ALL_SUBSCRIBERS_WITHOUT_MODSTAMP} WHERE OrgKey IN ('${orgIds.join("','")}')`);
-				subs = subs.concat(res.records);
-			} catch (e) {
-				logger.error("Failed to fetch subscribers from org", {org_id: packageOrgIds[i], error: e.message || e});
-			}
-		}
-	}
-	return subs;
-}
-
-function bulkFindSubscribersByIds(packageOrgIds, orgIds) {
-	let queries = [];
-	for (let i = 0; i < packageOrgIds.length; i++) {
-		let p = new Promise((resolve, reject) => {
-			let soql = `SELECT Id, OrgName, InstalledStatus, InstanceName, OrgStatus, 
-                    OrgType, MetadataPackageVersionId, OrgKey FROM PackageSubscriber
-                    WHERE OrgKey IN ('${orgIds.join("','")}')`;
-			sfdc.buildOrgConnection(packageOrgIds[i]).then(conn => {
-				let subs = [];
-				conn.bulk.pollTimeout = 240000;
-				conn.bulk.query(soql)
-				.on("record", rec => {
-					subs.push(rec);
-				})
-				.on("end", async () => {
-					resolve(subs);
-				})
-				.on("error", error => {
-					reject(error);
-				});
-			});
-		});
-		queries.push(p.catch(error => error));
-	}
-	return Promise.all(queries);
-}
-
-
 exports.findRequestsByStatus = findRequestsByStatus;
 exports.findRequestsByIds = findRequestsByIds;
-exports.findSubscribersByIds = findSubscribersByIds;
 exports.findJobsByStatus = findJobsByStatus;
 exports.findJobsByRequestIds = findJobsByRequestIds;
 exports.findJobsByIds = findJobsByIds;
@@ -706,6 +658,5 @@ exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroup = upgradeOrgGroup;
 exports.retryFailedUpgrade = retryFailedUpgrade;
-exports.Status = Status;
 exports.isActiveStatus = isActiveStatus;
-exports.bulkFindSubscribersByIds = bulkFindSubscribersByIds;
+exports.Status = Status;

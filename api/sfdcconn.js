@@ -83,14 +83,14 @@ async function invalidateOrgs(orgIds) {
 	await init();
 }
 
-function buildConnection(accessToken, refreshToken, instanceUrl, apiVersion) {
+function buildConnection(accessToken, refreshToken, instanceUrl, apiVersion = SFDC_API_VERSION) {
 	const target = new jsforce.Connection({
 			oauth2: {
 				clientId: CLIENT_ID,
 				clientSecret: CLIENT_SECRET,
 				redirectUri: CALLBACK_URL
 			},
-			version: apiVersion || SFDC_API_VERSION,
+			version: apiVersion,
 			instanceUrl: instanceUrl,
 			accessToken: accessToken,
 			refreshToken: refreshToken,

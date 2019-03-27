@@ -1,6 +1,7 @@
 const db = require('../util/pghelper');
 const filters = require('./filters');
 const push = require('../worker/packagepush');
+const subs = require('../worker/subscriberfetch');
 const logger = require('../util/logger').logger;
 const sfdc = require('../api/sfdcconn');
 const packageorgs = require('../api/packageorgs');
@@ -164,48 +165,15 @@ async function requestAdd(req, res, next) {
 }
 
 async function addOrgsByIds(orgIds) {
-	let packageOrgs = await db.query(`SELECT org_id FROM package_org WHERE status = $1 AND type = $2`, [packageorgs.Status.Connected, sfdc.OrgTypes.Package]);
-	let packageOrgIds = packageOrgs.map(o => o.org_id);
-	let recs = await push.findSubscribersByIds(packageOrgIds, orgIds);
-	let uniqueSet = new Set();
-	let uniqueRecs = recs.filter(rec => {
-		if (uniqueSet.has(rec.OrgKey))
-			return false;
-		uniqueSet.add(rec.OrgKey);
-		return true;
-	});
-
-	if (uniqueRecs.length === 0) {
-		logger.info("Did not find any subscribers for given org ids", {org_ids: orgIds.join(", ")});
-		return;
-	}
-
-	await insertOrgsFromSubscribers(uniqueRecs);
-
-	const opvs = recs.map(rec => {
-		return {
-			org_id: sfdc.normalizeId(rec.OrgKey),
-			version_id: rec.MetadataPackageVersionId,
-			license_status: orgpackageversions.LicenseStatus.Active
-		}
-	});
-	await orgpackageversions.insertOrgPackageVersions(opvs);
-}
-
-async function insertOrgsFromSubscribers(recs) {
-	let params = [], values = [];
-	for (let i = 0, n = 1; i < recs.length; i++) {
-		let rec = recs[i];
-		params.push(`($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`);
-		values.push(sfdc.normalizeId(rec.OrgKey), rec.OrgName, rec.OrgType, rec.OrgType === 'Sandbox',
-			rec.InstanceName, Status.Installed, rec.ParentOrg, rec.SystemModstamp);
-	}
-
-	let sql = `INSERT INTO org (org_id, name, type, is_sandbox, instance, status, parent_org_id, modified_date) 
-                       VALUES ${params.join(",")}
-                       ON CONFLICT (org_id) DO UPDATE SET status = '${Status.Installed}' 
-                       WHERE org.status = '${Status.NotFound}'`;
-	return db.insert(sql, values);
+	const job = new admin.AdminJob(
+		admin.JobTypes.FETCH, "Fetch subscribers by org id",
+		[
+			{
+				name: "Fetch subscribers",
+				handler: job => subs.fetchByOrgIds(orgIds, job)
+			}
+		]);
+	await job.run();
 }
 
 async function findByGroup(orgGroupId) {
