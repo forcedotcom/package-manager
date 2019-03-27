@@ -5,7 +5,7 @@ import * as authService from "../services/AuthService";
 import moment from "moment";
 
 const LOCK_ICON = `/assets/icons/evil/default.png`;
-const HAL_ICON = `/assets/icons/evil/hal_256.png`;
+const HAL_ICON = `/assets/icons/evil/hal.png`;
 const BEETLE_ICON = `/assets/icons/evil/beetle.png`;
 const NACHO_ICON = `/assets/icons/evil/nacho.png`;
 const THRONE_ICON = `/assets/icons/evil/throne.png`;
