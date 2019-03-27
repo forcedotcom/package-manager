@@ -67,7 +67,7 @@ export default class extends React.Component {
 	// Handlers
 	fetchData() {
 		packageOrgService.requestById(this.props.match.params.packageorgId).then(
-			packageorg => this.setState({packageorg, isRefreshing: false}));
+			packageorg => this.setState({packageorg, isRefreshing: false})).catch(e => notifier.error(e.message || e));
 	}
 
 	activationHandler() {

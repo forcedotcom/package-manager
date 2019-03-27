@@ -149,4 +149,51 @@ async function upsertBatch(recs) {
 	await orgpackageversions.insertOrgPackageVersions(opvs);
 }
 
+async function fetchOrgVersions(orgIds, packageOrgIds, job) {
+	adminJob = job;
+	orgIds = Array.isArray(orgIds) ? orgIds : [orgIds];
+
+	if (!packageOrgIds) {
+		packageOrgIds = (await db.query(
+			`SELECT org_id from package_org where type = $1`, [sfdc.OrgTypes.Package])).map(p => p.org_id);
+	}
+	const missingOrgIds = new Set(orgIds);
+
+	job.postDetail(`Querying ${packageOrgIds.length} org connections`);
+	let arrs = await push.bulkFindSubscribersByIds(packageOrgIds, orgIds);
+	let opvs = [];
+	for (let i = 0; i < arrs.length; i++) {
+		const arr = arrs[i];
+		if (!Array.isArray(arr)) {
+			// Error!
+			job.postDetail(`Error: ${arr}`);
+			continue;
+		}
+
+		opvs = opvs.concat(arr.map(rec => {
+			// Found! So remove from missing list and add as an Active license
+			const orgId = sfdc.normalizeId(rec.OrgKey);
+			missingOrgIds.delete(orgId);
+			return {
+				org_id: orgId,
+				version_id: rec.MetadataPackageVersionId,
+				license_status: orgpackageversions.LicenseStatus.Active
+			}
+		}));
+	}
+	job.postDetail(`Fetched ${opvs.length} package subscribers, with ${missingOrgIds.size} missing orgs`);
+	missingOrgIds.forEach((value) => {
+		opvs.push({
+			version_id: null,
+			org_id: value,
+			license_status: orgpackageversions.LicenseStatus.NotFound
+		});
+	});
+	if (opvs.length > 0) {
+		let res = await orgpackageversions.insertOrgPackageVersions(opvs);
+		job.postDetail(`Updated ${res.length} org package versions`);
+	}
+}
+
 exports.fetch = fetch;
+exports.fetchOrgVersions = fetchOrgVersions;

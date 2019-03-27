@@ -1,6 +1,6 @@
-const sfdc = require('../api/sfdcconn');
-const db = require('../util/pghelper');
-const logger = require('../util/logger').logger;
+const sfdc = require('../../api/sfdcconn');
+const db = require('../../util/pghelper');
+const logger = require('../../util/logger').logger;
 
 const SELECT_ALL = `SELECT Apttus_Config2__AccountId__c, Apttus_Config2__AccountId__r.Name,
 						Apttus_Config2__AccountId__r.Organization_ID_DW__c, Apttus_Config2__AccountId__r.LastModifiedDate 

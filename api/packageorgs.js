@@ -44,11 +44,7 @@ async function requestAll(req, res, next) {
 
 async function retrieveAll(sortField, sortDir) {
 	let sort = ` ORDER BY ${sortField || "name"} ${sortDir || "asc"}`;
-	let recs = await db.query(SELECT_ALL + sort, []);
-	if (ENABLE_ACCESS_TOKEN_UI) {
-		await crypt.decryptObjects(recs, ["access_token"]);
-	}
-	return recs;
+	return await db.query(SELECT_ALL + sort, []);
 }
 
 async function requestById(req, res, next) {
@@ -60,7 +56,11 @@ async function requestById(req, res, next) {
 			return next(new Error(`Cannot find any record with id ${id}`));
 		}
 		if (ENABLE_ACCESS_TOKEN_UI) {
-			await crypt.decryptObjects(recs, ["access_token"]);
+			try {
+				await crypt.decryptObjects(recs, ["access_token"]);
+			} catch (e) {
+				admin.emit(admin.Events.ALERT, {subject: "Failed to decrypt tokens", message: `This connected org's access token could not be read due to an error: ${e.message || e}`});
+			}
 		}
 		return res.json(recs[0]);
 	} catch (err) {
@@ -74,7 +74,11 @@ async function requestById(req, res, next) {
 async function privateRetrieveByOrgIds(orgIds) {
 	let where = ` WHERE org_id IN (${orgIds.map((o,i) => `$${i+1}`).join(",")})`;
 	let recs = await db.query(SELECT_ALL_WITH_REFRESH_TOKEN + where, orgIds);
-	await crypt.decryptObjects(recs, ["access_token", "refresh_token"]);
+	try {
+		await crypt.decryptObjects(recs, ["access_token", "refresh_token"]);
+	} catch (e) {
+		admin.emit(admin.Events.ALERT, {subject: "Failed to decrypt tokens", message: `One or more connected orgs' access or refresh tokens could not be read due to an error: ${e.message || e}`});
+	}
 	return recs;
 }
 

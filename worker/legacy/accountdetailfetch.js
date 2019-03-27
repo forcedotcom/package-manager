@@ -1,6 +1,6 @@
-const sfdc = require('../api/sfdcconn');
-const db = require('../util/pghelper');
-const logger = require('../util/logger').logger;
+const sfdc = require('../../api/sfdcconn');
+const db = require('../../util/pghelper');
+const logger = require('../../util/logger').logger;
 
 const QUERY_BATCH_SIZE = 500;
 
@@ -19,7 +19,7 @@ async function queryAndStore(org62Id, fetchAll, batchSize, useBulkAPI) {
 	if (!fetchAll) {
 		sql += ` AND account_name IS NULL ORDER BY modified_date desc`
 	}
-	let accounts = await db.query(sql, [sfdc.INVALID_ID, sfdc.INTERNAL_ID]);
+	let accounts = await db.query(sql, [sfdc.AccountIDs.Invalid, sfdc.AccountIDs.Internal]);
 	let count = accounts.length;
 	if (count === 0) {
 		logger.info("No accounts found to update");

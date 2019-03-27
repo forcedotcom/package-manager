@@ -71,23 +71,19 @@ const decryptObjects = async function (objects, fields) {
 	if (!fields || fields.length === 0) {
 		fields = Object.keys(objects[0]);
 	}
-	try {
-		for (let i = 0; i < objects.length; i++) {
-			let obj = objects[i];
-			for (let j = 0; j < fields.length; j++) {
-				let field = fields[j];
-				if (obj[field]) {
-					try {
-						obj[field] = await rsaDecrypt(CRYPT_KEY_RSA, obj[field]);
-					} catch (e) {
-						logger.warn("RSA decryption failed.  Ensure CRYPT_KEY_RSA configuration variable is set with your private key, then refresh your org connection to encrypt with your private key", e);
-						obj[field] = await passwordDecrypt(CRYPT_KEY, obj[field]);
-					}
+	for (let i = 0; i < objects.length; i++) {
+		let obj = objects[i];
+		for (let j = 0; j < fields.length; j++) {
+			let field = fields[j];
+			if (obj[field]) {
+				try {
+					obj[field] = await rsaDecrypt(CRYPT_KEY_RSA, obj[field]);
+				} catch (e) {
+					logger.warn("RSA decryption failed.  Ensure CRYPT_KEY_RSA configuration variable is set with your private key, then refresh your org connection to encrypt with your private key", e);
+					obj[field] = await passwordDecrypt(CRYPT_KEY, obj[field]);
 				}
 			}
 		}
-	} catch (error) {
-		logger.error("Failed to decrypt objects", error);
 	}
 };
 

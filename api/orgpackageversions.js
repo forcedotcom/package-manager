@@ -100,7 +100,7 @@ async function updateOrgPackageVersions(opvs) {
 		params.push(`($${++n},$${++n},$${++n})`);
 		values.push(v.package_id,v.version_id,v.org_id);
 	});
-	let sql = `UPDATE org_package_version as t SET version_id = v.version_id, modified_date = NOW()
+	let sql = `UPDATE org_package_version as t SET version_id = v.version_id
 			FROM ( VALUES ${params.join(",")} ) as v(package_id, version_id, org_id)
 			WHERE v.org_id = t.org_id AND v.package_id = t.package_id`;
 	await db.update(sql, values);

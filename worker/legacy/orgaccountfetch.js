@@ -1,9 +1,6 @@
-const db = require('../util/pghelper');
-const sfdc = require('../api/sfdcconn');
-const logger = require('../util/logger').logger;
-
-const SELECT_ALL = `SELECT DISTINCT account_id FROM org WHERE account_id is not null 
-                    AND account_id NOT IN('${sfdc.INVALID_ID}', '${sfdc.INTERNAL_ID}')`;
+const db = require('../../util/pghelper');
+const sfdc = require('../../api/sfdcconn');
+const logger = require('../../util/logger').logger;
 
 let adminJob;
 
@@ -22,7 +19,9 @@ async function fetch(fetchAll, job) {
 }
 
 async function query(fromDate) {
-	let select = SELECT_ALL, values = [];
+	let select = `SELECT DISTINCT account_id FROM org WHERE account_id is not null 
+                    AND account_id NOT IN($1, $2)`;
+	let values = [sfdc.AccountIDs.Invalid, sfdc.AccountIDs.Internal];
 	if (fromDate) {
 		values.push(fromDate);
 		select += ` AND modified_date > $${values.length}`;

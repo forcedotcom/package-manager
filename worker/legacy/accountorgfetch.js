@@ -1,7 +1,7 @@
-const sfdc = require('../api/sfdcconn');
-const db = require('../util/pghelper');
-const logger = require('../util/logger').logger;
-const orgsapi = require('../api/orgs');
+const sfdc = require('../../api/sfdcconn');
+const db = require('../../util/pghelper');
+const logger = require('../../util/logger').logger;
+const orgsapi = require('../../api/orgs');
 
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,PermissionsCpq,PermissionsCpqProvisioned FROM AllOrganization`;
 

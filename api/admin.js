@@ -6,6 +6,7 @@ const url = require('url');
 const sqlinit = require('../init/sqlinit');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
+const legacyfetch = require("../worker/legacy/fetch");
 const orgs = require("./orgs");
 const packageorgs = require("./packageorgs");
 const upgrades = require("./upgrades");
@@ -399,13 +400,13 @@ async function monitorUpgrades(interval) {
 }
 
 async function fetchAccountOrgs(fetchAll, interval) {
-	const job = fetch.fetchAccountOrgs(fetchAll);
+	const job = legacyfetch.fetchAccountOrgs(fetchAll);
 	job.interval = interval;
 	await job.run();
 }
 
 async function fetchData(fetchAll, interval) {
-	const job = fetch.fetch(fetchAll);
+	const job = legacyfetch.fetch(fetchAll);
 	job.interval = interval;
 	await job.run();
 }
@@ -417,13 +418,13 @@ async function fetchSubscribers(fetchAll, interval) {
 }
 
 async function fetchAccounts(fetchAll, interval) {
-	const job = fetch.fetchAccounts(fetchAll);
+	const job = legacyfetch.fetchAccounts(fetchAll);
 	job.interval = interval;
 	await job.run();
 }
 
 async function fetchInvalidOrgs(interval) {
-	const job = fetch.fetchInvalid();
+	const job = legacyfetch.fetchInvalid();
 	job.interval = interval;
 	await job.run();
 }
@@ -454,7 +455,7 @@ async function loadOrgsInSumoFormat(job) {
 		`SELECT o.org_id, a.account_name, o.type, o.edition, o.instance
         FROM org o
         INNER JOIN account a on a.account_id = o.account_id
-        WHERE a.account_id NOT IN ($1, $2)`, [sfdc.INTERNAL_ID, sfdc.INVALID_ID]);
+        WHERE a.account_id NOT IN ($1, $2)`, [sfdc.AccountIDs.Internal, sfdc.AccountIDs.Invalid]);
 	job.postMessage(`Loaded ${orgs.length} orgs for posting to Sumo`);
 	return orgs;
 }

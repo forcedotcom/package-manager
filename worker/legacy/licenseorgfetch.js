@@ -1,6 +1,6 @@
 const moment = require("moment");
-const db = require('../util/pghelper');
-const logger = require('../util/logger').logger;
+const db = require('../../util/pghelper');
+const logger = require('../../util/logger').logger;
 
 const SELECT_ALL = `SELECT DISTINCT org_id, instance, is_sandbox, modified_date FROM license 
                     WHERE status in ('Trial','Active') 
