@@ -4,7 +4,7 @@ import qs from 'query-string';
 import * as authService from "../services/AuthService";
 import moment from "moment";
 
-const DEFAULT_ICON = `/assets/icons/evil/default.png`;
+const LOCK_ICON = `/assets/icons/evil/default.png`;
 const HAL_ICON = `/assets/icons/evil/hal_256.png`;
 const BEETLE_ICON = `/assets/icons/evil/beetle.png`;
 const NACHO_ICON = `/assets/icons/evil/nacho.png`;
@@ -33,6 +33,7 @@ export default class extends React.Component {
 		};
 
 		const WELCOMONING = [
+			"This site is protected by a cute padlock icon.", LOCK_ICON,
 			"How many roads must a man walk down?", ROADS_ICON,
 			"Welcome to the jungle.", JUNGLE_ICON,
 			"Get that corn outta my face!", NACHO_ICON,
