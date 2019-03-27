@@ -3,16 +3,16 @@ import * as filtrage from '../services/filtrage';
 import * as notifier from '../services/notifications';
 import debounce from "lodash.debounce";
 
-const LARGE_THRESHOLD = 8;
-const MED_THRESHOLD = 6;
-const SMALL_THRESHOLD = 4;
+const LARGE_THRESHOLD = 7;
+const MED_THRESHOLD = 5;
+const SMALL_THRESHOLD = 3;
 const MICRO_THRESHOLD = 2;
 
-function calcThreshold() {
-	return window.innerWidth > 1600 ? LARGE_THRESHOLD :
-			window.innerWidth > 1300 ? MED_THRESHOLD :
-				window.innerWidth > 1100 ? SMALL_THRESHOLD :
-				window.innerWidth > 800 ? MICRO_THRESHOLD : 0;
+function calcThreshold(offset = 0) {
+	return window.innerWidth > 1600 ? Math.max(0, LARGE_THRESHOLD - offset):
+			window.innerWidth > 1200 ? Math.max(0, MED_THRESHOLD - offset) :
+				window.innerWidth > 900 ? Math.max(0, SMALL_THRESHOLD - offset) :
+				window.innerWidth > 600 ? Math.max(0, MICRO_THRESHOLD - offset) : 0;
 }
 
 export default class extends React.Component {
@@ -21,7 +21,8 @@ export default class extends React.Component {
 		
 		this.state = {
 			filters: [],
-			threshold: calcThreshold()
+			threshold: calcThreshold(props.offset),
+			thresholdOffset: props.offset
 		};
 		
 		filtrage.requestFilters(props.id).then(filters => {
@@ -46,7 +47,7 @@ export default class extends React.Component {
 	}
 
 	handleWindowResize = debounce(() => {
-		let threshold = calcThreshold();
+		let threshold = calcThreshold(this.state.thresholdOffset);
 		if (this.state.threshold !== threshold) {
 			this.setState({threshold})
 		}
