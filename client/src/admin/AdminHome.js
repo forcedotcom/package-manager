@@ -84,9 +84,14 @@ export default class extends React.Component {
 						spinning: job.cancelling
 					});
 				}
+
+				let spent = moment(job.modifiedDate).diff(job.startTime) / 1000;
+				let timing = job.status == null ? '' : spent <= 100 ?
+					`(took ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
+					`(took ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
 				activeCards.push(
-					<AdminCard key={job.id} title={job.name} status={job.status} actions={actions}>
-						<ProgressBar message={job.message} progress={job.stepIndex / job.stepCount}
+					<AdminCard key={job.id} title={`${job.name}`} status={job.status} actions={actions}>
+						<ProgressBar message={`${job.message} ${timing}`} progress={job.stepIndex / job.stepCount}
 									 status={job.errors.length > 0 ? "error" : "success"}/>
 						{job.errors.length > 0 ?
 							<Section title="Errors"><Errors startTime={job.startTime} lines={job.errors}/></Section> : ""}
@@ -126,8 +131,8 @@ export default class extends React.Component {
 					<AdminCard key={`${job.id}-history-${i}`} title={job.name}>
 						<div className="slds-m-top--medium slds-m-bottom--medium">
 							<ProgressBar message={spent <= 100 ?
-								`${moment(job.modifiedDate).format("lll")} (completed in ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
-								`${moment(job.modifiedDate).format("lll")} (completed in ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
+								`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
+								`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
 							}
 										 progress={1} status={job.errors.length > 0 ? "error" : "success"}/></div>
 						{job.errors.length > 0 ?
@@ -151,8 +156,8 @@ export default class extends React.Component {
 				historyCards.push(
 					<TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval}
 								   error={job.errors.length > 0} timestamp={spent <= 100 ?
-								   	`${moment(job.modifiedDate).format("lll")} (completed in ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
-								   	`${moment(job.modifiedDate).format("lll")} (completed in ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
+								   	`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
+								   	`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
 								   }>
 						{job.errors.length > 0 ?
 							<Section title="Errors"><Errors startTime={job.startTime} lines={job.errors}/></Section> : ""}
