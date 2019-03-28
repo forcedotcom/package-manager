@@ -50,6 +50,7 @@ const DEFAULT_ORGS = {
 
 async function init() {
 	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {};
+	logger.info(`Initializing named orgs from ${process.env.NAMED_ORGS ? process.env.NAMED_ORGS : 'nothing'}`);
 	// Loop through default orgs, setting the given configured org if found, otherwise using the default
 	Object.entries(DEFAULT_ORGS).forEach(([key, defaultOrg]) => {
 		if (orgsConfig[key]) {
@@ -69,6 +70,7 @@ function initOrg(type, orgId, instanceUrl) {
 		if (orgConfig.type === type) {
 			orgConfig.orgId = orgId;
 			orgConfig.instanceUrl = instanceUrl;
+			logger.info(`Updating named org type ${orgConfig.type} from registered org ${orgConfig.orgId}, ${orgConfig.instanceUrl}`);
 		}
 	});
 }

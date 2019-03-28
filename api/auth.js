@@ -46,7 +46,7 @@ function requestLogout(req, res, next) {
 
 function oauthLoginURL(req, res, next) {
 	try {
-		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL || sfdc.KnownOrgs.lma.instanceUrl, returnTo: req.query.returnTo});
+		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : null, returnTo: req.query.returnTo});
 		res.json(url);
 	} catch (e) {
 		next(e);
