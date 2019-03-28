@@ -164,3 +164,4 @@ exports.invalidateOrgs = invalidateOrgs;
 exports.KnownOrgs = KnownOrgs;
 exports.OrgTypes = OrgTypes;
 exports.AccountIDs = AccountIDs;
+exports.SFDC_API_VERSION = SFDC_API_VERSION;

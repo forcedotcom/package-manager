@@ -22,120 +22,126 @@ const AUTH_URL = process.env.AUTH_URL;
 const PROD_LOGIN = "https://login.salesforce.com";
 
 function sanitizeReturnTo(path) {
-	if (!path)
-		return null;
+    if (!path || typeof path !== 'string')
+        return null;
 
-	const segments = path.split("/", 10);
-	// Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
-	for (let i = 1; i < segments.length; i++) {
-		if (segments[i].match(/[\W]+/g)) {
-			return null;
-		}
-	}
-	return segments.join('/');
+    const segments = path.split("/", 10);
+    // Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
+    for (let i = 1; i < segments.length; i++) {
+        if (segments[i].match(/[\W]+/g)) {
+            return null;
+        }
+    }
+    return segments.join('/');
 }
 
 function requestLogout(req, res, next) {
-	try {
-		req.session = null;
-		return res.send({result: 'ok'});
-	} catch (e) {
-		next(e);
-	}
+    try {
+        req.session = null;
+        return res.send({result: 'ok'});
+    } catch (e) {
+        next(e);
+    }
 }
 
 function oauthLoginURL(req, res, next) {
-	try {
-		const url = buildURL('api id web', {operation: "login", loginUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : null, returnTo: req.query.returnTo});
-		res.json(url);
-	} catch (e) {
-		next(e);
-	}
+    try {
+        const url = buildURL('api id web', {
+            operation: "login",
+            loginUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : null,
+            returnTo: req.query.returnTo
+        });
+        res.json(url);
+    } catch (e) {
+        next(e);
+    }
 }
 
 function oauthOrgURL(req, res, next) {
-	try {
-		const url = buildURL("api id web refresh_token", {
-			operation: "org",
-			type: req.query.type,
-			loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN
-		});
-		res.json(url);
-	} catch (e) {
-		next(e);
-	}
+    try {
+        const url = buildURL("api id web refresh_token", {
+            operation: "org",
+            type: req.query.type,
+            loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN
+        });
+        res.json(url);
+    } catch (e) {
+        next(e);
+    }
 }
 
 function buildURL(scope, state) {
-	let conn = buildAuthConnection(undefined, undefined, state.loginUrl);
-	return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
+    let conn = buildAuthConnection(undefined, undefined, state.loginUrl);
+    return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
 }
 
 async function oauthCallback(req, res, next) {
-	let state = JSON.parse(req.query.state);
-	let conn = buildAuthConnection(null, null, state.loginUrl);
-	try {
-		let userInfo = await conn.authorize(req.query.code);
-		switch (state.operation) {
-			case "org":
-				await packageorgs.initOrg(conn, userInfo.organizationId, state.type);
-				res.redirect(`${CLIENT_URL}/packageorgs`);
-				break;
-			default:
-				const user = await conn.identity();
-				req.session.username = user.username;
-				req.session.display_name = user.display_name;
-				req.session.access_token = conn.accessToken;
-				let url = CLIENT_URL;
-				let returnTo = sanitizeReturnTo(state.returnTo);
-				if (returnTo) {
-					url += returnTo;
-				}
-				res.redirect(url);
-		}
-	} catch (error) {
-		logger.error("Failed to authorize user", error);
-		let errs = {
-			message: error.message,
-			severity: error.severity,
-			code: error.code
-		};
+    let state = JSON.parse(req.query.state);
+    let conn = buildAuthConnection(null, null, state.loginUrl);
+    try {
+        let userInfo = await conn.authorize(req.query.code);
+        switch (state.operation) {
+            case "org":
+                await packageorgs.initOrg(conn, userInfo.organizationId, state.type);
+                res.redirect(`${CLIENT_URL}/packageorgs`);
+                break;
+            default:
+                const user = await conn.identity();
+                req.session.username = user.username;
+                req.session.display_name = user.display_name;
+                req.session.access_token = conn.accessToken;
+                let url = CLIENT_URL;
+                let returnTo = sanitizeReturnTo(state.returnTo);
+                if (returnTo) {
+                    url += returnTo;
+                }
+                res.redirect(url);
+        }
+    } catch (error) {
+        logger.error("Failed to authorize user", error);
+        let errs = {
+            message: error.message,
+            severity: error.severity,
+            code: error.code
+        };
 
-		res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
-		next(error);
-	}
+        res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
+        next(error);
+    }
 }
 
 async function requestUser(req, res, next) {
-	if (!req.session.access_token) {
-		return; // Not logged in.
-	}
-	const conn = buildAuthConnection(req.session.access_token);
-	try {
-		let user = await conn.identity();
-		// Store additional settings on user session object that the UI may need
-		user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
-		user.enable_sumo = !!process.env.SUMO_URL;
-		res.json(user);
-	} catch (e) {
-		logger.error("Failed to identify current user", {...e});
-		next(e);
-	}
+    if (!req.session.access_token) {
+        return; // Not logged in.
+    }
+    const conn = buildAuthConnection(req.session.access_token);
+    try {
+        let user = await conn.identity();
+        // Store additional settings on user session object that the UI may need
+        user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
+        user.enable_sumo = !!process.env.SUMO_URL;
+        res.json(user);
+    } catch (e) {
+        logger.error("Failed to identify current user", {...e});
+        next(e);
+    }
 }
 
 function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
-	return new jsforce.Connection({
-			oauth2: {
-				loginUrl: loginUrl,
-				clientId: CLIENT_ID,
-				clientSecret: CLIENT_SECRET,
-				redirectUri: CALLBACK_URL
-			},
-			instanceUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : null,
-			accessToken: accessToken,
-			refreshToken: refreshToken
-		}
-	);
+    return new jsforce.Connection({
+            oauth2: {
+                loginUrl: loginUrl,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                redirectUri: CALLBACK_URL
+            },
+            version: sfdc.SFDC_API_VERSION,
+            instanceUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : loginUrl,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            logLevel: process.env.LOG_LEVEL || "WARN"
+        }
+    );
 }
 
 exports.requestUser = requestUser;
