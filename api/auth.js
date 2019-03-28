@@ -131,7 +131,7 @@ function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
 				clientSecret: CLIENT_SECRET,
 				redirectUri: CALLBACK_URL
 			},
-			instanceUrl: AUTH_URL || sfdc.KnownOrgs.lma.instanceUrl,
+			instanceUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : null,
 			accessToken: accessToken,
 			refreshToken: refreshToken
 		}
