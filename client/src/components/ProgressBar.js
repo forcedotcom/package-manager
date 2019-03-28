@@ -44,13 +44,18 @@ export default class extends React.Component {
 		let pctWarning = `${progressWarning}%`;
 		let pctError = `${progressError}%`;
 
+		let progressComplete = progressSuccess + progressWarning + progressError;
+		if (progressComplete + .000000001 > 100) {
+			// Stupid but simple hack.  Better option is to refactor to pass actual counts, rather than percentages
+			progressComplete = 100;
+		}
 
 		return (
 			<div style={{lineHeight: this.props.message ? 1 : 0}}>
 				{this.props.message ?
 					<div className="slds-grid slds-grid_align-spread">
 						<span>{this.props.message}</span>
-						<span style={{paddingLeft: "5px"}}><strong>{parseInt(progressSuccess + progressWarning + progressError, 10)}% complete</strong></span>
+						<span style={{paddingLeft: "5px"}}><strong>{parseInt(progressComplete, 10)}% complete</strong></span>
 					</div>
 					: ""}
 				<div className="slds-progress-bar" style={{display: "inline-flex", height}}>
