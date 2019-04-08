@@ -37,7 +37,9 @@ export const PackageVersionStatus = {
 
 export const Colors = {
 	Success: "#BFD641", // Pantone Lime Punch Spring '18
+	SuccessDark: "#a2b537", // Pantone Lime Punch Spring '18, just a bit darker
 	Warning: "#FFD662", // Pantone Aspen Gold Summer '19
+	WarningDark: "#c9a94d", // Pantone Aspen Gold Summer '19, just a bit darker
 	Error: "#DD4132", // Pantone Fiesta Summer '19
 	Neutral: "#6B5B95", // Pantone Ultra Violet COTY '19
 	Subtle: "#77777E" // Bluey gray
