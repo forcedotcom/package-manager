@@ -360,7 +360,7 @@ async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy,
 	});
 	
 	const excludedVersions = null; //await findCurrentAndNewerVersions(versions).map(v => v.version_id);
-	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), [orgGroupId], excludedVersions);
+	let opvs = await orgpackageversions.findAll(versions.map(v => v.package_id), [orgGroupId], excludedVersions, ["Active", "Trial"]);
 
 	const whitelist = await orggroups.loadWhitelist();
 	if (whitelist.size > 0) {

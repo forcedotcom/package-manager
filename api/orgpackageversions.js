@@ -22,8 +22,14 @@ const LicenseStatus = {
 	NotFound: "Not Found"
 };
 
-async function findAll(packageIds, orgGroupIds, excludeVersionIds) {
+async function findAll(packageIds, orgGroupIds, excludeVersionIds, status) {
 	let whereParts = [], values = [], select = SELECT_ALL;
+
+	if (status && status.length > 0) {
+		let params = status.map((v,i) => '$' + (values.length + i + 1));
+		whereParts.push(`op.license_status IN (${params.join(",")})`);
+		values = values.concat(status);
+	}
 
 	if (packageIds) {
 		let params = [];
