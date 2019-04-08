@@ -15,6 +15,7 @@ socket.on("alert", e => info(e.message, e.subject));
 socket.on("alert-invalid-org", e => error(e.message, e.subject, 15000,
 	() => authService.oauthOrgURL(e.org.instance_url, e.org.type).then(url => window.location.href = url)));
 
+export let warning = (message, subject, timeout, onClick) => {NotificationManager.warning(message, subject, timeout, onClick)};
 export let info = (message, subject, timeout, onClick) => {NotificationManager.info(message, subject, timeout, onClick)};
 export let error = (message, subject, timeout, onClick) => {NotificationManager.error(message, subject, timeout, onClick)};
 export let success = (message, subject, timeout, onClick) => {NotificationManager.success(message, subject, timeout, onClick)};
