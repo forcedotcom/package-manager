@@ -193,7 +193,7 @@ export default class extends React.Component {
 		}
 
 		if (res.message) {
-			notifier.error(res.message, "Upgrade System Failure", 10000);
+			notifier.warning(res.message, "Upgrade System Failure", 10000);
 		} else {
 			nav.toPath("upgrade", res.id);
 		}

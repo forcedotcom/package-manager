@@ -194,7 +194,9 @@ export default class extends React.Component {
 	// Utilities
 	resolveUpgradeablePackages(versions) {
 		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
-		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
+		const packageVersionList = Array.from(packageVersionMap.values()).filter(v =>
+			v.version_id !== v.latest_limited_version_id
+			&& (v.license_status === 'Active' || v.license_status === 'Trial'));
 		packageVersionList.sort(function (a, b) {
 			return a.dependency_tier > b.dependency_tier ? 1 : -1;
 		});
