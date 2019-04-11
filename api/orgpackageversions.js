@@ -112,7 +112,33 @@ async function updateOrgPackageVersions(opvs) {
 	await db.update(sql, values);
 }
 
+/**
+ * Flip expired orgs to Expired and non-expired orgs to their license status
+ */
+async function updateFromLicenseStatus() {
+	await db.update(`
+		UPDATE org_package_version opv
+		SET install_date = l.install_date,
+			license_status =
+				CASE
+					WHEN l.expiration <= NOW() THEN 'Expired'
+					ELSE l.status
+					END
+		FROM license l
+		WHERE l.org_id = opv.org_id AND l.version_id = opv.version_id`);
+}
+
+/**
+ * Invalidate all existing org package versions when we are upserting all new findings
+ */
+async function updateStatus(packageId, status) {
+	await db.update(
+		`UPDATE org_package_version set license_status = $1 WHERE package_id = $2`, [status, packageId]);
+}
+
 exports.LicenseStatus = LicenseStatus;
 exports.findAll = findAll;
 exports.insertOrgPackageVersions = insertOrgPackageVersions;
 exports.updateOrgPackageVersions = updateOrgPackageVersions;
+exports.updateFromLicenseStatus = updateFromLicenseStatus;
+exports.updateStatus = updateStatus;

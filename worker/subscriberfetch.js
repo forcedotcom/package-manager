@@ -1,7 +1,7 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
-const orgpackageversions = require('../api/orgpackageversions');
+const opvapi = require('../api/orgpackageversions');
 const orgs = require('../api/orgs');
 
 const SELECT_ALL =
@@ -93,8 +93,7 @@ async function fetchFromOrg(org, fetchAll, orgIds) {
 
 	if (invalidateAll) {
 		// Invalidate all existing org package versions when we are upserting all new findings
-		await db.update(`UPDATE org_package_version set license_status = $1
-					WHERE package_id = $2`, [orgpackageversions.LicenseStatus.NotFound, org.package_id]);
+		await opvapi.updateStatus(org.package_id, opvapi.LicenseStatus.NotFound);
 	}
 
 	adminJob.postDetail(`Storing ${recs.length} orgs`);
@@ -159,11 +158,11 @@ async function upsertBatch(recs) {
 		return {
 			org_id: rec.org_id,
 			version_id: rec.package_version_id,
-			license_status: orgpackageversions.LicenseStatus.Active,
+			license_status: opvapi.LicenseStatus.Active,
 			modified_date: rec.modified_date
 		}
 	});
-	await orgpackageversions.insertOrgPackageVersions(opvs);
+	await opvapi.insertOrgPackageVersions(opvs);
 }
 
 exports.fetch = fetch;

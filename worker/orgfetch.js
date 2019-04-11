@@ -35,16 +35,7 @@ async function updateOrgStatus(job) {
 	adminJob = job;
 
 	// Flip expired orgs to Expired and non-expired orgs to their license status
-	await db.update(`
-		UPDATE org_package_version opv
-		SET install_date = l.install_date,
-			license_status =
-				CASE
-					WHEN l.expiration <= NOW() THEN 'Expired'
-					ELSE l.status
-					END
-		FROM license l
-		WHERE l.org_id = opv.org_id AND l.version_id = opv.version_id`);
+	await opvapi.updateFromLicenseStatus();
 
 	// Flip orgs MISSING versions to status Not Installed
 	await db.update(`UPDATE org SET status = '${orgsapi.Status.NotInstalled}' WHERE status = '${orgsapi.Status.Installed}' AND org_id IN
