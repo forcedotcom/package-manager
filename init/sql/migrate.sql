@@ -71,3 +71,5 @@ where total_job_count is null;
 
 update package_org set active = true where active is null;
 update package_org set type = 'Package' where type = 'Subscribers' OR (type is null AND namespace is not null);
+update package_org set type = 'Production Blacktab' where type = 'All Production Orgs';
+update package_org set type = 'Sandbox Blacktab' where type = 'All Sandbox Orgs';

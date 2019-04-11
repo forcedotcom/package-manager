@@ -31,7 +31,7 @@ function fetchBySubscribers(fetchAll) {
 				steps: [
 					{
 						name: "Fetching licenses",
-						handler: (job) => licenses.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
+						handler: (job) => licenses.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
 					/*,
 					{
@@ -41,7 +41,7 @@ function fetchBySubscribers(fetchAll) {
 				],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.lma.orgId, packageorgs.Status.Invalid)
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, packageorgs.Status.Invalid)
 							.then(() => {
 						});
 					}
@@ -52,11 +52,11 @@ function fetchBySubscribers(fetchAll) {
 				steps: [
 					{
 						name: "Fetching packages",
-						handler: (job) => ps.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
+						handler: (job) => ps.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
 					{
 						name: "Fetching package versions",
-						handler: (job) => pvs.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
+						handler: (job) => pvs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
 					{
 						name: "Fetching latest package versions",
@@ -65,7 +65,7 @@ function fetchBySubscribers(fetchAll) {
 				],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.lma.orgId, packageorgs.Status.Invalid)
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, packageorgs.Status.Invalid)
 							.then(() => {});
 					}
 				}
@@ -79,7 +79,7 @@ function fetchBySubscribers(fetchAll) {
 					},
 					{
 						name: "Fetching accounts for orgs",
-						handler: (job) => accounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job)
+						handler: (job) => accounts.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, fetchAll, job)
 					},
 					{
 						name: "Updating orgs based on license status",

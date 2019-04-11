@@ -48,7 +48,7 @@ function oauthLoginURL(req, res, next) {
     try {
         const url = buildURL('api id web', {
             operation: "login",
-            loginUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : null,
+            loginUrl: AUTH_URL || sfdc.KnownOrgs[sfdc.OrgTypes.Licenses] ? sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].instanceUrl : null,
             returnTo: req.query.returnTo
         });
         res.json(url);
@@ -136,7 +136,7 @@ function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
                 redirectUri: CALLBACK_URL
             },
             version: sfdc.SFDC_API_VERSION,
-            instanceUrl: AUTH_URL || sfdc.KnownOrgs.lma ? sfdc.KnownOrgs.lma.instanceUrl : loginUrl,
+            instanceUrl: AUTH_URL || sfdc.KnownOrgs[sfdc.OrgTypes.Licenses] ? sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].instanceUrl : loginUrl,
             accessToken: accessToken,
             refreshToken: refreshToken,
             logLevel: process.env.LOG_LEVEL || "WARN"

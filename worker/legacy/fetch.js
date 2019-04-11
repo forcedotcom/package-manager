@@ -33,7 +33,7 @@ function fetch(fetchAll) {
 				steps: [
 					{
 						name: "Fetching licenses",
-						handler: (job) => licenses.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
+						handler: (job) => licenses.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
 					{
 						name: "Invalidating conflicting licenses",
@@ -46,7 +46,7 @@ function fetch(fetchAll) {
 				],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						orgs.updateOrgStatus(sfdc.KnownOrgs.lma.orgId, packageorgs.Status.Invalid).then(() => {});
+						orgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -55,11 +55,11 @@ function fetch(fetchAll) {
 				steps: [
 					{
 						name: "Fetching packages",
-						handler: (job) => ps.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
+						handler: (job) => ps.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
 					{
 						name: "Fetching package versions",
-						handler: (job) => pvs.fetch(sfdc.KnownOrgs.lma.orgId, fetchAll, job)
+						handler: (job) => pvs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
 					{
 						name: "Fetching latest package versions",
@@ -68,37 +68,37 @@ function fetch(fetchAll) {
 				],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.lma.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
-			}, sfdc.KnownOrgs.bt ?
+			}, sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab] ?
 			{
 				name: "Populating production org data",
 				steps: [
 					{
 						name: "Fetching production orgs",
-						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs.bt.orgId, false, fetchAll, job)
+						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, false, fetchAll, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => legacyorgs.mark(false, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			} : {
 				name: "Skipping production org data.  No Production blacktab org connection found.",
-			}, sfdc.KnownOrgs.sbt ?
+			}, sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab] ?
 			{
 				name: "Populating sandbox org data",
 				steps: [
 					{
 						name: "Fetching sandbox orgs",
-						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs.sbt.orgId, true, fetchAll, job)
+						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, true, fetchAll, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => legacyorgs.mark(true, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			} : {
@@ -125,7 +125,7 @@ function fetch(fetchAll) {
 					},
 					{
 						name: "Fetching account names",
-						handler: (job) => accounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job)
+						handler: (job) => accounts.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, fetchAll, job)
 					},
 					{
 						name: "Updating orgs from accounts",
@@ -134,7 +134,7 @@ function fetch(fetchAll) {
 					],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}
@@ -148,11 +148,11 @@ function fetchAccounts(fetchAll) {
 		[
 			{
 				name: "Fetching accounts",
-				// handler: (job) => allaccounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job),
-				handler: (job) => accountsbyorg.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job),
+				// handler: (job) => allaccounts.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, fetchAll, job),
+				handler: (job) => accountsbyorg.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.org62.orgId, packageorgs.Status.Invalid)
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, packageorgs.Status.Invalid)
 							.then(() => {
 						});
 					}
@@ -175,23 +175,23 @@ function fetchByAccountOrgs(fetchAll) {
 		[
 			{
 				name: "Fetching accounts from assets",
-				handler: (job) => assetaccounts.fetch(sfdc.KnownOrgs.org62.orgId, fetchAll, job)
+				handler: (job) => assetaccounts.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, fetchAll, job)
 			},
 			{
 				name: "Fetching production org data",
-				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs.bt.orgId, fetchAll, job),
+				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
 			{
 				name: "Fetching sandbox org data",
-				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs.sbt.orgId, fetchAll, job),
+				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}
@@ -211,12 +211,12 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid production orgs",
-						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs.bt.orgId, false, job)
+						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, false, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => legacyorgs.mark(false, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.bt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -225,12 +225,12 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid sandbox orgs",
-						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs.sbt.orgId, true, job)
+						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, true, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => legacyorgs.mark(true, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.sbt.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -240,11 +240,11 @@ function fetchInvalid() {
 					{name: "Deriving accounts from orgs", handler: (job) => orgaccounts.fetch(true, job)},
 					{
 						name: "Fetching account names",
-						handler: (job) => accounts.fetch(sfdc.KnownOrgs.org62.orgId, true, job)
+						handler: (job) => accounts.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, true, job)
 					}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs.org62.orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}

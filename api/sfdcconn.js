@@ -29,48 +29,55 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 const TRACE_FUNCTIONS = ["query", "sobject", "retrieve", "insert", "update", "upsert"];
 
-const DEFAULT_ORGS = {
-	// bt: {
+const DEFAULT_ORGS = [
+	// {
 	// 	type: OrgTypes.ProductionBlacktab,
 	// 	instanceUrl: "https://bt1.my.salesforce.com"
 	// },
-	// sbt: {
+	// {
 	// 	type: OrgTypes.SandboxBlacktab,
 	// 	instanceUrl: "https://sbt2.cs10.my.salesforce.com"
 	// },
-	org62: {
+	{
 		type: OrgTypes.Accounts,
 		instanceUrl: "https://org62.my.salesforce.com"
 	},
-	lma: {
+	{
 		type: OrgTypes.Licenses,
 		instanceUrl: "https://login.salesforce.com"
 	}
-};
+];
 
 async function init() {
-	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : {};
+	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : [];
 	logger.info(`Initializing named orgs from ${process.env.NAMED_ORGS ? process.env.NAMED_ORGS : 'nothing'}`);
-	// Loop through default orgs, setting the given configured org if found, otherwise using the default
-	Object.entries(DEFAULT_ORGS).forEach(([key, defaultOrg]) => {
-		if (orgsConfig[key]) {
-			KnownOrgs[key] = orgsConfig[key];
-		} else {
+
+	// Start with configured orgs
+	orgsConfig.forEach(orgConfig => {
+		KnownOrgs[orgConfig.type] = orgConfig;
+	});
+
+	// Add default orgs if not found
+	DEFAULT_ORGS.forEach(defaultOrg => {
+		if (!orgsConfig[defaultOrg.type]) {
 			// Clone the default
-			KnownOrgs[key] = Object.assign({}, defaultOrg);
+			KnownOrgs[defaultOrg.type] = Object.assign({}, defaultOrg);
 		}
 	});
 
+	// Overlay the package orgs last, overriding anything prior
 	let orgs = await packageorgs.retrieveAll();
 	orgs.forEach(org => initOrg(org.type, org.org_id, org.instance_url));
 }
 
 function initOrg(type, orgId, instanceUrl) {
-	Object.entries(KnownOrgs).forEach(([key, orgConfig]) => {
-		if (orgConfig.type === type) {
-			orgConfig.orgId = orgId;
-			orgConfig.instanceUrl = instanceUrl;
-			logger.info(`Updating named org type ${orgConfig.type} from registered org ${orgConfig.orgId}, ${orgConfig.instanceUrl}`);
+	if (type == null || type === OrgTypes.Package)
+		return; // Nothing to do here.
+
+	Object.entries(OrgTypes).forEach(([key, value]) => {
+		if (value === type) {
+			KnownOrgs[type] = {type, orgId, instanceUrl};
+			logger.info(`Updating named org type ${type} from registered org ${orgId}, ${instanceUrl}`);
 		}
 	});
 }
