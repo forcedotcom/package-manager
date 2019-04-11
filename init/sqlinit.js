@@ -7,8 +7,11 @@ async function init() {
     const sqlDir = path.join(__dirname, 'sql');
 
     try {
-        const data = fs.readFileSync(path.join(sqlDir, "init.sql"), {encoding: 'utf-8'});
-        await db.query(data);
+        const init = fs.readFileSync(path.join(sqlDir, "init.sql"), {encoding: 'utf-8'});
+        await db.query(init);
+
+        const migrate = fs.readFileSync(path.join(sqlDir, "migrate.sql"), {encoding: 'utf-8'});
+        await db.query(migrate);
         logger.info('Database is alive and ready');
     } catch (error) {
         logger.error('Database failed to initialize', error);
