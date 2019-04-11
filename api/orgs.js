@@ -4,16 +4,13 @@ const push = require('../worker/packagepush');
 const subs = require('../worker/subscriberfetch');
 const logger = require('../util/logger').logger;
 const sfdc = require('../api/sfdcconn');
-const packageorgs = require('../api/packageorgs');
 const orggroups = require('../api/orggroups');
 const admin = require('../api/admin');
-const orgpackageversions = require('../api/orgpackageversions');
 
 const Status = {
 	NotFound: 'Not Found', 
 	Installed: 'Installed', 
-	NotInstalled: 'Not Installed',
-	Purchased: 'Purchased'
+	NotInstalled: 'Not Installed'
 };
 
 const QUERY_DICTIONARY = new Map([

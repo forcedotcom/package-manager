@@ -1,7 +1,6 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
-const push = require('./packagepush');
 const orgpackageversions = require('../api/orgpackageversions');
 const orgs = require('../api/orgs');
 
@@ -31,7 +30,12 @@ async function fetchOrgs(fetchAll, job, orgIds) {
 		INNER JOIN package p on p.package_org_id = o.org_id
 		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
 
-	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
+    if (fetchAll) {
+        // Invalidate all existing orgs when we are upserting all new findings
+        await db.update(`UPDATE org set status = $1`, [orgs.Status.NotFound]);
+    }
+
+    const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
 	for (let i = 0; i < packageOrgs.length; i++) {
 		await fetchFromOrg(packageOrgs[i], fetchAll, orgIds);
 	}
@@ -88,7 +92,7 @@ async function fetchFromOrg(org, fetchAll, orgIds) {
 		return;
 
 	if (invalidateAll) {
-		// Invalidate all existing when we are upserting all new findings
+		// Invalidate all existing org package versions when we are upserting all new findings
 		await db.update(`UPDATE org_package_version set license_status = $1
 					WHERE package_id = $2`, [orgpackageversions.LicenseStatus.NotFound, org.package_id]);
 	}
@@ -115,7 +119,7 @@ async function load(result, conn, storeModifiedDate) {
 			instance: v.InstanceName,
 			is_sandbox: v.OrgType === "Sandbox",
 			type: v.OrgType,
-			status: v.InstalledStatus === "i" ? orgs.Status.Installed : orgs.Status.NotInstalled,
+			status: orgs.Status.Installed,
 			package_version_id: v.MetadataPackageVersionId,
 			modified_date: storeModifiedDate ? v.SystemModstamp : null
 		};

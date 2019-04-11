@@ -2,7 +2,6 @@ const sfdc = require('../../api/sfdcconn');
 const db = require('../../util/pghelper');
 const logger = require('../../util/logger').logger;
 const orgsapi = require('../../api/orgs');
-
 const SELECT_ALL = `SELECT Id,Name,OrganizationType,Account,Active,LastModifiedDate,PermissionsCpq,PermissionsCpqProvisioned FROM AllOrganization`;
 
 const QUERY_BATCH_SIZE = 500;
@@ -88,7 +87,7 @@ async function upsertBatch(recs) {
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, ${orgsapi.Status.Purchased})`;
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++}, $${n++}, 'Purchased')`;
 		values.push(rec.org_id, rec.name, rec.edition, rec.modified_date, rec.account_id, rec.features);
 	}
 	sql += ` on conflict (org_id) do update set name = excluded.name, edition = excluded.edition, modified_date = excluded.modified_date, 
