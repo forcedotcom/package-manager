@@ -340,16 +340,31 @@ function scheduleJobs() {
 		logger.info(`Scheduled upgrade monitor for every ${schedules.upgrade_monitor_interval_seconds} seconds`)
 	}
 
-	if (schedules.fetch_interval_minutes != null && schedules.fetch_interval_minutes !== -1) {
-		let interval = schedules.fetch_interval_minutes * 60 * 1000;
-		setInterval(() => {fetchData(false, interval).then(() => {})}, interval);
-		logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
-	}
-
 	if (schedules.fetch_subscriber_interval_minutes != null && schedules.fetch_subscriber_interval_minutes !== -1) {
 		let interval = schedules.fetch_subscriber_interval_minutes * 60 * 1000;
 		setInterval(() => {fetchSubscribers(false, interval).then(() => {})}, interval);
 		logger.info(`Scheduled fetching of latest subscribers every ${schedules.fetch_subscriber_interval_minutes } minutes`)
+	}
+
+	if (schedules.fetch_all_subscriber_interval_days != null && schedules.fetch_all_subscriber_interval_days !== -1) {
+		let interval = schedules.fetch_all_subscriber_interval_days* 24 * 60 * 60 * 1000;
+		setInterval(() => {fetchSubscribers(true, interval).then(() => {})}, interval);
+		logger.info(`Scheduled fetching of all subscribers every ${schedules.fetch_all_subscriber_interval_days } days`)
+	}
+
+	if (schedules.upload_orgs_interval_hours != null && schedules.upload_orgs_interval_hours !== -1) {
+		let interval = schedules.upload_orgs_interval_hours * 60 * 60 * 1000;
+		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
+		setTimeout(() => setInterval(() => {uploadOrgsToSumo(interval).then(() => {})}, interval), delay);
+		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
+		logger.info(`Scheduled org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} hours`)
+	}
+
+	// Legacy
+	if (schedules.fetch_interval_minutes != null && schedules.fetch_interval_minutes !== -1) {
+		let interval = schedules.fetch_interval_minutes * 60 * 1000;
+		setInterval(() => {fetchData(false, interval).then(() => {})}, interval);
+		logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
 	}
 
 	if (schedules.fetch_invalid_interval_hours != null && schedules.fetch_invalid_interval_hours !== -1) {
@@ -359,14 +374,6 @@ function scheduleJobs() {
 		setTimeout(() => setInterval(() => {fetchInvalidOrgs(interval).then(() => {})}, interval), delay);
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
 		logger.info(`Scheduled fetching of invalid orgs starting ${startTime} and recurring every ${schedules.fetch_invalid_interval_hours} hours`)
-	}
-
-	if (schedules.upload_orgs_interval_hours != null && schedules.upload_orgs_interval_hours !== -1) {
-		let interval = schedules.upload_orgs_interval_hours * 60 * 60 * 1000;
-		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {uploadOrgsToSumo(interval).then(() => {})}, interval), delay);
-		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-		logger.info(`Scheduled org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} hours`)
 	}
 
 	if (schedules.refetch_interval_days != null && schedules.refetch_interval_days !== -1) {
