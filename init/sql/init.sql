@@ -193,11 +193,6 @@ create table if not exists filter
   query      text
 );
 
--- Default internal non-account
-insert into account (account_name, account_id)
-values ('Internal', '000000000000000'), ('Unknown/Invalid', '000000000000001')
-on conflict do nothing;
-
 -- Indices
 create index if not exists org_parent_index
   on org (parent_org_id);
@@ -207,3 +202,8 @@ create index if not exists license_org_version_index
 
 create index if not exists license_package_org_version_index
   on license (org_id, package_id, version_id);
+
+-- Default Data
+insert into account (account_name, account_id)
+values ('Internal', '000000000000000'), ('Unknown/Invalid', '000000000000001')
+on conflict do nothing;
