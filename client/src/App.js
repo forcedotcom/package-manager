@@ -88,8 +88,7 @@ class App extends Component {
 							</li>
 							<li className="slds-list__item">
 								<Link style={{whiteSpace: "nowrap"}} to="/packageorgs"><Icon
-									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>Package
-									Orgs</Link>
+									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>Connected Orgs</Link>
 							</li>
 							<li className="slds-list__item">
 								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name}

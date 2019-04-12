@@ -41,7 +41,7 @@ export default class extends React.Component {
 		let actions = [
 			{label: packageorg.active ? 'Deactivate' : 'Activate', group: "toggle",
 				handler: this.activationHandler, disabled: packageorg.type !== "Package",
-				detail: packageorg.active ? "Click to deactivate this package org" : "Click to activate this package org"},
+				detail: packageorg.active ? "Click to deactivate this org connection" : "Click to activate this org connection"},
 			{label: "Refresh", handler: this.refreshHandler, group: "actions", spinning: this.state.isRefreshing},
 			{label: "Revoke", handler: this.revokeHandler, group: "actions", spinning: this.state.isRevoking},
 			{label: "Edit", handler: this.editHandler},
@@ -50,7 +50,7 @@ export default class extends React.Component {
 
 		return (
 			<div>
-				<RecordHeader type="Org Connection" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name}
+				<RecordHeader type="Connected Org" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name}
 							  actions={actions} parent={{label: "Orgs", location: `/packageorgs`}}>
 					<HeaderField label="Org ID" value={this.state.packageorg.org_id}/>
 					<HeaderField label="Description" value={this.state.packageorg.description}/>
@@ -71,14 +71,14 @@ export default class extends React.Component {
 	}
 
 	activationHandler() {
-		if (!this.state.packageorg.active || window.confirm(`Are you sure you want to deactivate this packaging org?`)) {
+		if (!this.state.packageorg.active || window.confirm(`Are you sure you want to deactivate this org connection?`)) {
 			packageOrgService.requestActivation([this.state.packageorg.org_id], !this.state.packageorg.active)
 				.then((packageorg) => this.setState({packageorg}));
 		}
 	}
 
 	deleteHandler() {
-		if (window.confirm(`Are you sure you want to remove this packaging org?`)) {
+		if (window.confirm(`Are you sure you want to remove this org connection?`)) {
 			packageOrgService.requestDelete([this.state.packageorg.org_id]).then(() => {
 				nav.toPath("packageorgs");
 			});

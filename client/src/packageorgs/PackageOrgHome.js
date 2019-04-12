@@ -33,7 +33,7 @@ export default class extends React.Component {
 
 		return (
 			<div>
-				<HomeHeader type="org connections" title="Org Connections" newLabel="Add Org Connection" actions={actions} count={this.state.itemCount}>
+				<HomeHeader type="connected orgs" title="Connected Orgs" newLabel="Add Connected Org" actions={actions} count={this.state.itemCount}>
 					<HeaderNote>Remember that packaging orgs must have the <b>Packaging Push</b> permissions as well
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
@@ -87,7 +87,7 @@ export default class extends React.Component {
 	}
 
 	deleteHandler() {
-		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} packaging org(s)?`)) {
+		if (window.confirm(`Are you sure you want to remove ${this.state.selected.size} connected org(s)?`)) {
 			this.setState({isDeleting: true});
 			packageOrgService.requestDelete(Array.from(this.state.selected.keys()))
 			.then(() => this.setState({isDeleting: false}))
