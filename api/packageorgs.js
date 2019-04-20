@@ -272,17 +272,19 @@ async function requestUpdate(req, res, next) {
 }
 
 async function requestRefresh(req, res, next) {
-	try {
-		let orgs = await privateRetrieveByOrgIds(req.body.orgIds);
-		for (let i = 0; i < orgs.length; i++) {
-			let org = orgs[i];
-			let conn = await sfdc.buildOrgConnection(org.org_id);
-			await initOrg(conn, org.org_id, org.type);
-		}
+	refreshByOrgIds(req.body.orgIds).then(() => {
 		admin.emit(admin.Events.PACKAGE_ORGS);
-		return res.json({result: "OK"});
-	} catch (err) {
-		next(err);
+	})
+	.catch(next);
+	return res.json({result: "OK"});
+}
+
+async function refreshByOrgIds(orgIds) {
+	let orgs = await privateRetrieveByOrgIds(orgIds);
+	for (let i = 0; i < orgs.length; i++) {
+		let org = orgs[i];
+		let conn = await sfdc.buildOrgConnection(org.org_id);
+		await initOrg(conn, org.org_id, org.type);
 	}
 }
 

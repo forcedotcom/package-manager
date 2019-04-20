@@ -20,6 +20,15 @@ export default class extends React.Component {
 		this.refreshHandler = this.refreshHandler.bind(this);
 		this.revokeHandler = this.revokeHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
+		this.orgsUpdated = this.orgsUpdated.bind(this);
+	}
+
+	componentDidMount() {
+		notifier.on('package-orgs', this.orgsUpdated);
+	}
+
+	componentWillUnmount() {
+		notifier.remove('package-orgs', this.orgsUpdated);
 	}
 
 	// Lifecycle
@@ -48,6 +57,10 @@ export default class extends React.Component {
 		return packageOrgService.requestAll();
 	}
 
+	orgsUpdated() {
+		this.setState({isRefreshing: false});
+	}
+
 	filterHandler (filtered, filterColumns, itemCount) {
 		this.setState({itemCount});
 	}
@@ -69,7 +82,7 @@ export default class extends React.Component {
 	refreshHandler() {
 		this.setState({isRefreshing: true});
 		packageOrgService.requestRefresh(Array.from(this.state.selected.keys()))
-		.then(() => this.setState({isRefreshing: false}))
+		.then(() => {})
 		.catch(e => {
 			this.setState({isRefreshing: false});
 			notifier.error(e.message, "Refresh Failed");
