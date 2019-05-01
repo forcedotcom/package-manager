@@ -1,7 +1,7 @@
 import React from 'react';
 import {FormHeader} from "../components/PageHeader";
 import {ORG_GROUP_ICON, GroupTypes} from "../Constants";
-import PickList from "../components/PickList";
+import Combobox from "../components/Combobox";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -43,7 +43,7 @@ export default class extends React.Component {
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="type">Type</label>
 									<div className="slds-form-element__control">
-										<PickList value={this.state.type} onChange={this.typeChangeHandler} items={GroupTypes.map(t => t.name)}/>
+										<Combobox value={this.state.type} onChange={this.typeChangeHandler} items={GroupTypes.map(t => t.name)}/>
 									</div>
 								</div>
 

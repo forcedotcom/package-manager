@@ -281,7 +281,7 @@ export class FormHeader extends React.Component {
 							<div className="slds-media__body">
 								<p className="slds-text-heading--label">{this.props.type}</p>
 								<div className="slds-grid">
-									<h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle"
+									<h1 className="slds-text-heading--medium slds-m-right--small slds-align-middle"
 										title={this.props.title}>{this.props.title}</h1>
 								</div>
 							</div>

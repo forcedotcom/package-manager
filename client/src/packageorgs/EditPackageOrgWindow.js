@@ -1,7 +1,7 @@
 import React from 'react';
 import {FormHeader, HeaderField} from "../components/PageHeader";
 import {PACKAGE_ORG_ICON} from "../Constants";
-import PickList from "../components/PickList";
+import Combobox from "../components/Combobox";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -34,7 +34,7 @@ export default class extends React.Component {
 								<div className="slds-form-element">
 									<label className="slds-form-element__label" htmlFor="type">Type</label>
 									<div className="slds-form-element__control">
-										<PickList value={this.state.type} onChange={this.typeChangeHandler}
+										<Combobox autoFocus={true} value={this.state.type} onChange={this.typeChangeHandler}
 												  items={["Package", "Licenses", "Accounts"]}/>
 									</div>
 								</div>
@@ -47,7 +47,6 @@ export default class extends React.Component {
 									</div>
 								</div>
 							</div>
-
 						</div>
 					</div>
 				</div>

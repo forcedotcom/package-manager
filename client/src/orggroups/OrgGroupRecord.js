@@ -92,24 +92,24 @@ export default class extends React.Component {
 		];
 
 		const tabs = [
-			<div label="Members">
+			<div key="members" label="Members">
 				<GroupMemberOrgCard orggroup={orggroup} onFetch={this.fetchMembers} refetchOn="group-members"
 									refetchFor={orggroup.id} actions={memberActions}
 									selected={selected} showSelected={showSelected} onSelect={this.selectionHandler}/>
 			</div>,
-			<div label="Versions">
+			<div key="versions" label="Versions">
 				<GroupMemberVersionCard orggroup={orggroup} onFetch={this.fetchVersions} refetchOn="group-versions"
 										refetchFor={orggroup.id} actions={memberActions}
 										selected={selected} showSelected={showSelected}
 										onSelect={this.versionSelectionHandler}/>
 			</div>,
-			<div label="Licenses">
+			<div key="licenses" label="Licenses">
 				<LicenseCard title="Licenses" id="GroupLicenseCard" onFetch={this.fetchLicenses} refetchOn="licenses"/>
 			</div>
 		];
 		if (orggroup.type === "Upgrade Group") {
 			tabs.push(
-				<div label="Upgrades">
+				<div key="upgrades" label="Upgrades">
 					<UpgradeCard onFetch={this.fetchUpgrades} refetchOn="upgrades"/>
 				</div>);
 		}

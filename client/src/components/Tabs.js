@@ -9,7 +9,7 @@ class TabHeader extends React.Component {
 
 	render() {
 		return (
-			<li className={'slds-tabs_default__item ' + (this.props.active ? 'slds-is-active' : '')}
+			<li className={`slds-tabs_default__item ${this.props.active ? 'slds-is-active' : ''}`}
 				title={this.props.label} role="presentation">
 				<a className="slds-tabs_default__link" role="tab" tabIndex="0" aria-selected="true"
 				   onClick={this.clickHandler}>{this.props.label}</a>
@@ -50,7 +50,7 @@ export default class extends React.Component {
 
 		return (
 			<div className="slds-tabs_default">
-				<ul className="slds-tabs_default__nav slds-m-around--xx-small" role="tablist">
+				<ul className="slds-tabs_default__nav" role="tablist">
 					{tabHeaders}
 				</ul>
 				{tabs}

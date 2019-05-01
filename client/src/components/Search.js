@@ -132,9 +132,10 @@ export default class extends React.Component {
 												<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#search"/>
 											</svg>
 										</span>
-										<input ref={this.searchInput} type="text" className="slds-input slds-combobox__input slds-has-focus slds-combobox__input-value"
-											    autoComplete="off" placeholder="Find org by id or name.  Type '/' to focus." value={this.state.term}
-												onChange={this.changeHandler}/>
+										<input id="global-search" ref={this.searchInput} type="text" autoComplete="off"
+											   className="slds-input slds-combobox__input slds-has-focus slds-combobox__input-value"
+											   placeholder="Find org by id or name.  Type '/' to focus." value={this.state.term}
+											   onChange={this.changeHandler}/>
 									</div>
 									<div className="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid">
 										<ul className="slds-listbox slds-listbox_vertical">

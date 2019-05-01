@@ -83,7 +83,7 @@ export default class extends React.Component {
 											Token</p>
 									</dt>
 									<dd>
-										<p><input className="slds-input" type="text" readOnly="true"
+										<p><input className="slds-input" type="text" readOnly={true}
 												  value="Double-click to reveal" onDoubleClick={this.revealAccessToken}/>
 										</p>
 									</dd>
