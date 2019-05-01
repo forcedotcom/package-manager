@@ -5,8 +5,6 @@ const packageorgs = require('./packageorgs');
 const logger = require("../util/logger").logger;
 
 const OrgTypes = {
-	ProductionBlacktab: "Production Blacktab",
-	SandboxBlacktab: "Sandbox Blacktab",
 	Accounts: "Accounts",
 	Licenses: "Licenses",
 	Package: "Package"

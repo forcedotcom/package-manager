@@ -35,7 +35,7 @@ export default class extends React.Component {
 									<label className="slds-form-element__label" htmlFor="type">Type</label>
 									<div className="slds-form-element__control">
 										<PickList value={this.state.type} onChange={this.typeChangeHandler}
-												  items={["Package", "Licenses", "Accounts", "Production Blacktab", "Sandbox Blacktab"]}/>
+												  items={["Package", "Licenses", "Accounts"]}/>
 									</div>
 								</div>
 								<div className="slds-form-element">

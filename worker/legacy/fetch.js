@@ -16,6 +16,11 @@ const accountorgs = require('./accountorgfetch');
 
 const packageorgs = require('../../api/packageorgs');
 
+const OrgTypes = {
+	ProductionBlacktab: "Production Blacktab",
+	SandboxBlacktab: "Sandbox Blacktab"
+};
+
 /**
  * 1. Fetch all license records
  * 2. Derive unique set of production and sandbox orgs from license data
@@ -71,34 +76,34 @@ function fetch(fetchAll) {
 						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
-			}, sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab] ?
+			}, sfdc.KnownOrgs[OrgTypes.ProductionBlacktab] ?
 			{
 				name: "Populating production org data",
 				steps: [
 					{
 						name: "Fetching production orgs",
-						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, false, fetchAll, job)
+						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs[OrgTypes.ProductionBlacktab].orgId, false, fetchAll, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => legacyorgs.mark(false, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			} : {
 				name: "Skipping production org data.  No Production blacktab org connection found.",
-			}, sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab] ?
+			}, sfdc.KnownOrgs[OrgTypes.SandboxBlacktab] ?
 			{
 				name: "Populating sandbox org data",
 				steps: [
 					{
 						name: "Fetching sandbox orgs",
-						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, true, fetchAll, job)
+						handler: (job) => legacyorgs.fetch(sfdc.KnownOrgs[OrgTypes.SandboxBlacktab].orgId, true, fetchAll, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => legacyorgs.mark(true, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			} : {
@@ -179,19 +184,19 @@ function fetchByAccountOrgs(fetchAll) {
 			},
 			{
 				name: "Fetching production org data",
-				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, fetchAll, job),
+				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs[OrgTypes.ProductionBlacktab].orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
 			{
 				name: "Fetching sandbox org data",
-				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, fetchAll, job),
+				handler: (job) => accountorgs.fetch(sfdc.KnownOrgs[OrgTypes.SandboxBlacktab].orgId, fetchAll, job),
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			}
@@ -211,12 +216,12 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid production orgs",
-						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, false, job)
+						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs[OrgTypes.ProductionBlacktab].orgId, false, job)
 					},
 					{name: "Invalidating missing production orgs", handler: (job) => legacyorgs.mark(false, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[OrgTypes.ProductionBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
@@ -225,12 +230,12 @@ function fetchInvalid() {
 				steps: [
 					{
 						name: "Fetching invalid sandbox orgs",
-						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, true, job)
+						handler: (job) => legacyorgs.refetchInvalid(sfdc.KnownOrgs[OrgTypes.SandboxBlacktab].orgId, true, job)
 					},
 					{name: "Invalidating missing sandbox orgs", handler: (job) => legacyorgs.mark(true, job)}],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus(sfdc.KnownOrgs[sfdc.OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
+						packageorgs.updateOrgStatus(sfdc.KnownOrgs[OrgTypes.SandboxBlacktab].orgId, packageorgs.Status.Invalid).then(() => {});
 					}
 				}
 			},
