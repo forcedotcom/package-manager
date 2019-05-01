@@ -104,9 +104,7 @@ async function requestCreate(req, res, next) {
 		let i = 0;
 		const rows = await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++i}, $${++i}, $${++i}, NOW())`, [og.name, og.type || GroupType.UpgradeGroup, og.description || '']);
 		const groupId = rows[0].id;
-		if (og.orgIds && og.orgIds.length > 0) {
-			await insertOrgMembers(groupId, og.name, og.orgIds);
-		}
+		await insertOrgMembers(groupId, og.name, og.orgIds);
 		return res.json(rows[0]);
 	} catch (e) {
 		next(e);
@@ -119,9 +117,7 @@ async function requestUpdate(req, res, next) {
 		const groupId = og.id;
 		let i = 0;
 		const updatedGroup = await db.update(`UPDATE org_group SET name=$${++i}, type=$${++i}, description=$${++i} WHERE id=$${++i}`, [og.name, og.type, og.description, og.id]);
-		if (og.orgIds && og.orgIds.length > 0) {
-			await insertOrgMembers(og.id, og.name, og.orgIds);
-		}
+		await insertOrgMembers(og.id, og.name, og.orgIds);
 		admin.emit(admin.Events.GROUP, groupId);
 		return res.send(updatedGroup[0]);
 	} catch (e) {
@@ -165,29 +161,33 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	} else {
 		orggroup = (await db.query(SELECT_ALL + " WHERE id = $1", [groupId]))[0];
 	}
-	let l = 1;
-	let orgIdParams = orgIds.map(() => `($${l++})`);
-	let missingOrgs = await db.query(`
+	let missingOrgs = [];
+	if (orgIds && orgIds.length > 0) {
+		let l = 1;
+		let orgIdParams = orgIds.map(() => `($${l++})`);
+		missingOrgs = await db.query(`
         SELECT t.org_id
         FROM (VALUES ${orgIdParams.join(",")}) AS t (org_id) 
         LEFT JOIN org ON t.org_id = org.org_id
         WHERE org.org_id IS NULL`, orgIds);
-	
-	let n = 2;
-	let params = orgIds.map(() => `($1,$${n++})`);
-	let values = [orggroup.id].concat(orgIds);
-	let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
+
+		let n = 2;
+		let params = orgIds.map(() => `($1,$${n++})`);
+		let values = [orggroup.id].concat(orgIds);
+		let sql = `INSERT INTO org_group_member (org_group_id, org_id) VALUES ${params.join(",")}
                on conflict do nothing`;
-	await db.insert(sql, values);
-	logger.info("Added orgs to group", {group_id: orggroup.id, org_ids: orgIds.join(',')});
+		await db.insert(sql, values);
+		logger.info("Added orgs to group", {group_id: orggroup.id, org_ids: orgIds.join(',')});
+	}
 	if (missingOrgs.length > 0) {
+		// If we need to create net new orgs, do so asynchronously and defer the group-members event
 		orgs.addOrgsByIds(missingOrgs.map(o => o.org_id)).then(() => {
 			admin.emit(admin.Events.ORGS);
 			admin.emit(admin.Events.GROUP_MEMBERS, orggroup.id);
 			admin.emit(admin.Events.GROUP_VERSIONS, orggroup.id);
 		}).catch(e => admin.emit(admin.Events.FAIL, {subject: "Failed to import orgs", message: e.message || e}));
 	} else {
-		// Still want to broadcast that we are done adding group members.
+		// No new orgs, so just fire the group-members event immediately
 		admin.emit(admin.Events.GROUP_MEMBERS, orggroup.id);
 	}
 	return orggroup;
