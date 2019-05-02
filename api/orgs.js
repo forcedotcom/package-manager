@@ -27,12 +27,13 @@ const QUERY_DICTIONARY = new Map([
 	["groups", "g.name"],
 	["version_number", "pv.version_number"],
 	["version_sort", "pv.version_sort"],
-	["license_status", "opv.license_status"]
+	["license_status", "opv.license_status"],
+	["modified_date", "o.modified_date"]
 ]);
 
 const SELECT_ALL = `
     SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, 
-    a.account_name,
+    a.account_name, o.modified_date,
     STRING_AGG(g.name, ', ') as groups
     FROM org o
     LEFT JOIN account a on a.account_id = o.account_id
@@ -41,7 +42,7 @@ const SELECT_ALL = `
 
 const GROUP_BY = `
     GROUP BY o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, 
-    a.account_name`;
+    a.account_name, o.modified_date`;
 
 const SELECT_WITH_LICENCE = ` 
     SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features,

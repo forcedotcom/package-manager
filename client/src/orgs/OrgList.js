@@ -3,6 +3,7 @@ import DataTable from "../components/DataTable";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import {Redirect} from "react-router-dom";
 import * as nav from "../services/nav";
+import moment from "moment";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -26,7 +27,8 @@ export default class extends React.Component {
 			{Header: "Edition", accessor: "edition", sortable: true},
 			{Header: "Type", accessor: "type", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true},
-			{Header: "Status", accessor: "status", sortable: true}
+			{Header: "Status", accessor: "status", sortable: true},
+			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true}
 		];
 		return (
 			<div>
