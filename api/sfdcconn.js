@@ -140,6 +140,7 @@ async function buildOrgConnection(packageOrgId, apiVersion) {
 			if (e.errorCode === 'QUERY_TIMEOUT') {
 				return await conn.query(soql);
 			}
+			throw e;
 		}
 	};
 
