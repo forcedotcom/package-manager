@@ -1,6 +1,7 @@
 import React from 'react';
 
 import * as packageOrgService from '../services/PackageOrgService';
+import * as authService from "../services/AuthService";
 import * as notifier from '../services/notifications';
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
@@ -17,6 +18,7 @@ export default class extends React.Component {
 		};
 		
 		this.fetchData = this.fetchData.bind(this);
+		this.connectHandler = this.connectHandler.bind(this);
 		this.activationHandler = this.activationHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
@@ -42,8 +44,13 @@ export default class extends React.Component {
 			{label: packageorg.active ? 'Deactivate' : 'Activate', group: "toggle",
 				handler: this.activationHandler, disabled: packageorg.type !== "Package",
 				detail: packageorg.active ? "Click to deactivate this org connection" : "Click to activate this org connection"},
-			{label: "Refresh", handler: this.refreshHandler, group: "actions", spinning: this.state.isRefreshing},
-			{label: "Revoke", handler: this.revokeHandler, group: "actions", spinning: this.state.isRevoking},
+			{label: "Connect", group: "actions",
+				handler: this.connectHandler, disabled: packageorg.status === "Connected",
+				detail: "Click to login and connect this org"},
+			{label: "Refresh", handler: this.refreshHandler, group: "actions",  disabled: packageorg.status !== "Connected",
+				spinning: this.state.isRefreshing},
+			{label: "Revoke", handler: this.revokeHandler, group: "actions",  disabled: packageorg.status !== "Connected",
+				spinning: this.state.isRevoking},
 			{label: "Edit", handler: this.editHandler},
 			{label: "Delete", handler: this.deleteHandler}
 		];
@@ -68,6 +75,12 @@ export default class extends React.Component {
 	fetchData() {
 		packageOrgService.requestById(this.props.match.params.packageorgId).then(
 			packageorg => this.setState({packageorg, isRefreshing: false})).catch(e => notifier.error(e.message || e));
+	}
+
+	connectHandler() {
+		authService.oauthOrgURL(this.state.packageorg.instanceUrl, this.state.packageorg.type, `/packageorg/${this.state.packageorg.org_id}`).then(url => {
+			window.location.href = url;
+		});
 	}
 
 	activationHandler() {

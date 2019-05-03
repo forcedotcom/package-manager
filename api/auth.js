@@ -62,7 +62,8 @@ function oauthOrgURL(req, res, next) {
         const url = buildURL("api id web refresh_token", {
             operation: "org",
             type: req.query.type,
-            loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN
+            loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN,
+            returnTo: req.query.returnTo
         });
         res.json(url);
     } catch (e) {
@@ -80,21 +81,21 @@ async function oauthCallback(req, res, next) {
     let conn = buildAuthConnection(null, null, state.loginUrl);
     try {
         let userInfo = await conn.authorize(req.query.code);
+        let url = CLIENT_URL;
+        let returnTo = sanitizeReturnTo(state.returnTo);
+        if (returnTo) {
+            url += returnTo;
+        }
         switch (state.operation) {
             case "org":
                 await packageorgs.initOrg(conn, userInfo.organizationId, state.type);
-                res.redirect(`${CLIENT_URL}/packageorgs`);
+                res.redirect(url);
                 break;
             default:
                 const user = await conn.identity();
                 req.session.username = user.username;
                 req.session.display_name = user.display_name;
                 req.session.access_token = conn.accessToken;
-                let url = CLIENT_URL;
-                let returnTo = sanitizeReturnTo(state.returnTo);
-                if (returnTo) {
-                    url += returnTo;
-                }
                 res.redirect(url);
         }
     } catch (error) {

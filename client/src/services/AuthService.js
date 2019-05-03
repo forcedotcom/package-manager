@@ -4,7 +4,7 @@ let url = "/oauth2";
 
 export let oauthLoginURL = (returnTo) => h.get(url + "/loginurl", {returnTo});
 
-export let oauthOrgURL = (instanceUrl, type) => h.get(url + "/orgurl", {instanceUrl, type});
+export let oauthOrgURL = (instanceUrl, type, returnTo) => h.get(url + "/orgurl", {instanceUrl, type, returnTo});
 
 export let requestLogout = () => h.get(url + "/logout");
 

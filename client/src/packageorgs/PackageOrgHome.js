@@ -70,7 +70,7 @@ export default class extends React.Component {
 	}
 
 	connectHandler(instanceUrl, type) {
-		authService.oauthOrgURL(instanceUrl, type).then(url => {
+		authService.oauthOrgURL(instanceUrl, type, "/packageorgs").then(url => {
 			window.location.href = url;
 		});
 	}
