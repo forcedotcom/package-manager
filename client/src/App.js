@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {BrowserRouter as Router, Link, Route} from "react-router-dom";
 import ReactTooltip from 'react-tooltip';
 import {NotificationContainer} from 'react-notifications';
+import debounce from "lodash.debounce";
 
 import {Icon} from './components/Icons';
 
@@ -46,10 +47,28 @@ import {
 	UPGRADE_ICON
 } from "./Constants";
 
+function getCompactSize() {
+	return window.innerWidth > 1200 ? 2 : window.innerWidth > 900 ? 1 : 0;
+}
+
 class App extends Component {
-	state = {};
+	constructor(props) {
+		super(props);
+		this.state = {compactSize: getCompactSize()};
+
+		this.handleWindowResize = this.handleWindowResize.bind(this);
+	}
+
+	handleWindowResize = debounce(() => {
+		let compactSize = getCompactSize();
+		if (this.state.compactSize !== compactSize) {
+			this.setState({compactSize})
+		}
+	}, 100);
 
 	componentDidMount() {
+		window.addEventListener('resize', this.handleWindowResize);
+
 		let user = authService.getSessionUser();
 		if (!user) {
 			authService.requestUser().then(user => {
@@ -60,39 +79,45 @@ class App extends Component {
 		}
 	}
 
+	componentWillUnmount() {
+		window.removeEventListener('resize', this.handleWindowResize);
+	}
+
 	render() {
+		const isCompact = this.state.compactSize < 2;
+		const isMini = this.state.compactSize < 1;
 		return (
 			<Router>
 				<div>
 					<header className="menu">
 						<ul className="slds-list--horizontal">
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Upgrades">
 								<Link style={{whiteSpace: "nowrap"}} to="/"><Icon name={UPGRADE_ICON.name}
-																						  category={UPGRADE_ICON.category}/>Upgrades</Link>
+																						  category={UPGRADE_ICON.category}/>{isCompact ? "" : "Upgrades"}</Link>
 							</li>
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Packages">
 								<Link style={{whiteSpace: "nowrap"}} to="/packages"><Icon name={PACKAGE_ICON.name}
-																						  category={PACKAGE_ICON.category}/>Packages</Link>
+																						  category={PACKAGE_ICON.category}/>{isCompact ? "" : "Packages"}</Link>
 							</li>
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Org Groups">
 								<Link style={{whiteSpace: "nowrap"}} className="slds-nowrap" to="/orggroups"><Icon
-									name={ORG_GROUP_ICON.name} category={ORG_GROUP_ICON.category}/>Org Groups</Link>
+									name={ORG_GROUP_ICON.name} category={ORG_GROUP_ICON.category}/>{isCompact ? "" : "Org Groups"}</Link>
 							</li>
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Orgs">
 								<Link style={{whiteSpace: "nowrap"}} to="/orgs"><Icon name={ORG_ICON.name}
-																				  category={ORG_ICON.category}/>Orgs</Link>
+																				  category={ORG_ICON.category}/>{isCompact ? "" : "Orgs"}</Link>
 							</li>
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Licenses">
 								<Link style={{whiteSpace: "nowrap"}} to="/licenses"><Icon name={LICENSE_ICON.name}
-																						  category={LICENSE_ICON.category}/>Licenses</Link>
+																						  category={LICENSE_ICON.category}/>{isCompact ? "" : "Licenses"}</Link>
 							</li>
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Connected Orgs">
 								<Link style={{whiteSpace: "nowrap"}} to="/packageorgs"><Icon
-									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>Connected Orgs</Link>
+									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>{isCompact ? "" : "Connected Orgs"}</Link>
 							</li>
-							<li className="slds-list__item">
+							<li className="slds-list__item" title="Administration">
 								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name}
-																					   category={ADMIN_ICON.category}/>Administration</Link>
+																					   category={ADMIN_ICON.category}/>{isCompact ? "" : "Administration"}</Link>
 							</li>
 
 							<li style={{width: "100%"}} className="slds-list__item">
@@ -100,10 +125,10 @@ class App extends Component {
 							</li>
 
 							{this.state.username ?
-								<li className="slds-list__item">
+								<li className="slds-list__item" title={`Logout ${this.state.display_name}`}>
 									<Link data-tip data-for="logout" style={{whiteSpace: "nowrap"}} to="/logout"><Icon
 										name={AUTH_ICON.name}
-										category={AUTH_ICON.category}/>Logout {this.state.display_name}</Link>
+										category={AUTH_ICON.category}/>{isMini ? "" : `Logout ${this.state.display_name}`}</Link>
 									<ReactTooltip id="logout" place="left" delayShow={600}>
 										Logged in as {this.state.username}
 									</ReactTooltip>
