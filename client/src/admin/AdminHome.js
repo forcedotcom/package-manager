@@ -29,25 +29,16 @@ export default class extends React.Component {
 		this.onQueue = this.onQueue.bind(this);
 		this.cancellationHandler = this.cancellationHandler.bind(this);
 		this.fetchHandler = this.fetchHandler.bind(this);
-		this.fetchAccountsHandler = this.fetchAccountsHandler.bind(this);
-		this.fetchAllAccountsHandler = this.fetchAllAccountsHandler.bind(this);
-		this.fetchSubscribersHandler = this.fetchSubscribersHandler.bind(this);
-		this.fetchAllSubscribersHandler = this.fetchAllSubscribersHandler.bind(this);
-		this.fetchInvalidHandler = this.fetchInvalidHandler.bind(this);
 		this.fetchAllHandler = this.fetchAllHandler.bind(this);
 		this.uploadOrgsHandler = this.uploadOrgsHandler.bind(this);
 		this.goToHerokuHandler = this.goToHerokuHandler.bind(this);
 		this.showAllHistoryHandler = this.showAllHistoryHandler.bind(this);
-		this.showAdvancedActionsHandler = this.showAdvancedActionsHandler.bind(this);
-		this.hideAdvancedActionsHandler = this.hideAdvancedActionsHandler.bind(this);
 		this.handleWindowResize = this.handleWindowResize.bind(this);
 	}
 
 	// Lifecycle
 	componentDidMount() {
 		window.addEventListener('resize', this.handleWindowResize);
-		window.addEventListener('keydown', this.showAdvancedActionsHandler);
-		window.addEventListener('keyup', this.hideAdvancedActionsHandler);
 
 		notifier.on('jobs', this.onJobs);
 		notifier.on('job-history', this.onHistory);
@@ -62,9 +53,6 @@ export default class extends React.Component {
 
 	componentWillUnmount() {
 		window.removeEventListener('resize', this.handleWindowResize);
-		window.removeEventListener('keydown', this.showAdvancedActionsHandler);
-		window.removeEventListener('keyup', this.hideAdvancedActionsHandler);
-
 
 		notifier.remove('jobs', this.onJobs);
 		notifier.remove('job-history', this.onHistory);
@@ -172,22 +160,10 @@ export default class extends React.Component {
 			);
 		}
 
-		let actions = [];
-
-		if (this.state.advanced) {
-			actions.push(
-				{group: "accounts", label: "Fetch Accounts", handler: this.fetchAccountsHandler},
-				{group: "accounts", label: "Fetch All Accounts", handler: this.fetchAllAccountsHandler},
-				{group: "legacy", label: "Fetch Legacy", handler: this.fetchHandler},
-				{group: "legacy", label: "Fetch All Legacy", handler: this.fetchAllHandler},
-				{group: "legacy", label: "Fetch Invalid Orgs", handler: this.fetchInvalidHandler}
-			);
-		}
-
-		actions.push(
-		    {group: "data", label: "Fetch Data", handler: this.fetchSubscribersHandler},
-            {group: "data", label: "Fetch All Data", handler: this.fetchAllSubscribersHandler}
-        );
+		let actions = [
+		    {group: "data", label: "Fetch Data", handler: this.fetchHandler},
+            {group: "data", label: "Fetch All Data", handler: this.fetchAllHandler}
+        ];
 
 
 		let user = authService.getSessionUser();
@@ -282,26 +258,6 @@ export default class extends React.Component {
 		notifier.emit("fetch", {});
 	}
 
-	fetchSubscribersHandler() {
-		notifier.emit("fetch-subscribers", {});
-	}
-
-	fetchAccountsHandler() {
-		notifier.emit("fetch-accounts", {});
-	}
-
-	fetchAllAccountsHandler() {
-		notifier.emit("fetch-all-accounts", {});
-	}
-
-	fetchAllSubscribersHandler() {
-		notifier.emit("fetch-all-subscribers", {});
-	}
-
-	fetchInvalidHandler() {
-		notifier.emit("fetch-invalid", {});
-	}
-
 	fetchAllHandler() {
 		notifier.emit("fetch-all", {});
 	}
@@ -316,18 +272,6 @@ export default class extends React.Component {
 
 	showAllHistoryHandler = () => {
 		this.setState({showAllHistory: true});
-	};
-
-	showAdvancedActionsHandler = (e) => {
-		if (e.key === "Alt") {
-			this.setState({advanced: true});
-		}
-	};
-
-	hideAdvancedActionsHandler = (e) => {
-		if (this.state.advanced) {
-			this.setState({advanced: false});
-		}
 	};
 }
 

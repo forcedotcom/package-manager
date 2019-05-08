@@ -6,7 +6,6 @@ const url = require('url');
 const sqlinit = require('../init/sqlinit');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
-const legacyfetch = require("../worker/legacy/fetch");
 const orgs = require("./orgs");
 const packageorgs = require("./packageorgs");
 const upgrades = require("./upgrades");
@@ -26,13 +25,6 @@ const Events = {
 	JOB_HISTORY: "job-history",
 	FETCH: "fetch",
 	FETCH_ALL: "fetch-all",
-	FETCH_ACCOUNT_ORGS: "fetch-account-orgs",
-	FETCH_ALL_ACCOUNT_ORGS: "fetch-all-account-orgs",
-	FETCH_SUBSCRIBERS: "fetch-subscribers",
-	FETCH_ALL_SUBSCRIBERS: "fetch-all-subscribers",
-	FETCH_ACCOUNTS: "fetch-accounts",
-	FETCH_ALL_ACCOUNTS: "fetch-all-accounts",
-	FETCH_INVALID: "fetch-invalid",
 	CANCEL_JOBS: "cancel-jobs",
 	UPLOAD_ORGS: "upload-orgs",
 	GROUP: "group",
@@ -56,9 +48,6 @@ const JobTypes = {
 	UPLOAD_ORGS: "upload-orgs",
 	UPGRADE: "upgrade",
 	FETCH: "fetch",
-	FETCH_INVALID: "fetch-invalid",
-	FETCH_ACCOUNTS: "fetch-accounts",
-	FETCH_ACCOUNT_ORGS: "fetch-account-orgs",
 	REFRESH_GROUP_VERSIONS: "refresh-group-versions"
 };
 
@@ -225,32 +214,11 @@ class AdminJob {
 function connect(sock) {
 	socket = sock;
 
-	socket.on(Events.FETCH_ACCOUNTS, function () {
-		fetchAccounts().then(() => {});
-	});
-	socket.on(Events.FETCH_ALL_ACCOUNTS, function () {
-		fetchAccounts(true).then(() => {});
-	});
-	socket.on(Events.FETCH_ACCOUNT_ORGS, function () {
-		fetchAccountOrgs().then(() => {});
-	});
-	socket.on(Events.FETCH_ALL_ACCOUNT_ORGS, function () {
-		fetchAccountOrgs(true).then(() => {});
-	});
 	socket.on(Events.FETCH, function () {
 		fetchData().then(() => {});
 	});
 	socket.on(Events.FETCH_ALL, function () {
 		fetchData(true).then(() => {});
-	});
-	socket.on(Events.FETCH_INVALID, function () {
-		fetchInvalidOrgs().then(() => {});
-	});
-	socket.on(Events.FETCH_SUBSCRIBERS, function () {
-		fetchSubscribers().then(() => {});
-	});
-	socket.on(Events.FETCH_ALL_SUBSCRIBERS, function () {
-		fetchSubscribers(true).then(() => {});
 	});
 	socket.on(Events.CANCEL_JOBS, function (jobIds) {
 		cancelJobs(jobIds);
@@ -342,13 +310,13 @@ function scheduleJobs() {
 
 	if (schedules.fetch_subscriber_interval_minutes != null && schedules.fetch_subscriber_interval_minutes !== -1) {
 		let interval = schedules.fetch_subscriber_interval_minutes * 60 * 1000;
-		setInterval(() => {fetchSubscribers(false, interval).then(() => {})}, interval);
+		setInterval(() => {fetchData(false, interval).then(() => {})}, interval);
 		logger.info(`Scheduled fetching of latest subscribers every ${schedules.fetch_subscriber_interval_minutes } minutes`)
 	}
 
 	if (schedules.fetch_all_subscriber_interval_days != null && schedules.fetch_all_subscriber_interval_days !== -1) {
 		let interval = schedules.fetch_all_subscriber_interval_days* 24 * 60 * 60 * 1000;
-		setInterval(() => {fetchSubscribers(true, interval).then(() => {})}, interval);
+		setInterval(() => {fetchData(true, interval).then(() => {})}, interval);
 		logger.info(`Scheduled fetching of all subscribers every ${schedules.fetch_all_subscriber_interval_days } days`)
 	}
 
@@ -360,37 +328,19 @@ function scheduleJobs() {
 		logger.info(`Scheduled org upload starting ${startTime} and recurring every ${schedules.upload_orgs_interval_hours} hours`)
 	}
 
-	// Legacy
 	if (schedules.fetch_interval_minutes != null && schedules.fetch_interval_minutes !== -1) {
 		let interval = schedules.fetch_interval_minutes * 60 * 1000;
 		setInterval(() => {fetchData(false, interval).then(() => {})}, interval);
 		logger.info(`Scheduled fetching of latest data every ${schedules.fetch_interval_minutes} minutes`)
 	}
 
-	if (schedules.fetch_invalid_interval_hours != null && schedules.fetch_invalid_interval_hours !== -1) {
-		// Always start heavyweight tasks at the end of the day.
-		let interval = schedules.fetch_invalid_interval_hours * 60 * 60 * 1000;
-		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {fetchInvalidOrgs(interval).then(() => {})}, interval), delay);
-		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-		logger.info(`Scheduled fetching of invalid orgs starting ${startTime} and recurring every ${schedules.fetch_invalid_interval_hours} hours`)
-	}
-
-	if (schedules.refetch_interval_days != null && schedules.refetch_interval_days !== -1) {
+	if (schedules.fetch_all_interval_days != null && schedules.fetch_all_interval_days !== -1) {
 		// Always start heavyweight at the end of the day.
-		let interval = schedules.refetch_interval_days * 24 * 60 * 60 * 1000;
+		let interval = schedules.fetch_all_interval_days * 24 * 60 * 60 * 1000;
 		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
 		setTimeout(() => setInterval(() => {fetchData(true, interval).then(() => {})}, interval), delay);
 		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-		logger.info(`Scheduled re-fetching of all data starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
-	}
-
-	if (schedules.fetch_account_orgs_interval_days != null && schedules.fetch_account_orgs_interval_days !== -1) {
-		let interval = schedules.refetch_interval_days * 24 * 60 * 60 * 1000;
-		let delay = moment().endOf('day').toDate().getTime() - new Date().getTime();
-		setTimeout(() => setInterval(() => {fetchAccountOrgs(false, interval).then(() => {})}, interval), delay);
-		let startTime = moment(new Date().getTime() + delay + interval).format('lll Z');
-		logger.info(`Scheduled fetching of account orgs starting ${startTime} and recurring every ${schedules.refetch_interval_days} days`)
+		logger.info(`Scheduled fetching of all data starting ${startTime} and recurring every ${schedules.fetch_all_interval_days} days`)
 	}
 }
 
@@ -406,32 +356,8 @@ async function monitorUpgrades(interval) {
 	await job.run();
 }
 
-async function fetchAccountOrgs(fetchAll, interval) {
-	const job = legacyfetch.fetchAccountOrgs(fetchAll);
-	job.interval = interval;
-	await job.run();
-}
-
 async function fetchData(fetchAll, interval) {
-	const job = legacyfetch.fetch(fetchAll);
-	job.interval = interval;
-	await job.run();
-}
-
-async function fetchSubscribers(fetchAll, interval) {
-	const job = fetch.fetchSubscribers(fetchAll);
-	job.interval = interval;
-	await job.run();
-}
-
-async function fetchAccounts(fetchAll, interval) {
-	const job = legacyfetch.fetchAccounts(fetchAll);
-	job.interval = interval;
-	await job.run();
-}
-
-async function fetchInvalidOrgs(interval) {
-	const job = legacyfetch.fetchInvalid();
+	const job = fetch.fetchData(fetchAll);
 	job.interval = interval;
 	await job.run();
 }

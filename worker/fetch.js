@@ -21,7 +21,7 @@ const packageorgs = require('../api/packageorgs');
  * 2. Query org62 for all accounts by org ids.
  * 3. Fill in account ids on sandbox org records using data from parent production org.
  */
-function fetchBySubscribers(fetchAll) {
+function fetchData(fetchAll) {
 	return new admin.AdminJob(
 		admin.JobTypes.FETCH,
 		fetchAll ? "Fetch all data" : "Fetch latest data",
@@ -71,7 +71,7 @@ function fetchBySubscribers(fetchAll) {
 				}
 			},
 			{
-				name: "Fetch subscriber orgs",
+				name: "Fetch orgs",
 				steps: [
 					{
 						name: "Fetching package subscribers",
@@ -128,6 +128,6 @@ function fetchOrgGroupVersions(groupId, orgId) {
 		]);
 }
 
-exports.fetchSubscribers = fetchBySubscribers;
+exports.fetchData = fetchData;
 exports.fetchOrgVersions = fetchOrgVersions;
 exports.fetchOrgGroupVersions = fetchOrgGroupVersions;
