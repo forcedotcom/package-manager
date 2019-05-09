@@ -33,10 +33,13 @@ export default class extends React.Component {
 		this.activationHandler = this.activationHandler.bind(this);
 		this.cancellationHandler = this.cancellationHandler.bind(this);
 		this.retryHandler = this.retryHandler.bind(this);
+		this.refreshJobsHandler = this.refreshJobsHandler.bind(this);
+		this.refreshJobsCompleteHandler = this.refreshJobsCompleteHandler.bind(this);
 	}
 
 	componentDidMount() {
 		notifier.on('upgrade', this.upgradeUpdated);
+		notifier.on('upgrade-jobs', this.refreshJobsCompleteHandler);
 
 		upgradeService.requestById(this.props.match.params.upgradeId)
 			.then(upgrade => this.setState({upgrade}))
@@ -45,6 +48,7 @@ export default class extends React.Component {
 
 	componentWillUnmount() {
 		notifier.remove('upgrade', this.upgradeUpdated);
+		notifier.remove('upgrade-jobs', this.refreshJobsCompleteHandler);
 	}
 	
 	render() {
@@ -73,6 +77,10 @@ export default class extends React.Component {
 				label: "Retry Failed Jobs", handler: this.retryHandler,
 				disabled: progress.errors === 0, 
 				spinning: this.state.isRetrying
+			},
+			{
+				label: "Refresh Jobs", handler: this.refreshJobsHandler,
+				spinning: this.state.isRefreshing
 			}
 		];
 
@@ -158,6 +166,24 @@ export default class extends React.Component {
 				this.setState({isRetrying: false});
 				notifier.error(e.message, "Retry Failed");
 			});
+		}
+	}
+
+	refreshJobsHandler() {
+		if (window.confirm(`Are you sure you want to refresh all upgrade jobs?  This will take some time and run in the background.`)) {
+			this.setState({isRefreshing: true});
+			upgradeService.refresh(this.state.upgrade.id).then(() =>
+				notifier.info("Refreshing upgrade job information from packaging orgs", "Refreshing Jobs"))
+					.catch((e) => {
+						this.setState({isRefreshing: false});
+						notifier.error(e.message, "Refresh Failed");
+					});
+		}
+	}
+
+	refreshJobsCompleteHandler(data) {
+		if (data === String(this.state.upgrade.id)) {
+			this.setState({isRefreshing: false});
 		}
 	}
 }

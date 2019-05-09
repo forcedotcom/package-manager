@@ -32,7 +32,7 @@ const SELECT_ALL = `SELECT
     p.name as package_name
     FROM license l
     INNER JOIN org as o on l.org_id = o.org_id
-    INNER JOIN account as a on o.account_id = a.account_id
+    LEFT JOIN account as a on a.account_id = o.account_id
     INNER JOIN package_version as pv on l.version_id = pv.version_id
     INNER JOIN package as p on pv.package_id = p.sfid`;
 

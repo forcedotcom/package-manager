@@ -23,13 +23,21 @@ export default class extends React.Component {
 		this.upgradeItemsUpdated = this.upgradeItemsUpdated.bind(this);
 		this.handleActivation = this.handleActivation.bind(this);
 		this.handleCancellation = this.handleCancellation.bind(this);
+		this.refreshJobsHandler = this.refreshJobsHandler.bind(this);
+		this.refreshJobsCompleteHandler = this.refreshJobsCompleteHandler.bind(this);
 	}
 
 	// Lifecycle
 	componentDidMount() {
 		notifier.on('upgrade-items', this.upgradeItemsUpdated);
+		notifier.on('upgrade-jobs', this.refreshJobsCompleteHandler);
 
 		upgradeItemService.requestById(this.props.match.params.itemId).then(item => this.setState({item}));
+	}
+
+	componentWillUnmount() {
+		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
+		notifier.remove('upgrade-jobs', this.refreshJobsCompleteHandler);
 	}
 	
 	render() {
@@ -51,6 +59,10 @@ export default class extends React.Component {
 				label: "Cancel Request", handler: this.handleCancellation,
 				disabled: progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
+			},
+			{
+				label: "Refresh Jobs", handler: this.refreshJobsHandler,
+				spinning: this.state.isRefreshing
 			}
 		];
 		
@@ -82,10 +94,6 @@ export default class extends React.Component {
 		});
 	}
 
-	componentWillUnmount() {
-		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
-	}
-
 	upgradeItemsUpdated(items) {
 		const mine = items.find(i => (i.id || i) === this.state.item.id);
 		if (mine) {
@@ -113,6 +121,24 @@ export default class extends React.Component {
 				this.setState({isCancelling: false});
 				notifier.error(e.message, "Cancellation Failed");
 			});
+		}
+	}
+
+	refreshJobsHandler() {
+		if (window.confirm(`Are you sure you want to refresh this upgrade item's jobs?  This will take some time and run in the background.`)) {
+			this.setState({isRefreshing: true});
+			upgradeItemService.refresh(this.state.item.id).then(() =>
+				notifier.info("Refreshing upgrade item job information from packaging org", "Refreshing Jobs"))
+				.catch((e) => {
+					this.setState({isRefreshing: false});
+					notifier.error(e.message, "Refresh Failed");
+				});
+		}
+	}
+
+	refreshJobsCompleteHandler(data) {
+		if (data === String(this.state.item.id)) {
+			this.setState({isRefreshing: false});
 		}
 	}
 }

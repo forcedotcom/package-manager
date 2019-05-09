@@ -10,14 +10,6 @@ const logger = require('../util/logger').logger;
 
 const JOB_CREATION_BATCH_SIZE = process.env.JOB_CREATION_BATCH_SIZE || (13 * 13);
 
-const SELECT_ALL_SUBSCRIBERS =
-    `SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,ParentOrg,SystemModstamp
-		FROM PackageSubscriber`;
-
-const SELECT_ALL_SUBSCRIBERS_WITHOUT_MODSTAMP =
-    `SELECT OrgName,OrgType,InstalledStatus,InstanceName,OrgStatus,MetadataPackageVersionId,OrgKey,ParentOrg
-		FROM PackageSubscriber`;
-
 const Status = {
     Created: "Created",
     Pending: "Pending",
@@ -136,6 +128,9 @@ async function handleBatchResponse(upgradeId, itemId, versionId, pushReqId, orgI
         const res = results[i];
         const opv = opvMap.get(orgIds[i]);
         jobs.push({
+            upgrade_id: upgradeId,
+            item_id: itemId,
+            push_request_id: pushReqId,
             org_id: opv.org_id,
             job_id: res.id,
             status: res.success ? Status.Created : Status.Ineligible,
@@ -146,8 +141,7 @@ async function handleBatchResponse(upgradeId, itemId, versionId, pushReqId, orgI
             logger.warn("Failed to schedule push upgrade job", {org_id: opv.org_id, error: res.errors.join(", ")})
         }
     }
-    const recs = await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
-    return recs;
+    return await upgrades.createJobs(jobs);
 }
 
 async function createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionId, pushReqId, pushJobs) {
@@ -167,6 +161,9 @@ async function createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionI
         const pushJob = pushJobs[i];
         const opv = opvMap.get(pushJob.SubscriberOrganizationKey);
         const job = {
+            upgrade_id: upgradeId,
+            item_id: itemId,
+            push_request_id: pushReqId,
             org_id: opv.org_id,
             original_version_id: opv.version_id
         };
@@ -183,7 +180,7 @@ async function createPushJobsFromFailedBatches(conn, upgradeId, itemId, versionI
         jobs.push(job);
     }
 
-    return await upgrades.createUpgradeJobs(upgradeId, itemId, pushReqId, jobs);
+    return await upgrades.createJobs(jobs);
 }
 
 async function cancelRequests(packageOrgId) {

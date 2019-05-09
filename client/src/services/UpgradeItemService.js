@@ -8,3 +8,4 @@ export let findByPackage = (packageId, sort_field, sort_dir) => h.get(url, {pack
 export let findByPackageOrg = (packageOrgId, sort_field, sort_dir) => h.get(url, {packageOrgId, sort_field, sort_dir});
 export let activate = id => h.post(`${url}/activate/${id}`);
 export let cancel = id => h.post(`${url}/cancel/${id}`);
+export let refresh = id => h.post(`${url}/refresh/${id}`);

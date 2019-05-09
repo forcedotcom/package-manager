@@ -26,7 +26,7 @@ const SELECT_ALL_IN_ORG =
     INNER JOIN package_version_latest pvl ON pvl.package_id = pv.package_id
     INNER JOIN org_package_version op ON op.version_id = pv.version_id 
     INNER JOIN org o ON o.org_id = op.org_id
-    INNER JOIN account a ON a.account_id = o.account_id`;
+    LEFT JOIN account a ON a.account_id = o.account_id`;
 
 const SELECT_ALL_IN_ORG_GROUP =
 	SELECT_ALL_IN_ORG +

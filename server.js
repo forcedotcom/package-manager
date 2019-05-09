@@ -121,12 +121,14 @@ app.get('/api/upgrades/:id', upgrades.requestById);
 app.post('/api/upgrades/activate/:id', upgrades.requestActivateUpgrade);
 app.post('/api/upgrades/cancel/:id', upgrades.requestCancelUpgrade);
 app.post('/api/upgrades/retry/:id', upgrades.requestRetryFailedUpgrade);
+app.post('/api/upgrades/refresh/:id', upgrades.requestRefreshUpgrade);
 app.post('/api/upgrades/purge', upgrades.requestPurge);
 
 app.get('/api/upgradeitems', upgrades.requestItems);
 app.get('/api/upgradeitems/:id', upgrades.requestItemById);
 app.post('/api/upgradeitems/activate/:id', upgrades.requestActivateUpgradeItem);
 app.post('/api/upgradeitems/cancel/:id', upgrades.requestCancelUpgradeItem);
+app.post('/api/upgradeitems/refresh/:id', upgrades.requestRefreshUpgradeItem);
 
 app.get('/api/upgradejobs', upgrades.requestAllJobs);
 app.get('/api/upgradejobs/:id', upgrades.requestJobById);
