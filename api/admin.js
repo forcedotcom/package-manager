@@ -6,7 +6,6 @@ const url = require('url');
 const sqlinit = require('../init/sqlinit');
 const logger = require("../util/logger").logger;
 const fetch = require("../worker/fetch");
-const orgs = require("./orgs");
 const packageorgs = require("./packageorgs");
 const upgrades = require("./upgrades");
 const sfdc = require("./sfdcconn");
@@ -48,7 +47,7 @@ const JobTypes = {
 	UPLOAD_ORGS: "upload-orgs",
 	UPGRADE: "upgrade",
 	FETCH: "fetch",
-	REFRESH_GROUP_VERSIONS: "refresh-group-versions"
+	REFRESH_VERSIONS: "refresh-versions"
 };
 
 let jobQueue = [];
@@ -141,7 +140,7 @@ class AdminJob {
 			this.postProgress("Admin Job Failed", this.stepCount, e);
 		} finally {
 			activeJobs.delete(this.type);
-			latestJobs.set(this.type, this)
+			latestJobs.set(this.type, this);
 			jobHistory.push(this);
 			if (jobHistory.length > MAX_HISTORY) {
 				jobHistory.shift();
@@ -228,8 +227,7 @@ function connect(sock) {
 		await job.run();
 	});
 	socket.on(Events.REFRESH_GROUP_VERSIONS, async function (groupId) {
-		let orgIds = (await orgs.findByGroup(groupId)).map(o => o.org_id);
-		const job = fetch.fetchOrgGroupVersions(groupId, orgIds);
+		const job = fetch.fetchOrgGroupVersions(groupId);
 		await job.run();	
 	});
 	socket.on(Events.UPLOAD_ORGS, async function () {
@@ -423,34 +421,6 @@ async function sendOrgsToSumo(orgs, job) {
 		job.postMessage(`Sending ${orgs.length} orgs to Sumo`);
 	});
 }
-
-function convertID(id) {
-	if (id.length === 18) return id;
-	if (id.length !== 15) throw "Illegal argument length. 15 char string expected.";
-
-	let triplet = [id.substring(0, 5), id.substring(5, 10), id.substring(10, 15)];
-	triplet = triplet.map(v => {
-		let str = "";
-		for (let i = v.length - 1; i >= 0; i--) {
-			let code = v.charCodeAt(i);
-			str += (code > 64 && code < 91) // upper alpha (A-Z)
-				? "1" : "0"
-		}
-		return BinaryIdLookup[str];
-	});
-	const suffix = triplet.join("");
-	return id + suffix;
-}
-
-const BinaryIdLookup = {
-	"00000": 'A', "00001": 'B', "00010": 'C', "00011": 'D', "00100": 'E',
-	"00101": 'F', "00110": 'G', "00111": 'H', "01000": 'I', "01001": 'J',
-	"01010": 'K', "01011": 'L', "01100": 'M', "01101": 'N', "01110": 'O',
-	"01111": 'P', "10000": 'Q', "10001": 'R', "10010": 'S', "10011": 'T',
-	"10100": 'U', "10101": 'V', "10110": 'W', "10111": 'X', "11000": 'Y',
-	"11001": 'Z', "11010": '0', "11011": '1', "11100": '2', "11101": '3',
-	"11110": '4', "11111": '5'
-};
 
 exports.Events = Events;
 exports.connect = connect;

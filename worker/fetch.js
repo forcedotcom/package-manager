@@ -100,10 +100,10 @@ function fetchData(fetchAll) {
 
 function fetchOrgVersions(orgId) {
 	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
-	return new admin.AdminJob(admin.JobTypes.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
+	return new admin.AdminJob(admin.JobTypes.REFRESH_VERSIONS, "Fetch package versions for orgs",
 		[
 			{
-				name: "Fetching package versions from subscribers",
+				name: "Fetching package versions for org",
 				handler: (job) => subs.fetchByOrgIds(orgIds, job),
 			},
 			{
@@ -113,13 +113,12 @@ function fetchOrgVersions(orgId) {
 		]);
 }
 
-function fetchOrgGroupVersions(groupId, orgId) {
-	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
-	return new admin.AdminJob(admin.JobTypes.REFRESH_GROUP_VERSIONS, "Fetch package versions installed on orgs",
+function fetchOrgGroupVersions(groupId) {
+	return new admin.AdminJob(admin.JobTypes.REFRESH_VERSIONS, "Fetch package versions for a group",
 		[
 			{
-				name: "Fetching package versions from subscribers",
-				handler: (job) => subs.fetchByOrgIds(orgIds, job),
+				name: "Fetching package versions for group",
+				handler: (job) => subs.fetchByOrgGroupId(groupId, job),
 			},
 			{
 				name: "Finish event",

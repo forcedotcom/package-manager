@@ -15,14 +15,6 @@ const SELECT_ALL_WITHOUT_MODSTAMP =
 let adminJob;
 
 async function fetch(fetchAll, job) {
-	await fetchOrgs(fetchAll, job);
-}
-
-async function fetchByOrgIds(orgIds, job) {
-	await fetchOrgs(false, job, orgIds);
-}
-
-async function fetchOrgs(fetchAll, job, orgIds) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
 		`SELECT o.org_id, o.name, o.type, p.sfid package_id
@@ -30,20 +22,54 @@ async function fetchOrgs(fetchAll, job, orgIds) {
 		INNER JOIN package p on p.package_org_id = o.org_id
 		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
 
-	// Never honor fetchAll when orgIds is specified
-	fetchAll = fetchAll && !orgIds;
-    if (fetchAll) {
-        // Invalidate all existing orgs when we are upserting all new findings
-        await db.update(`UPDATE org set status = $1`, [orgs.Status.NotFound]);
-    }
+	if (fetchAll) {
+		// Invalidate all existing orgs when we are upserting all new findings
+		// (Not when orgIds is given)
+		await db.update(`UPDATE org set status = $1`, [orgs.Status.NotFound]);
+	}
 
-    const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
+	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
 	for (let i = 0; i < packageOrgs.length; i++) {
-		await fetchFromOrg(packageOrgs[i], fetchAll, orgIds);
+		await fetchFromOrg(packageOrgs[i], fetchAll);
 	}
 }
 
-async function fetchFromOrg(org, fetchAll, orgIds) {
+async function fetchByOrgGroupId(groupId, job) {
+	adminJob = job;
+	const SELECT_PACKAGE_ORGS =
+		`SELECT o.org_id, o.name, o.type, p.sfid package_id
+		FROM package_org o
+		INNER JOIN package p on p.package_org_id = o.org_id
+		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+
+	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
+	for (let i = 0; i < packageOrgs.length; i++) {
+		const packageOrg = packageOrgs[i];
+		const SELECT_GROUP_MEMBERS_BY_PACKAGE_ORG = `
+			SELECT opv.org_id FROM org_package_version opv
+			INNER JOIN org_group_member m on m.org_id = opv.org_id		
+			INNER JOIN package p on p.sfid = opv.package_id	
+			WHERE m.org_group_id = $1 AND p.package_org_id = $2`;
+		const orgIds = await db.query(SELECT_GROUP_MEMBERS_BY_PACKAGE_ORG, [groupId, packageOrg.org_id]);
+		await fetchFromOrgByOrgIds(packageOrg, orgIds.map(o => o.org_id));
+	}
+}
+
+async function fetchByOrgIds(orgIds, job) {
+	adminJob = job;
+	const SELECT_PACKAGE_ORGS =
+		`SELECT o.org_id, o.name, o.type, p.sfid package_id
+		FROM package_org o
+		INNER JOIN package p on p.package_org_id = o.org_id
+		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+
+	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
+	for (let i = 0; i < packageOrgs.length; i++) {
+		await fetchFromOrgByOrgIds(packageOrgs[i], orgIds);
+	}
+}
+
+async function fetchFromOrg(org, fetchAll) {
 	let invalidateAll = false;
 	let whereParts = [];
 	if (!fetchAll) {
@@ -54,10 +80,6 @@ async function fetchFromOrg(org, fetchAll, orgIds) {
 		}
 	}
 
-	if (orgIds) {
-		whereParts.push(`OrgKey IN ('${orgIds.join("','")}')`);
-	}
-
 	adminJob.postMessage(`Querying orgs from ${org.name}`);
 
 	const where = whereParts.length > 0 ? `WHERE ${whereParts.join(" AND ")}` : "";
@@ -65,7 +87,7 @@ async function fetchFromOrg(org, fetchAll, orgIds) {
 	let conn = await sfdc.buildOrgConnection(org.org_id);
 	try {
 		res = await conn.queryWithRetry(`${SELECT_ALL} ${where}`);
-		adminJob.postDetail(`Found ${res.totalSize} orgs ${where !== '' ? 'using last modified date' : ''}`);
+		adminJob.postDetail(`Found ${res.totalSize} orgs ${fetchAll ? '' : 'using last modified date'}`);
 		invalidateAll = fetchAll;
 	} catch (e) {
 		if (e.errorCode === 'QUERY_TIMEOUT') {
@@ -84,11 +106,7 @@ async function fetchFromOrg(org, fetchAll, orgIds) {
 		}
 	}
 
-	// Only store the modified_date of the org_package_version if we are querying all orgs.  If we are querying orgs
-	// by id, we have to null out the modified date to make sure we do not screw up our fetch-by-date logic above.
-	const storeModifiedDate = !orgIds;
-
-	let recs = await load(res, conn, storeModifiedDate);
+	let recs = await load(res, conn);
 
 	if (recs.length === 0)
 		return;
@@ -102,31 +120,62 @@ async function fetchFromOrg(org, fetchAll, orgIds) {
 	await upsert(recs, 2000);
 }
 
+async function fetchFromOrgByOrgIds(org, orgIds, batchSize = 500) {
+	adminJob.postMessage(`Querying orgs from ${org.name}`);
+	let conn = await sfdc.buildOrgConnection(org.org_id);
+	let recs = [];
+	const count = orgIds.length;
+	try {
+		for (let start = 0; start < count && !adminJob.canceled;) {
+			const idBatch = orgIds.slice(start, start += batchSize);
+			const where = `WHERE OrgKey IN ('${idBatch.join("','")}')`;
+			let res = await conn.queryWithRetry(`${SELECT_ALL_WITHOUT_MODSTAMP} ${where}`);
+
+			// If we are querying orgs by id, we have to null out the modified date to make sure we do not screw up
+			// our normal fetch-by-date logic.
+			const storeModifiedDate = false;
+			recs = recs.concat(await load(res, conn, storeModifiedDate, new Set(idBatch)));
+		}
+
+		adminJob.postDetail(`Found ${recs.length} orgs`);
+	} catch (e) {
+		return fail(org, e);
+	}
+
+	if (recs.length === 0)
+		return;
+
+	adminJob.postDetail(`Storing ${recs.length} orgs`);
+	await upsert(recs, 2000);
+}
+
 function fail(org, e) {
 	adminJob.postDetail(`Failed to retrieve orgs from ${org.name}`, e);
 }
 
-async function fetchMore(nextRecordsUrl, conn, recs, storeModifiedDate) {
-	let result = await conn.requestGet(nextRecordsUrl);
-	return recs.concat(await load(result, conn, storeModifiedDate));
-}
+async function load(result, conn, storeModifiedDate = true, idSet) {
+	let recs = [];
+	result.records.forEach(v => {
+	    if (idSet && !idSet.has(v.OrgKey)) {
+	        // see W-6129024.  Once fixed, get rid of this idSet check.
+            return;
+        }
 
-async function load(result, conn, storeModifiedDate) {
-	let recs = result.records.map(v => {
-		return {
-			org_id: v.OrgKey,
-			name: v.OrgName,
-			parent_org_id: v.ParentOrg,
-			instance: v.InstanceName,
-			is_sandbox: v.OrgType === "Sandbox",
-			type: v.OrgType,
-			status: orgs.Status.Installed,
-			package_version_id: v.MetadataPackageVersionId,
-			modified_date: storeModifiedDate ? v.SystemModstamp : null
-		};
+        recs.push({
+            org_id: v.OrgKey,
+            name: v.OrgName,
+            parent_org_id: v.ParentOrg,
+            instance: v.InstanceName,
+            is_sandbox: v.OrgType === "Sandbox",
+            type: v.OrgType,
+            status: orgs.Status.Installed,
+            package_version_id: v.MetadataPackageVersionId,
+            modified_date: storeModifiedDate ? v.SystemModstamp : null
+        });
 	});
 	if (!result.done && !adminJob.canceled) {
-		return await fetchMore(result.nextRecordsUrl, conn, recs, storeModifiedDate);
+		let nextResult = await conn.requestGet(result.nextRecordsUrl);
+		recs = recs.concat(await load(nextResult, conn, storeModifiedDate, idSet));
 	}
 	return recs;
 }
@@ -169,3 +218,4 @@ async function upsertBatch(recs) {
 
 exports.fetch = fetch;
 exports.fetchByOrgIds = fetchByOrgIds;
+exports.fetchByOrgGroupId = fetchByOrgGroupId;
