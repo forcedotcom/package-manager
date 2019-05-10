@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactTooltip from 'react-tooltip';
 
 import {HeaderIcon} from "./Icons";
 import moment from "moment/moment";
@@ -75,7 +74,7 @@ export class RecordHeader extends React.Component {
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} 
 								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon} 
 								  handler={currentAction.handler}/> :
-					<button data-tip={currentAction.detail} key={currentAction.label}
+					<button title={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
 						{currentAction.spinning ?
@@ -85,8 +84,6 @@ export class RecordHeader extends React.Component {
 									<div className="slds-spinner__dot-b"/>
 								</div>
 							</div> : currentAction.label}
-						{currentAction.detail ?
-							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
@@ -161,7 +158,7 @@ export class CardHeader extends React.Component {
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
 								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
 								  handler={currentAction.handler}/> :
-					<button data-tip={currentAction.detail} key={currentAction.label}
+					<button title={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
 						{currentAction.spinning ?
@@ -171,8 +168,6 @@ export class CardHeader extends React.Component {
 									<div className="slds-spinner__dot-b"/>
 								</div>
 							</div> : currentAction.label}
-						{currentAction.detail ?
-							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
@@ -241,7 +236,7 @@ export class FormHeader extends React.Component {
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
 								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
 								  handler={currentAction.handler}/> :
-					<button data-tip={currentAction.detail} key={currentAction.label}
+					<button title={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
 						{currentAction.spinning ?
@@ -251,8 +246,6 @@ export class FormHeader extends React.Component {
 									<div className="slds-spinner__dot-b"/>
 								</div>
 							</div> : currentAction.label}
-						{currentAction.detail ?
-							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
@@ -320,7 +313,7 @@ export class HomeHeader extends React.Component {
 					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
 								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
 								  handler={currentAction.handler}/> :
-					<button data-tip={currentAction.detail} key={currentAction.label}
+					<button title={currentAction.detail} key={currentAction.label}
 							disabled={currentAction.disabled || currentAction.spinning}
 							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
 						{currentAction.spinning ?
@@ -330,8 +323,6 @@ export class HomeHeader extends React.Component {
 									<div className="slds-spinner__dot-b"/>
 								</div>
 							</div> : currentAction.label}
-						{currentAction.detail ?
-							<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 					</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
@@ -389,7 +380,7 @@ export class ToggleButton extends React.Component {
 		const iconOff = this.props.iconOff || "add";
 		const iconOn = this.props.iconOn || "check";
 		return (
-			<button data-tip={this.props.detail} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
+			<button title={this.props.detail} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
 					onClick={this.props.handler}>
   				<span className="slds-text-not-selected">
 					{iconOff !== 'none' ? <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
@@ -399,8 +390,6 @@ export class ToggleButton extends React.Component {
 					{iconOn !== 'none' ? <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
 					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOn}`}/>
 					</svg> : ''}{this.props.label}</span>
-				{this.props.detail ?
-					<ReactTooltip place="left" effect="solid" delayShow={900} type="info"/> : ''}
 			</button>
 		);
 	}

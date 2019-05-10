@@ -677,7 +677,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 				bucket.state = State.Running;
 				break;
 			case push.Status.Canceled:
-				bucket.state = State.Blocked;
+				bucket.state = State.Complete;
 				break;
 			default:
 				break;

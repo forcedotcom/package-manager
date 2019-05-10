@@ -137,7 +137,7 @@ function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
                 redirectUri: CALLBACK_URL
             },
             version: sfdc.SFDC_API_VERSION,
-            instanceUrl: AUTH_URL || sfdc.KnownOrgs[sfdc.OrgTypes.Licenses] ? sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].instanceUrl : loginUrl,
+            instanceUrl: AUTH_URL || (sfdc.KnownOrgs[sfdc.OrgTypes.Licenses] ? sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].instanceUrl : loginUrl),
             accessToken: accessToken,
             refreshToken: refreshToken,
             logLevel: process.env.LOG_LEVEL || "WARN"
