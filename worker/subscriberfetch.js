@@ -19,7 +19,7 @@ async function fetch(fetchAll, job) {
 }
 
 async function fetchByOrgIds(orgIds, job) {
-	await fetchOrgs(true, job, orgIds);
+	await fetchOrgs(false, job, orgIds);
 }
 
 async function fetchOrgs(fetchAll, job, orgIds) {
@@ -30,6 +30,8 @@ async function fetchOrgs(fetchAll, job, orgIds) {
 		INNER JOIN package p on p.package_org_id = o.org_id
 		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
 
+	// Never honor fetchAll when orgIds is specified
+	fetchAll = fetchAll && !orgIds;
     if (fetchAll) {
         // Invalidate all existing orgs when we are upserting all new findings
         await db.update(`UPDATE org set status = $1`, [orgs.Status.NotFound]);
