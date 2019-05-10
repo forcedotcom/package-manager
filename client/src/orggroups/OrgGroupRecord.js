@@ -86,9 +86,9 @@ export default class extends React.Component {
 		let memberActions = [
 			{label: `${selected.size} Selected`, toggled: showSelected, icon: "filterList", group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Copy To Group", group: "selection", handler: this.addingToGroupHandler, disabled: selected.size === 0},
-			{label: "Move To Group", group: "selection", handler: this.movingToGroupHandler, disabled: selected.size === 0},
-			{label: "Remove From Group", group: "selection", handler: this.removeMembersHandler, disabled: selected.size === 0},
+			{label: "Copy", group: "selection", handler: this.addingToGroupHandler, disabled: selected.size === 0},
+			{label: "Move", group: "selection", handler: this.movingToGroupHandler, disabled: selected.size === 0},
+			{label: "Remove", group: "selection", handler: this.removeMembersHandler, disabled: selected.size === 0},
 		];
 
 		const tabs = [

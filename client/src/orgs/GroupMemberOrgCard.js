@@ -35,7 +35,7 @@ export default class extends React.Component {
 		];
 
 		const actions = [
-			<DataTableSavedFilters id="GroupMemberOrgCard" key="GroupMemberOrgCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
+			<DataTableSavedFilters offset={2} id="GroupMemberOrgCard" key="GroupMemberOrgCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		].concat(this.props.actions);
 		actions.push({label: "Export", handler: this.exportHandler});
 		

@@ -100,7 +100,7 @@ export class RecordHeader extends React.Component {
 		}
 		return (
 			<div className="slds-page-header">
-				<div className="slds-grid">
+				<div className="slds-grid" style={{flexWrap: "wrap", justifyContent: "space-around"}}>
 					<div className="slds-col">
 						<div className="slds-media">
 							<div className="slds-media__figure">
@@ -264,7 +264,7 @@ export class FormHeader extends React.Component {
 		return (
 			<div style={{borderLeft: 0, borderRight: 0, borderRadius: "0.25rem 0.25rem 0 0", zIndex: 2}}
 				 className="slds-page-header">
-				<div className="slds-grid">
+				<div className="slds-grid" style={{flexWrap: "wrap", justifyContent: "space-around"}}>
 					<div className="slds-col">
 						<div className="slds-media">
 							<div className="slds-media__figure">
@@ -343,7 +343,7 @@ export class HomeHeader extends React.Component {
 				<Helmet>
 					<title>SteelBrick PM: {this.props.title}</title>
 				</Helmet>
-				<div className="slds-grid">
+				<div className="slds-grid" style={{flexWrap: "wrap", justifyContent: "space-around"}}>
 					<div className="slds-col">
 						<p className="slds-text-heading--label">{this.props.type}</p>
 						<div className="slds-grid">
