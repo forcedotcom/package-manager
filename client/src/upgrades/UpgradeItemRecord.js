@@ -125,10 +125,10 @@ export default class extends React.Component {
 	}
 
 	refreshJobsHandler() {
-		if (window.confirm(`Are you sure you want to refresh this upgrade item's jobs?  This will take some time and run in the background.`)) {
+		if (window.confirm(`Are you sure you want to refresh this upgrade request?  This will take some time and run in the background.`)) {
 			this.setState({isRefreshing: true});
 			upgradeItemService.refresh(this.state.item.id).then(() =>
-				notifier.info("Refreshing upgrade item job information from packaging org", "Refreshing Jobs"))
+				notifier.info("Refreshing upgrade request information from packaging org", "Refreshing Upgrade Request"))
 				.catch((e) => {
 					this.setState({isRefreshing: false});
 					notifier.error(e.message, "Refresh Failed");

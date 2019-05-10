@@ -253,6 +253,35 @@ async function changeUpgradeItemStatus(items, status) {
 	await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
 }
 
+async function updateUpgradeItemsFromPushRequests(items, pushReqs) {
+	const updated = [];
+
+	// Populate existing upgrade jobs map
+	const itemsByRequestId = new Map();
+	items.forEach(i => itemsByRequestId.set(i.push_request_id, i));
+
+	// First, Loop through all push jobs and create upgrade jobs as needed.
+	for (let u = 0; u < pushReqs.length; u++) {
+		const pushReq = pushReqs[u];
+		const item = itemsByRequestId.get(sfdc.normalizeId(pushReq.Id));
+
+		// Check if our local status matches the remote status. If so, we can skip.
+		if (pushReq.Status === item.status)
+			continue;
+
+		// New status, so update our local copy.
+		item.status = pushReq.Status;
+		updated.push(item);
+	}
+
+	if (updated.length > 0) {
+		await updateUpgradeItemStatus(updated);
+		admin.emit(admin.Events.UPGRADE_ITEMS, updated);
+	}
+
+	return {updated: updated.length};
+}
+
 async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs) {
 	let created = [];
 	let updated = [];
@@ -372,6 +401,21 @@ async function createJobsBatch(jobs) {
 	return db.insert(sql, values);
 }
 
+async function updateUpgradeItemStatus(updated) {
+	let n = 0;
+	let params = [];
+	let values = [];
+	updated.forEach(u => {
+		params.push(`($${++n}::INTEGER,$${++n})`);
+		values.push(u.id, u.status);
+	});
+	let sql = `UPDATE upgrade_item as t 
+			SET status = u.status
+			FROM ( VALUES ${params.join(",")} ) as u(id, status)
+			WHERE u.id = t.id`;
+	await db.update(sql, values);
+}
+
 async function updateUpgradeJobsStatus(jobs) {
 	let n = 0;
 	let params = [];
@@ -475,17 +519,21 @@ async function requestAllJobs(req, res, next) {
 	}
 }
 
-async function fetchStatus(items) {
-	for (let i = 0; i < items.length; i++) {
-		let item = items[i];
-		let pushReqs = await push.findRequestsByIds(item.package_org_id, [item.push_request_id]);
-		try {
-			await changeUpgradeItemStatus([item], pushReqs[0].Status);
-			admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
-		} catch (e) {
-			logger.error("Failed to update upgrade items", {status, error: e.message || e});
-		}
-	}
+async function fetchRequests(items) {
+	const promisesArr = [];
+	items.forEach(item => {
+		promisesArr.push(push.findRequestsByIds(item.package_org_id, [item.push_request_id]));
+	});
+
+	let pushReqs = [];
+	const promisesResults = await Promise.all(promisesArr);
+	promisesResults.forEach(arr => {
+		if (arr.length === 0)
+			return; // Nothing to do.
+
+		pushReqs = pushReqs.concat(arr);
+	});
+	await updateUpgradeItemsFromPushRequests(items, pushReqs);
 }
 
 async function fetchJobs(items, upgradeJobs) {
@@ -771,7 +819,7 @@ async function monitorActiveUpgradeItems(job) {
 		return; // Nothing to do
 	}
 	
-	await fetchStatus(activeItems);
+	await fetchRequests(activeItems);
 }
 
 async function monitorActiveUpgradeJobs(job) {
@@ -882,9 +930,11 @@ async function requestRefreshUpgrade(req, res, next) {
 	const id = req.params.id;
 	try {
 		const items = await findItemsByUpgrade(id);
+		fetchRequests(items).then(() => {}).catch(next);
+
 		const upgradeJobs = await findJobs(id);
 		fetchJobs(items, upgradeJobs).then(() =>
-			admin.emit(admin.Events.UPGRADE_JOBS, id));
+			admin.emit(admin.Events.UPGRADE_JOBS, id)).catch(next);
 		res.json({result: "OK"});
 	} catch (e) {
 		next(e);
@@ -894,7 +944,9 @@ async function requestRefreshUpgrade(req, res, next) {
 async function requestRefreshUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
-		const items = await findItemsByIds([id]);
+		const items = await findItemsByIds([id]).catch(next);
+		fetchRequests(items).then(() => {}).catch(next);
+
 		const upgradeJobs = await findJobs(null, [id]);
 		fetchJobs(items, upgradeJobs).then(() =>
 			admin.emit(admin.Events.UPGRADE_JOBS, id));
