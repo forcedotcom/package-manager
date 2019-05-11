@@ -229,13 +229,12 @@ async function changeUpgradeJobStatus(items, toStatus, ...fromStatus) {
 
 	// If a fromStatus is provided, only update records with that status.
 	let whereStatus = '';
-	if (fromStatus) {
+	if (fromStatus.length > 0) {
 		whereStatus = `AND status IN (${fromStatus.map((o,i) => `$${i+1+values.length}`).join(",")})`;
 		values = values.concat(fromStatus);
 	}
 
-	let sql = `UPDATE upgrade_job SET status = $1 
-		WHERE item_id IN (${params.join(",")}) 
+	let sql = `UPDATE upgrade_job SET status = $1 WHERE item_id IN (${params.join(",")}) 
 		${whereMessage} 
 		${whereStatus}`;
 	await db.update(sql, values);
