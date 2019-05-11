@@ -79,7 +79,7 @@ export default class extends React.Component {
 				spinning: this.state.isRetrying
 			},
 			{
-				label: "Refresh Jobs", handler: this.refreshJobsHandler,
+				label: "Refresh Upgrade", handler: this.refreshJobsHandler,
 				spinning: this.state.isRefreshing
 			}
 		];
