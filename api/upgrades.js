@@ -760,8 +760,9 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 					admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 					job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
 				} catch (e) {
-					logger.error("Failed to update", {error: e.message || e});
-				}
+					logger.error("Failed to activate", {error: e.message || e});
+                    admin.alert("Failed to activate", e.message || e);
+                }
 			}
 		}
 	}
