@@ -40,7 +40,7 @@ export default class extends React.Component {
 			`${goodDay()}, Dave.`, HAL_ICON,
 			"'All you need is love' - the Beatles.", LOVE_ICON,
 			"'All you need is dung' - the Beetles.", BEETLE_ICON,
-			"Winter is coming.", THRONE_ICON,
+			"Winter done got 'sploded.", THRONE_ICON,
 			"Hear that? That is the sound of a man trying to gargle while fighting off a pack of wolves.", WOLF_ICON,
 			"Welcome to the machine.", MACHINE_ICON,
 			"Do not make me regret this.", REGRET_ICON,
