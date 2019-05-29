@@ -1,4 +1,5 @@
 import * as h from './h';
+import moment from "moment";
 
 const jsep = require('jsep');
 jsep.addUnaryOp("?");
@@ -6,6 +7,7 @@ jsep.addUnaryOp("<");
 jsep.addUnaryOp("<=");
 jsep.addUnaryOp(">");
 jsep.addUnaryOp(">=");
+jsep.addUnaryOp("#");
 jsep.removeBinaryOp("<");
 jsep.removeBinaryOp("<=");
 jsep.removeBinaryOp(">");
@@ -192,11 +194,12 @@ function matchNode(value, filter, node, neg) {
 					break;
 			}
 
-			let sortVal;
+			let sortVal, sortValEnd;
 			if (node.argument) {
-				const unwrapped = unwrap(filter, node.argument);
-				sortVal = unwrapped.sortVal || unwrapped.filterVal;
-			}
+				const unwrapped = unwrap(filter, node.argument, node.operator);
+				sortVal = unwrapped.sortVal ? unwrapped.sortVal : unwrapped.filterVal;
+				sortValEnd = unwrapped.filterValEnd;
+
 			switch(node.operator) {
 				case "<":
 					return value && value < sortVal;
@@ -206,9 +209,11 @@ function matchNode(value, filter, node, neg) {
 					return value && value <= sortVal;
 				case ">=":
 					return value && value >= sortVal;
+				case "#":
+					return value && value >= sortVal && (!sortValEnd || value < sortValEnd);
 				default:
 					break;
-			}
+			}}
 			return false;
 		case Types.BinaryExpression:
 			break;
@@ -258,27 +263,39 @@ function isQuoted(str) {
  * We treat single-quotes as a sort of escape character, allowing for strings that would otherwise fail, like
  * numbers followed by non-numbers.
  */
-function unwrap(filter, node) {
+function unwrap(filter, node, operator) {
 	if (!node.filterVal) {
-		let fieldVal = "";
+		let fieldVals = {value: "", end: ""};
 		switch (node.type) {
-			case "Literal":
-				fieldVal = node.name || String(node.raw) || "";
-				break;
 			case "BinaryExpression":
-				fieldVal = unwrap(filter, node.left).filterVal + node.operator + unwrap(filter, node.right).filterVal;
+				fieldVals.value = unwrap(filter, node.left).filterVal + node.operator + unwrap(filter, node.right).filterVal;
+				break;
+			case "Identifier":
+				if (operator === "#") {
+					fieldVals = resolveMacro(node.name);
+				} else {
+					fieldVals.value = node.name || String(node.raw) || "";
+				}
 				break;
 			case "UnaryExpression":
-				fieldVal = "";
+				fieldVals = resolveMacro(node.argument.name);
 				break;
+			case "Literal":
 			default:
-				fieldVal = node.name || String(node.raw) || "";
+				fieldVals.value = node.name || String(node.raw) || "";
 				break;
 		}
 
-		let unwrapped = isWrapped(fieldVal) ? fieldVal.substring(1, fieldVal.length - 1) : fieldVal;
+		let filterVal = fieldVals.value;
+		let unwrapped = isWrapped(filterVal) ? filterVal.substring(1, filterVal.length - 1) : filterVal;
 		node.filterVal = unwrapped.toLowerCase();
-		node.sortVal = filter.id.indexOf("version_sort") !== -1 ? toVersionSort(unwrapped) : null;
+		if (filter.id.indexOf("version_sort") !== -1) {
+			node.sortVal = toVersionSort(unwrapped);
+		} else {
+			delete node.sortVal;
+		}
+
+		node.filterValEnd = fieldVals.end;
 	}
 	
 	return node;
@@ -300,4 +317,66 @@ function isWrapped(str) {
 	const first = str.charAt(0);
 	const last = str.charAt(str.length - 1);
 	return (first === "'" && last === "'");
+}
+
+function resolveMacro(str) {
+	const res = {value: "", end: undefined};
+	if (!str)
+		return res;
+
+	const parts = str.toLowerCase().split("_");
+	const m = moment(), f = moment();
+	const op = parts[0];
+	switch (op) {
+		case "now":
+			break;
+		case "today":
+			m.startOf('day');
+			f.endOf('day');
+			res.value = m.toISOString();
+			res.end = f.toISOString();
+			break;
+		case "this":
+			try {
+				const unit = parts[1];
+				m.startOf(unit);
+				f.endOf(unit);
+				res.value = m.toISOString();
+				res.end = f.toISOString();
+			} catch (e) {
+				console.log(e);
+			}
+			break;
+		case "last":
+			try {
+				let i = 1;
+				const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
+				const unit = parts[i];
+				m.startOf(unit);
+				m.subtract(num, unit);
+				res.value = m.toISOString();
+				f.startOf(unit);
+				res.end = f.toISOString();
+			} catch (e) {
+				console.log(e);
+			}
+			break;
+		case "next":
+			try {
+				let i = 1;
+				const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
+				const unit = parts[i];
+				m.endOf(unit);
+				res.value = m.toISOString();
+				f.endOf(unit);
+				f.add(num, unit);
+				res.end = f.toISOString();
+			} catch (e) {
+				console.log(e);
+			}
+			break;
+		default:
+			break;
+	}
+	return res;
 }

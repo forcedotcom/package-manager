@@ -8,7 +8,6 @@ const LOCK_ICON = `/assets/icons/evil/default.png`;
 const HAL_ICON = `/assets/icons/evil/hal.png`;
 const BEETLE_ICON = `/assets/icons/evil/beetle.png`;
 const NACHO_ICON = `/assets/icons/evil/nacho.png`;
-const THRONE_ICON = `/assets/icons/evil/throne.png`;
 const LOVE_ICON = `/assets/icons/evil/love.png`;
 const CLOCK_ICON = `/assets/icons/evil/clock.png`;
 const WOLF_ICON = `/assets/icons/evil/wolf.png`;
@@ -40,7 +39,6 @@ export default class extends React.Component {
 			`${goodDay()}, Dave.`, HAL_ICON,
 			"'All you need is love' - the Beatles.", LOVE_ICON,
 			"'All you need is dung' - the Beetles.", BEETLE_ICON,
-			"Winter done got 'sploded.", THRONE_ICON,
 			"Hear that? That is the sound of a man trying to gargle while fighting off a pack of wolves.", WOLF_ICON,
 			"Welcome to the machine.", MACHINE_ICON,
 			"Do not make me regret this.", REGRET_ICON,
