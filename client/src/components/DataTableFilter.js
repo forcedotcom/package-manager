@@ -65,13 +65,14 @@ const HelpText = () => (
 				{example: '> 2018-08', description: "after August 2018"},
 				{example: '<= 2', description: "less than or equal to 2"}
 			]}/>
-			<HelpSection title="Date Macros" items={[
+			<HelpSection title="Macro Replacements" items={[
+				{example: '#ME', description: "logged in username"},
 				{example: '#TODAY', description: "occurs today"},
 				{example: '#THIS_MONTH', description: "occurs this month"},
 				{example: '< #LAST_WEEK', description: "prior to last week"},
-				{example: '#LAST_10_DAYS', description: "in the past ten days"},
 			]}/>
 			<HelpSection title="&nbsp;" items={[
+				{example: '#LAST_10_DAYS', description: "in the past ten days"},
 				{example: '#LAST_3_MONTHS', description: "in the past three months"},
 				{example: '> #LAST_3_MONTHS', description: "since three months ago"},
 				{example: '#NEXT_3_MONTHS', description: "in next three months"},

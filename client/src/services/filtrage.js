@@ -1,5 +1,6 @@
 import * as h from './h';
 import moment from "moment";
+import * as authService from "./AuthService";
 
 const jsep = require('jsep');
 jsep.addUnaryOp("?");
@@ -210,7 +211,12 @@ function matchNode(value, filter, node, neg) {
 				case ">=":
 					return value && value >= sortVal;
 				case "#":
-					return value && value >= sortVal && (!sortValEnd || value < sortValEnd);
+					if (sortValEnd) {
+						// Assume date or other range
+						return value && value >= sortVal && value < sortValEnd;
+					} else {
+						return value === sortVal;
+					}
 				default:
 					break;
 			}}
@@ -319,64 +325,84 @@ function isWrapped(str) {
 	return (first === "'" && last === "'");
 }
 
+/**
+ * Macro strings are of the form a[_b][_c].  Such as 'last_5_days', or 'this_week', or just 'me'.
+ * @return object with fields:
+ * 	value: replacement value, or start of range
+ * 	end: end of range (optional)
+ */
 function resolveMacro(str) {
-	const res = {value: "", end: undefined};
 	if (!str)
-		return res;
+		return {value: ""};
 
 	const parts = str.toLowerCase().split("_");
-	const m = moment(), f = moment();
 	const op = parts[0];
 	switch (op) {
+		case "me":
+			return {value: authService.getSessionUser().username};
 		case "now":
-			break;
+			return {value: new Date().toISOString()};
 		case "today":
-			m.startOf('day');
-			f.endOf('day');
-			res.value = m.toISOString();
-			res.end = f.toISOString();
-			break;
+			return _today();
 		case "this":
-			try {
-				const unit = parts[1];
-				m.startOf(unit);
-				f.endOf(unit);
-				res.value = m.toISOString();
-				res.end = f.toISOString();
-			} catch (e) {
-				console.log(e);
-			}
-			break;
+			return _this(parts);
 		case "last":
-			try {
-				let i = 1;
-				const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
-				const unit = parts[i];
-				m.startOf(unit);
-				m.subtract(num, unit);
-				res.value = m.toISOString();
-				f.startOf(unit);
-				res.end = f.toISOString();
-			} catch (e) {
-				console.log(e);
-			}
-			break;
+			return _last(parts);
 		case "next":
-			try {
-				let i = 1;
-				const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
-				const unit = parts[i];
-				m.endOf(unit);
-				res.value = m.toISOString();
-				f.endOf(unit);
-				f.add(num, unit);
-				res.end = f.toISOString();
-			} catch (e) {
-				console.log(e);
-			}
-			break;
+			return _next(parts);
 		default:
-			break;
+			return {value: ""};
 	}
-	return res;
+}
+
+function _today() {
+	const m = moment(), f = moment();
+	m.startOf('day');
+	f.endOf('day');
+	return {value: m.toISOString(), end: f.toISOString()};
+}
+
+function _this(parts) {
+	try {
+		const m = moment(), f = moment();
+		const unit = parts[1];
+		m.startOf(unit);
+		f.endOf(unit);
+		return {value: m.toISOString(), end: f.toISOString()};
+	} catch (e) {
+		console.log(e);
+		return {value: ""};
+	}
+}
+
+function _last(parts) {
+	try {
+		const m = moment(), f = moment();
+		let i = 1;
+		const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
+		const unit = parts[i];
+		m.startOf(unit);
+		m.subtract(num, unit);
+		f.startOf(unit);
+		return {value: m.toISOString(), end: f.toISOString()};
+	} catch (e) {
+		console.log(e);
+		return {value: ""};
+	}
+}
+
+function _next(parts) {
+	try {
+		const m = moment(), f = moment();
+		let i = 1;
+		const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
+		const unit = parts[i];
+		m.endOf(unit);
+		f.endOf(unit);
+		f.add(num, unit);
+		return {value: m.toISOString(), end: f.toISOString()};
+	} catch (e) {
+		console.log(e);
+		return {value: ""};
+	}
 }
