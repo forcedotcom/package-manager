@@ -54,7 +54,7 @@ export default class extends React.Component {
 				`}} />
 				<div className="slds-modal slds-fade-in-open">
 					<div className="slds-modal__container" style={{maxWidth: "60em", width: "60%"}}>
-						<div className="slds-modal__header">
+						<header className="slds-modal__header">
 							<h2 className="slds-text-heading--medium">Schedule Upgrade</h2>
 							<button className="slds-button slds-modal__close">
 								<svg aria-hidden="true"
@@ -62,7 +62,7 @@ export default class extends React.Component {
 								</svg>
 								<span className="slds-assistive-text">Close</span>
 							</button>
-						</div>
+						</header>
 						<div className="slds-modal__content slds-p-around_medium">
 							<div className="slds-form slds-form_stacked slds-wrap slds-m-around--medium">
 								<div className="slds-form-element">
@@ -107,7 +107,7 @@ export default class extends React.Component {
 							</div>
 						</div>
 
-						<div className="slds-modal__footer">
+						<footer className="slds-modal__footer">
 							<button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel
 							</button>
 							<button className="slds-button slds-button--neutral slds-button--brand"
@@ -120,7 +120,7 @@ export default class extends React.Component {
 										</div>
 									</div> : "Schedule"}
 							</button>
-						</div>
+						</footer>
 					</div>
 				</div>
 				<div className="slds-modal-backdrop slds-modal-backdrop--open"/>
