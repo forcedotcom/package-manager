@@ -13,6 +13,10 @@ export let requestUser = () => h.get(url + "/user").then(user => {
     return user;
 });
 
-export let getSessionUser = () => JSON.parse(sessionStorage.getItem("user"));
+export let getSessionUser = () => {
+    let str = sessionStorage.getItem("user");
+    let user = JSON.parse(str);
+    return user;
+};
 
 export let invalidateUser = () => sessionStorage.removeItem('user');

@@ -45,7 +45,7 @@ export default class extends React.Component {
 		let userCanActivate = true;
 		let user = authService.getSessionUser();
 		if (user) {
-			userCanActivate = user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username);
+			userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username));
 		}
 
 		let actions = [
@@ -57,7 +57,7 @@ export default class extends React.Component {
 			},
 			{
 				label: "Cancel Request", handler: this.handleCancellation,
-				disabled: progress.canceled > 0 || progress.done,
+				disabled: user.read_only || progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
 			{

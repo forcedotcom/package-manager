@@ -16,6 +16,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			readOnly: authService.getSessionUser().read_only,
 			advanced: false,
 			jobs: [],
 			queue: [],
@@ -60,16 +61,18 @@ export default class extends React.Component {
 	}
 
 	render() {
+		const {jobs, history, queue, readOnly} = this.state;
 		let activeCards = [];
-		if (this.state.jobs.length > 0) {
-			for (let i = 0; i < this.state.jobs.length; i++) {
-				let job = this.state.jobs[i];
+		if (jobs.length > 0) {
+			for (let i = 0; i < jobs.length; i++) {
+				let job = jobs[i];
 				let actions = [];
 				if (job.stepIndex !== job.stepCount && !job.canceled) {
 					actions.push({
 						label: "Cancel Job",
 						handler: () => this.cancellationHandler(job),
-						spinning: job.cancelling
+						spinning: job.cancelling,
+						disabled: readOnly
 					});
 				}
 
@@ -95,12 +98,12 @@ export default class extends React.Component {
 		}
 
 		let queueCards = [];
-		if (this.state.queue.length > 0) {
-			for (let i = 0; i < this.state.queue.length; i++) {
-				let job = this.state.queue[i];
+		if (queue.length > 0) {
+			for (let i = 0; i < queue.length; i++) {
+				let job = queue[i];
 				queueCards.push(
 					<AdminCard key={`${job.id}-queue-${i}`} title={job.name} actions={[
-						{label: "Cancel Job", handler: () => this.cancellationHandler(job), spinning: job.cancelling}]}>
+						{label: "Cancel Job", handler: () => this.cancellationHandler(job), disabled: readOnly, spinning: job.cancelling}]}>
 					</AdminCard>);
 			}
 		} else {
@@ -111,9 +114,9 @@ export default class extends React.Component {
 		}
 
 		let latestHistoryCards = [];
-		if (this.state.history.latest.length > 0) {
-			for (let i = this.state.history.latest.length - 1; i >= 0; i--) {
-				let job = this.state.history.latest[i];
+		if (history.latest.length > 0) {
+			for (let i = history.latest.length - 1; i >= 0; i--) {
+				let job = history.latest[i];
 				let spent = moment(job.modifiedDate).diff(job.startTime) / 1000;
 				latestHistoryCards.push(
 					<AdminCard key={`${job.id}-history-${i}`} title={job.name}>
@@ -137,9 +140,9 @@ export default class extends React.Component {
 		}
 		
 		let historyCards = [];
-		if (this.state.history.all.length > 0) {
-			for (let i = this.state.history.all.length - 1; i >= 0; i--) {
-				let job = this.state.history.all[i];
+		if (history.all.length > 0) {
+			for (let i = history.all.length - 1; i >= 0; i--) {
+				let job = history.all[i];
 				let spent = moment(job.modifiedDate).diff(job.startTime) / 1000;
 				historyCards.push(
 					<TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval}
@@ -161,17 +164,17 @@ export default class extends React.Component {
 		}
 
 		let actions = [
-		    {group: "data", label: "Fetch Data", handler: this.fetchHandler},
-            {group: "data", label: "Fetch All Data", handler: this.fetchAllHandler}
+		    {label: "Fetch Data", disabled: readOnly, group: "data", handler: this.fetchHandler},
+            {label: "Fetch All Data", disabled: readOnly, group: "data", handler: this.fetchAllHandler}
         ];
 
 
 		let user = authService.getSessionUser();
 		if (user && user.enable_sumo)
-			actions.push({label: "Upload Orgs To SumoLogic", group: "external", handler: this.uploadOrgsHandler});
+			actions.push({label: "Upload Orgs To SumoLogic", disabled: readOnly, group: "external", handler: this.uploadOrgsHandler});
 
 		if (this.state.settings.HEROKU_APP_NAME) {
-			actions.push({label: "Open Heroku", handler: this.goToHerokuHandler, group: "external"});
+			actions.push({label: "Open Heroku", disabled: readOnly, handler: this.goToHerokuHandler, group: "external"});
 		}
 
 		return (
@@ -185,16 +188,16 @@ export default class extends React.Component {
 					<div className="slds-grid slds-gutters">
 						<div className="slds-col slds-size_1-of-1">
 							<Tabs id="Content">
-								<div label={`Active Jobs (${this.state.jobs.length})`}>
+								<div label={`Active Jobs (${jobs.length})`}>
 									{activeCards}
 								</div>
-								<div label={`Queue (${this.state.queue.length})`}>
+								<div label={`Queue (${queue.length})`}>
 									{queueCards}
 								</div>
-								<div label={`Recent Jobs (${this.state.history.latest.length})`}>
+								<div label={`Recent Jobs (${history.latest.length})`}>
 									{latestHistoryCards}
 								</div>
-								<div label={`All History (${this.state.history.all.length})`}>
+								<div label={`All History (${history.all.length})`}>
 									{historyCards}
 								</div>
 							</Tabs>
@@ -204,20 +207,20 @@ export default class extends React.Component {
 					<div className="slds-grid slds-gutters">
 						<div className="slds-col slds-size_3-of-5">
 							<Tabs id="Content">
-								<div label={`Active Jobs (${this.state.jobs.length})`}>
+								<div label={`Active Jobs (${jobs.length})`}>
 									{activeCards}
 								</div>
-								<div label={`Queue (${this.state.queue.length})`}>
+								<div label={`Queue (${queue.length})`}>
 									{queueCards}
 								</div>
 							</Tabs>
 						</div>
 						<div className="slds-col slds-size_2-of-5">
 							<Tabs id="Content">
-								<div label={`Recent Jobs (${this.state.history.latest.length})`}>
+								<div label={`Recent Jobs (${history.latest.length})`}>
 									{latestHistoryCards}
 								</div>
-								<div label={`History (${this.state.history.all.length})`}>
+								<div label={`History (${history.all.length})`}>
 									{historyCards}
 								</div>
 							</Tabs>

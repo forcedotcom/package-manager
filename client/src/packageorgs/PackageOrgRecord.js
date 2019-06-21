@@ -14,6 +14,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			readOnly: authService.getSessionUser().read_only,
 			packageorg: {}
 		};
 		
@@ -39,33 +40,33 @@ export default class extends React.Component {
 	}
 	
 	render() {
-		let packageorg = this.state.packageorg;
+		let {packageorg, readOnly} = this.state;
 		let actions = [
 			{label: packageorg.active ? 'Deactivate' : 'Activate', group: "toggle",
-				handler: this.activationHandler, disabled: packageorg.type !== "Package",
+				handler: this.activationHandler, disabled: readOnly || packageorg.type !== "Package",
 				detail: packageorg.active ? "Click to deactivate this org connection" : "Click to activate this org connection"},
 			{label: "Connect", group: "actions",
-				handler: this.connectHandler, disabled: packageorg.status === "Connected",
+				handler: this.connectHandler, disabled: readOnly || packageorg.status === "Connected",
 				detail: "Click to login and connect this org"},
 			{label: "Refresh", handler: this.refreshHandler, group: "actions",  disabled: packageorg.status !== "Connected",
 				spinning: this.state.isRefreshing},
-			{label: "Revoke", handler: this.revokeHandler, group: "actions",  disabled: packageorg.status !== "Connected",
+			{label: "Revoke", handler: this.revokeHandler, group: "actions",  disabled: readOnly || packageorg.status !== "Connected",
 				spinning: this.state.isRevoking},
-			{label: "Edit", handler: this.editHandler},
-			{label: "Delete", handler: this.deleteHandler}
+			{label: "Edit", handler: this.editHandler, disabled: readOnly, },
+			{label: "Delete", handler: this.deleteHandler, disabled: readOnly, }
 		];
 
 		return (
 			<div>
-				<RecordHeader type="Connected Org" icon={PACKAGE_ORG_ICON} title={this.state.packageorg.name}
+				<RecordHeader type="Connected Org" icon={PACKAGE_ORG_ICON} title={packageorg.name}
 							  actions={actions} parent={{label: "Orgs", location: `/packageorgs`}}>
-					<HeaderField label="Org ID" value={this.state.packageorg.org_id}/>
-					<HeaderField label="Description" value={this.state.packageorg.description}/>
-					<HeaderField label="Type" value={this.state.packageorg.type}/>
+					<HeaderField label="Org ID" value={packageorg.org_id}/>
+					<HeaderField label="Description" value={packageorg.description}/>
+					<HeaderField label="Type" value={packageorg.type}/>
 				</RecordHeader>
-				<PackageOrgView packageorg={this.state.packageorg}/>
+				<PackageOrgView packageorg={packageorg}/>
 				{this.state.isEditing ?
-					<EditPackageOrgWindow packageorg={this.state.packageorg} onSave={this.saveHandler}
+					<EditPackageOrgWindow packageorg={packageorg} onSave={this.saveHandler}
 										  onCancel={this.cancelHandler}/> : ""}
 			</div>
 		);

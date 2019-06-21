@@ -52,13 +52,13 @@ export default class extends React.Component {
 	}
 	
 	render() {
-		const {upgrade, progress} = this.state;
+		const {upgrade, progress, readOnly} = this.state;
 		
 		
 		let userCanActivate = true;
 		let user = authService.getSessionUser();
 		if (user) {
-			userCanActivate = user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username);
+			userCanActivate = !readOnly && (user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username));
 		}
 		
 		const actions = [
@@ -70,12 +70,12 @@ export default class extends React.Component {
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler,
-				disabled: progress.canceled > 0 || progress.done,
+				disabled: readOnly || progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
 			{
 				label: "Retry Failed Jobs", handler: this.retryHandler,
-				disabled: progress.errors === 0, 
+				disabled: readOnly || progress.errors === 0,
 				spinning: this.state.isRetrying
 			},
 			{

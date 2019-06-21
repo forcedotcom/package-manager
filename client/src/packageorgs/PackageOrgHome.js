@@ -10,7 +10,10 @@ import * as authService from "../services/AuthService";
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {selected: new Map()};
+		this.state = {
+			readOnly: authService.getSessionUser().read_only,
+			selected: new Map()
+		};
 		
 		this.fetchData = this.fetchData.bind(this);
 		this.filterHandler = this.filterHandler.bind(this);
@@ -33,11 +36,12 @@ export default class extends React.Component {
 
 	// Lifecycle
 	render() {
+		let {readOnly} = this.state;
 		const actions = [
-			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", handler: this.newHandler},
+			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", disabled: readOnly, handler: this.newHandler},
 			{label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
-			{label: "Revoke", handler: this.revokeHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
-			{label: "Delete", handler: this.deleteHandler, disabled: this.state.selected.size === 0, spinning: this.state.isDeleting, detail: "Revoke access to and delete the selected org entry"}
+			{label: "Revoke", handler: this.revokeHandler, disabled: readOnly || this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
+			{label: "Delete", handler: this.deleteHandler, disabled: readOnly || this.state.selected.size === 0, spinning: this.state.isDeleting, detail: "Revoke access to and delete the selected org entry"}
 		];
 
 		return (
@@ -47,7 +51,7 @@ export default class extends React.Component {
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
 				<PackageOrgList onFetch={this.fetchData.bind(this)} refetchOn="package-orgs" onConnect={this.connectHandler}
-								onSelect={this.selectionHandler} onDelete={this.deleteHandler}/>
+								onSelect={!readOnly && this.selectionHandler} onDelete={this.deleteHandler}/>
 			</div>
 		);
 	}

@@ -80,6 +80,16 @@ async function oauthCallback(req, res, next) {
     let state = JSON.parse(req.query.state);
     let conn = buildAuthConnection(null, null, state.loginUrl);
     try {
+        if (req.query.error) {
+            let errs = {
+                message: req.query.error_description,
+                severity: "Error",
+                code: req.query.error
+            };
+
+            res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
+            return;
+        }
         let userInfo = await conn.authorize(req.query.code);
         let url = CLIENT_URL;
         let returnTo = sanitizeReturnTo(state.returnTo);
@@ -118,6 +128,12 @@ async function requestUser(req, res, next) {
     const conn = buildAuthConnection(req.session.access_token);
     try {
         let user = await conn.identity();
+        // If user has a permission set granting edit rights on the Package Version object, we consider them admins
+        const perms = await conn.query(`SELECT Id FROM ObjectPermissions WHERE ParentId
+                    IN (SELECT PermissionSetId FROM PermissionSetAssignment WHERE AssigneeId = '${user.user_id}') AND
+                    PermissionsEdit = true AND SobjectType = 'sfLma__Package_Version__c'`);
+        user.read_only = perms.totalSize === 0;
+
         // Store additional settings on user session object that the UI may need
         user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
         user.enable_sumo = !!process.env.SUMO_URL;

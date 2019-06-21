@@ -2,6 +2,7 @@ import React from 'react';
 import * as filtrage from '../services/filtrage';
 import * as notifier from '../services/notifications';
 import debounce from "lodash.debounce";
+import * as authService from "../services/AuthService";
 
 const LARGE_THRESHOLD = 7;
 const MED_THRESHOLD = 5;
@@ -20,6 +21,7 @@ export default class extends React.Component {
 		super(props);
 		
 		this.state = {
+			readOnly: authService.getSessionUser().read_only,
 			filters: [],
 			threshold: calcThreshold(props.offset),
 			thresholdOffset: props.offset
@@ -75,7 +77,7 @@ export default class extends React.Component {
 	render() {
 		let selectedId = filtrage.getSelectedFilterId(this.props.id);
 
-		const {isModified, threshold, filters, showMenu} = this.state;
+		const {isModified, threshold, filters, showMenu, readOnly} = this.state;
 		if (!this.props.filterColumns && filters.length === 0)
 			return "";
 
@@ -104,12 +106,13 @@ export default class extends React.Component {
 		) : [];
 		if (overflow.length > 0)
 			overflow.push(<li key="overflowDivider" className="slds-has-divider_top-space slds-dropdown__item"/>);
-
-		const menu =
+		const hasFilter = this.props.filterColumns && this.props.filterColumns.length > 0;
+		const hasMenuItems = !readOnly || overflow.length > 0;
+		const menu = hasMenuItems || hasFilter ?
 			<div className={`slds-dropdown-trigger slds-dropdown-trigger_click slds-m-right--medium ${showMenu ? "slds-is-open" : ""}`}
 				 onMouseLeave={() => this.setState({showMenu: null})} onClick={() => this.setState({showMenu: null})}>
 				<div style={{display: "inline-flex"}}>
-					<button className="slds-button slds-radio_button slds-button_icon slds-button_icon-container-more"
+					{hasMenuItems ? <button className="slds-button slds-radio_button slds-button_icon slds-button_icon-container-more"
 						onMouseEnter={e => this.setState({showMenu: window.innerWidth - e.clientX > 200 ? "left" : "right"})}>
 						<svg className="slds-button__icon">
 							<use xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -119,8 +122,8 @@ export default class extends React.Component {
 							<use xmlnsXlink="http://www.w3.org/1999/xlink"
 								 xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#down"/>
 						</svg>
-					</button>
-					{this.props.filterColumns && this.props.filterColumns.length > 0 ?
+					</button> : <div className="slds-m-around--xx-small"/> }
+					{hasFilter ?
 					<button className="slds-button" onClick={this.clearHandler} title="Clear filters and show everything">
 						<svg className="slds-button__icon">
 							<use xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -131,6 +134,7 @@ export default class extends React.Component {
 				<div className={`slds-m-around_none slds-dropdown slds-dropdown_${showMenu} slds-dropdown_small`}>
 					<ul className="slds-dropdown__list">
 						{overflow}
+						{!readOnly ?
 						<li className="slds-dropdown__item">
 							<a tabIndex="0" onClick={this.createHandler}>
 								<span className="slds-truncate">
@@ -139,8 +143,8 @@ export default class extends React.Component {
 									</svg>Save as new filter
 								</span>
 							</a>
-						</li>
-						{selectedId != null ? [
+						</li> : '' }
+						{!readOnly && selectedId != null ? [
 						<li key="updateHandler" className="slds-has-divider_top-space slds-dropdown__item">
 							<a tabIndex="0" onClick={this.updateHandler}>
 								<span className="slds-truncate">
@@ -168,8 +172,8 @@ export default class extends React.Component {
 								</span>
 							</a>
 						</li>] : "" }
-						{this.props.filterColumns && this.props.filterColumns.length > 0 ?
-						<li className="slds-has-divider_top-space slds-dropdown__item">
+						{hasFilter ?
+						<li className={`${hasMenuItems ? "slds-has-divider_top-space" : ""} slds-dropdown__item`}>
 							<a tabIndex="3" onClick={this.clearHandler}>
 							<span className="slds-truncate">
 								<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
@@ -180,7 +184,7 @@ export default class extends React.Component {
 						</li> : "" }
 					</ul>
 				</div>
-			</div>;
+			</div> : "";
 
 		return (
 			<div style={{display: "inherit"}}>

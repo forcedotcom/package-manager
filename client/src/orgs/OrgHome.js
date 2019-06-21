@@ -12,11 +12,13 @@ import AddOrgWindow from "../orggroups/AddOrgWindow";
 import * as strings from "../services/strings";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as nav from "../services/nav";
+import * as authService from "../services/AuthService";
 
 export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {
+			readOnly: authService.getSessionUser().read_only,
 			transid: nav.transid(),
 			selected: new Map()
 		};
@@ -47,14 +49,14 @@ export default class extends React.Component {
 	}
 	
 	render() {
-		const {selected, filterColumns} = this.state;
+		const {selected, filterColumns, readOnly} = this.state;
 		const actions = [
-			<DataTableSavedFilters id="OrgList" key="OrgList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id="OrgList" key="OrgList" offset={3} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "special", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: `Blacklisted`, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
 				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
-			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.addingToGroupHandler},
+			{label: "Add To Group", group: "selectable", spinning: this.state.addingToGroup, disabled: readOnly || selected.size === 0, handler: this.addingToGroupHandler},
 			{label: "Import", handler: this.importHandler},
 			{label: "Export", handler: this.exportHandler}
 		];

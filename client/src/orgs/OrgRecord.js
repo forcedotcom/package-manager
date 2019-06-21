@@ -18,11 +18,17 @@ import Tabs from "../components/Tabs";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import OrgCard from "./OrgCard";
 import LicenseCard from "../licenses/LicenseCard";
+import * as authService from "../services/AuthService";
 
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {transid: nav.transid(), org: {}, upgradeablePackageIds: []};
+		this.state = {
+			readOnly: authService.getSessionUser().read_only,
+			transid: nav.transid(),
+			org: {},
+			upgradeablePackageIds: []
+		};
 		
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
@@ -49,16 +55,18 @@ export default class extends React.Component {
 	}
 
 	render() {
+		const {org, upgradeablePackageIds, readOnly} = this.state;
 		const actions = [
 			{
 				label: "Upgrade Packages",
 				handler: this.openSchedulerWindow,
 				group: "upgrade",
-				disabled: this.state.upgradeablePackageIds.length === 0
+				disabled: readOnly || upgradeablePackageIds.length === 0
 			},
 			{
 				label: "Add To Group", 
-				handler: this.openGroupWindow
+				handler: this.openGroupWindow,
+				disabled: readOnly
 			},
 			{
 				label: "Refresh Versions",
@@ -69,24 +77,24 @@ export default class extends React.Component {
 		];
 		return (
 			<div>
-				<RecordHeader type="Org" icon={ORG_ICON} title={this.state.org.account_name} actions={actions}
+				<RecordHeader type="Org" icon={ORG_ICON} title={org.account_name} actions={actions}
 							  parent={{label: "Orgs", location: `/orgs`}}
-								notes={this.state.org.blacklisted ? <div className="slds-pill" style={{color: "white", padding: 7, backgroundColor: "black"}}>
+								notes={org.blacklisted ? <div className="slds-pill" style={{color: "white", padding: 7, backgroundColor: "black"}}>
 									This org is currently blacklisted and will be automatically excluded from future upgrades.</div> : ""}>
-					<HeaderField label="Name" value={this.state.org.name}/>
-					<HeaderField label="Org ID" value={this.state.org.org_id}/>
-					<HeaderField label="Instance" value={this.state.org.instance}/>
-					<HeaderField label="Edition" value={this.state.org.edition}/>
-					<HeaderField label="Type" value={this.state.org.type}/>
-					<HeaderField label="Status" value={this.state.org.status}/>
-					<HeaderField label="Features" value={this.state.org.features}/>
-					<HeaderField label="Groups" value={this.state.org.groups}/>
+					<HeaderField label="Name" value={org.name}/>
+					<HeaderField label="Org ID" value={org.org_id}/>
+					<HeaderField label="Instance" value={org.instance}/>
+					<HeaderField label="Edition" value={org.edition}/>
+					<HeaderField label="Type" value={org.type}/>
+					<HeaderField label="Status" value={org.status}/>
+					<HeaderField label="Features" value={org.features}/>
+					<HeaderField label="Groups" value={org.groups}/>
 				</RecordHeader>
 
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="UpgradeRecord">
 						<div label="Versions">
-							<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions" refetchFor={this.state.org.org_id}/>
+							<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions" refetchFor={org.org_id}/>
 						</div>
 						<div label="Licenses">
 							<LicenseCard title="Licenses" onFetch={this.fetchLicenses} refetchOn="licenses"/>
@@ -103,7 +111,7 @@ export default class extends React.Component {
 				{this.state.addingToGroup ? <SelectGroupWindow title="Add this org to a group" onAdd={this.addToGroupHandler}
 															   onCancel={this.closeGroupWindow}/> : ""}
 				{this.state.schedulingUpgrade ?
-					<ScheduleUpgradeWindow org={this.state.org} packageIds={this.state.upgradeablePackageIds}
+					<ScheduleUpgradeWindow org={org} packageIds={upgradeablePackageIds}
 										   onUpgrade={this.upgradeHandler} onCancel={this.closeSchedulerWindow}/> : ""}
 			</div>
 		);

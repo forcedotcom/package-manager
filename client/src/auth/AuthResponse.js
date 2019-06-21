@@ -37,7 +37,7 @@ export default class extends React.Component {
 									<span className="slds-assistive-text">Close</span>
 								</button>
 								<h2 className="slds-text-heading_medium" id="prompt-heading-id">Sorry about
-									this</h2>
+									this, but...</h2>
 							</header>
 							<div className="slds-modal__content slds-p-around_medium" id="prompt-message-wrapper">
 								<p><b>{this.state.message}</b></p>

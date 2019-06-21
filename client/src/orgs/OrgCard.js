@@ -9,11 +9,13 @@ import DataTable from "../components/DataTable";
 import * as strings from "../services/strings";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as nav from "../services/nav";
+import * as authService from "../services/AuthService";
 
 export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {
+			readOnly: authService.getSessionUser().read_only,
 			selected: new Map()
 		};
 		
@@ -33,7 +35,7 @@ export default class extends React.Component {
 	
 	// Lifecycle
 	render() {
-		const {selected, filterColumns} = this.state;
+		const {selected, filterColumns, readOnly} = this.state;
 		
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, sortable: true, clickable: true},
@@ -53,7 +55,7 @@ export default class extends React.Component {
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: `Blacklisted`, hidden: !this.props.onFetchBlacklist, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
 				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
-			{label: "Add To Group", handler: this.openGroupWindow, disabled: selected.size === 0},
+			{label: "Add To Group", handler: this.openGroupWindow, disabled: readOnly || selected.size === 0},
 			{label: "Export", handler: this.exportHandler}
 		];
 		if (this.props.onRemove) {
@@ -69,7 +71,7 @@ export default class extends React.Component {
 				<CardHeader title={this.props.title} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
 					<DataTable id={this.props.id} keyField="org_id" 
-					 	onFetch={this.state.showBlacklisted ? this.props.onFetchBlacklist : this.props.onFetch} 
+					 	onFetch={this.state.showBlacklisted ? this.props.onFetchBlacklist : this.props.onFetch}
 						fetchName={this.state.showBlacklisted ? "blacklist" : "data"}
 					  	columns={columns} onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
 						showSelected={this.props.showSelected} selection={selected}

@@ -54,7 +54,18 @@ function getCompactSize() {
 class App extends Component {
 	constructor(props) {
 		super(props);
-		this.state = {compactSize: getCompactSize()};
+		let user = authService.getSessionUser();
+		if (!user) {
+			user = {};
+			authService.requestUser().then(user => {
+				this.setState({...user});
+			}).catch(e => this.setState({display_name: "Invalid", username: e.message}));
+		}
+
+		this.state = {
+			username: user.username,
+			display_name: user.display_name,
+			compactSize: getCompactSize()};
 
 		this.handleWindowResize = this.handleWindowResize.bind(this);
 	}
@@ -68,15 +79,6 @@ class App extends Component {
 
 	componentDidMount() {
 		window.addEventListener('resize', this.handleWindowResize);
-
-		let user = authService.getSessionUser();
-		if (!user) {
-			authService.requestUser().then(user => {
-				this.setState({...user});
-			}).catch(e => this.setState({display_name: "Invalid", username: e.message}));
-		} else {
-			this.setState({username: user.username, display_name: user.display_name});
-		}
 	}
 
 	componentWillUnmount() {
