@@ -46,7 +46,7 @@ export let getPageSize = (contextKey, def = 25) => {
 
 	let str = window.localStorage.getItem(PAGESIZE_PREFIX + contextKey);
 	try {
-		return str ? parseInt(str, 10) : def;
+		return !str || str === "NaN" ? def : parseInt(str, 10);
 	} catch (e) {
 		return def;
 	}
@@ -64,7 +64,7 @@ export let getTabIndex = (contextKey, defIndex = 0) => {
 
 	let str = window.localStorage.getItem(TABS_PREFIX + contextKey);
 	try {
-		return str ? parseInt(str, 10) : defIndex;
+		return !str || str === "NaN" ? defIndex : parseInt(str, 10);
 	} catch (e) {
 		return defIndex;
 	}

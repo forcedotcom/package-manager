@@ -71,7 +71,7 @@ export const getSelectedFilterId = (key) => {
 	}
 
 	const str = window.localStorage.getItem(SEL_PREFIX + key);
-	return str ? parseInt(str, 10) : null;
+	return !str || str === "NaN" ? null : parseInt(str, 10);
 };
 
 export const setSelectedFilterId = (key, id) => {
