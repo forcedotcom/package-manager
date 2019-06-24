@@ -19,9 +19,9 @@ function calcThreshold(offset = 0) {
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		
+
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			filters: [],
 			threshold: calcThreshold(props.offset),
 			thresholdOffset: props.offset
@@ -77,7 +77,7 @@ export default class extends React.Component {
 	render() {
 		let selectedId = filtrage.getSelectedFilterId(this.props.id);
 
-		const {isModified, threshold, filters, showMenu, readOnly} = this.state;
+		const {isModified, threshold, filters, showMenu, user} = this.state;
 		if (!this.props.filterColumns && filters.length === 0)
 			return "";
 
@@ -107,7 +107,7 @@ export default class extends React.Component {
 		if (overflow.length > 0)
 			overflow.push(<li key="overflowDivider" className="slds-has-divider_top-space slds-dropdown__item"/>);
 		const hasFilter = this.props.filterColumns && this.props.filterColumns.length > 0;
-		const hasMenuItems = !readOnly || overflow.length > 0;
+		const hasMenuItems = !user.read_only || overflow.length > 0;
 		const menu = hasMenuItems || hasFilter ?
 			<div className={`slds-dropdown-trigger slds-dropdown-trigger_click slds-m-right--medium ${showMenu ? "slds-is-open" : ""}`}
 				 onMouseLeave={() => this.setState({showMenu: null})} onClick={() => this.setState({showMenu: null})}>
@@ -134,7 +134,7 @@ export default class extends React.Component {
 				<div className={`slds-m-around_none slds-dropdown slds-dropdown_${showMenu} slds-dropdown_small`}>
 					<ul className="slds-dropdown__list">
 						{overflow}
-						{!readOnly ?
+						{!user.read_only ?
 						<li className="slds-dropdown__item">
 							<a tabIndex="0" onClick={this.createHandler}>
 								<span className="slds-truncate">
@@ -144,7 +144,7 @@ export default class extends React.Component {
 								</span>
 							</a>
 						</li> : '' }
-						{!readOnly && selectedId != null ? [
+						{!user.read_only && selectedId != null ? [
 						<li key="updateHandler" className="slds-has-divider_top-space slds-dropdown__item">
 							<a tabIndex="0" onClick={this.updateHandler}>
 								<span className="slds-truncate">

@@ -15,7 +15,7 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			selected: new Map()
 		};
 		
@@ -35,7 +35,7 @@ export default class extends React.Component {
 	
 	// Lifecycle
 	render() {
-		const {selected, filterColumns, readOnly} = this.state;
+		const {selected, filterColumns, user} = this.state;
 		
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, sortable: true, clickable: true},
@@ -55,7 +55,7 @@ export default class extends React.Component {
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: `Blacklisted`, hidden: !this.props.onFetchBlacklist, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
 				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
-			{label: "Add To Group", handler: this.openGroupWindow, disabled: readOnly || selected.size === 0},
+			{label: "Add To Group", handler: this.openGroupWindow, disabled: user.read_only || selected.size === 0},
 			{label: "Export", handler: this.exportHandler}
 		];
 		if (this.props.onRemove) {

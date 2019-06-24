@@ -22,6 +22,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			user: authService.getSessionUser(this),
 			upgrade: {},
 			progress: getProgress([])
 		};
@@ -52,14 +53,9 @@ export default class extends React.Component {
 	}
 	
 	render() {
-		const {upgrade, progress, readOnly} = this.state;
+		const {upgrade, progress, user} = this.state;
 		
-		
-		let userCanActivate = true;
-		let user = authService.getSessionUser();
-		if (user) {
-			userCanActivate = !readOnly && (user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username));
-		}
+		let userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username));
 		
 		const actions = [
 			{
@@ -70,12 +66,12 @@ export default class extends React.Component {
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancellationHandler,
-				disabled: readOnly || progress.canceled > 0 || progress.done,
+				disabled: user.read_only || progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
 			{
 				label: "Retry Failed Jobs", handler: this.retryHandler,
-				disabled: readOnly || progress.errors === 0,
+				disabled: user.read_only || progress.errors === 0,
 				spinning: this.state.isRetrying
 			},
 			{

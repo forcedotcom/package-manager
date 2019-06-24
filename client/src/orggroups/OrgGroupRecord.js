@@ -27,7 +27,7 @@ export default class extends React.Component {
 		super(props);
 
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			transid: nav.transid(),
 			isEditing: false,
 			orggroup: {},
@@ -74,23 +74,23 @@ export default class extends React.Component {
 	}
 
 	render() {
-		const {selected, showSelected, orggroup, readOnly} = this.state;
+		const {selected, showSelected, orggroup, user} = this.state;
 		const actions = [];
 		if (orggroup.type === "Upgrade Group") {
-			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: readOnly || this.state.upgradeablePackageIds.length === 0});
+			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: user.read_only || this.state.upgradeablePackageIds.length === 0});
 		}
 		actions.push(
 			{handler: this.refreshHandler, label: "Refresh Versions", spinning: this.state.isRefreshing, detail: "Fetch latest installed package version information for all orgs in this group."},
-			{handler: this.editHandler, label: "Edit", disabled: readOnly, spinning: this.state.isProcessing},
-			{handler: this.deleteHandler, label: "Delete", disabled: readOnly, }
+			{handler: this.editHandler, label: "Edit", disabled: user.read_only, spinning: this.state.isProcessing},
+			{handler: this.deleteHandler, label: "Delete", disabled: user.read_only, }
 		);
 			
 		let memberActions = [
 			{label: `${selected.size} Selected`, toggled: showSelected, icon: "filterList", group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Copy", group: "selection", handler: this.addingToGroupHandler, disabled: readOnly || selected.size === 0},
-			{label: "Move", group: "selection", handler: this.movingToGroupHandler, disabled: readOnly || selected.size === 0},
-			{label: "Remove", group: "selection", handler: this.removeMembersHandler, disabled: readOnly || selected.size === 0},
+			{label: "Copy", group: "selection", handler: this.addingToGroupHandler, disabled: user.read_only || selected.size === 0},
+			{label: "Move", group: "selection", handler: this.movingToGroupHandler, disabled: user.read_only || selected.size === 0},
+			{label: "Remove", group: "selection", handler: this.removeMembersHandler, disabled: user.read_only || selected.size === 0},
 		];
 
 		const tabs = [

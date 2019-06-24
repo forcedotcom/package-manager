@@ -14,7 +14,9 @@ import * as notifier from "../services/notifications";
 export default class extends React.Component {
 	constructor() {
 		super();
-		this.state = {item: {},
+		this.state = {
+			user: authService.getSessionUser(this),
+			item: {},
 			progress: getProgress([])
 		};
 		
@@ -41,12 +43,8 @@ export default class extends React.Component {
 	}
 	
 	render() {
-		const {item, progress} = this.state;
-		let userCanActivate = true;
-		let user = authService.getSessionUser();
-		if (user) {
-			userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username));
-		}
+		const {item, progress, user} = this.state;
+		let userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username));
 
 		let actions = [
 			{

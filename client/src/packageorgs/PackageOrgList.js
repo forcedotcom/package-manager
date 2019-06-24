@@ -29,7 +29,7 @@ export default class extends React.Component {
 				Cell: row => (
 					<b style={{filter: "brightness(65%)", color: row.value === "Connected" || row.value === "Unprotected" ? Colors.Success : Colors.Error}}>{row.value}</b>)
 			},
-			{Header: "Status", id: "active", accessor: d => d.active ? 'Active' : 'Inactive'}
+			{Header: "Active", type: "boolean", id: "active", accessor: d => d.active ? 'Yes' : 'No'}
 		];
 
 		return (

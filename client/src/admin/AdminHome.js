@@ -16,7 +16,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			advanced: false,
 			jobs: [],
 			queue: [],
@@ -61,7 +61,7 @@ export default class extends React.Component {
 	}
 
 	render() {
-		const {jobs, history, queue, readOnly} = this.state;
+		const {jobs, history, queue, user} = this.state;
 		let activeCards = [];
 		if (jobs.length > 0) {
 			for (let i = 0; i < jobs.length; i++) {
@@ -72,7 +72,7 @@ export default class extends React.Component {
 						label: "Cancel Job",
 						handler: () => this.cancellationHandler(job),
 						spinning: job.cancelling,
-						disabled: readOnly
+						disabled: user.read_only
 					});
 				}
 
@@ -103,7 +103,7 @@ export default class extends React.Component {
 				let job = queue[i];
 				queueCards.push(
 					<AdminCard key={`${job.id}-queue-${i}`} title={job.name} actions={[
-						{label: "Cancel Job", handler: () => this.cancellationHandler(job), disabled: readOnly, spinning: job.cancelling}]}>
+						{label: "Cancel Job", handler: () => this.cancellationHandler(job), disabled: user.read_only, spinning: job.cancelling}]}>
 					</AdminCard>);
 			}
 		} else {
@@ -164,17 +164,16 @@ export default class extends React.Component {
 		}
 
 		let actions = [
-		    {label: "Fetch Data", disabled: readOnly, group: "data", handler: this.fetchHandler},
-            {label: "Fetch All Data", disabled: readOnly, group: "data", handler: this.fetchAllHandler}
+		    {label: "Fetch Data", disabled: user.read_only, group: "data", handler: this.fetchHandler},
+            {label: "Fetch All Data", disabled: user.read_only, group: "data", handler: this.fetchAllHandler}
         ];
 
 
-		let user = authService.getSessionUser();
 		if (user && user.enable_sumo)
-			actions.push({label: "Upload Orgs To SumoLogic", disabled: readOnly, group: "external", handler: this.uploadOrgsHandler});
+			actions.push({label: "Upload Orgs To SumoLogic", disabled: user.read_only, group: "external", handler: this.uploadOrgsHandler});
 
 		if (this.state.settings.HEROKU_APP_NAME) {
-			actions.push({label: "Open Heroku", disabled: readOnly, handler: this.goToHerokuHandler, group: "external"});
+			actions.push({label: "Open Heroku", disabled: user.read_only, handler: this.goToHerokuHandler, group: "external"});
 		}
 
 		return (

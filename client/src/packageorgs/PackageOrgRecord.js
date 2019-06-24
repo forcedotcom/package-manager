@@ -14,7 +14,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			packageorg: {}
 		};
 		
@@ -40,20 +40,20 @@ export default class extends React.Component {
 	}
 	
 	render() {
-		let {packageorg, readOnly} = this.state;
+		let {packageorg, user} = this.state;
 		let actions = [
 			{label: packageorg.active ? 'Deactivate' : 'Activate', group: "toggle",
-				handler: this.activationHandler, disabled: readOnly || packageorg.type !== "Package",
+				handler: this.activationHandler, disabled: user.read_only || packageorg.type !== "Package",
 				detail: packageorg.active ? "Click to deactivate this org connection" : "Click to activate this org connection"},
 			{label: "Connect", group: "actions",
-				handler: this.connectHandler, disabled: readOnly || packageorg.status === "Connected",
+				handler: this.connectHandler, disabled: user.read_only || packageorg.status === "Connected",
 				detail: "Click to login and connect this org"},
 			{label: "Refresh", handler: this.refreshHandler, group: "actions",  disabled: packageorg.status !== "Connected",
 				spinning: this.state.isRefreshing},
-			{label: "Revoke", handler: this.revokeHandler, group: "actions",  disabled: readOnly || packageorg.status !== "Connected",
+			{label: "Revoke", handler: this.revokeHandler, group: "actions",  disabled: user.read_only || packageorg.status !== "Connected",
 				spinning: this.state.isRevoking},
-			{label: "Edit", handler: this.editHandler, disabled: readOnly, },
-			{label: "Delete", handler: this.deleteHandler, disabled: readOnly, }
+			{label: "Edit", handler: this.editHandler, disabled: user.read_only, },
+			{label: "Delete", handler: this.deleteHandler, disabled: user.read_only, }
 		];
 
 		return (

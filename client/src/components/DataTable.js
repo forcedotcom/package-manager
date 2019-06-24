@@ -15,11 +15,15 @@ const CheckboxTable = checkboxHOC(ReactTable);
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		let {id, minRows, keyField, selection, showSelected} = props;
+		let {id, minRows, keyField, selection, showSelected, columns} = props;
+
+		const columnMap = new Map();
+		columns.forEach(c => columnMap.set(c.id || c.accessor, c));
 
 		this.state = {
 			tableId: id,
 			data: [],
+			columnMap,
 			pages: null,
 			loading: true,
 
@@ -59,7 +63,6 @@ export default class extends React.Component {
 	componentWillReceiveProps(props) {
 		let {defaultFilter, showSelected} = props;
 		let {tableId, data} = this.state;
-
 		let filterColumns = props.filters ? props.filters : filtrage.getFilterColumns(tableId);
 		if (defaultFilter) {
 			// Remove existing default filter if found, then add it back
@@ -251,7 +254,7 @@ export default class extends React.Component {
 		}
 
 		const {tableId, showSelected, page, pageSize} = this.state;
-
+		this.setState({loading: true});
 		(onFetch || this.props.onFetch)().then(data => {
 			const filterColumns = filtrage.getFilterColumns(tableId);
 			const sortColumns = sortage.getSortColumns(tableId);
@@ -259,8 +262,18 @@ export default class extends React.Component {
 		});
 	}
 
-	dataChanged(tableId, data, showSelected, filterColumns, sortColumns, page, pageSize, preview, force) {
-		const {filteredRows} = this.state;
+	dataChanged(tableId, data, showSelected, filtered, sorted, page, pageSize, preview, force) {
+		const {filteredRows, columnMap} = this.state;
+
+		const filterColumns = filtered.map(f => {
+			const col = columnMap.get(f.id);
+			return col ? {id: f.id, value: f.value, type: col.type} : f;
+		});
+
+		const sortColumns = sorted.map(s => {
+			const col = columnMap.get(s.id);
+			return col ? {id: s.id, desc: s.desc, type: col.type} : s;
+		});
 
 		let changedFilter = force || filtrage.hasChanged(filterColumns, tableId);
 		let changedSort = force || sortage.hasChanged(sortColumns, tableId);

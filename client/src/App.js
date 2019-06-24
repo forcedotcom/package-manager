@@ -54,17 +54,9 @@ function getCompactSize() {
 class App extends Component {
 	constructor(props) {
 		super(props);
-		let user = authService.getSessionUser();
-		if (!user) {
-			user = {};
-			authService.requestUser().then(user => {
-				this.setState({...user});
-			}).catch(e => this.setState({display_name: "Invalid", username: e.message}));
-		}
 
 		this.state = {
-			username: user.username,
-			display_name: user.display_name,
+			user: authService.getSessionUser(this),
 			compactSize: getCompactSize()};
 
 		this.handleWindowResize = this.handleWindowResize.bind(this);
@@ -86,8 +78,9 @@ class App extends Component {
 	}
 
 	render() {
-		const isCompact = this.state.compactSize < 2;
-		const isMini = this.state.compactSize < 1;
+		const {compactSize, user} = this.state;
+		const isCompact = compactSize < 2;
+		const isMini = compactSize < 1;
 		return (
 			<Router>
 				<div>
@@ -126,13 +119,13 @@ class App extends Component {
 								<Search/>
 							</li>
 
-							{this.state.username ?
-								<li className="slds-list__item" title={`Logout ${this.state.display_name}`}>
+							{user.username ?
+								<li className="slds-list__item" title={`Logout ${user.display_name}`}>
 									<Link data-tip data-for="logout" style={{whiteSpace: "nowrap"}} to="/logout"><Icon
 										name={AUTH_ICON.name}
-										category={AUTH_ICON.category}/>{isMini ? "" : `Logout ${this.state.display_name}`}</Link>
+										category={AUTH_ICON.category}/>{isMini ? "" : `Logout ${user.display_name}`}</Link>
 									<ReactTooltip id="logout" place="left" delayShow={600}>
-										Logged in as {this.state.username}
+										Logged in as {user.username}
 									</ReactTooltip>
 								</li> : ""}
 						</ul>

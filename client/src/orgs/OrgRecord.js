@@ -24,7 +24,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			transid: nav.transid(),
 			org: {},
 			upgradeablePackageIds: []
@@ -55,18 +55,18 @@ export default class extends React.Component {
 	}
 
 	render() {
-		const {org, upgradeablePackageIds, readOnly} = this.state;
+		const {org, upgradeablePackageIds, user} = this.state;
 		const actions = [
 			{
 				label: "Upgrade Packages",
 				handler: this.openSchedulerWindow,
 				group: "upgrade",
-				disabled: readOnly || upgradeablePackageIds.length === 0
+				disabled: user.read_only || upgradeablePackageIds.length === 0
 			},
 			{
 				label: "Add To Group", 
 				handler: this.openGroupWindow,
-				disabled: readOnly
+				disabled: user.read_only
 			},
 			{
 				label: "Refresh Versions",

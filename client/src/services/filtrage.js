@@ -80,19 +80,19 @@ export const setSelectedFilterId = (key, id) => {
 	}
 	if (id == null)
 		window.localStorage.removeItem(SEL_PREFIX + key);
-	else 
+	else
 		window.localStorage.setItem(SEL_PREFIX + key, id);
 };
 
 export const sanitize = (filters) => {
 	let sanitizedFilters = null;
 	if (filters) {
-		try { 
+		try {
 			sanitizedFilters = filters.map(f => {return {id: f.id, value: sanitizeValue(f.value)}});
 		} catch (e) {
 			// Bad filters, just ignore and don't change a thing.
 			console.log("Bad filters: " + JSON.stringify(filters));
-			return null;		
+			return null;
 		}
 	}
 	return sanitizedFilters;
@@ -138,7 +138,7 @@ export const filterRows = (filters, rows, key) => {
 	try {
 		let filteredRows = rows;
 		if (filters && filters.length > 0 ) {
-			let filterNodes = filters.map(f => ({id: f.id, node: parseNode(f.value)}));
+			let filterNodes = filters.map(f => ({id: f.id, type: f.type, node: parseNode(f.value)}));
 			filteredRows = rows.filter(row => {
 				return !filterNodes.some(f => {
 					let fieldElem = row[f.id];
@@ -169,8 +169,8 @@ function matchNode(value, filter, node, neg) {
 			let nodeValue = node.value && node.value.toLowerCase ? node.value.toLowerCase() : node.value;
 			return isQuoted(node.raw) ?
 				(String(nodeValue) === value) === !neg :
-				 matchFilterString(value, filter, node, neg);
-			
+				matchFilterString(value, filter, node, neg);
+
 		case Types.ThisExpression:
 			break;
 		case Types.CallExpression:
@@ -201,25 +201,25 @@ function matchNode(value, filter, node, neg) {
 				sortVal = unwrapped.sortVal ? unwrapped.sortVal : unwrapped.filterVal;
 				sortValEnd = unwrapped.filterValEnd;
 
-			switch(node.operator) {
-				case "<":
-					return value && value < sortVal;
-				case ">":
-					return value && value > sortVal;
-				case "<=":
-					return value && value <= sortVal;
-				case ">=":
-					return value && value >= sortVal;
-				case "#":
-					if (sortValEnd) {
-						// Assume date or other range
-						return value && value >= sortVal && value < sortValEnd;
-					} else {
-						return value === sortVal;
-					}
-				default:
-					break;
-			}}
+				switch(node.operator) {
+					case "<":
+						return value && value < sortVal;
+					case ">":
+						return value && value > sortVal;
+					case "<=":
+						return value && value <= sortVal;
+					case ">=":
+						return value && value >= sortVal;
+					case "#":
+						if (sortValEnd) {
+							// Assume date or other range
+							return value && value >= sortVal && value < sortValEnd;
+						} else {
+							return value === sortVal;
+						}
+					default:
+						break;
+				}}
 			return false;
 		case Types.BinaryExpression:
 			break;
@@ -244,19 +244,33 @@ function matchFilterString(fieldVal, filter, node, neg) {
 	if (node.sortVal) {
 		return (fieldVal != null && fieldVal.startsWith(node.sortVal)) === !neg;
 	}
-	
+
 	const filterVal = node.filterVal;
 	const first = filterVal.charAt(0);
 	const last = filterVal.charAt(filterVal.length-1);
 	if (first === "$") {
+		// Starts with
 		return (fieldVal != null && fieldVal.startsWith(filterVal.substring(1))) === !neg;
 	}
-	if (last === "$") {
+	else if (last === "$") {
+		// Ends with
 		return (fieldVal != null && fieldVal.endsWith(filterVal.substring(0, filterVal.length - 1))) === !neg;
 	}
-	// Else, full monty
-	return (fieldVal != null && fieldVal.indexOf(filterVal) !== -1) === !neg;
-
+	else if (filter.type === "boolean") {
+		// Equals boolean true
+		if (filterVal.startsWith("t") || filterVal.startsWith("y")) {
+			return fieldVal === "true";
+		}
+		// Equals boolean false
+		if (filterVal.startsWith("f") || filterVal.startsWith("n")) {
+			return fieldVal === null || fieldVal === "false";
+		}
+		// Not a boolean filter, do don't filter anything
+		return true;
+	} else {
+		// Equals string
+		return (fieldVal != null && fieldVal.indexOf(filterVal) !== -1) === !neg;
+	}
 }
 
 function isQuoted(str) {
@@ -303,7 +317,7 @@ function unwrap(filter, node, operator) {
 
 		node.filterValEnd = fieldVals.end;
 	}
-	
+
 	return node;
 }
 
@@ -339,7 +353,7 @@ function resolveMacro(str) {
 	const op = parts[0];
 	switch (op) {
 		case "me":
-			return {value: authService.getSessionUser().username};
+			return {value: authService.getSessionUser(this).username};
 		case "now":
 			return {value: new Date().toISOString()};
 		case "today":

@@ -13,9 +13,16 @@ export let requestUser = () => h.get(url + "/user").then(user => {
     return user;
 });
 
-export let getSessionUser = () => {
+export let getSessionUser = (dis) => {
     let str = sessionStorage.getItem("user");
     let user = JSON.parse(str);
+    if (!user) {
+        user = {read_only: true};
+        requestUser().then(user => {
+            dis.setState({user});
+        }).catch(e => dis.setState({user: {display_name: "Invalid", username: e.message}}));
+    }
+
     return user;
 };
 

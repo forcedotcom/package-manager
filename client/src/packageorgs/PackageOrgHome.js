@@ -11,7 +11,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			selected: new Map()
 		};
 		
@@ -36,12 +36,12 @@ export default class extends React.Component {
 
 	// Lifecycle
 	render() {
-		let {readOnly} = this.state;
+		let {user} = this.state;
 		const actions = [
-			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", disabled: readOnly, handler: this.newHandler},
+			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", disabled: user.read_only, handler: this.newHandler},
 			{label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
-			{label: "Revoke", handler: this.revokeHandler, disabled: readOnly || this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
-			{label: "Delete", handler: this.deleteHandler, disabled: readOnly || this.state.selected.size === 0, spinning: this.state.isDeleting, detail: "Revoke access to and delete the selected org entry"}
+			{label: "Revoke", handler: this.revokeHandler, disabled: user.read_only || this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
+			{label: "Delete", handler: this.deleteHandler, disabled: user.read_only || this.state.selected.size === 0, spinning: this.state.isDeleting, detail: "Revoke access to and delete the selected org entry"}
 		];
 
 		return (
@@ -51,7 +51,7 @@ export default class extends React.Component {
 						as <b>Apex Certified</b> Partner</HeaderNote>
 				</HomeHeader>
 				<PackageOrgList onFetch={this.fetchData.bind(this)} refetchOn="package-orgs" onConnect={this.connectHandler}
-								onSelect={!readOnly && this.selectionHandler} onDelete={this.deleteHandler}/>
+								onSelect={!user.read_only && this.selectionHandler} onDelete={this.deleteHandler}/>
 			</div>
 		);
 	}

@@ -17,7 +17,7 @@ export default class extends React.Component {
 		super(props);
 		this.groupTypeMap = new Map(GroupTypes.map(t => [t.name, t]));
 		this.state = {
-			readOnly: authService.getSessionUser().read_only,
+			user: authService.getSessionUser(this),
 			selected: new Map(),
 			selectedType: this.groupTypeMap.get(sortage.getSelectedName("OrgGroupList")) || GroupTypes[0]
 		};
@@ -35,15 +35,15 @@ export default class extends React.Component {
 
 	// Lifecycle
 	render() {
-		const {selected, selectedType, filterColumns, readOnly} = this.state;
+		const {selected, selectedType, filterColumns, user} = this.state;
 
 		const actions = [
 			<DataTableSavedFilters id="OrgGroupList" key="OrgGroupList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			<TypeSelect group="types" key="types" types={GroupTypes} selected={selectedType} onSelect={this.typeSelectionHandler}/>,
-			{label: "New", handler: this.newHandler, disabled: readOnly, detail: "Create new org group"},
+			{label: "New", handler: this.newHandler, disabled: user.read_only, detail: "Create new org group"},
 			{
 				label: "Delete",
-				disabled: selected.size === 0 || readOnly,
+				disabled: selected.size === 0 || user.read_only,
 				handler: this.deleteHandler,
 				detail: "Delete the selected groups"
 			}
@@ -53,7 +53,7 @@ export default class extends React.Component {
 				<HomeHeader type="org groups" title="Org Groups" count={this.state.itemCount} actions={actions}/>
 				<OrgGroupList onFetch={this.fetchData} refetchOn="groups" 
 							  onFilter={this.filterHandler} filterColumns={filterColumns} 
-							  onSelect={readOnly ? null : this.selectionHandler} selected={selected} type={selectedType.name}/>
+							  onSelect={user.read_only ? null : this.selectionHandler} selected={selected} type={selectedType.name}/>
 				{this.state.addingOrgGroup ?
 					<GroupFormWindow type={selectedType.name} onSave={this.saveHandler} onCancel={this.cancelHandler}/> : ""}
 			</div>

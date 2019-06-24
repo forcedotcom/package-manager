@@ -11,16 +11,8 @@ import * as authService from "../services/AuthService";
 export default class extends React.Component {
 	constructor(props) {
 		super(props);
-		let user = authService.getSessionUser();
-		if (!user) {
-			user = {readOnly: true};
-			authService.requestUser().then(user => {
-				this.setState({readOnly: user.read_only});
-			});
-		}
-
 		this.state = {
-			readOnly: user.read_only,
+			user:authService.getSessionUser(this),
 			selected: new Map()
 		};
 
@@ -34,14 +26,14 @@ export default class extends React.Component {
 
 	// Lifecycle
 	render() {
-		const {selected, filterColumns, readOnly} = this.state;
+		const {selected, filterColumns, user} = this.state;
 
 		const actions = [
 			<DataTableSavedFilters id="UpgradeList" key="UpgradeList" filterColumns={filterColumns}
 								   onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.showSelectedHandler, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Purge", group: "selectable", disabled: readOnly || selected.size === 0, handler: this.purgeHandler}
+			{label: "Purge", group: "selectable", disabled: user.read_only || selected.size === 0, handler: this.purgeHandler}
 		];
 
 		return (
