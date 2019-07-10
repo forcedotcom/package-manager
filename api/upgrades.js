@@ -771,7 +771,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 
 function monitorUpgrades() {
 	const job = new admin.AdminJob(
-		admin.JobTypes.FETCH, "Run and monitor active upgrades",
+		"Upgrade", "Run and monitor active upgrades",
 		[
 			{
 				name: "Monitor active upgrades",
