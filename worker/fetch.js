@@ -100,7 +100,7 @@ function fetchData(fetchAll) {
 
 function fetchOrgVersions(orgId) {
 	const orgIds = Array.isArray(orgId) ? orgId : [orgId];
-	return new admin.AdminJob(admin.JobTypes.REFRESH_VERSIONS, "Fetch package versions for orgs",
+	return new admin.AdminJob(admin.JobTypes.FETCH, "Fetch package versions for orgs",
 		[
 			{
 				name: "Fetching package versions for org",
@@ -114,7 +114,7 @@ function fetchOrgVersions(orgId) {
 }
 
 function fetchOrgGroupVersions(groupId) {
-	return new admin.AdminJob(admin.JobTypes.REFRESH_VERSIONS, "Fetch package versions for a group",
+	return new admin.AdminJob(admin.JobTypes.FETCH, "Fetch package versions for a group",
 		[
 			{
 				name: "Fetching package versions for group",

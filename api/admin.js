@@ -45,9 +45,7 @@ const Events = {
 const JobTypes = {
 	MONITOR_ORGS: "monitor-orgs",
 	UPLOAD_ORGS: "upload-orgs",
-	UPGRADE: "upgrade",
-	FETCH: "fetch",
-	REFRESH_VERSIONS: "refresh-versions"
+	FETCH: "fetch"
 };
 
 let jobQueue = [];
