@@ -551,7 +551,7 @@ async function findRequestsByStatus(packageOrgId, status) {
     throw lastError;
 }
 
-async function findRequestsByIds(packageOrgId, requestIds) {
+async function findRequestsByIds(packageOrgId, requestIds, results) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
     let params = requestIds.map(v => `'${v}'`);
@@ -563,7 +563,7 @@ async function findRequestsByIds(packageOrgId, requestIds) {
     for (let counter = 1; counter <= 5; counter++) {
         try {
             let res = await conn.query(soql);
-            return res.records;
+            return results.set(packageOrgId, res.records);
         } catch (e) {
             logger.error("Failed to retrieve upgrade requests", {
                 packageOrgId,
@@ -612,7 +612,7 @@ async function findJobsByStatus(packageOrgId, requestIds, status) {
     throw lastError;
 }
 
-async function findJobsByRequestIds(packageOrgId, requestId) {
+async function findJobsByRequestIds(packageOrgId, requestId, results) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
     let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
         FROM PackagePushJob
@@ -628,7 +628,7 @@ async function findJobsByRequestIds(packageOrgId, requestId) {
                 result = await conn.requestGet(result.nextRecordsUrl);
                 recs = recs.concat(result.records);
             }
-            return recs;
+            return results.set(requestId, recs);
         } catch (e) {
             logger.error("Failed to retrieve job records by request id", {
                 requestId,

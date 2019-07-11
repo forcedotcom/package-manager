@@ -139,7 +139,7 @@ async function requestUser(req, res, next) {
         user.enable_sumo = !!process.env.SUMO_URL;
         res.json(user);
     } catch (e) {
-        logger.error("Failed to identify current user", {...e});
+        logger.error("Failed to identify current user", e);
         next(e);
     }
 }

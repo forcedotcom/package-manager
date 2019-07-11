@@ -519,38 +519,48 @@ async function requestAllJobs(req, res, next) {
 }
 
 async function fetchRequests(items) {
-	const promisesArr = [];
+	const promisesArr = [], results = new Map();
 	items.forEach(item => {
-		promisesArr.push(push.findRequestsByIds(item.package_org_id, [item.push_request_id]));
+		promisesArr.push(push.findRequestsByIds(item.package_org_id, [item.push_request_id]), results);
 	});
 
 	let pushReqs = [];
-	const promisesResults = await Promise.all(promisesArr);
-	promisesResults.forEach(arr => {
-		if (arr.length === 0)
+	try {
+		await Promise.all(promisesArr);
+	} catch (e) {
+		return logger.error("Failed to fetch upgrade request data", e)
+	}
+
+	results.forEach(value => {
+		if (value.length === 0)
 			return; // Nothing to do.
 
-		pushReqs = pushReqs.concat(arr);
+		pushReqs = pushReqs.concat(value);
 	});
 	await updateUpgradeItemsFromPushRequests(items, pushReqs);
 }
 
 async function fetchJobs(items, upgradeJobs) {
-	const promisesArr = [];
+	const promisesArr = [], results = new Map();
 	items.forEach(item => {
-		promisesArr.push(push.findJobsByRequestIds(item.package_org_id, item.push_request_id));
+		promisesArr.push(push.findJobsByRequestIds(item.package_org_id, item.push_request_id, results));
 	});
 
 	let pushJobs = [];
-	const promisesResults = await Promise.all(promisesArr);
-	promisesResults.forEach(arr => {
-		if (arr.length === 0)
+	try {
+		await Promise.all(promisesArr);
+	} catch (e) {
+		logger.error("Failed to fetch upgrade job data", e)
+	}
+
+	results.forEach(value => {
+		if (value.length === 0)
 			return; // Nothing to do.
 
-		let pushRequestId = sfdc.normalizeId(arr[0].PackagePushRequestId);
+		let pushRequestId = sfdc.normalizeId(value[0].PackagePushRequestId);
 		const item = items.find(item => pushRequestId === item.push_request_id);
-		arr.forEach(pj => pj.item = item);
-		pushJobs = pushJobs.concat(arr);
+		value.forEach(pj => pj.item = item);
+		pushJobs = pushJobs.concat(value);
 	});
 	await updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs);
 }
