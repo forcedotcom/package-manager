@@ -521,7 +521,7 @@ async function requestAllJobs(req, res, next) {
 async function fetchRequests(items) {
 	const promisesArr = [], results = new Map();
 	items.forEach(item => {
-		promisesArr.push(push.findRequestsByIds(item.package_org_id, [item.push_request_id]), results);
+		promisesArr.push(push.findRequestsByIds(item.package_org_id, [item.push_request_id], results));
 	});
 
 	let pushReqs = [];
