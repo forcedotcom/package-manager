@@ -80,6 +80,8 @@ class AdminJob {
 		this.modifiedDate = new Date();
         logger.info(`Job Update: ${message}`, {
 			...this,
+			resultCount: this.results.length,
+			errorCount: this.errors.length,
 			modified: moment(this.modifiedDate).format('lll Z')
 		});
 		emit(Events.JOBS, Array.from(activeJobs.values()));
@@ -99,6 +101,8 @@ class AdminJob {
 		this.modifiedDate = new Date();
 		logger.info(`Job Progress: ${message}`, e ? {error: e.message} : {
 			...this,
+			resultCount: this.results.length,
+			errorCount: this.errors.length,
 			modified: moment(this.modifiedDate).format('lll Z')
 		});
 		emit(Events.JOBS, Array.from(activeJobs.values()));
@@ -128,6 +132,8 @@ class AdminJob {
 			if (this.singleton) {
                 logger.info(`Singleton job ${this.name} already in progress.`, {
 					...this,
+					resultCount: this.results.length,
+					errorCount: this.errors.length,
 					modified: moment(this.modifiedDate).format('lll Z')
 				});
             } else {
@@ -144,8 +150,10 @@ class AdminJob {
 			this.status = this.canceled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
 			this.postProgress(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.canceled ? this.stepIndex : this.stepCount);
 			logger.info(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", {
-				steps: this.stepCount,
-				errors: this.errors.length
+				...this,
+				resultCount: this.results.length,
+				errorCount: this.errors.length,
+				modified: moment(this.modifiedDate).format('lll Z')
 			});
 		} catch (e) {
 			this.status = "Failed";
@@ -154,6 +162,8 @@ class AdminJob {
 			activeJobs.delete(this.type);
 			logger.info(`Job Update: job ${this.type} complete and removed from active duty.`, {
 				...this,
+				resultCount: this.results.length,
+				errorCount: this.errors.length,
 				modified: moment(this.modifiedDate).format('lll Z')
 			});
 			latestJobs.set(this.type, this);
