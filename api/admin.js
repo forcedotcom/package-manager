@@ -74,16 +74,27 @@ class AdminJob {
 		this.shouldRun = () => true;
 	}
 
+	toLogMessage() {
+		return {
+			type: this.type,
+			name: this.name,
+			results: this.results.length,
+			errors: this.errors.length,
+			modified: moment(this.modifiedDate).format('lll Z'),
+			startTime: this.startTime,
+			status: this.status,
+			stepIndex: this.stepIndex,
+			stepCount: this.stepCount,
+			canceled: this.canceled,
+			singleton: this.singleton
+		}
+	}
+
 	postMessage(message) {
 		this.message = message;
 		this.results.push({message, timestamp: Date.now(), details: []});
 		this.modifiedDate = new Date();
-        logger.info(`Job Update: ${message}`, {
-			...this,
-			resultCount: this.results.length,
-			errorCount: this.errors.length,
-			modified: moment(this.modifiedDate).format('lll Z')
-		});
+        logger.info(`Job Update: ${message}`, this.toLogMessage());
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
@@ -99,12 +110,7 @@ class AdminJob {
 			this.stepIndex = stepIndex;
 		}
 		this.modifiedDate = new Date();
-		logger.info(`Job Progress: ${message}`, e ? {error: e.message} : {
-			...this,
-			resultCount: this.results.length,
-			errorCount: this.errors.length,
-			modified: moment(this.modifiedDate).format('lll Z')
-		});
+		logger.info(`Job Progress: ${message}`, e ? {error: e.message} : this.toLogMessage());
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
@@ -130,12 +136,7 @@ class AdminJob {
 		
 		if (activeJobs.has(this.type)) {
 			if (this.singleton) {
-                logger.info(`Singleton job ${this.name} already in progress.`, {
-					...this,
-					resultCount: this.results.length,
-					errorCount: this.errors.length,
-					modified: moment(this.modifiedDate).format('lll Z')
-				});
+                logger.info(`Singleton job ${this.name} already in progress.`, this.toLogMessage());
             } else {
 				jobQueue.push(this);
 				emit(Events.JOB_QUEUE, jobQueue);
@@ -149,23 +150,13 @@ class AdminJob {
 			await this.runSteps(this.steps);
 			this.status = this.canceled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
 			this.postProgress(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.canceled ? this.stepIndex : this.stepCount);
-			logger.info(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", {
-				...this,
-				resultCount: this.results.length,
-				errorCount: this.errors.length,
-				modified: moment(this.modifiedDate).format('lll Z')
-			});
+			logger.info(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.toLogMessage());
 		} catch (e) {
 			this.status = "Failed";
 			this.postProgress("Admin Job Failed", this.stepCount, e);
 		} finally {
 			activeJobs.delete(this.type);
-			logger.info(`Job Update: job ${this.type} complete and removed from active duty.`, {
-				...this,
-				resultCount: this.results.length,
-				errorCount: this.errors.length,
-				modified: moment(this.modifiedDate).format('lll Z')
-			});
+			logger.info(`Job Update: job ${this.type} complete and removed from active duty.`, this.toLogMessage());
 			latestJobs.set(this.type, this);
 			jobHistory.push(this);
 			if (jobHistory.length > MAX_HISTORY) {
