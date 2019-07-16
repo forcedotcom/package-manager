@@ -1,6 +1,6 @@
 'use strict';
 
-const moment = require("moment");
+const moment = require("moment-timezone");
 const https = require("https");
 const url = require('url');
 const sqlinit = require('../init/sqlinit');
@@ -14,6 +14,7 @@ const db = require("../util/pghelper");
 const MAX_HISTORY = 200;
 
 const SUMO_URL = process.env.SUMO_URL;
+const SUMO_TZ = process.env.SUMO_TZ || "America/Los_Angeles";
 
 const Events = {
 	ALERT: "alert",
@@ -80,7 +81,7 @@ class AdminJob {
 			name: this.name,
 			results: this.results.length,
 			errors: this.errors.length,
-			modified: moment(this.modifiedDate).format('lll Z'),
+			modified: moment(this.modifiedDate).tz(SUMO_TZ).format('MM/DD/YYYY HH:mm:ss Z'),
 			startTime: this.startTime,
 			status: this.status,
 			stepIndex: this.stepIndex,
