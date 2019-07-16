@@ -137,7 +137,7 @@ class AdminJob {
 		
 		if (activeJobs.has(this.type)) {
 			if (this.singleton) {
-                logger.info(`Singleton job ${this.name} already in progress.`, this.toLogMessage());
+                logger.info(`Singleton job ${this.name} already in progress.`, activeJobs.get(this.type).toLogMessage());
             } else {
 				jobQueue.push(this);
 				emit(Events.JOB_QUEUE, jobQueue);
