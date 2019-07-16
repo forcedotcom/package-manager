@@ -140,13 +140,15 @@ class AdminJob {
 			const activeJob = activeJobs.get(this.type);
 			if (activeJob.startTime + this.timeout < Date.now()) {
 				logger.info(`Job Update: ${this.name} is too old and presumed lost at sea.`, activeJob.toLogMessage());
+				// Continue on...
 			} else if (this.singleton) {
                 logger.info(`Job Update: singleton ${this.name} already in progress.`, activeJob.toLogMessage());
-            } else {
+				return;
+			} else {
 				jobQueue.push(this);
 				emit(Events.JOB_QUEUE, jobQueue);
+				return;
 			}
-			return;
 		}
 		try {
 			activeJobs.set(this.type, this);
