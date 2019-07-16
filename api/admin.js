@@ -79,9 +79,9 @@ class AdminJob {
 		this.results.push({message, timestamp: Date.now(), details: []});
 		this.modifiedDate = new Date();
         logger.info(`Job Update: ${message}`, {
-            name: this.name,
-            modified: this.modifiedDate
-        });
+			...this,
+			modified: moment(this.modifiedDate).format('lll Z')
+		});
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
@@ -97,7 +97,10 @@ class AdminJob {
 			this.stepIndex = stepIndex;
 		}
 		this.modifiedDate = new Date();
-		logger.info(`Job Progress: ${message}`, e ? {error: e.message} : {});
+		logger.info(`Job Progress: ${message}`, e ? {error: e.message} : {
+			...this,
+			modified: moment(this.modifiedDate).format('lll Z')
+		});
 		emit(Events.JOBS, Array.from(activeJobs.values()));
 	}
 
@@ -124,9 +127,9 @@ class AdminJob {
 		if (activeJobs.has(this.type)) {
 			if (this.singleton) {
                 logger.info(`Singleton job ${this.name} already in progress.`, {
-                    name: this.name,
-                    modified: this.modifiedDate
-                });
+					...this,
+					modified: moment(this.modifiedDate).format('lll Z')
+				});
             } else {
 				jobQueue.push(this);
 				emit(Events.JOB_QUEUE, jobQueue);
@@ -149,6 +152,10 @@ class AdminJob {
 			this.postProgress("Admin Job Failed", this.stepCount, e);
 		} finally {
 			activeJobs.delete(this.type);
+			logger.info(`Job Update: job ${this.type} complete and removed from active duty.`, {
+				...this,
+				modified: moment(this.modifiedDate).format('lll Z')
+			});
 			latestJobs.set(this.type, this);
 			jobHistory.push(this);
 			if (jobHistory.length > MAX_HISTORY) {
