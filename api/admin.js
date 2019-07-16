@@ -60,6 +60,7 @@ let socket = null;
 class AdminJob {
 	constructor(type, name, steps) {
 		this.id = `${type}-${new Date().getTime()}`; // Simple id based on type and time
+		this.timeout = 30 * 60 * 1000; // 30 minute timeout by default.
 		this.type = type;
 		this.name = name;
 		this.modifiedDate = new Date();
@@ -136,8 +137,11 @@ class AdminJob {
 			return; // Just don't do it
 		
 		if (activeJobs.has(this.type)) {
-			if (this.singleton) {
-                logger.info(`Singleton job ${this.name} already in progress.`, activeJobs.get(this.type).toLogMessage());
+			const activeJob = activeJobs.get(this.type);
+			if (activeJob.startTime + this.timeout < Date.now()) {
+				logger.info(`Job Update: ${this.name} is too old and presumed lost at sea.`, activeJob.toLogMessage());
+			} else if (this.singleton) {
+                logger.info(`Job Update: singleton ${this.name} already in progress.`, activeJob.toLogMessage());
             } else {
 				jobQueue.push(this);
 				emit(Events.JOB_QUEUE, jobQueue);

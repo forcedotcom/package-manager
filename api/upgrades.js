@@ -797,6 +797,7 @@ function monitorUpgrades() {
 			}
 		]);
 	job.singleton = true; // Don't queue us up
+	job.timeout = 5 * 60 * 1000; // Lower, 5 minute timeout.
 	job.shouldRun = async () => await areAnyUpgradesUnfinished();
 	return job;
 }
