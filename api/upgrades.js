@@ -53,7 +53,8 @@ const ITEM_STATUS_SOQL = `
 
 const SELECT_ALL = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id,
-    ${ITEM_STATUS_SOQL}
+    SUM(i.total_job_count) total_job_count,
+    ${ITEM_STATUS_SOQL}    
     FROM upgrade u
     LEFT JOIN upgrade_item i ON i.upgrade_id = u.id`;
 

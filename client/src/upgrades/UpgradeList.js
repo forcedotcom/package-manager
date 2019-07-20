@@ -26,6 +26,7 @@ export default class extends React.Component {
 				sortable: true,
 				clickable: true
 			},
+			{Header: "Job Count", accessor: "total_job_count", sortable: true},
 			{Header: "When", id: "when", accessor: d => moment(d.start_time).fromNow(), clickable: true, sortable: false},
 			{Header: "Created By", accessor: "created_by", sortable: true},
 			{Header: "Status", accessor: "item_status", sortable: true}
