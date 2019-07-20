@@ -86,6 +86,7 @@ export default class extends React.Component {
 							  parent={{label: "Upgrades", location: `/upgrades`}}>
 					<HeaderField label="Scheduled Start Time" value={`${moment(upgrade.start_time).format('lll')} (${moment(upgrade.start_time).fromNow()})`}/>
 					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`}/>
+					<HeaderField label="Jobs" value={upgrade.total_job_count}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
 				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled}
