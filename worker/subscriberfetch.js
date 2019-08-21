@@ -1,6 +1,5 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
-const logger = require('../util/logger').logger;
 const opvapi = require('../api/orgpackageversions');
 const orgs = require('../api/orgs');
 
@@ -90,20 +89,7 @@ async function fetchFromOrg(org, fetchAll) {
 		adminJob.postDetail(`Found ${res.totalSize} orgs ${fetchAll ? '' : 'using last modified date'}`);
 		invalidateAll = fetchAll;
 	} catch (e) {
-		if (e.errorCode === 'QUERY_TIMEOUT') {
-			return fail(org, e);
-		}
-
-		// TODO remove after 220 GA when modstamp is available for all
-		logger.warn("Could not query with modstamp", e);
-		try {
-			const where = orgIds ? `WHERE OrgKey IN ('${orgIds.join("','")}')` : "";
-			res = await conn.queryWithRetry(`${SELECT_ALL_WITHOUT_MODSTAMP} ${where}`);
-			adminJob.postDetail(`Found ${res.totalSize} orgs`);
-			invalidateAll = true; // Not using modstamp, so always invalidate
-		} catch (e) {
-			return fail(org, e);
-		}
+		return fail(org, e);
 	}
 
 	let recs = await load(res, conn);
