@@ -17,6 +17,7 @@ import {DataTableFilterHelp} from "../components/DataTableFilter";
 import {getProgress, UPGRADE_ICON} from "../Constants";
 import OrgCard from "../orgs/OrgCard";
 import * as nav from "../services/nav";
+import CommentModal from '../components/CommentModal';
 
 export default class extends React.Component {
 	constructor(props) {
@@ -24,7 +25,8 @@ export default class extends React.Component {
 		this.state = {
 			user: authService.getSessionUser(this),
 			upgrade: {},
-			progress: getProgress([])
+			progress: getProgress([]),
+			showCancelWindow: false
 		};
 		
 		this.fetchBlacklist = this.fetchBlacklist.bind(this);
@@ -65,7 +67,7 @@ export default class extends React.Component {
 				spinning: this.state.isActivating
 			},
 			{
-				label: "Cancel Upgrade", handler: this.cancellationHandler,
+				label: "Cancel Upgrade", handler: this.cancelWindowHandler,
 				disabled: user.read_only || progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
@@ -105,6 +107,7 @@ export default class extends React.Component {
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
+				{this.state.showCancelWindow ? <CommentModal onSave={this.cancellationHandler} onCancel={this.closeCancelWindowHandler}/> : ""}
 			</div>
 		);
 	}
@@ -144,10 +147,18 @@ export default class extends React.Component {
 		}
 	}
 
-	cancellationHandler() {
+	cancelWindowHandler() {
+		this.setState({showCancelWindow: true});
+	}
+
+	closeCancelWindowHandler() {
+		this.setState({showCancelWindow: false});
+	}
+
+	cancellationHandler(text) {
 		if (window.confirm(`Are you sure you want to cancel this upgrade?  All requests will be canceled.`)) {
 			this.setState({isCancelling: true});
-			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
+			upgradeService.cancel(this.state.upgrade.id, text).then(() => window.location.reload()).catch((e) => {
 				this.setState({isCancelling: false});
 				notifier.error(e.message, "Cancellation Failed");
 			});

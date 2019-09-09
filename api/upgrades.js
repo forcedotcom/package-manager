@@ -871,11 +871,14 @@ async function areJobsCompleteForUpgrade(upgradeId) {
 
 async function requestCancelUpgrade(req, res, next) {
 	const id = req.params.id;
+	const text = req.query.text;
 	try {
 		let items = await findItemsByUpgrade(id);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		await changeUpgradeJobStatus(items, push.Status.Canceled, push.Status.Pending, push.Status.Created);
 		await changeUpgradeItemStatus(items, push.Status.Canceled);
+		//Create a text column in the upgrade table and insert text for the cancelled upgrade
+		//await db.update(`UPDATE upgrade SET status = $1, text = $2 WHERE id = $3`, [UpgradeStatus.Canceled, text, id]);
 		await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Canceled, id]);
 		admin.emit(admin.Events.UPGRADE, await retrieveById(id));
 		admin.emit(admin.Events.UPGRADE_ITEMS, items);
