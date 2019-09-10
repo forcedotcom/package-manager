@@ -103,7 +103,7 @@ export default class extends React.Component {
 							<UpgradeJobCard id="OrgJobCard" onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 						</div>
 						<div label="Related Orgs">
-							<OrgCard id="RelatedOrgCard" title="Orgs" onFetch={this.fetchRelatedOrgs} refetchOn="orgs"/>
+							<OrgCard id="RelatedOrgCard" title="Orgs" withLicenseData={false} onFetch={this.fetchRelatedOrgs} refetchOn="orgs"/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>

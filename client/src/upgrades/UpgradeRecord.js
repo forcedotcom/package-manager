@@ -100,7 +100,7 @@ export default class extends React.Component {
 							<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
 						</div>
 						<div label="Blacklist">
-							<OrgCard id="UpgradeBlacklistCard" title="Orgs" onFetch={this.fetchBlacklist} refetchOn="upgrade-blacklist"/>
+							<OrgCard id="UpgradeBlacklistCard" title="Orgs" withLicenseData={true} onFetch={this.fetchBlacklist} refetchOn="upgrade-blacklist"/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
