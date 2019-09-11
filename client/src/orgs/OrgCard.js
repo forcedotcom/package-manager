@@ -12,9 +12,10 @@ import * as nav from "../services/nav";
 import * as authService from "../services/AuthService";
 
 export default class extends React.Component {
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
 		this.state = {
+			withLicenseData: props.withLicenseData,
 			user: authService.getSessionUser(this),
 			selected: new Map()
 		};
@@ -40,14 +41,19 @@ export default class extends React.Component {
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, sortable: true, clickable: true},
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
-			{Header: "Account", accessor: "account_name", sortable: true, clickable: true},
-			{Header: "Version", id: "version_sort", accessor: "version_number", sortable: true},
-			{Header: "License", accessor: "license_status", sortable: true},
+			{Header: "Account", accessor: "account_name", sortable: true, clickable: true}];
+		if (this.state.withLicenseData) {
+			columns.push(
+				{Header: "Version", id: "version_sort", accessor: "version_number", sortable: true},
+				{Header: "License", accessor: "license_status", sortable: true},
+			);
+		}
+		columns.push(
 			{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true},
 			{Header: "Edition", accessor: "edition", sortable: true},
 			{Header: "Type", accessor: "type", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true}
-		];
+		);
 
 		const actions = [
 			<DataTableSavedFilters id={this.props.id} offset={2} key={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,

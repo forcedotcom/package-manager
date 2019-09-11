@@ -48,7 +48,7 @@ export default class extends React.Component {
 							<PackageVersionCard onFetch={this.fetchVersions}/>
 						</div>
 						<div label="Customers">
-							<OrgCard id="PackageMembers" title="Customers" onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
+							<OrgCard id="PackageMembers" title="Customers" withLicenseData={true} onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
 						</div>
 						<div label="Upgrades">
 							<UpgradeItemCard id="PackageUpgradeItemCard" onFetch={this.fetchUpgradeItems} refetchOn="upgrade-items,upgrade-jobs"/>
