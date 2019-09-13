@@ -51,7 +51,7 @@ export default class extends React.Component {
 	render() {
 		const {selected, filterColumns, user} = this.state;
 		const actions = [
-			<DataTableSavedFilters id="OrgList" key="OrgList" offset={3} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
+			<DataTableSavedFilters id="OrgList" key="OrgList" offset={4} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "special", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: `Blacklisted`, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,

@@ -67,24 +67,24 @@ export class RecordHeader extends React.Component {
 			if (currentAction.hidden) {
 				continue;
 			}
-			
+
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
-				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled} 
-								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon} 
-								  handler={currentAction.handler}/> :
-					<button title={currentAction.detail} key={currentAction.label}
-							disabled={currentAction.disabled || currentAction.spinning}
-							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-						{currentAction.spinning ?
-							<div style={{width: "3em"}}>&nbsp;
-								<div role="status" className="slds-spinner slds-spinner_x-small">
-									<div className="slds-spinner__dot-a"/>
-									<div className="slds-spinner__dot-b"/>
-								</div>
-							</div> : currentAction.label}
-					</button>;
+					typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+						<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+									  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+									  handler={currentAction.handler}/> :
+						<button title={currentAction.detail} key={currentAction.label}
+								disabled={currentAction.disabled || currentAction.spinning}
+								className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+							{currentAction.spinning ?
+								<div style={{width: "3em"}}>&nbsp;
+									<div role="status" className="slds-spinner slds-spinner_x-small">
+										<div className="slds-spinner__dot-a"/>
+										<div className="slds-spinner__dot-b"/>
+									</div>
+								</div> : currentAction.label}
+						</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
 				currentGroup = {key: currentActionGroup, actions: [btn]};
@@ -100,8 +100,8 @@ export class RecordHeader extends React.Component {
 		}
 		return (
 			<div className="slds-page-header">
-				<div className="slds-grid" style={{flexWrap: "wrap", justifyContent: "space-around"}}>
-					<div className="slds-col">
+				<div className="slds-grid" >
+					<div className="slds-col slds-p-right--small">
 						<div className="slds-media">
 							<div className="slds-media__figure">
 								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="large"/>
@@ -133,8 +133,8 @@ export class RecordHeader extends React.Component {
 }
 
 class Breadcrumb extends React.Component {
-	render() { 
-		return <span><a href={this.props.target.location}>{this.props.target.label}</a> <span className="slds-text-heading--small">::</span> </span> 
+	render() {
+		return <span><a href={this.props.target.location}>{this.props.target.label}</a> <span className="slds-text-heading--small">::</span> </span>
 	}
 }
 
@@ -154,21 +154,21 @@ export class CardHeader extends React.Component {
 			}
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
-				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
-								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
-								  handler={currentAction.handler}/> :
-					<button title={currentAction.detail} key={currentAction.label}
-							disabled={currentAction.disabled || currentAction.spinning}
-							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-						{currentAction.spinning ?
-							<div style={{width: "3em"}}>&nbsp;
-								<div role="status" className="slds-spinner slds-spinner_x-small">
-									<div className="slds-spinner__dot-a"/>
-									<div className="slds-spinner__dot-b"/>
-								</div>
-							</div> : currentAction.label}
-					</button>;
+					typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+						<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+									  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+									  handler={currentAction.handler}/> :
+						<button title={currentAction.detail} key={currentAction.label}
+								disabled={currentAction.disabled || currentAction.spinning}
+								className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+							{currentAction.spinning ?
+								<div style={{width: "3em"}}>&nbsp;
+									<div role="status" className="slds-spinner slds-spinner_x-small">
+										<div className="slds-spinner__dot-a"/>
+										<div className="slds-spinner__dot-b"/>
+									</div>
+								</div> : currentAction.label}
+						</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
 				currentGroup = {key: currentActionGroup, actions: [btn]};
@@ -229,24 +229,24 @@ export class FormHeader extends React.Component {
 			if (currentAction.hidden) {
 				continue;
 			}
-			
+
 			const btn =
 				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
-				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
-								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
-								  handler={currentAction.handler}/> :
-					<button title={currentAction.detail} key={currentAction.label}
-							disabled={currentAction.disabled || currentAction.spinning}
-							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-						{currentAction.spinning ?
-							<div style={{width: "3em"}}>&nbsp;
-								<div role="status" className="slds-spinner slds-spinner_x-small">
-									<div className="slds-spinner__dot-a"/>
-									<div className="slds-spinner__dot-b"/>
-								</div>
-							</div> : currentAction.label}
-					</button>;
+					typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+						<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+									  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+									  handler={currentAction.handler}/> :
+						<button title={currentAction.detail} key={currentAction.label}
+								disabled={currentAction.disabled || currentAction.spinning}
+								className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+							{currentAction.spinning ?
+								<div style={{width: "3em"}}>&nbsp;
+									<div role="status" className="slds-spinner slds-spinner_x-small">
+										<div className="slds-spinner__dot-a"/>
+										<div className="slds-spinner__dot-b"/>
+									</div>
+								</div> : currentAction.label}
+						</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
 				currentGroup = {key: currentActionGroup, actions: [btn]};
@@ -264,8 +264,8 @@ export class FormHeader extends React.Component {
 		return (
 			<div style={{borderLeft: 0, borderRight: 0, borderRadius: "0.25rem 0.25rem 0 0", zIndex: 2}}
 				 className="slds-page-header">
-				<div className="slds-grid" style={{flexWrap: "wrap", justifyContent: "space-around"}}>
-					<div className="slds-col">
+				<div className="slds-grid">
+					<div className="slds-col slds-p-right--small">
 						<div className="slds-media">
 							<div className="slds-media__figure">
 								<HeaderIcon name={this.props.icon.name} category={this.props.icon.category}
@@ -306,24 +306,24 @@ export class HomeHeader extends React.Component {
 			if (currentAction.hidden) {
 				continue;
 			}
-			
+
 			const btn =
-				currentAction.props ? currentAction : // Bad test for whether this is a react component :(  
-				typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
-					<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
-								  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
-								  handler={currentAction.handler}/> :
-					<button title={currentAction.detail} key={currentAction.label}
-							disabled={currentAction.disabled || currentAction.spinning}
-							className="slds-button slds-button--neutral" onClick={currentAction.handler}>
-						{currentAction.spinning ?
-							<div style={{width: "3em"}}>&nbsp;
-								<div role="status" className="slds-spinner slds-spinner_x-small">
-									<div className="slds-spinner__dot-a"/>
-									<div className="slds-spinner__dot-b"/>
-								</div>
-							</div> : currentAction.label}
-					</button>;
+				currentAction.props ? currentAction : // Bad test for whether this is a react component :(
+					typeof currentAction.toggled !== "undefined" ? currentAction.disabled ? "" :
+						<ToggleButton key={currentAction.label} label={currentAction.label} detail={currentAction.detail} toggled={currentAction.toggled}
+									  iconOn={currentAction.iconOn || currentAction.icon} iconOff={currentAction.iconOff || currentAction.icon}
+									  handler={currentAction.handler}/> :
+						<button title={currentAction.detail} key={currentAction.label}
+								disabled={currentAction.disabled || currentAction.spinning}
+								className="slds-button slds-button--neutral" onClick={currentAction.handler}>
+							{currentAction.spinning ?
+								<div style={{width: "3em"}}>&nbsp;
+									<div role="status" className="slds-spinner slds-spinner_x-small">
+										<div className="slds-spinner__dot-a"/>
+										<div className="slds-spinner__dot-b"/>
+									</div>
+								</div> : currentAction.label}
+						</button>;
 			const currentActionGroup = currentAction.group || (currentAction.props ? currentAction.props.group : null);
 			if (currentAction.spinning || currentGroup == null || currentGroup.key !== currentActionGroup) {
 				currentGroup = {key: currentActionGroup, actions: [btn]};
@@ -343,8 +343,8 @@ export class HomeHeader extends React.Component {
 				<Helmet>
 					<title>SteelBrick PM: {this.props.title}</title>
 				</Helmet>
-				<div className="slds-grid" style={{flexWrap: "wrap", justifyContent: "space-around"}}>
-					<div className="slds-col">
+				<div className="slds-grid">
+					<div className="slds-col slds-p-right--small">
 						<p className="slds-text-heading--label">{this.props.type}</p>
 						<div className="slds-grid">
 							<div className="slds-grid slds-type-focus slds-no-space">
@@ -384,11 +384,11 @@ export class ToggleButton extends React.Component {
 					onClick={this.props.handler}>
   				<span className="slds-text-not-selected">
 					{iconOff !== 'none' ? <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
-					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOff}`}/>
+						<use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOff}`}/>
 					</svg> : ''}{this.props.label}</span>
 				<span className="slds-text-selected">
 					{iconOn !== 'none' ? <svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
-					  <use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOn}`}/>
+						<use xlinkHref={`/assets/icons/utility-sprite/svg/symbols.svg#${iconOn}`}/>
 					</svg> : ''}{this.props.label}</span>
 			</button>
 		);
