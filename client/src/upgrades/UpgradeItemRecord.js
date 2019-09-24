@@ -22,6 +22,7 @@ export default class extends React.Component {
 		
 		this.upgradeItemsUpdated = this.upgradeItemsUpdated.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
+		this.fetchItemJobs = this.fetchItemJobs.bind(this);
 		this.upgradeItemsUpdated = this.upgradeItemsUpdated.bind(this);
 		this.handleActivation = this.handleActivation.bind(this);
 		this.handleCancellation = this.handleCancellation.bind(this);
@@ -92,6 +93,12 @@ export default class extends React.Component {
 		});
 	}
 
+	fetchItemJobs(item) {
+		upgradeJobService.requestAllJobs(this.props.match.params.itemId).then(jobs => {
+			this.setState({item, jobs, isCancelling: false, isActivating: false});
+		});
+	}
+
 	upgradeItemsUpdated(items) {
 		const mine = items.find(i => (i.id || i) === this.state.item.id);
 		if (mine) {
@@ -102,7 +109,7 @@ export default class extends React.Component {
 	handleActivation() {
 		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
 			this.setState({isActivating: true});
-			upgradeItemService.activate(this.state.item.id).then(item => this.loadItemJobs(item))
+			upgradeItemService.activate(this.state.item.id).then(item => this.fetchItemJobs(item))
 			.catch(e => {
 				this.setState({isActivating: false});
 				notifier.error(e.message, "Activation Failed");
@@ -114,7 +121,7 @@ export default class extends React.Component {
 		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.item.eligible_job_count} orgs will be canceled.`)) {
 			this.setState({isCancelling: true});
 			upgradeItemService.cancel(this.state.item.id)
-			.then(item => this.loadItemJobs(item))
+			.then(item => this.fetchItemJobs(item))
 			.catch(e => {
 				this.setState({isCancelling: false});
 				notifier.error(e.message, "Cancellation Failed");
