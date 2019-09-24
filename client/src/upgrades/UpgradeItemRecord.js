@@ -111,7 +111,7 @@ export default class extends React.Component {
 	}
 
 	handleCancellation() {
-		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.jobs.length} orgs will be canceled.`)) {
+		if (window.confirm(`Are you sure you want to cancel this request?  All ${this.state.item.eligible_job_count} orgs will be canceled.`)) {
 			this.setState({isCancelling: true});
 			upgradeItemService.cancel(this.state.item.id)
 			.then(item => this.loadItemJobs(item))
