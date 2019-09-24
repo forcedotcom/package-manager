@@ -469,7 +469,7 @@ async function retryFailedUpgrade(failedId, createdBy, transid) {
     }
 
     const scheduledDate = new Date();
-    const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedId);
+    const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
 
     // Set transient transaction id given by the caller.
     upgrade.transid = transid;
