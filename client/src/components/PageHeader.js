@@ -4,6 +4,7 @@ import {HeaderIcon} from "./Icons";
 import moment from "moment/moment";
 import {Helmet} from "react-helmet";
 
+
 export class HeaderNote extends React.Component {
 	render() {
 		return (
@@ -44,8 +45,9 @@ export class HeaderField extends React.Component {
 					<dt>
 						<p className="slds-text-heading--label slds-truncate" style={style}>{this.props.label}</p>
 					</dt>
+
 					<dd>
-						<p className="slds-text-body--regular slds-truncate" style={style} title={value}>{value}</p>
+						<p className="slds-text-body--regular slds-truncate" style={style} title={this.props.message ? this.props.message : value}>{value}</p>
 					</dd>
 				</dl>
 			</div>

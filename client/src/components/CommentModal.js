@@ -1,7 +1,8 @@
 import React from 'react';
 import {FormHeader} from "../components/PageHeader";
+import {ORG_ICON} from "../Constants";
 
-export default class extends React.Component {
+export default class CommentModal extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -16,7 +17,7 @@ export default class extends React.Component {
 	// Lifecycle
 	render() {
 		const actions = [
-			{handler: this.onAdd, spinning: this.state.isAdding, label: "Add"},
+			{handler: this.onAdd, spinning: this.state.isAdding, label: "Continue"},
 			{handler: this.props.onCancel, label: "Cancel"}
 		];
 
@@ -24,7 +25,7 @@ export default class extends React.Component {
 			<div>
 				<div className="slds-modal slds-fade-in-open">
 					<div className="slds-modal__container">
-						<FormHeader type="Orgs" icon={icon} title={title} actions={actions}/>
+						<FormHeader type="Orgs" icon={ORG_ICON} title="Add Comment" actions={actions}/>
 						<div className="slds-modal__content slds-p-around_medium">
 							<div className="slds-form slds-form_stacked slds-wrap  slds-m-around--medium">
 								<div className="slds-form-element">

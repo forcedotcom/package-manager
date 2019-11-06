@@ -38,6 +38,8 @@ export default class extends React.Component {
 		this.retryHandler = this.retryHandler.bind(this);
 		this.refreshJobsHandler = this.refreshJobsHandler.bind(this);
 		this.refreshJobsCompleteHandler = this.refreshJobsCompleteHandler.bind(this);
+		this.cancelWindowHandler = this.cancelWindowHandler.bind(this);
+		this.closeCancelWindowHandler = this.closeCancelWindowHandler.bind(this);
 	}
 
 	componentDidMount() {
@@ -56,7 +58,6 @@ export default class extends React.Component {
 	
 	render() {
 		const {upgrade, progress, user} = this.state;
-		
 		let userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username));
 		
 		const actions = [
@@ -87,7 +88,7 @@ export default class extends React.Component {
 				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={upgrade.description} actions={actions}
 							  parent={{label: "Upgrades", location: `/upgrades`}}>
 					<HeaderField label="Scheduled Start Time" value={`${moment(upgrade.start_time).format('lll')} (${moment(upgrade.start_time).fromNow()})`}/>
-					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`}/>
+					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`} message={upgrade.comment}/>
 					<HeaderField label="Jobs" value={upgrade.total_job_count}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
