@@ -88,7 +88,7 @@ export default class extends React.Component {
 				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={upgrade.description} actions={actions}
 							  parent={{label: "Upgrades", location: `/upgrades`}}>
 					<HeaderField label="Scheduled Start Time" value={`${moment(upgrade.start_time).format('lll')} (${moment(upgrade.start_time).fromNow()})`}/>
-					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`} message={upgrade.comment}/>
+					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`} detail={upgrade.comment}/>
 					<HeaderField label="Jobs" value={upgrade.total_job_count}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>

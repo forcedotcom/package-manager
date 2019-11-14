@@ -47,7 +47,7 @@ export class HeaderField extends React.Component {
 					</dt>
 
 					<dd>
-						<p className="slds-text-body--regular slds-truncate" style={style} title={this.props.message ? this.props.message : value}>{value}</p>
+						<p className="slds-text-body--regular slds-truncate" style={style} title={this.props.detail? this.props.detail : ""}>{value}</p>
 					</dd>
 				</dl>
 			</div>
