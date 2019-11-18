@@ -17,6 +17,7 @@ import {DataTableFilterHelp} from "../components/DataTableFilter";
 import {getProgress, UPGRADE_ICON} from "../Constants";
 import OrgCard from "../orgs/OrgCard";
 import * as nav from "../services/nav";
+import CommentModal from '../components/CommentModal';
 
 export default class extends React.Component {
 	constructor(props) {
@@ -24,7 +25,8 @@ export default class extends React.Component {
 		this.state = {
 			user: authService.getSessionUser(this),
 			upgrade: {},
-			progress: getProgress([])
+			progress: getProgress([]),
+			showCancelWindow: false
 		};
 		
 		this.fetchBlacklist = this.fetchBlacklist.bind(this);
@@ -36,6 +38,8 @@ export default class extends React.Component {
 		this.retryHandler = this.retryHandler.bind(this);
 		this.refreshJobsHandler = this.refreshJobsHandler.bind(this);
 		this.refreshJobsCompleteHandler = this.refreshJobsCompleteHandler.bind(this);
+		this.cancelWindowHandler = this.cancelWindowHandler.bind(this);
+		this.closeCancelWindowHandler = this.closeCancelWindowHandler.bind(this);
 	}
 
 	componentDidMount() {
@@ -54,7 +58,6 @@ export default class extends React.Component {
 	
 	render() {
 		const {upgrade, progress, user} = this.state;
-		
 		let userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username));
 		
 		const actions = [
@@ -65,7 +68,7 @@ export default class extends React.Component {
 				spinning: this.state.isActivating
 			},
 			{
-				label: "Cancel Upgrade", handler: this.cancellationHandler,
+				label: "Cancel Upgrade", handler: this.cancelWindowHandler,
 				disabled: user.read_only || progress.canceled > 0 || progress.done,
 				spinning: this.state.isCancelling
 			},
@@ -85,7 +88,7 @@ export default class extends React.Component {
 				<RecordHeader type="Upgrade" icon={UPGRADE_ICON} title={upgrade.description} actions={actions}
 							  parent={{label: "Upgrades", location: `/upgrades`}}>
 					<HeaderField label="Scheduled Start Time" value={`${moment(upgrade.start_time).format('lll')} (${moment(upgrade.start_time).fromNow()})`}/>
-					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`}/>
+					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`} detail={upgrade.comment}/>
 					<HeaderField label="Jobs" value={upgrade.total_job_count}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 				</RecordHeader>
@@ -105,6 +108,7 @@ export default class extends React.Component {
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
+				{this.state.showCancelWindow ? <CommentModal onSave={this.cancellationHandler} onCancel={this.closeCancelWindowHandler}/> : ""}
 			</div>
 		);
 	}
@@ -144,10 +148,18 @@ export default class extends React.Component {
 		}
 	}
 
-	cancellationHandler() {
+	cancelWindowHandler() {
+		this.setState({showCancelWindow: true});
+	}
+
+	closeCancelWindowHandler() {
+		this.setState({showCancelWindow: false});
+	}
+
+	cancellationHandler(text) {
 		if (window.confirm(`Are you sure you want to cancel this upgrade?  All requests will be canceled.`)) {
 			this.setState({isCancelling: true});
-			upgradeService.cancel(this.state.upgrade.id).then(() => window.location.reload()).catch((e) => {
+			upgradeService.cancel(this.state.upgrade.id, text).then(() => window.location.reload()).catch((e) => {
 				this.setState({isCancelling: false});
 				notifier.error(e.message, "Cancellation Failed");
 			});

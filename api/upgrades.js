@@ -61,7 +61,7 @@ const SELECT_ALL = `
 const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ONE = `
-    SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id,
+    SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id, u.comment,
     CAST (SUM(i.total_job_count) AS INTEGER) total_job_count,
 	${ITEM_STATUS_SOQL}
     FROM upgrade u
@@ -871,12 +871,13 @@ async function areJobsCompleteForUpgrade(upgradeId) {
 
 async function requestCancelUpgrade(req, res, next) {
 	const id = req.params.id;
+	const comment = req.body.comment;
 	try {
 		let items = await findItemsByUpgrade(id);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		await changeUpgradeJobStatus(items, push.Status.Canceled, push.Status.Pending, push.Status.Created);
 		await changeUpgradeItemStatus(items, push.Status.Canceled);
-		await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [UpgradeStatus.Canceled, id]);
+		await db.update(`UPDATE upgrade SET status = $1, comment = $2 WHERE id = $3`, [UpgradeStatus.Canceled, comment, id]);
 		admin.emit(admin.Events.UPGRADE, await retrieveById(id));
 		admin.emit(admin.Events.UPGRADE_ITEMS, items);
 		res.json(items);

@@ -85,6 +85,7 @@ create table if not exists upgrade
   description  text,
   status       varchar(40),
   parent_id    varchar(18),
+  comment      text,
   org_group_id varchar(18),
   created_by   varchar(255)
 );
