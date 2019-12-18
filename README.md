@@ -1,8 +1,9 @@
 # brick-manager
 
-## Org Data Sources
-Org62
-Blacktab (SB and Prod)
+## Data Sources
+### Accounts data (for internal ISVs)
+Org62 - requires user that can query accounts data and has Heroku private space IP addresses exempted
+
 ### LMA Org
 #### Required Objects and Fields
 ##### sfLma__Package__c.DependencyTier__c
@@ -12,10 +13,10 @@ Description: Identifies simple dependency tree.  Packages in Tier 1 are upgraded
 ##### sfLma__Package_Version__c.Status__c
 Type: Picklist
 Values:
-* Verified - GA-ready
-* Pre-Release - SB-ready
-* Preview - Preview package
-* Limited - Limited release for select customers
+* "Verified" - The version is GA
+* "Pre-Release" - The version is ready for SB
+* "Preview" - The version is a preview package, similar to SB but not meant for everyone
+* "Limited" - The version was built for a specific purpose for specific customers
 
 ### Connected App
 A connected app is required to enable and govern your oauth connections to your various orgs. Define a permission set
