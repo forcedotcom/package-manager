@@ -2,9 +2,11 @@
 
 ## Data Sources
 ### Accounts data (for internal ISVs)
-Org62 - requires user that can query accounts data and has Heroku private space IP addresses exempted
+Org62 supplies account names.  Normal ISVs have account data provisioned in their LMO.  Internal ISVs seem not to.  Thus they need to query Org62 to retrieve account names based on production org ids.  The tool then associates those account names and ids with the production orgs and their child sandbox orgs. The Org62 user used must be able to query accounts data and have Heroku private space IP addresses exempted.
 
 ### LMA Org
+Your LMA org supplies you packages, package version details and license data.
+
 #### Required Objects and Fields
 ##### sfLma__Package__c.DependencyTier__c
 Type: Integer
@@ -18,7 +20,7 @@ Values:
 * "Preview" - The version is a preview package, similar to SB but not meant for everyone
 * "Limited" - The version was built for a specific purpose for specific customers
 
-### Connected App
+#### Connected App
 A connected app is required to enable and govern your oauth connections to your various orgs. Define a permission set
 to grant access to specific user accounts.  Your permission set, or the user's profile, should also grant
 the appropriate read access to the LMA objects you need.  
@@ -33,7 +35,10 @@ For your connected app:
 * https://pm.steelbrick.com/oauth2/callback
 * http://localhost:5000/oauth2/callback
 
-### Environment configuration (.env)
+### Packaging Dev Orgs
+You may connect one or more packaging orgs.  This must be an admin user, able to query PackageSubscribers and write to the PackagePush API to query, schedule and activate push upgrades.
+
+## Heroku Environment Configuration (.env)
 When deployed to Heroku, config settings must be added for each.  When running locally, your .env file 
 supplies them.
 ```
