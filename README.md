@@ -62,30 +62,28 @@ EXPAND_BLACKLIST=true
 PACKAGE_MANAGER_ADMIN_PROFILE=SteelBrick Package Manager Admin
 PACKAGE_ORG_IP_RANGES=[{"description": "SFDC Network", "startAddress": "204.14.232.0", "endAddress": "204.14.239.255"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.148.180", "endAddress": "35.165.148.180"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.168.63", "endAddress": "35.165.168.63"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.214.66", "endAddress": "35.165.214.66"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.214.102", "endAddress": "35.165.214.102"}, {"description": "SFDC Phoenix (PRD)", "startAddress": "136.146.0.0", "endAddress": "136.147.255.255"}]
 
-##TEST
-
 # The app runs various background jobs to keep everything monitored and data synced.  Use the following
 # to determine the job intervals.
 JOB_SCHEDULES={"org_monitor_interval_seconds": 240, "fetch_interval_minutes": 5, "fetch_all_interval_days": 1, "upgrade_monitor_interval_seconds": 30,"upload_orgs_interval_hours": 12}
 # The app requires four specific org types, in addition to whatever packaging orgs you need.  If you 
 # want to explicitly the instance url for one or more of them, like with your LMA org, you may do so 
 # here.  This is very much optional.
+
 NAMED_ORGS=[{"type": "Licenses","orgId": "00D300000008V7fEAE","name": "SB 62","instanceUrl":"https://steelbrick.my.salesforce.com"}]
 
-# Self-explanatory.
 LOG_LEVEL=DEBUG
 DEBUG_SQL_VALUES=true
 
-# Warning: use with caution, for testing and development purposes only.
-ENFORCE_ACTIVATION_POLICY=false
-ENFORCE_AUTH=false
+# WARNING: use with caution, for testing and development purposes only.
+ENFORCE_ACTIVATION_POLICY=true
+ENFORCE_AUTH=true
 
-# Biult-in whitelisting, very useful for local development where you only want to be able to affect
+# Built-in whitelisting, very useful for local development where you only want to be able to affect
 # a limited number of internal orgs.
 ALLOWED_ORGS=["00D...","00D..."]
 
 # Whether to force usage of HTTPS.  Good for production, not so good for local development
-FORCE_HTTPS=false
+FORCE_HTTPS=true
 
 # In Dev mode, we run the UI on 3000 and proxy to the backend API (on 5000)
 CLIENT_PORT=3000
