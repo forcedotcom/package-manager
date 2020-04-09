@@ -29,3 +29,13 @@
     content: '✘' !important;
     color: #91261c !important; /* Darker Pantone Fiesta Summer '19 */
 }
+
+.button-link {
+    background: none;
+    border: none;
+    margin: .25em 0 .25em .35em;
+}
+
+.button-tab {
+    border-bottom: 1px solid #dddbda;
+}

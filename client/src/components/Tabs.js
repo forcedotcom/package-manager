@@ -8,11 +8,12 @@ class TabHeader extends React.Component {
 	};
 
 	render() {
+		// borderBottom style is required below until slds changes itself to use button
 		return (
 			<li className={`slds-tabs_default__item ${this.props.active ? 'slds-is-active' : ''}`}
 				title={this.props.label} role="presentation">
-				<a className="slds-tabs_default__link" role="tab" tabIndex="0" aria-selected="true"
-				   onClick={this.clickHandler}>{this.props.label}</a>
+				<button className="button-tab slds-tabs_default__link" role="tab" tabIndex="0" aria-selected="true"
+				   onClick={this.clickHandler}>{this.props.label}</button>
 			</li>
 		);
 	}

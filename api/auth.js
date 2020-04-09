@@ -4,6 +4,7 @@ const jsforce = require('jsforce');
 const qs = require('query-string');
 const sfdc = require('./sfdcconn');
 const packageorgs = require('./packageorgs');
+const {sanitizeIt} = require("../util/strings");
 const logger = require('../util/logger').logger;
 
 // Configurable parameters
@@ -20,20 +21,6 @@ const AUTH_URL = process.env.AUTH_URL;
 
 // Constants
 const PROD_LOGIN = "https://login.salesforce.com";
-
-function sanitizeReturnTo(path) {
-    if (!path || typeof path !== 'string')
-        return null;
-
-    const segments = path.split("/", 10);
-    // Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
-    for (let i = 1; i < segments.length; i++) {
-        if (segments[i].match(/[\W]+/g)) {
-            return null;
-        }
-    }
-    return segments.join('/');
-}
 
 function requestLogout(req, res, next) {
     try {
@@ -92,7 +79,7 @@ async function oauthCallback(req, res, next) {
         }
         let userInfo = await conn.authorize(req.query.code);
         let url = CLIENT_URL;
-        let returnTo = sanitizeReturnTo(state.returnTo);
+        let returnTo = sanitizeIt(state.returnTo);
         if (returnTo) {
             url += returnTo;
         }

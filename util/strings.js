@@ -15,3 +15,17 @@ exports.generalizeIt = (len) => {
 	}
 	return str + "+";
 };
+
+exports.sanitizeIt = (path) => {
+	if (!path || typeof path !== 'string')
+		return null;
+
+	const segments = path.split("/", 10);
+	// Extremely cautious.  If any path segments contain any non-alphanum characters, forget it
+	for (let i = 1; i < segments.length; i++) {
+		if (segments[i].match(/[\W]+/g)) {
+			return null;
+		}
+	}
+	return segments.join('/');
+}

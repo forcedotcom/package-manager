@@ -389,9 +389,7 @@ class TimelineEntry extends React.Component {
 								<div
 									className="slds-grid slds-grid_vertical-align-center slds-truncate_container_75 slds-no-space">
 									<h3 className="slds-truncate" title={this.props.subject}>
-										<a>
-											<strong>{this.props.subject}</strong>
-										</a>
+										<strong>{this.props.subject}</strong>
 									</h3>
 									{interval}
 									{error}

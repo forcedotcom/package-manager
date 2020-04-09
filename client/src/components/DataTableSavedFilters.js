@@ -94,13 +94,13 @@ export default class extends React.Component {
 
 		const overflow = filters.length > threshold ? filters.slice(threshold).map(f =>
 			<li key={f.id} id={f.id} className="slds-dropdown__item">
-				<a onClick={this.filterChangeHandler}>
+				<button className="button-link" onClick={this.filterChangeHandler}>
 					<span className="slds-truncate">
 						<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
 							<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#filter"/>
 						</svg>{f.name}
 					</span>
-				</a>
+				</button>
 			</li>
 		
 		) : [];
@@ -136,51 +136,51 @@ export default class extends React.Component {
 						{overflow}
 						{!user.read_only ?
 						<li className="slds-dropdown__item">
-							<a tabIndex="0" onClick={this.createHandler}>
+							<button className="button-link" tabIndex="0" onClick={this.createHandler}>
 								<span className="slds-truncate">
 									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
 									  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#new"/>
 									</svg>Save as new filter
 								</span>
-							</a>
+							</button>
 						</li> : '' }
 						{!user.read_only && selectedId != null ? [
 						<li key="updateHandler" className="slds-has-divider_top-space slds-dropdown__item">
-							<a tabIndex="0" onClick={this.updateHandler}>
+							<button className="button-link" tabIndex="0" onClick={this.updateHandler}>
 								<span className="slds-truncate">
 									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
 									  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#save"/>
 									</svg>Save changes to filter
 								</span>
-							</a>
+							</button>
 						</li>,
 						<li key="resetHandler" className="slds-dropdown__item">
-							<a tabIndex="0" onClick={this.resetHandler}>
+							<button className="button-link" tabIndex="0" onClick={this.resetHandler}>
 								<span className="slds-truncate">
 									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
 									  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#undo"/>
 									</svg>Undo changes to filter
 								</span>
-							</a>
+							</button>
 						</li>,
 						<li key="deleteHandler" className="slds-dropdown__item">
-							<a tabIndex="2" onClick={this.deleteHandler}>
+							<button className="button-link" tabIndex="2" onClick={this.deleteHandler}>
 								<span className="slds-truncate">
 									<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
 									  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#delete"/>
 									</svg>Delete selected filter
 								</span>
-							</a>
+							</button>
 						</li>] : "" }
 						{hasFilter ?
 						<li className={`${hasMenuItems ? "slds-has-divider_top-space" : ""} slds-dropdown__item`}>
-							<a tabIndex="3" onClick={this.clearHandler}>
+							<button className="button-link" tabIndex="3" onClick={this.clearHandler}>
 							<span className="slds-truncate">
 								<svg className="slds-icon slds-icon_x-small slds-icon-text-default slds-m-right_x-small">
 								  <use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#clear"/>
 								</svg>Clear filters and show everything
 							</span>
-							</a>
+							</button>
 						</li> : "" }
 					</ul>
 				</div>
