@@ -1,0 +1,79 @@
+---
+- - :permit
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:46:53.150347000 Z
+- - :permit
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:47:11.401341000 Z
+- - :permit
+  - New BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:48:12.854415000 Z
+- - :permit
+  - ISC
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:48:35.186279000 Z
+- - :permit
+  - MIT*
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:48:53.744516000 Z
+- - :permit
+  - Simplified BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:48:59.460045000 Z
+- - :permit
+  - CC0-1.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:49:33.695957000 Z
+- - :permit
+  - BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:50:21.993140000 Z
+- - :permit
+  - CC-BY-3.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:50:29.349524000 Z
+- - :permit
+  - BSD*
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:50:34.467995000 Z
+- - :permit
+  - WTFPL
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:50:50.275811000 Z
+- - :permit
+  - Unlicense
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:51:35.786656000 Z
+- - :permit
+  - "(MIT OR Apache-2.0)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 20:51:53.014396000 Z

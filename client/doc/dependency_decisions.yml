@@ -1,0 +1,133 @@
+---
+- - :permit
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:00:09.186000000 Z
+- - :permit
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:00:13.167451000 Z
+- - :permit
+  - ISC
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:00:17.879958000 Z
+- - :permit
+  - BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:00:28.383187000 Z
+- - :permit
+  - New BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:00:40.535709000 Z
+- - :permit
+  - Simplified BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:00.131492000 Z
+- - :permit
+  - CC0-1.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:09.161892000 Z
+- - :permit
+  - "(MIT OR CC0-1.0)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:15.714929000 Z
+- - :permit
+  - Unlicense
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:21.645840000 Z
+- - :permit
+  - "(WTFPL OR MIT)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:28.216931000 Z
+- - :permit
+  - CC-BY-3.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:49.565954000 Z
+- - :permit
+  - CC-BY-4.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:02:55.583756000 Z
+- - :permit
+  - MIT*
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:00.195585000 Z
+- - :permit
+  - BSD*
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:07.713317000 Z
+- - :permit
+  - "(MIT OR Apache-2.0)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:16.017319000 Z
+- - :permit
+  - BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:28.516950000 Z
+- - :permit
+  - "(Apache-2.0 OR MPL-1.1)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:36.839721000 Z
+- - :permit
+  - WTFPL
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:45.439866000 Z
+- - :permit
+  - "(MIT AND BSD-3-Clause)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:03:52.569061000 Z
+- - :permit
+  - Public Domain
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:04:07.097980000 Z
+- - :permit
+  - "(BSD-3-Clause OR GPL-2.0)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:04:14.178282000 Z
+- - :permit
+  - "(MIT AND Zlib)"
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-04-09 21:04:53.389705000 Z
