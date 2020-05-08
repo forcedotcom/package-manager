@@ -179,7 +179,7 @@ export default class extends React.Component {
 		return (
 			<div>
 				<Helmet>
-					<title>SteelBrick PM: Admin</title>
+					<title>Package Manager: Admin</title>
 				</Helmet>
 				<RecordHeader type="Admin" icon={ADMIN_ICON} title="Background Jobs" actions={actions}/>
 

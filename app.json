@@ -1,6 +1,6 @@
 {
-  "name": "brick-manager",
-  "description": "SteelBrick Package Manager",
-  "repository": "https://git.soma.salesforce.com/Steelbrick/brick-manager",
+  "name": "package-manager",
+  "description": "Package Manager",
+  "repository": "https://github.com/forcedotcom/package-manager",
   "addons": ["heroku-postgresql:hobby-dev"]
 }

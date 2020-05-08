@@ -1,7 +1,7 @@
 {
-  "name": "brick-manager",
+  "name": "package-manager",
   "version": "1.0.0",
-  "description": "SteelBrick Package Manager",
+  "description": "Package Manager",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

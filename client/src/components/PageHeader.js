@@ -343,7 +343,7 @@ export class HomeHeader extends React.Component {
 		return (
 			<div className="slds-page-header">
 				<Helmet>
-					<title>SteelBrick PM: {this.props.title}</title>
+					<title>Package Manager: {this.props.title}</title>
 				</Helmet>
 				<div className="slds-grid">
 					<div className="slds-col slds-p-right--small">
