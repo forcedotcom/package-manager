@@ -12,6 +12,13 @@ Your LMA org supplies you packages, package version details and license data.
 Type: Integer
 Description: Identifies simple dependency tree.  Packages in Tier 1 are upgraded before Tier 2.  Tier 2 before Tier 3, and so on.
 
+##### sfLma__Package__c.Status__c
+Type: Picklist
+Description: If Inactive, the package is skipped altogether and not loaded into the package manager tool.
+Values:
+* "Active"
+* "Inactive"
+
 ##### sfLma__Package_Version__c.Status__c
 Type: Picklist
 Values:
