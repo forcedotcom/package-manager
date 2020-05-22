@@ -33,11 +33,6 @@ function fetchData(fetchAll) {
 						name: "Fetching licenses",
 						handler: (job) => licenses.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].orgId, fetchAll, job)
 					},
-					/*,
-					{
-						name: "Invalidating conflicting licenses",
-						handler: (job) => licenses.markInvalid(job)
-					}*/
 				],
 				fail: (e) => {
 					if (e.name === "invalid_grant") {
