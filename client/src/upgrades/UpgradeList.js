@@ -16,7 +16,7 @@ export default class extends React.Component {
 	// Lifecycle
 	render() {
 		let columns = [
-			{Header: "Number", accessor: "id", minWidth: 30, sortable: true, clickable: true},
+			{Header: "Number", accessor: "id", minWidth: 60, sortable: true, clickable: true},
 			{Header: "Description", accessor: "description", minWidth: 300, clickable: true},
 			{
 				Header: "Scheduled Start Time",
