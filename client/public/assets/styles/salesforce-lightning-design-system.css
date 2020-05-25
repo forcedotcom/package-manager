@@ -7277,7 +7277,14 @@ a.slds-button--inverse:focus {
    * @selector .slds-checkbox_faux
    * @restrict .slds-checkbox span
    */ }
-
+.slds-checkbox-flex {
+   display: flex;
+   align-items: center;
+   margin-right: auto;
+ }
+.slds-flex-footer {
+  display: flex;
+}
 .slds-checkbox.slds-checkbox_stacked {
   /**
      * @summary Container for faux checkbox element

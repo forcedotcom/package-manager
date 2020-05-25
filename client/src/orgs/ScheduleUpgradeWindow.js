@@ -12,9 +12,11 @@ export default class extends React.Component {
 		super(props);
 		this.state = {
 			startDate: moment().add(15, 'minutes'),
-			description: this.props.description || ""
+			description: this.props.description || "",
+			checked: true
 		};
 		
+		this.autoRetryHandler = this.autoRetryHandler.bind(this);
 		this.handleSelectNone = this.handleSelectNone.bind(this);
 		this.handleVersionChange = this.handleVersionChange.bind(this);
 		this.handleDateChange = this.handleDateChange.bind(this);
@@ -107,7 +109,11 @@ export default class extends React.Component {
 							</div>
 						</div>
 
-						<footer className="slds-modal__footer">
+						<footer className="slds-modal__footer slds-flex-footer">
+							<div className="slds-checkbox-flex">
+								<input type="checkbox" onChange={this.autoRetryHandler} defaultChecked={this.state.checked}/>
+								<p style={{marginLeft: '5px'}}><strong>Auto Retry Upgrade</strong></p>
+							</div>
 							<button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel
 							</button>
 							<button className="slds-button slds-button--neutral slds-button--brand"
@@ -129,6 +135,10 @@ export default class extends React.Component {
 	}
 	
 	// Handlers
+	autoRetryHandler() {
+		this.setState({checked: !this.state.checked});
+	}
+
 	handleSelectNone() {
 		const {packageMap} = this.state;
 		packageMap.forEach(p => p.selectedVersions = ["[[NONE]]"]);
