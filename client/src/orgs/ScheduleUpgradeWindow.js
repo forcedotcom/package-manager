@@ -13,10 +13,12 @@ export default class extends React.Component {
 		this.state = {
 			startDate: moment().add(15, 'minutes'),
 			description: this.props.description || "",
-			checked: true
+			checked: true,
+			retryCount: 1
 		};
 		
 		this.autoRetryHandler = this.autoRetryHandler.bind(this);
+		this.retryCountHandler = this.retryCountHandler.bind(this);
 		this.handleSelectNone = this.handleSelectNone.bind(this);
 		this.handleVersionChange = this.handleVersionChange.bind(this);
 		this.handleDateChange = this.handleDateChange.bind(this);
@@ -112,7 +114,10 @@ export default class extends React.Component {
 						<footer className="slds-modal__footer slds-flex-footer">
 							<div className="slds-checkbox-flex">
 								<input type="checkbox" onChange={this.autoRetryHandler} defaultChecked={this.state.checked}/>
-								<p style={{marginLeft: '5px'}}><strong>Auto Retry Upgrade</strong></p>
+								<p style={{margin: '0 5px'}}><strong>Auto Retry Upgrade</strong></p>
+								<select onChange={this.retryCountHandler} defaultValue={this.state.retryCount} disabled>
+									<option value="1">1</option>
+								</select>
 							</div>
 							<button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel
 							</button>
@@ -135,6 +140,10 @@ export default class extends React.Component {
 	}
 	
 	// Handlers
+	retryCountHandler(value) {
+		this.setState({retryCount: value});
+	}
+
 	autoRetryHandler() {
 		this.setState({checked: !this.state.checked});
 	}
