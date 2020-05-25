@@ -144,8 +144,8 @@ export default class extends React.Component {
 		return licenseService.requestByOrg(this.props.match.params.orgId);
 	}
 
-	upgradeHandler(versions, startDate, description) {
-		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description, this.state.transid).then((res) => {
+	upgradeHandler(versions, startDate, description, retryEnabled, retryCount) {
+		orgService.requestUpgrade(this.state.org.org_id, versions, startDate, description, this.state.transid, retryEnabled, retryCount).then((res) => {
 			if (res.message) {
 				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
 				this.setState({schedulingUpgrade: false});

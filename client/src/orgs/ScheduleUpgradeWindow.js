@@ -13,7 +13,7 @@ export default class extends React.Component {
 		this.state = {
 			startDate: moment().add(15, 'minutes'),
 			description: this.props.description || "",
-			checked: true,
+			retryEnabled: true,
 			retryCount: 1
 		};
 		
@@ -113,7 +113,7 @@ export default class extends React.Component {
 
 						<footer className="slds-modal__footer slds-flex-footer">
 							<div className="slds-checkbox-flex">
-								<input type="checkbox" onChange={this.autoRetryHandler} defaultChecked={this.state.checked}/>
+								<input type="checkbox" onChange={this.autoRetryHandler} defaultChecked={this.state.retryEnabled}/>
 								<p style={{margin: '0 5px'}}><strong>Auto Retry Upgrade</strong></p>
 								<select onChange={this.retryCountHandler} defaultValue={this.state.retryCount} disabled>
 									<option value="1">1</option>
@@ -145,7 +145,7 @@ export default class extends React.Component {
 	}
 
 	autoRetryHandler() {
-		this.setState({checked: !this.state.checked});
+		this.setState({retryEnabled: !this.state.retryEnabled});
 	}
 
 	handleSelectNone() {
@@ -198,7 +198,7 @@ export default class extends React.Component {
 		this.setState({isScheduling: true});
 		let versions = [];
 		this.state.packageMap.forEach(p => versions = versions.concat(p.selectedVersions));
-		this.props.onUpgrade(versions.filter(versionId => !versionId.startsWith("[[NONE]]")), this.state.startDate, this.state.description);
+		this.props.onUpgrade(versions.filter(versionId => !versionId.startsWith("[[NONE]]")), this.state.startDate, this.state.description, this.state.retryEnabled, this.state.retryCount);
 	}
 }
 

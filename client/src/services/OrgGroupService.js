@@ -15,4 +15,4 @@ export let requestUpdate = orggroup => h.put(url, orggroup);
 export let requestCreate = orggroup => h.post(url, orggroup);
 export let requestDelete = orggroupIds => h.post(url + "/delete", {orggroupIds});
 
-export let requestUpgrade = (id, versions, scheduled_date, description, transid) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description, transid});
+export let requestUpgrade = (id, versions, scheduled_date, description, transid, retryEnabled, retryCount) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description, transid, retryEnabled, retryCount});

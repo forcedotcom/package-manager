@@ -177,8 +177,8 @@ export default class extends React.Component {
 		return packageVersionList.map(v => v.package_id);
 	}
 
-	upgradeHandler(versions, startDate, description) {
-		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description, this.state.transid).then((res) => {
+	upgradeHandler(versions, startDate, description, retryEnabled, retryCount) {
+		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description, this.state.transid, retryEnabled, retryCount).then((res) => {
 			if (res.message) {
 				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
 				this.setState({schedulingUpgrade: false});
