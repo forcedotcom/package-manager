@@ -165,9 +165,9 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN org o on o.org_id = j.org_id
         LEFT JOIN account a ON a.account_id = o.account_id`;
 
-async function createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId, parentId) {
+async function createUpgrade(retryEnabled, retryCount, scheduledDate, createdBy, description, blacklisted, orgGroupId, parentId) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
-	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status,org_group_id,parent_id) VALUES ($1,$2,$3,$4,$5,$6)', [isoTime, createdBy, description, UpgradeStatus.Ready, orgGroupId, parentId]);
+	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status,org_group_id,parent_id,retry_enabled,retry_count) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [isoTime, createdBy, description, UpgradeStatus.Ready, orgGroupId, parentId, retryEnabled, retryCount]);
 	if (blacklisted && blacklisted.length !== 0) {
 		createUpgradeBlacklist(recs[0].id, blacklisted).then(() => {});
 	}

@@ -14,6 +14,6 @@ export let requestByUpgradeBlacklist = blacklistUpgradeId => h.get(url, {blackli
 
 export let requestById = id => h.get(url + "/" + id);
 
-export let requestUpgrade = (id, versions, scheduled_date, description, transid) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description, transid});
+export let requestUpgrade = (id, versions, scheduled_date, description, transid, retryEnabled, retryCount) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description, transid, retryEnabled, retryCount});
 
 export let requestAdd = (orgIds, transid) => h.put(url, {orgIds, transid});

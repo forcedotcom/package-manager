@@ -36,7 +36,7 @@ export default class extends React.Component {
 			showSelected: false,
 			upgradeablePackageIds: []
 		};
-		
+
 		this.fetchMembers = this.fetchMembers.bind(this);
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchUpgrades = this.fetchUpgrades.bind(this);
@@ -67,7 +67,7 @@ export default class extends React.Component {
 		notifier.on('group-members', this.processingFinished);
 		orgGroupService.requestById(this.props.match.params.orgGroupId).then(orggroup => this.setState({orggroup}));
 	}
-	
+
 	componentWillUnmount() {
 		notifier.remove('upgrade', this.upgradeUpdated);
 		notifier.remove('group-members', this.processingFinished);
@@ -93,7 +93,7 @@ export default class extends React.Component {
 				detail: user.read_only ? Messages.READ_ONLY_USER : ""
 			}
 		);
-			
+
 		let memberActions = [
 			{label: `${selected.size} Selected`, toggled: showSelected, icon: "filterList", group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
@@ -148,7 +148,7 @@ export default class extends React.Component {
 					</Tabs>
 					<DataTableFilterHelp/>
 				</div>
-				
+
 				{this.state.isEditing ? <GroupFormWindow orggroup={orggroup} onSave={this.saveHandler}
 														 onCancel={this.cancelHandler}/> : ""}
 				{this.state.schedulingUpgrade ? <ScheduleUpgradeWindow packageIds={this.state.upgradeablePackageIds}
@@ -156,7 +156,7 @@ export default class extends React.Component {
 																	   onUpgrade={this.upgradeHandler}
 																	   onCancel={this.cancelSchedulingHandler}/> : ""}
 				{this.state.addingToGroup ?
-					<SelectGroupWindow title={`${this.state.removeAfterAdd ? "Move" : "Copy"} ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to different group`} 
+					<SelectGroupWindow title={`${this.state.removeAfterAdd ? "Move" : "Copy"} ${strings.pluralizeIt(selected, "org").num} ${strings.pluralizeIt(selected, "org").str} to different group`}
 									   excludeId={orggroup.id} removeAfterAdd={this.state.removeAfterAdd}
 									   onAdd={this.addToGroupHandler}
 									   onCancel={this.closeGroupWindow}/> : ""}
@@ -186,8 +186,17 @@ export default class extends React.Component {
 		return licenseService.requestByGroup(this.props.match.params.orgGroupId);
 	}
 
-	upgradeHandler(versions, startDate, description) {
-		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description, this.state.transid).then((res) => {
+	resolveUpgradeablePackages(versions) {
+		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
+		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
+		packageVersionList.sort(function (a, b) {
+			return a.dependency_tier > b.dependency_tier ? 1 : -1;
+		});
+		return packageVersionList.map(v => v.package_id);
+	}
+
+	upgradeHandler(versions, startDate, description, retryEnabled, retryCount) {
+		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description, this.state.transid, retryEnabled, retryCount).then((res) => {
 			if (res.message) {
 				notifier.error(res.message, "Failed to Schedule", 7000, res.id ? () => window.location = `/upgrade/${res.id}` : null);
 				this.setState({schedulingUpgrade: false});
