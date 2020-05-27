@@ -108,7 +108,7 @@ export default class extends React.Component {
 			}).catch(reject);
 		});
 		p.then(upgradeStats => {
-			let stats = this.formatMessage(upgradeStats);
+			let stats = this.groupStatsbyPackage(upgradeStats);
 			this.setState({showStats: true, upgradeStats: stats});
 		});
 	}
@@ -117,7 +117,7 @@ export default class extends React.Component {
 		this.setState({showStats: null});
 	}
 
-    formatMessage(upgradeStats){
+    groupStatsbyPackage(upgradeStats){
 		let items = [];
 		for (const [index, value] of upgradeStats.entries()) {
 			const data = {};
