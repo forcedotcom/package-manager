@@ -713,8 +713,9 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 	let tier = null, packageId = null;
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
-		// If this item is in a new tier, or if the same package is being upgraded again, add a new bucket.
-		if (tier !== item.dependency_tier || packageId === item.package_id) {
+		// If buckets are empty, or this item is in a new tier, or if the same package is being
+		// upgraded again, add a new bucket.
+		if (buckets.length === 0 || tier !== item.dependency_tier || packageId === item.package_id) {
 			tier = item.dependency_tier;
 			packageId = item.package_id;
 			bucket = {state: State.Ready, items: []};

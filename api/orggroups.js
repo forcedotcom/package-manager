@@ -242,8 +242,9 @@ async function isOrgOfType(orgId, type, defaultsJSON, expandByAccount) {
 			SELECT DISTINCT o.account_id FROM org o
 			INNER JOIN org_group_member m ON m.org_id = o.org_id AND o.account_id != $2
 			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $3)`, [orgId, sfdc.AccountIDs.Internal, type]) :
-		await db.query(`SELECT m.org_id FROM org_group_member m WHERE m.org_id = $1 AND 
-			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $2`, [orgId, type]);
+		await db.query(`SELECT m.org_id FROM org_group_member m
+			INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = $2
+			WHERE m.org_id = $1`, [orgId, type]);
 	return l.length > 0;
 }
 
