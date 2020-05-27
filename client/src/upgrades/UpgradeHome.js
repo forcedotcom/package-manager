@@ -1,12 +1,17 @@
 import React from 'react';
 
+
 import {HomeHeader} from '../components/PageHeader';
 import UpgradeList from "./UpgradeList";
 import * as upgradeService from "../services/UpgradeService";
-import {UPGRADE_ICON} from "../Constants";
+import * as upgradeStats from "../services/UpgradeStats";
+import {getProgress, UPGRADE_ICON} from "../Constants";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as notifier from "../services/notifications";
 import * as authService from "../services/AuthService";
+import StatsWindow from "../components/StatsWindow";
+
+import * as upgradeJobService from "../services/UpgradeJobService";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -22,6 +27,8 @@ export default class extends React.Component {
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.showSelectedHandler = this.showSelectedHandler.bind(this);
 		this.purgeHandler = this.purgeHandler.bind(this);
+		this.openStatsWindow = this.openStatsWindow.bind(this);
+		this.closeStatsWindow = this.closeStatsWindow.bind(this);
 	}
 
 	// Lifecycle
@@ -33,7 +40,8 @@ export default class extends React.Component {
 								   onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.showSelectedHandler, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Purge", group: "selectable", disabled: user.read_only || selected.size === 0, handler: this.purgeHandler}
+			{label: "Purge", group: "selectable", disabled: user.read_only || selected.size === 0, handler: this.purgeHandler},
+			{label: "Statistics", group: "selectable",  spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.openStatsWindow}
 		];
 
 		return (
@@ -42,6 +50,10 @@ export default class extends React.Component {
 							count={this.state.itemCount}/>
 				<UpgradeList onFetch={this.fetchData} refetchOn="upgrades" onFilter={this.filterHandler} filters={filterColumns}
 							 onSelect={this.selectionHandler} selected={selected} showSelected={this.state.showSelected}/>
+				{this.state.showStats ?
+					<StatsWindow title="Upgrade Statistics" upgradeStats={this.state.upgradeStats}
+					onClose={this.closeStatsWindow}/> : ""
+				}
 			</div>
 		);
 	}
@@ -85,5 +97,40 @@ export default class extends React.Component {
 				.catch(e => notifier.error(e.message | e, "Fail"));
 			}
 		}
+	}
+	openStatsWindow() {
+
+		let p =  new Promise((resolve, reject) => {
+			upgradeStats.requestStatsByid(Array.from(this.state.selected.keys())).then(data => {
+				this.setState({showSelected: false});
+				resolve(data);
+
+			}).catch(reject);
+		});
+		p.then(upgradeStats => {
+			let stats = this.formatMessage(upgradeStats);
+			this.setState({showStats: true, upgradeStats: stats});
+		});
+	}
+
+	closeStatsWindow() {
+		this.setState({showStats: null});
+	}
+
+    formatMessage(upgradeStats){
+		let items = [];
+		for (const [index, value] of upgradeStats.entries()) {
+			const data = {};
+			data.package = value.name
+			data.stats = value.status.concat(': ' + value.count)
+			
+			let elemIndex = items.findIndex( obj => obj.package === data.package)
+			if(elemIndex == -1){
+				items.push(data)
+			} else {
+				items[elemIndex].stats = items[elemIndex].stats.concat('; ' + data.stats)
+			}
+		}
+		return items;
 	}
 }

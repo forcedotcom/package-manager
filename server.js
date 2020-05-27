@@ -25,6 +25,7 @@ const express = require('express'),
 	admin = require('./api/admin'),
 	filters = require('./api/filters'),
 	logger = require('./util/logger').logger,
+	stats = require('./api/stats'),
 	helmet = require('helmet');
 
 const http = require('http');
@@ -134,6 +135,7 @@ app.get('/api/upgradejobs', upgrades.requestAllJobs);
 app.get('/api/upgradejobs/:id', upgrades.requestJobById);
 
 app.get('/api/emit/:key', admin.requestEmit);
+app.get('/api/stats', stats.requestStats);
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
