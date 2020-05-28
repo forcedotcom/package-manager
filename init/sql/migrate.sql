@@ -5,6 +5,10 @@ alter table upgrade
   add if not exists retry_enabled boolean,
   add if not exists retry_count integer;
 
+alter table upgrade_item
+    add if not exists time_stamp timestamp with time zone,
+    add if not exists remaining_orgs  integer;
+
 alter table package
   add if not exists status varchar(80);
 

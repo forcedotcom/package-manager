@@ -18,7 +18,8 @@ const Status = {
     Failed: "Failed",
     Canceled: "Canceled",
     Ineligible: "Ineligible",
-    Invalid: "Invalid"
+    Invalid: "Invalid",
+    Stuck: "Stuck"
 };
 const ActiveStatus = {
     Created: Status.Created,
