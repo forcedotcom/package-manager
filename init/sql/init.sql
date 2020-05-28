@@ -107,7 +107,9 @@ create table if not exists upgrade_item (
   version_id      varchar(18),
   status          varchar(40),
   start_time      timestamp with time zone,
-  created_by      varchar(255)
+  created_by      varchar(255),
+  time_stamp      timestamp with time zone,
+  remaining_orgs  integer
 );
 
 create table if not exists upgrade_job (

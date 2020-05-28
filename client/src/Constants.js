@@ -28,7 +28,7 @@ export const iconForType = (type) => {
 export const Status = {
 	Created: "Created", Pending: "Pending", InProgress: "InProgress", 
 	Succeeded: "Succeeded", Failed: "Failed", Canceled: "Canceled", Invalid: "Invalid",
-	Ineligible: "Ineligible"
+	Ineligible: "Ineligible", Stuck: "Stuck"
 };
 
 export const PackageVersionStatus = {

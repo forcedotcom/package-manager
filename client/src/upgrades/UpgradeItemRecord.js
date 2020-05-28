@@ -70,7 +70,7 @@ export default class extends React.Component {
 				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={item.description}
 							  actions={actions} parent={{label: "Upgrade", location: `/upgrade/${item.upgrade_id}`}}>
 					<HeaderField label="Scheduled Start Time" value={`${moment(item.start_time).format('lll')} (${moment(item.start_time).fromNow()})`}/>
-					<HeaderField label="Status" value={item.status}
+					<HeaderField label="Status" value={item.status === Status.Stuck ? Status.InProgress : item.status}
 								 className={item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={item.created_by}/>
 				</RecordHeader>

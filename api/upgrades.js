@@ -5,13 +5,15 @@ const logger = require('../util/logger').logger;
 const strings = require('../util/strings');
 const sfdc = require('./sfdcconn');
 const orgpackageversions = require('./orgpackageversions');
+const moment = require('moment');
 
 const State = {
 	Ready: "Ready",
 	Blocked: "Blocked",
 	Running: "Running",
 	Partial: "Partial",
-	Complete: "Complete"
+	Complete: "Complete",
+	Stuck: "Stuck"
 };
 
 const UpgradeStatus = {
@@ -23,6 +25,8 @@ const UpgradeStatus = {
 };
 
 const MAX_ERROR_COUNT = 20;
+
+const CHECK_PROGRESS_THRESHOLD = 15;
 
 const ITEM_STATUS_SOQL = `
 	CASE
@@ -739,6 +743,11 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 			case push.Status.Canceled:
 				bucket.state = State.Complete;
 				break;
+			// Setting bucket state to Stuck so that the next available bucket can be processed.
+			// This won't stop the current bucket execution.
+			case push.Status.Stuck:
+				bucket.state = State.Stuck;
+				break;
 			default:
 				break;
 		}
@@ -757,7 +766,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 			} else {
 				// We are not the first tier, so we have to check our previous tier before activating.
 				const parentBucket = buckets[b - 1];
-				if (parentBucket.state === State.Complete) {
+				if ([State.Complete, State.Stuck].includes(parentBucket.state)) {
 					// Yay! Parent is done so we can start.
 					activate = true;
 				}
@@ -772,10 +781,24 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 					admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
 					admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 					job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
+					// Initializing the timeStamp and remainingOrgs in the upgrade_item table. This is used below to determine if an item upgrade is stuck
+					await db.update(`UPDATE upgrade_item set time_stamp = $1, remaining_orgs = $2 WHERE id = $3`, [item.start_time, item.total_job_count, item.id]);
 				} catch (e) {
 					logger.error("Failed to activate", {error: e.message || e});
-                    admin.alert("Failed to activate", e.message || e);
-                }
+					admin.alert("Failed to activate", e.message || e);
+				}
+			} else {
+				const currentTimestamp = moment().format();
+				const {failed_job_count, invalid_job_count, canceled_job_count, succeeded_job_count, total_job_count} = item;
+				const remaining_orgs = total_job_count - (failed_job_count + invalid_job_count + canceled_job_count + succeeded_job_count);
+				const {prevTimestamp, prevRemainingOrgs} = await db.query(`SELECT time_stamp, remaining_orgs from upgrade_item WHERE id = $1`, [item.id]);
+				const timeStampDiff = moment.duration(prevTimestamp.diff(currentTimestamp)).asMinutes();
+				if (remaining_orgs === prevRemainingOrgs && timeStampDiff >= CHECK_PROGRESS_THRESHOLD) {
+					// Setting current item state to Stuck
+					await db.update(`UPDATE upgrade_item set status = $1 WHERE id = $2`, [State.Stuck, item.id]);
+				} else if (remaining_orgs < prevRemainingOrgs) {
+					await db.update(`UPDATE upgrade_item set time_stamp = $1, remaining_orgs = $2 WHERE id = $3`, [currentTimestamp, remaining_orgs, item.id]);
+				}
 			}
 		}
 	}
