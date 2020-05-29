@@ -3,7 +3,7 @@ import React from 'react';
 import {HomeHeader} from '../components/PageHeader';
 import UpgradeList from "./UpgradeList";
 import * as upgradeService from "../services/UpgradeService";
-import {UPGRADE_ICON} from "../Constants";
+import {Messages, UPGRADE_ICON} from "../Constants";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as notifier from "../services/notifications";
 import * as authService from "../services/AuthService";
@@ -33,7 +33,10 @@ export default class extends React.Component {
 								   onSelect={this.applySavedFilter}/>,
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.showSelectedHandler, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Purge", group: "selectable", disabled: user.read_only || selected.size === 0, handler: this.purgeHandler}
+			{label: "Purge", group: "selectable",
+				disabled: user.read_only || selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				handler: this.purgeHandler}
 		];
 
 		return (

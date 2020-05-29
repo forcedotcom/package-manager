@@ -6,6 +6,7 @@ import * as notifier from "../services/notifications";
 import {HeaderNote, HomeHeader} from '../components/PageHeader';
 import PackageOrgList from './PackageOrgList';
 import * as authService from "../services/AuthService";
+import {Messages} from "../Constants";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -38,10 +39,19 @@ export default class extends React.Component {
 	render() {
 		let {user} = this.state;
 		const actions = [
-			{label: "Add Org", group: "add", detail: "Shift-click to add sandbox org", disabled: user.read_only, handler: this.newHandler},
+			{label: "Add Org", group: "add",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "Shift-click to add sandbox org",
+				handler: this.newHandler},
 			{label: "Refresh", handler: this.refreshHandler, disabled: this.state.selected.size === 0, spinning: this.state.isRefreshing, detail: "Refresh the access token of the selected org"},
-			{label: "Revoke", handler: this.revokeHandler, disabled: user.read_only || this.state.selected.size === 0, spinning: this.state.isRevoking, detail: "Revoke access to the selected org"},
-			{label: "Delete", handler: this.deleteHandler, disabled: user.read_only || this.state.selected.size === 0, spinning: this.state.isDeleting, detail: "Revoke access to and delete the selected org entry"}
+			{label: "Revoke", handler: this.revokeHandler,
+				disabled: user.read_only || this.state.selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "Revoke access to the selected org",
+				spinning: this.state.isRevoking},
+			{label: "Delete", handler: this.deleteHandler,
+				disabled: user.read_only || this.state.selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "Revoke access to and delete the selected org entry",
+				spinning: this.state.isDeleting}
 		];
 
 		return (

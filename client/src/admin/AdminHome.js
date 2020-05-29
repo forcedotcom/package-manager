@@ -5,7 +5,7 @@ import debounce from 'lodash.debounce';
 import * as notifier from "../services/notifications";
 import * as adminService from '../services/AdminService';
 
-import {ADMIN_ICON, Colors} from "../Constants";
+import {ADMIN_ICON, Colors, Messages} from "../Constants";
 import ProgressBar from "../components/ProgressBar";
 import Tabs from "../components/Tabs";
 import {RecordHeader} from "../components/PageHeader";
@@ -72,7 +72,8 @@ export default class extends React.Component {
 						label: "Cancel Job",
 						handler: () => this.cancellationHandler(job),
 						spinning: job.cancelling,
-						disabled: user.read_only
+						disabled: user.read_only,
+						detail: user.read_only ? Messages.READ_ONLY_USER : ""
 					});
 				}
 
@@ -103,7 +104,10 @@ export default class extends React.Component {
 				let job = queue[i];
 				queueCards.push(
 					<AdminCard key={`${job.id}-queue-${i}`} title={job.name} actions={[
-						{label: "Cancel Job", handler: () => this.cancellationHandler(job), disabled: user.read_only, spinning: job.cancelling}]}>
+						{label: "Cancel Job", handler: () => this.cancellationHandler(job),
+							disabled: user.read_only,
+							detail: user.read_only ? Messages.READ_ONLY_USER : "",
+							spinning: job.cancelling}]}>
 					</AdminCard>);
 			}
 		} else {
@@ -164,16 +168,28 @@ export default class extends React.Component {
 		}
 
 		let actions = [
-		    {label: "Fetch Data", disabled: user.read_only, group: "data", handler: this.fetchHandler},
-            {label: "Fetch All Data", disabled: user.read_only, group: "data", handler: this.fetchAllHandler}
+		    {label: "Fetch Data",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				group: "data", handler: this.fetchHandler},
+            {label: "Fetch All Data",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				group: "data", handler: this.fetchAllHandler}
         ];
 
 
 		if (user && user.enable_sumo)
-			actions.push({label: "Upload Orgs To SumoLogic", disabled: user.read_only, group: "external", handler: this.uploadOrgsHandler});
+			actions.push({label: "Upload Orgs To SumoLogic",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				group: "external", handler: this.uploadOrgsHandler});
 
 		if (this.state.settings.HEROKU_APP_NAME) {
-			actions.push({label: "Open Heroku", disabled: user.read_only, handler: this.goToHerokuHandler, group: "external"});
+			actions.push({label: "Open Heroku",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				handler: this.goToHerokuHandler, group: "external"});
 		}
 
 		return (
