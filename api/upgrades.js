@@ -26,7 +26,7 @@ const UpgradeStatus = {
 
 const MAX_ERROR_COUNT = 20;
 
-const CHECK_PROGRESS_THRESHOLD = 15;
+const CHECK_PROGRESS_THRESHOLD_MINUTES = 15;
 
 const ITEM_STATUS_SOQL = `
 	CASE
@@ -73,7 +73,7 @@ const SELECT_ONE = `
     WHERE u.id = $1
     GROUP by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count,
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count, i.time_stamp, i.remaining_orgs,
         u.description,
         pv.version_number, pv.version_id, pv.version_sort,
         p.name package_name, p.sfid package_id, p.dependency_tier,
@@ -787,13 +787,16 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 					logger.error("Failed to activate", {error: e.message || e});
 					admin.alert("Failed to activate", e.message || e);
 				}
-			} else {
+			} else if (item.status === push.Status.Running) {
 				const currentTimestamp = moment().format();
 				const {failed_job_count, invalid_job_count, canceled_job_count, succeeded_job_count, total_job_count} = item;
 				const remaining_orgs = total_job_count - (failed_job_count + invalid_job_count + canceled_job_count + succeeded_job_count);
-				const {prevTimestamp, prevRemainingOrgs} = await db.query(`SELECT time_stamp, remaining_orgs from upgrade_item WHERE id = $1`, [item.id]);
+				const {time_stamp: prevTimestamp, remaining_orgs: prevRemainingOrgs} = item;
 				const timeStampDiff = moment.duration(prevTimestamp.diff(currentTimestamp)).asMinutes();
-				if (remaining_orgs === prevRemainingOrgs && timeStampDiff >= CHECK_PROGRESS_THRESHOLD) {
+
+				/*	IF the remaining org count doesn't change for a set threshold, mark the item as stuck
+					Update the db only IF the remaining org count changed but NOT if the org count remained the same and time_stamp has changed */
+				if (remaining_orgs === prevRemainingOrgs && timeStampDiff >= CHECK_PROGRESS_THRESHOLD_MINUTES) {
 					// Setting current item state to Stuck
 					await db.update(`UPDATE upgrade_item set status = $1 WHERE id = $2`, [State.Stuck, item.id]);
 				} else if (remaining_orgs < prevRemainingOrgs) {
@@ -802,7 +805,32 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 			}
 		}
 	}
+	// Check if all items in the upgrade are either Complete or Stuck
+	const shouldRetry = buckets.some(bucket => {
+		return ![State.Running].includes(bucket.state);
+	});
+
+	const retryEnabled = await db.update(`SELECT retryEnabled FROM upgrade WHERE id = $1`, [id]);
+
+	// Trigger Auto retry only if all items in the upgrade are either Complete or Stuck AND only if retry in enabled at the time of scheduling the upgrade
+	if (shouldRetry && retryEnabled) {
+		await autoRetryUpgrades(id);
+	}
 	return items;
+}
+
+async function autoRetryUpgrades(upgradeId) {
+	const userName = await db.query(`SELECT created_by FROM upgrade WHERE id = $1`, [upgradeId]);
+    try {
+        const upgrade = await push.retryFailedUpgrade(upgradeId, userName);
+		if (upgrade == null) {
+			logger.info("No failed jobs found to retry");
+			return;
+		}
+        await activateUpgrade(upgrade.id, null); // Skip passing the username to skip the activation validation check
+    } catch(e) {
+        logger.error("Failed to rescheduled upgrade", {id, error: e.message || e});
+    }
 }
 
 function monitorUpgrades() {
