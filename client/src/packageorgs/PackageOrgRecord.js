@@ -6,7 +6,7 @@ import * as notifier from '../services/notifications';
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import PackageOrgView from "./PackageOrgView";
-import {PACKAGE_ORG_ICON} from "../Constants";
+import {Messages, PACKAGE_ORG_ICON} from "../Constants";
 import EditPackageOrgWindow from "./EditPackageOrgWindow";
 import * as nav from "../services/nav";
 
@@ -43,17 +43,28 @@ export default class extends React.Component {
 		let {packageorg, user} = this.state;
 		let actions = [
 			{label: packageorg.active ? 'Deactivate' : 'Activate', group: "toggle",
-				handler: this.activationHandler, disabled: user.read_only || packageorg.type !== "Package",
-				detail: packageorg.active ? "Click to deactivate this org connection" : "Click to activate this org connection"},
+				handler: this.activationHandler,
+				disabled: user.read_only || packageorg.type !== "Package",
+				detail: user.read_only ? Messages.READ_ONLY_USER : packageorg.active ? "Click to deactivate this org connection" : "Click to activate this org connection"},
 			{label: "Connect", group: "actions",
 				handler: this.connectHandler, disabled: user.read_only || packageorg.status === "Connected",
-				detail: "Click to login and connect this org"},
-			{label: "Refresh", handler: this.refreshHandler, group: "actions",  disabled: packageorg.status !== "Connected",
+				detail: user.read_only ? Messages.READ_ONLY_USER : "Click to login and connect this org"},
+			{label: "Refresh", handler: this.refreshHandler, group: "actions",
+				disabled: user.read_only || packageorg.status !== "Connected",
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
 				spinning: this.state.isRefreshing},
-			{label: "Revoke", handler: this.revokeHandler, group: "actions",  disabled: user.read_only || packageorg.status !== "Connected",
+			{label: "Revoke", handler: this.revokeHandler, group: "actions",
+				disabled: user.read_only || packageorg.status !== "Connected",
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
 				spinning: this.state.isRevoking},
-			{label: "Edit", handler: this.editHandler, disabled: user.read_only, },
-			{label: "Delete", handler: this.deleteHandler, disabled: user.read_only, }
+			{label: "Edit", handler: this.editHandler,
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			},
+			{label: "Delete", handler: this.deleteHandler,
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			}
 		];
 
 		return (
