@@ -14,7 +14,7 @@ import Tabs from "../components/Tabs";
 import moment from "moment";
 import * as notifier from "../services/notifications";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
-import {getProgress, UPGRADE_ICON} from "../Constants";
+import {getProgress, Messages, UPGRADE_ICON} from "../Constants";
 import OrgCard from "../orgs/OrgCard";
 import * as nav from "../services/nav";
 import CommentModal from '../components/CommentModal';
@@ -58,27 +58,32 @@ export default class extends React.Component {
 	
 	render() {
 		const {upgrade, progress, user} = this.state;
-		let userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username));
+		let userCanActivate = user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username);
 		
 		const actions = [
 			{
 				label: "Activate Upgrade", handler: this.activationHandler,
-				disabled: !userCanActivate || progress.active > 0 || progress.done,
-				detail: userCanActivate ? "Activate all items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
+				disabled: !userCanActivate || user.read_only || progress.active > 0 || progress.done,
+				detail: !userCanActivate ? Messages.SAME_USER_ACTIVATE :
+					user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE,
 				spinning: this.state.isActivating
 			},
 			{
 				label: "Cancel Upgrade", handler: this.cancelWindowHandler,
 				disabled: user.read_only || progress.canceled > 0 || progress.done,
+				detail: user.read_only ? Messages.READ_ONLY_USER : progress.canceled > 0 || progress.done ? Messages.NOTHING_TO_DO : "",
 				spinning: this.state.isCancelling
 			},
 			{
 				label: "Retry Failed Jobs", handler: this.retryHandler,
 				disabled: user.read_only || progress.errors === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : progress.errors === 0 ? Messages.NOTHING_TO_DO : "",
 				spinning: this.state.isRetrying
 			},
 			{
 				label: "Refresh Upgrade", handler: this.refreshJobsHandler,
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
 				spinning: this.state.isRefreshing
 			}
 		];

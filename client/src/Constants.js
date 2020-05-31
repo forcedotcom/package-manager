@@ -10,6 +10,14 @@ export const PACKAGE_VERSION_ICON = {name: "custom72", category: "custom"};
 export const ADMIN_ICON = {name: "calibration", category: "standard"};
 export const AUTH_ICON = {name: "portal", category: "standard"};
 
+export const Messages = {
+	READ_ONLY_USER: "You are only allowed to view information, not modify it.",
+	NOTHING_TO_DO: "Nothing to do.",
+	SAME_USER_ACTIVATE: "The same user that scheduled an upgrade cannot activate it",
+	ACTIVATE_UPGRADE: "Activate all items for upgrade",
+	ACTIVATE_UPGRADE_ITEMS: "Activate the selected items for upgrade"
+};
+
 const typeMap = {
 	org: ORG_ICON,
 	org_group: ORG_GROUP_ICON,

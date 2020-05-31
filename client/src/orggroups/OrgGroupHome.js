@@ -3,7 +3,7 @@ import React from 'react';
 import * as orgGroupService from "../services/OrgGroupService";
 import * as sortage from '../services/sortage';
 
-import {GroupTypes} from "../Constants";
+import {GroupTypes, Messages} from "../Constants";
 import {HomeHeader} from "../components/PageHeader";
 import OrgGroupList from "./OrgGroupList";
 import GroupFormWindow from "./GroupFormWindow";
@@ -40,12 +40,15 @@ export default class extends React.Component {
 		const actions = [
 			<DataTableSavedFilters id="OrgGroupList" key="OrgGroupList" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
 			<TypeSelect group="types" key="types" types={GroupTypes} selected={selectedType} onSelect={this.typeSelectionHandler}/>,
-			{label: "New", handler: this.newHandler, disabled: user.read_only, detail: "Create new org group"},
+			{label: "New", handler: this.newHandler,
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "Create new org group"},
 			{
 				label: "Delete",
 				disabled: selected.size === 0 || user.read_only,
 				handler: this.deleteHandler,
-				detail: "Delete the selected groups"
+				detail: user.read_only ? Messages.READ_ONLY_USER :
+					selected.size === 0 ? "Nothing selected" : "Delete the selected groups"
 			}
 		];
 		return (

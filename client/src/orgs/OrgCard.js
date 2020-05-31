@@ -10,6 +10,7 @@ import * as strings from "../services/strings";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as nav from "../services/nav";
 import * as authService from "../services/AuthService";
+import {Messages} from "../Constants";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -61,7 +62,10 @@ export default class extends React.Component {
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: `Blacklisted`, hidden: !this.props.onFetchBlacklist, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
 				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
-			{label: "Add To Group", handler: this.openGroupWindow, disabled: user.read_only || selected.size === 0},
+			{label: "Add To Group", handler: this.openGroupWindow,
+				disabled: user.read_only || selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			},
 			{label: "Export", handler: this.exportHandler}
 		];
 		if (this.props.onRemove) {

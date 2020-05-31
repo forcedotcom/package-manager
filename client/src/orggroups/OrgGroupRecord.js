@@ -8,7 +8,7 @@ import * as notifier from "../services/notifications";
 import * as strings from "../services/strings";
 import * as nav from "../services/nav";
 
-import {ORG_GROUP_ICON} from "../Constants";
+import {Messages, ORG_GROUP_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import GroupFormWindow from "./GroupFormWindow";
 import ScheduleUpgradeWindow from "../orgs/ScheduleUpgradeWindow";
@@ -77,20 +77,38 @@ export default class extends React.Component {
 		const {selected, showSelected, orggroup, user} = this.state;
 		const actions = [];
 		if (orggroup.type === "Upgrade Group") {
-			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade", disabled: user.read_only || this.state.upgradeablePackageIds.length === 0});
+			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade",
+				disabled: user.read_only || this.state.upgradeablePackageIds.length === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			});
 		}
 		actions.push(
 			{handler: this.refreshHandler, label: "Refresh Versions", spinning: this.state.isRefreshing, detail: "Fetch latest installed package version information for all orgs in this group."},
-			{handler: this.editHandler, label: "Edit", disabled: user.read_only, spinning: this.state.isProcessing},
-			{handler: this.deleteHandler, label: "Delete", disabled: user.read_only, }
+			{handler: this.editHandler, label: "Edit",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				spinning: this.state.isProcessing},
+			{handler: this.deleteHandler, label: "Delete",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			}
 		);
 			
 		let memberActions = [
 			{label: `${selected.size} Selected`, toggled: showSelected, icon: "filterList", group: "selected", handler: this.handleShowSelected, disabled: selected.size === 0,
 				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
-			{label: "Copy", group: "selection", handler: this.addingToGroupHandler, disabled: user.read_only || selected.size === 0},
-			{label: "Move", group: "selection", handler: this.movingToGroupHandler, disabled: user.read_only || selected.size === 0},
-			{label: "Remove", group: "selection", handler: this.removeMembersHandler, disabled: user.read_only || selected.size === 0},
+			{label: "Copy", group: "selection", handler: this.addingToGroupHandler,
+				disabled: user.read_only || selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			},
+			{label: "Move", group: "selection", handler: this.movingToGroupHandler,
+				disabled: user.read_only || selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			},
+			{label: "Remove", group: "selection", handler: this.removeMembersHandler,
+				disabled: user.read_only || selected.size === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
+			},
 		];
 
 		const tabs = [

@@ -8,7 +8,7 @@ import * as orgGroupService from "../services/OrgGroupService";
 import * as upgradeJobService from "../services/UpgradeJobService";
 import * as licenseService from "../services/LicenseService";
 
-import {ORG_ICON} from "../Constants";
+import {Messages, ORG_ICON} from "../Constants";
 import {HeaderField, RecordHeader} from '../components/PageHeader';
 import ScheduleUpgradeWindow from "./ScheduleUpgradeWindow";
 import SelectGroupWindow from "./SelectGroupWindow";
@@ -61,12 +61,14 @@ export default class extends React.Component {
 				label: "Upgrade Packages",
 				handler: this.openSchedulerWindow,
 				group: "upgrade",
-				disabled: user.read_only || upgradeablePackageIds.length === 0
+				disabled: user.read_only || upgradeablePackageIds.length === 0,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
 			},
 			{
 				label: "Add To Group", 
 				handler: this.openGroupWindow,
-				disabled: user.read_only
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : ""
 			},
 			{
 				label: "Refresh Versions",

@@ -5,7 +5,7 @@ import * as upgradeJobService from "../services/UpgradeJobService";
 import * as authService from "../services/AuthService";
 
 import {HeaderField, RecordHeader} from '../components/PageHeader';
-import {getProgress, Status, UPGRADE_ITEM_ICON} from "../Constants";
+import {getProgress, Messages, Status, UPGRADE_ITEM_ICON} from "../Constants";
 import moment from "moment";
 import UpgradeJobCard from "./UpgradeJobCard";
 import ProgressBar from "../components/ProgressBar";
@@ -45,22 +45,26 @@ export default class extends React.Component {
 	
 	render() {
 		const {item, progress, user} = this.state;
-		let userCanActivate = !user.read_only && (user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username));
+		let userCanActivate = user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username);
 
 		let actions = [
 			{
 				label: "Activate Request", handler: this.handleActivation,
-				disabled: !userCanActivate || item.status !== Status.Created,
-				detail: userCanActivate ? "Update the selected items to proceed with upgrade" : "The same user that scheduled an upgrade cannot activate it",
+				disabled: user.read_only || !userCanActivate || item.status !== Status.Created,
+				detail: !userCanActivate ? Messages.SAME_USER_ACTIVATE :
+					user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE_ITEMS,
 				spinning: this.state.isActivating
 			},
 			{
 				label: "Cancel Request", handler: this.handleCancellation,
 				disabled: user.read_only || progress.canceled > 0 || progress.done,
+				detail: user.read_only ? Messages.READ_ONLY_USER : progress.canceled > 0 || progress.done ? Messages.NOTHING_TO_DO : "",
 				spinning: this.state.isCancelling
 			},
 			{
 				label: "Refresh Request", handler: this.refreshJobsHandler,
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
 				spinning: this.state.isRefreshing
 			}
 		];
