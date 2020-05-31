@@ -9,9 +9,7 @@ import {Messages, UPGRADE_ICON} from "../Constants";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as notifier from "../services/notifications";
 import * as authService from "../services/AuthService";
-import StatsWindow from "../components/StatsWindow";
-
-import * as upgradeJobService from "../services/UpgradeJobService";
+import AnalysisWindow from "../components/AnalysisWindow";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -27,8 +25,8 @@ export default class extends React.Component {
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.showSelectedHandler = this.showSelectedHandler.bind(this);
 		this.purgeHandler = this.purgeHandler.bind(this);
-		this.openStatsWindow = this.openStatsWindow.bind(this);
-		this.closeStatsWindow = this.closeStatsWindow.bind(this);
+		this.openAnalysisWindow = this.openAnalysisWindow.bind(this);
+		this.closeAnalysisWindow = this.closeAnalysisWindow.bind(this);
 	}
 
 	// Lifecycle
@@ -47,7 +45,7 @@ export default class extends React.Component {
       {label: "Analyze", group: "selectable",  
         spinning: this.state.addingToGroup, 
         disabled: selected.size === 0, 
-        handler: this.openAnalyzeWindow}
+        handler: this.openAnalysisWindow}
 		];
 
 		return (
@@ -57,8 +55,8 @@ export default class extends React.Component {
 				<UpgradeList onFetch={this.fetchData} refetchOn="upgrades" onFilter={this.filterHandler} filters={filterColumns}
 							 onSelect={this.selectionHandler} selected={selected} showSelected={this.state.showSelected}/>
 				{this.state.showStats ?
-					<StatsWindow title="Upgrade Analysis" upgradeStats={this.state.upgradeStats}
-					onClose={this.closeStatsWindow}/> : ""
+					<AnalysisWindow title="Upgrade Analysis" upgradeStats={this.state.upgradeStats}
+					onClose={this.closeAnalysisWindow}/> : ""
 				}
 			</div>
 		);
@@ -104,7 +102,7 @@ export default class extends React.Component {
 			}
 		}
 	}
-	openStatsWindow() {
+	openAnalysisWindow() {
 
 		let p =  new Promise((resolve, reject) => {
 			upgradeStats.requestStatsByid(Array.from(this.state.selected.keys())).then(data => {
@@ -119,7 +117,7 @@ export default class extends React.Component {
 		});
 	}
 
-	closeStatsWindow() {
+	closeAnalysisWindow() {
 		this.setState({showStats: null});
 	}
 
