@@ -41,7 +41,7 @@ export default class extends React.Component {
 			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "selected", handler: this.showSelectedHandler, disabled: selected.size === 0,
 				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: "Purge", group: "selectable", disabled: user.read_only || selected.size === 0, handler: this.purgeHandler},
-			{label: "Statistics", group: "selectable",  spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.openStatsWindow}
+			{label: "Analyze", group: "selectable",  spinning: this.state.addingToGroup, disabled: selected.size === 0, handler: this.openStatsWindow}
 		];
 
 		return (
@@ -51,7 +51,7 @@ export default class extends React.Component {
 				<UpgradeList onFetch={this.fetchData} refetchOn="upgrades" onFilter={this.filterHandler} filters={filterColumns}
 							 onSelect={this.selectionHandler} selected={selected} showSelected={this.state.showSelected}/>
 				{this.state.showStats ?
-					<StatsWindow title="Upgrade Statistics" upgradeStats={this.state.upgradeStats}
+					<StatsWindow title="Upgrade Analysis" upgradeStats={this.state.upgradeStats}
 					onClose={this.closeStatsWindow}/> : ""
 				}
 			</div>
