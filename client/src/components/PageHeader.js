@@ -111,13 +111,13 @@ export class RecordHeader extends React.Component {
 							<div className="slds-media__body">
 								<p className="slds-text-heading--label">{this.props.parent ? <Breadcrumb target={this.props.parent}/> : ""}{this.props.type}</p>
 								<div className="slds-grid">
-									<h1 className="slds-text-heading--medium slds-m-right--small slds-truncate slds-align-middle"
+									<h1 className="slds-text-heading--medium slds-m-right--small slds-align-middle"
 										title={this.props.title}>{this.props.title}</h1>
 								</div>
 							</div>
 						</div>
 					</div>
-					<div className="slds-col slds-no-flex slds-align-bottom">
+					<div className="slds-col slds-no-flex slds-align-middle">
 						{actionBar}
 					</div>
 				</div>
@@ -191,10 +191,10 @@ export class CardHeader extends React.Component {
 						<HeaderIcon name={this.props.icon.name} category={this.props.icon.category} size="small"/>
 					</div>
 					<div className="slds-media__body">
-						<h3 className="slds-text-heading--small slds-truncate"
+						<h3 className="slds-text-heading--small"
 							title={this.props.title}>{this.props.title}</h3>
 					</div>
-					<div className="slds-col slds-no-flex slds-align-bottom">
+					<div className="slds-col slds-no-flex slds-align-middle">
 						{actionBar}
 					</div>
 				</div>
@@ -282,7 +282,7 @@ export class FormHeader extends React.Component {
 							</div>
 						</div>
 					</div>
-					<div className="slds-col slds-no-flex slds-align-bottom">
+					<div className="slds-col slds-no-flex slds-align-middle">
 						{actionBar}
 					</div>
 				</div>
@@ -350,12 +350,12 @@ export class HomeHeader extends React.Component {
 						<p className="slds-text-heading--label">{this.props.type}</p>
 						<div className="slds-grid">
 							<div className="slds-grid slds-type-focus slds-no-space">
-								<h1 className="slds-text-heading--medium slds-truncate"
+								<h1 className="slds-text-heading--medium"
 									title={this.props.title}>{this.props.title}</h1>
 							</div>
 						</div>
 					</div>
-					<div className="slds-col slds-no-flex slds-align-bottom">
+					<div className="slds-col slds-no-flex slds-align-middle">
 						<div className="slds-grid">
 							<div className="slds-button-group slds-button-space-left" role="group">
 								{actionBar}

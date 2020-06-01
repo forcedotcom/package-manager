@@ -62,26 +62,26 @@ export default class extends React.Component {
 		
 		const actions = [
 			{
-				label: "Activate Upgrade", handler: this.activationHandler,
+				label: "Activate", handler: this.activationHandler,
 				disabled: !userCanActivate || user.read_only || progress.active > 0 || progress.done,
 				detail: !userCanActivate ? Messages.SAME_USER_ACTIVATE :
 					user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE,
 				spinning: this.state.isActivating
 			},
 			{
-				label: "Cancel Upgrade", handler: this.cancelWindowHandler,
+				label: "Cancel", handler: this.cancelWindowHandler,
 				disabled: user.read_only || progress.canceled > 0 || progress.done,
 				detail: user.read_only ? Messages.READ_ONLY_USER : progress.canceled > 0 || progress.done ? Messages.NOTHING_TO_DO : "",
 				spinning: this.state.isCancelling
 			},
 			{
-				label: "Retry Failed Jobs", handler: this.retryHandler,
+				label: "Retry Failed", handler: this.retryHandler,
 				disabled: user.read_only || progress.errors === 0,
 				detail: user.read_only ? Messages.READ_ONLY_USER : progress.errors === 0 ? Messages.NOTHING_TO_DO : "",
 				spinning: this.state.isRetrying
 			},
 			{
-				label: "Refresh Upgrade", handler: this.refreshJobsHandler,
+				label: "Refresh Status", handler: this.refreshJobsHandler,
 				disabled: user.read_only,
 				detail: user.read_only ? Messages.READ_ONLY_USER : "",
 				spinning: this.state.isRefreshing
