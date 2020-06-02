@@ -1,12 +1,15 @@
 import React from 'react';
 
+
 import {HomeHeader} from '../components/PageHeader';
 import UpgradeList from "./UpgradeList";
 import * as upgradeService from "../services/UpgradeService";
+import * as upgradeStats from "../services/UpgradeStats";
 import {Messages, UPGRADE_ICON} from "../Constants";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as notifier from "../services/notifications";
 import * as authService from "../services/AuthService";
+import AnalysisWindow from "../components/AnalysisWindow";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -22,6 +25,8 @@ export default class extends React.Component {
 		this.selectionHandler = this.selectionHandler.bind(this);
 		this.showSelectedHandler = this.showSelectedHandler.bind(this);
 		this.purgeHandler = this.purgeHandler.bind(this);
+		this.openAnalysisWindow = this.openAnalysisWindow.bind(this);
+		this.closeAnalysisWindow = this.closeAnalysisWindow.bind(this);
 	}
 
 	// Lifecycle
@@ -36,7 +41,11 @@ export default class extends React.Component {
 			{label: "Purge", group: "selectable",
 				disabled: user.read_only || selected.size === 0,
 				detail: user.read_only ? Messages.READ_ONLY_USER : "",
-				handler: this.purgeHandler}
+				handler: this.purgeHandler},
+      {label: "Analyze", group: "selectable",  
+        spinning: this.state.addingToGroup, 
+        disabled: selected.size === 0, 
+        handler: this.openAnalysisWindow}
 		];
 
 		return (
@@ -45,6 +54,10 @@ export default class extends React.Component {
 							count={this.state.itemCount}/>
 				<UpgradeList onFetch={this.fetchData} refetchOn="upgrades" onFilter={this.filterHandler} filters={filterColumns}
 							 onSelect={this.selectionHandler} selected={selected} showSelected={this.state.showSelected}/>
+				{this.state.showStats ?
+					<AnalysisWindow title="Upgrade Analysis" upgradeStats={this.state.upgradeStats}
+					onClose={this.closeAnalysisWindow}/> : ""
+				}
 			</div>
 		);
 	}
@@ -88,5 +101,39 @@ export default class extends React.Component {
 				.catch(e => notifier.error(e.message | e, "Fail"));
 			}
 		}
+	}
+	openAnalysisWindow() {
+
+		let p =  new Promise((resolve, reject) => {
+			upgradeStats.requestStatsByid(Array.from(this.state.selected.keys())).then(data => {
+				this.setState({showSelected: false});
+				resolve(data);
+			}).catch(reject);
+		});
+		p.then(upgradeStats => {
+			let stats = this.groupStatsbyPackage(upgradeStats);
+			this.setState({showStats: true, upgradeStats: stats});
+		});
+	}
+
+	closeAnalysisWindow() {
+		this.setState({showStats: null});
+	}
+
+    groupStatsbyPackage(upgradeStats){
+		let items = [];
+		for (const [index, value] of upgradeStats.entries()) {
+			const data = {};
+			data.package = value.name
+			data.stats = value.status.concat(': ' + value.count)
+			
+			let elemIndex = items.findIndex( obj => obj.package === data.package)
+			if(elemIndex == -1){
+				items.push(data)
+			} else {
+				items[elemIndex].stats = items[elemIndex].stats.concat('; ' + data.stats)
+			}
+		}
+		return items;
 	}
 }
