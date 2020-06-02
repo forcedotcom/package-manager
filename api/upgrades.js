@@ -28,6 +28,8 @@ const MAX_ERROR_COUNT = 20;
 
 const CHECK_PROGRESS_THRESHOLD_MINUTES = 15;
 
+const CHECK_REMAINING_THRESHOLD_PERCENTAGE = 5;
+
 const ITEM_STATUS_SOQL = `
 	CASE
 		 WHEN -- ALL Created == Inactive
@@ -781,26 +783,28 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 					admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
 					admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 					job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
-					// Initializing the timeStamp and remainingOrgs in the upgrade_item table. This is used below to determine if an item upgrade is stuck
-					await db.update(`UPDATE upgrade_item set time_stamp = $1, remaining_orgs = $2 WHERE id = $3`, [item.start_time, item.total_job_count, item.id]);
 				} catch (e) {
 					logger.error("Failed to activate", {error: e.message || e});
 					admin.alert("Failed to activate", e.message || e);
 				}
 			} else if (item.status === push.Status.Running) {
 				const currentTimestamp = moment().format();
-				const {failed_job_count, invalid_job_count, canceled_job_count, succeeded_job_count, total_job_count} = item;
-				const remaining_orgs = total_job_count - (failed_job_count + invalid_job_count + canceled_job_count + succeeded_job_count);
-				const {time_stamp: prevTimestamp, remaining_orgs: prevRemainingOrgs} = item;
+				const {failed_job_count, invalid_job_count, canceled_job_count, succeeded_job_count, total_job_count, start_time, time_stamp, remaining_orgs, id} = item;
+				const currentRemainingOrgs = total_job_count - (failed_job_count + invalid_job_count + canceled_job_count + succeeded_job_count);
+				const prevTimestamp = time_stamp || start_time;
+				const prevRemainingOrgs = remaining_orgs || total_job_count;
 				const timeStampDiff = moment.duration(prevTimestamp.diff(currentTimestamp)).asMinutes();
 
-				/*	IF the remaining org count doesn't change for a set threshold, mark the item as stuck
+				const percentageRemaining = currentRemainingOrgs/total_job_count * 100;
+				/*	After 95% of the upgrade is done, IF the remaining org count doesn't change for a set time threshold, mark the item as stuck
 					Update the db only IF the remaining org count changed but NOT if the org count remained the same and time_stamp has changed */
-				if (remaining_orgs === prevRemainingOrgs && timeStampDiff >= CHECK_PROGRESS_THRESHOLD_MINUTES) {
+				if (percentageRemaining <= CHECK_REMAINING_THRESHOLD_PERCENTAGE &&
+					currentRemainingOrgs === prevRemainingOrgs &&
+					timeStampDiff >= CHECK_PROGRESS_THRESHOLD_MINUTES) {
 					// Setting current item state to Stuck
 					await db.update(`UPDATE upgrade_item set status = $1 WHERE id = $2`, [State.Stuck, item.id]);
-				} else if (remaining_orgs < prevRemainingOrgs) {
-					await db.update(`UPDATE upgrade_item set time_stamp = $1, remaining_orgs = $2 WHERE id = $3`, [currentTimestamp, remaining_orgs, item.id]);
+				} else if (currentRemainingOrgs < prevRemainingOrgs) {
+					await db.update(`UPDATE upgrade_item set time_stamp = $1, remaining_orgs = $2 WHERE id = $3`, [currentTimestamp, currentRemainingOrgs, id]);
 				}
 			}
 		}
