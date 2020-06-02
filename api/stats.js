@@ -14,8 +14,8 @@ async function requestStats(req, res, next) {
         let ids = req.body.upgradeIds;
         let n = 1;
         let params = ids.map(() => `$${n++}`);
-        const WHERE = `WHERE upgrade_job.upgrade_id IN (` + (`${params.join(",")}`, ids) + `)` ;
-        const stats = await db.query(SELECT_UPGRADE_STATUS + WHERE + GROUP_BY_PKG_NAME_STATUS);
+        const WHERE = `WHERE upgrade_job.upgrade_id IN (${params.join(",")})` ;
+        const stats = await db.query(SELECT_UPGRADE_STATUS + WHERE + GROUP_BY_PKG_NAME_STATUS, ids);
         return res.json(stats);
     } catch (e) {
         next(e);
