@@ -108,7 +108,6 @@ export default class extends React.Component {
 			upgradeStats.requestStatsByid(Array.from(this.state.selected.keys())).then(data => {
 				this.setState({showSelected: false});
 				resolve(data);
-
 			}).catch(reject);
 		});
 		p.then(upgradeStats => {

@@ -124,6 +124,7 @@ app.post('/api/upgrades/cancel/:id', upgrades.requestCancelUpgrade);
 app.post('/api/upgrades/retry/:id', upgrades.requestRetryFailedUpgrade);
 app.post('/api/upgrades/refresh/:id', upgrades.requestRefreshUpgrade);
 app.post('/api/upgrades/purge', upgrades.requestPurge);
+app.post('/api/stats', stats.requestStats);
 
 app.get('/api/upgradeitems', upgrades.requestItems);
 app.get('/api/upgradeitems/:id', upgrades.requestItemById);
@@ -135,7 +136,6 @@ app.get('/api/upgradejobs', upgrades.requestAllJobs);
 app.get('/api/upgradejobs/:id', upgrades.requestJobById);
 
 app.get('/api/emit/:key', admin.requestEmit);
-app.get('/api/stats', stats.requestStats);
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.

@@ -11,10 +11,12 @@ const GROUP_BY_PKG_NAME_STATUS = `GROUP BY package.name, upgrade_job.status,org_
 
 async function requestStats(req, res, next) {
     try {
-        let ids = req.query.upgradeIds;
-        const where = `WHERE upgrade_job.upgrade_id IN (${ids})`
-        const stats = await db.query(SELECT_UPGRADE_STATUS + where + GROUP_BY_PKG_NAME_STATUS);
-        res.json(stats);
+        let ids = req.body.upgradeIds;
+        let n = 1;
+        let params = ids.map(() => `$${n++}`);
+        const WHERE = `WHERE upgrade_job.upgrade_id IN (` + (`${params.join(",")}`, ids) + `)` ;
+        const stats = await db.query(SELECT_UPGRADE_STATUS + WHERE + GROUP_BY_PKG_NAME_STATUS);
+        return res.json(stats);
     } catch (e) {
         next(e);
     }
