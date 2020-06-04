@@ -832,6 +832,7 @@ async function autoRetryUpgrades(upgradeId) {
 			return;
 		}
         await activateUpgrade(upgrade.id, null); // Skip passing the username to skip the activation validation check
+        admin.emit(admin.Events.TOAST, {subject: "Auto Retry Upgrades", message: "Retry failed jobs in progress. Click to monitor", type: "retry", id: upgrade.id});
     } catch(e) {
         logger.error("Failed to rescheduled upgrade", {id, error: e.message || e});
     }

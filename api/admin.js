@@ -40,7 +40,8 @@ const Events = {
 	UPGRADE_JOBS: "upgrade-jobs",
 	UPGRADE_BLACKLIST: "upgrade-blacklist",
 	ORGS: "orgs",
-	PACKAGE_ORGS: "package-orgs"
+	PACKAGE_ORGS: "package-orgs",
+	TOAST: "toast"
 };
 
 const JobTypes = {

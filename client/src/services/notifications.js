@@ -8,12 +8,24 @@ import * as authService from "./AuthService";
 // to the browser url (which is good for production).
 const apiUrl = process.env.REACT_APP_API_URL;
 const socket = io(apiUrl);
+const ToastType = {
+    RETRY: "retry"
+};
 
 // Global admin events
 socket.on("fail", e => error(e.message, e.subject));
 socket.on("alert", e => info(e.message, e.subject));
 socket.on("alert-invalid-org", e => error(e.message, e.subject, 15000,
 	() => authService.oauthOrgURL(e.org.instance_url, e.org.type).then(url => window.location.href = url)));
+socket.on("toast", data => {
+    switch(data.type) {
+        case ToastType.RETRY:
+            const url = `/upgrade/${data.id}`;
+            info(data.message, data.subject, 30000, () => window.location.href = url);
+            break;
+        default:
+    };
+});
 
 export let warning = (message, subject, timeout, onClick) => {NotificationManager.warning(message, subject, timeout, onClick)};
 export let info = (message, subject, timeout, onClick) => {NotificationManager.info(message, subject, timeout, onClick)};
