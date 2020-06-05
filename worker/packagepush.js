@@ -457,7 +457,7 @@ async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy,
     return upgrade;
 }
 
-async function retryFailedUpgrade(failedId, createdBy, transid) {
+async function retryFailedUpgrade(failedId, createdBy, transid, retryEnabled, retryCount) {
     const failedUpgrade = await upgrades.retrieveById(failedId);
     const failedJobs = await upgrades.findJobs(failedId, null, null, null, null, Status.Failed);
 
@@ -467,7 +467,7 @@ async function retryFailedUpgrade(failedId, createdBy, transid) {
     }
 
     const scheduledDate = new Date();
-    const upgrade = await upgrades.createUpgrade(null, null, scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
+    const upgrade = await upgrades.createUpgrade(retryEnabled, retryCount, scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
 
     // Set transient transaction id given by the caller.
     upgrade.transid = transid;

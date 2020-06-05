@@ -814,19 +814,20 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 		return ![State.Running].includes(bucket.state);
 	});
 
-	const retryEnabled = await db.update(`SELECT retryEnabled FROM upgrade WHERE id = $1`, [id]);
+	const {retryEnabled, retryCount} = await db.query(`SELECT retryEnabled, retryCount FROM upgrade WHERE id = $1`, [id]);
 
 	// Trigger Auto retry only if all items in the upgrade are either Complete or Stuck AND only if retry in enabled at the time of scheduling the upgrade
-	if (shouldRetry && retryEnabled) {
-		await autoRetryUpgrades(id);
+	if (shouldRetry && retryEnabled && retryCount) {
+		await autoRetryUpgrades(id, retryCount - 1);
 	}
 	return items;
 }
 
-async function autoRetryUpgrades(upgradeId) {
+async function autoRetryUpgrades(upgradeId, retryCount) {
 	const userName = await db.query(`SELECT created_by FROM upgrade WHERE id = $1`, [upgradeId]);
     try {
-        const upgrade = await push.retryFailedUpgrade(upgradeId, userName);
+        const retryEnabled = retryCount > 0;
+        const upgrade = await push.retryFailedUpgrade(upgradeId, userName, null, retryEnabled, retryCount);
 		if (upgrade == null) {
 			logger.info("No failed jobs found to retry");
 			return;

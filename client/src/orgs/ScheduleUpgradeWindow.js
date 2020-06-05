@@ -1,11 +1,14 @@
 import React from 'react';
 import DatePicker from "react-datepicker";
 import moment from 'moment';
+import * as _ from "lodash";
 
 import {PackageVersionStatus} from "../Constants";
 import 'react-datepicker/dist/react-datepicker.css';
 import '../components/datepicker.css';
 import * as packageVersionService from "../services/PackageVersionService";
+
+const MAX_RETRIES = 3;
 
 export default class extends React.Component {
 	constructor(props) {
@@ -44,13 +47,22 @@ export default class extends React.Component {
 			this.setState({packageMap});
 		});
 	}
-	
+
 	render() {
 		const versionFields = this.state.packageMap ? this.props.packageIds.map(packageId =>
 			this.state.packageMap.has(packageId) ?
 				<VersionField key={packageId} package={this.state.packageMap.get(packageId)} onSelect={this.handleVersionChange}/> : ""
 		) : [];
-		
+
+		const retryRange = _.range(1, MAX_RETRIES + 1);
+		const retryDropdownOptions = (
+			retryRange.map((option, i) =>
+				<option
+					key={i} value={option}>{option}
+				</option>
+			)
+		);
+
 		return (
 			<div>
 				<style dangerouslySetInnerHTML={{__html: `
@@ -115,8 +127,8 @@ export default class extends React.Component {
 							<div className="slds-checkbox-flex">
 								<input type="checkbox" onChange={this.autoRetryHandler} defaultChecked={this.state.retryEnabled}/>
 								<p style={{margin: '0 5px'}}><strong>Auto Retry Upgrade</strong></p>
-								<select onChange={this.retryCountHandler} defaultValue={this.state.retryCount} disabled>
-									<option value="1">1</option>
+								<select onChange={this.retryCountHandler} defaultValue={this.state.retryCount}>
+									{retryDropdownOptions}
 								</select>
 							</div>
 							<button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel
@@ -138,7 +150,7 @@ export default class extends React.Component {
 			</div>
 		);
 	}
-	
+
 	// Handlers
 	retryCountHandler(value) {
 		this.setState({retryCount: value});

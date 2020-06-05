@@ -6,6 +6,7 @@
   "dependencies": {
     "js-flock": "^3.5.3",
     "jsep": "^0.3.4",
+    "lodash": "^4.17.15",
     "lodash.debounce": "^4.0.8",
     "moment": "^2.22.0",
     "react": "^16.3.0",
