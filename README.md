@@ -1,4 +1,4 @@
-# brick-manager
+# package-manager
 
 ## Data Sources
 ### Accounts data (for internal ISVs)
@@ -6,6 +6,13 @@ Org62 supplies account names.  Normal ISVs have account data provisioned in thei
 
 ### LMA Org
 Your LMA org supplies you packages, package version details and license data.
+
+#### Permission sets
+Anyone with access to your LMO gets read-only access to the upgrade tool. For full access to connect orgs, create groups or perform upgrades, you must create a new permission set in the LMO:
+
+* Ensure that permission set has the Edit perm on Package Version.
+* If your user is not an admin, be sure to add at least Read permissions on Package, Package Version and License.  
+* Assign yourself and any other users you desire to that perm set. 
 
 #### Required Objects and Fields
 ##### sfLma__Package__c.DependencyTier__c
