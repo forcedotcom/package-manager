@@ -1,5 +1,7 @@
 # package-manager
 
+For onboarding automation, see https://github.com/forcedotcom/package-manager-onboarding
+
 ## Data Sources
 ### Accounts data (for internal ISVs)
 Org62 supplies account names.  Normal ISVs have account data provisioned in their LMO.  Internal ISVs seem not to.  Thus they need to query Org62 to retrieve account names based on production org ids.  The tool then associates those account names and ids with the production orgs and their child sandbox orgs. The Org62 user used must be able to query accounts data and have Heroku private space IP addresses exempted.
