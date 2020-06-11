@@ -28,10 +28,12 @@ Values:
 * "Limited" - The version was built for a specific purpose for specific customers
 
 #### Connected App
-A connected app is required to enable and govern your oauth connections to your various orgs. Define a permission set
-to grant access to specific user accounts.  Your permission set, or the user's profile, should also grant
-the appropriate read access to the LMA objects you need.  
-For your connected app:  
+A connected app is required to enable and govern your oauth connections to your various orgs. For your 
+connected app:  
+*Permitted User* should be "All users may self-authorize".  Note: if you like, you may choose "Admin approved users
+are pre-authorized", and then select specific users via permission sets or profiles.  This is only recommended if 
+you have a large user base in your LMO, and you do not wish for all users to have access to the push upgrade tool.
+ 
 *Selected OAuth Scopes* should include:
 * Access your basic information (id, profile, email, address, phone)
 * Access and manage your data (api)
