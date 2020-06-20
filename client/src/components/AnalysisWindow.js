@@ -1,5 +1,4 @@
 import React from 'react';
-import {NotificationManager} from 'react-notifications';
 import {Colors} from "../Constants";
 
 

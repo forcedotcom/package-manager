@@ -32,7 +32,7 @@ export default class extends React.Component {
 			{Header: "Status", accessor: "item_status", sortable: true}
 		];
 		return (
-			<div>
+			<div className="slds-color__background_gray-1">
 				<DataTable id="UpgradeList" onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} columns={columns} onClick={this.linkHandler} 
 						   onFilter={this.props.onFilter} filters={this.props.filters}
 						   showSelected={this.props.showSelected} selection={this.props.selected} onSelect={this.props.onSelect}/>

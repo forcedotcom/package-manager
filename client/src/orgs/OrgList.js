@@ -31,7 +31,7 @@ export default class extends React.Component {
 			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true}
 		];
 		return (
-			<div>
+			<div className="slds-color__background_gray-1">
 				<DataTable id="OrgList" keyField="org_id" columns={columns} 
 						 onFetch={this.props.onFetch} fetchName={this.props.fetchName} refetchOn={this.props.refetchOn}
 						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filters}

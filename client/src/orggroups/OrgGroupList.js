@@ -20,7 +20,7 @@ export default class extends React.Component {
 			{Header: "When", id: "when", maxWidth: 200, accessor: d => d.created_date ? moment(d.created_date).fromNow() : null, clickable: true, sortable: false}
 		];
 		return (
-			<div>
+			<div className="slds-color__background_gray-1">
 				<DataTable id="OrgGroupList" keyField="id" columns={columns} onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
 						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}
 						 defaultFilter={{id: "type", value: this.props.type}}

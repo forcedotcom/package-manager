@@ -25,7 +25,7 @@ export default class extends React.Component {
 			{Header: "Expiration", id: "expiration", accessor: d => d.expiration === null ? null : moment(d.expiration).format("YYYY-MM-DD"), sortable: true}
 		];
 		return (
-			<div>
+			<div className="slds-color__background_gray-1">
 				<DataTable id="LicenseList" keyField="sfid" columns={columns} onFetch={this.props.onFetch}
 						 onClick={this.linkHandler} onFilter={this.props.onFilter} filters={this.props.filterColumns}/>
 				<DataTableFilterHelp/>
