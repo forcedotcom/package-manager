@@ -109,13 +109,15 @@ async function findAll(packageId, versionId, relatedOrgId, blacklistUpgradeId, o
 	} 
 	
 	if (blacklisted) {
-		whereParts.push(orggroups.EXPAND_BLACKLIST ? 
-			`o.account_id IN (
+		let blacklistClause = `g.type = '${orggroups.GroupType.Blacklist}'`;
+		if (orggroups.EXPAND_BLACKLIST) {
+			blacklistClause +=  ` OR o.account_id IN (
 				SELECT DISTINCT bo.account_id FROM org bo
 				INNER JOIN org_group_member m ON m.org_id = bo.org_id AND bo.account_id != '${sfdc.AccountIDs.Internal}'
 				INNER JOIN org_group g ON g.id = m.org_group_id AND g.type = '${orggroups.GroupType.Blacklist}'
-			 )` :
-			`g.type = '${orggroups.GroupType.Blacklist}'`);
+			 )`;
+		}
+		whereParts.push(blacklistClause);
 	}
 	
 	let where = whereParts.length > 0 ? (" WHERE " + whereParts.join(" AND ")) : "";

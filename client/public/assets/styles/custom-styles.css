@@ -38,4 +38,5 @@
 
 .button-tab {
     border-bottom: 1px solid #dddbda;
+    background-color: inherit;
 }

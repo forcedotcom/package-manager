@@ -122,13 +122,13 @@ export default class extends React.Component {
 
     groupStatsbyPackage(upgradeStats){
 		let items = [];
-		for (const [index, value] of upgradeStats.entries()) {
+		for (const [value] of upgradeStats.entries()) {
 			const data = {};
 			data.package = value.name
 			data.stats = value.status.concat(': ' + value.count)
 			
 			let elemIndex = items.findIndex( obj => obj.package === data.package)
-			if(elemIndex == -1){
+			if(elemIndex === -1){
 				items.push(data)
 			} else {
 				items[elemIndex].stats = items[elemIndex].stats.concat('; ' + data.stats)

@@ -200,7 +200,7 @@ export default class extends React.Component {
 				<RecordHeader type="Admin" icon={ADMIN_ICON} title="Background Jobs" actions={actions}/>
 
 				{this.state.isMini ?
-					<div className="slds-grid slds-gutters">
+					<div className="slds-grid">
 						<div className="slds-col slds-size_1-of-1">
 							<Tabs id="Content">
 								<div label={`Active Jobs (${jobs.length})`}>
@@ -219,8 +219,8 @@ export default class extends React.Component {
 						</div>
 					</div>
 					:
-					<div className="slds-grid slds-gutters">
-						<div className="slds-col slds-size_3-of-5">
+					<div className="slds-grid">
+						<div className="slds-col slds-size_3-of-5 slds-p-left_x-small slds-p-top_x-small">
 							<Tabs id="Content">
 								<div label={`Active Jobs (${jobs.length})`}>
 									{activeCards}
@@ -230,7 +230,7 @@ export default class extends React.Component {
 								</div>
 							</Tabs>
 						</div>
-						<div className="slds-col slds-size_2-of-5">
+						<div className="slds-col slds-size_2-of-5 slds-p-left_x-small slds-p-top_x-small slds-p-right_x-small">
 							<Tabs id="Content">
 								<div label={`Recent Jobs (${history.latest.length})`}>
 									{latestHistoryCards}

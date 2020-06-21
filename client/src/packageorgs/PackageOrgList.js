@@ -33,9 +33,11 @@ export default class extends React.Component {
 		];
 
 		return (
-			<DataTable id="PackageOrgList" keyField="org_id" columns={columns}
-						 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
-						 onClick={this.linkHandler} onSelect={this.props.onSelect}/>
+			<div className="slds-color__background_gray-1">
+				<DataTable id="PackageOrgList" keyField="org_id" columns={columns}
+						   onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
+						   onClick={this.linkHandler} onSelect={this.props.onSelect}/>
+			</div>
 		);
 	}
 	

@@ -21,7 +21,7 @@ export default class extends React.Component {
 		];
 
 		return (
-			<div>
+			<div className="slds-color__background_gray-1">
 				<DataTable id="PackageList" onFetch={this.props.onFetch} onFilter={this.props.onFilter}
 					   onClick={this.linkHandler} columns={columns}/>
 				<DataTableFilterHelp/>
