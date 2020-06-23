@@ -4,7 +4,7 @@ import React from 'react';
 import {HomeHeader} from '../components/PageHeader';
 import UpgradeList from "./UpgradeList";
 import * as upgradeService from "../services/UpgradeService";
-import * as upgradeStats from "../services/UpgradeStats";
+import * as upgradeStatsService from "../services/UpgradeStatsService";
 import {Messages, UPGRADE_ICON} from "../Constants";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as notifier from "../services/notifications";
@@ -55,7 +55,7 @@ export default class extends React.Component {
 				<UpgradeList onFetch={this.fetchData} refetchOn="upgrades" onFilter={this.filterHandler} filters={filterColumns}
 							 onSelect={this.selectionHandler} selected={selected} showSelected={this.state.showSelected}/>
 				{this.state.showStats ?
-					<AnalysisWindow title="Upgrade Analysis" upgradeStats={this.state.upgradeStats}
+					<AnalysisWindow title="Upgrade Analysis" stats={this.state.stats}
 					onClose={this.closeAnalysisWindow}/> : ""
 				}
 			</div>
@@ -103,16 +103,15 @@ export default class extends React.Component {
 		}
 	}
 	openAnalysisWindow() {
-
 		let p =  new Promise((resolve, reject) => {
-			upgradeStats.requestStatsByid(Array.from(this.state.selected.keys())).then(data => {
+			upgradeStatsService.requestStatsById(Array.from(this.state.selected.keys())).then(data => {
 				this.setState({showSelected: false});
 				resolve(data);
 			}).catch(reject);
 		});
-		p.then(upgradeStats => {
-			let stats = this.groupStatsbyPackage(upgradeStats);
-			this.setState({showStats: true, upgradeStats: stats});
+		p.then(data => {
+			let stats = this.groupStatsByPackage(data);
+			this.setState({showStats: true, stats});
 		});
 	}
 
@@ -120,12 +119,12 @@ export default class extends React.Component {
 		this.setState({showStats: null});
 	}
 
-    groupStatsbyPackage(upgradeStats){
+    groupStatsByPackage(stats){
 		let items = [];
-		for (const [value] of upgradeStats.entries()) {
+		for (const stat of stats) {
 			const data = {};
-			data.package = value.name
-			data.stats = value.status.concat(': ' + value.count)
+			data.package = stat.name
+			data.stats = stat.status.concat(': ' + stat.count)
 			
 			let elemIndex = items.findIndex( obj => obj.package === data.package)
 			if(elemIndex === -1){

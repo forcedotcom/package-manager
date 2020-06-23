@@ -14,9 +14,9 @@ export default class extends React.Component {
     render() {
         let stats;
         try {
-            stats = JSON.parse(this.props.upgradeStats);
+            stats = JSON.parse(this.props.stats);
         } catch (e) {
-            stats = this.props.upgradeStats;
+            stats = this.props.stats;
         }
         let statsContent =
             <ol className="slds-has-dividers_top-space">{stats.map((m, i) => {
