@@ -18,13 +18,16 @@
     "react-scripts": "3.4.1",
     "react-table": "6.8.6",
     "react-tooltip": "^3.5.0",
-    "socket.io-client": "^2.1.1"
+    "socket.io-client": "^2.1.1",
+    "snyk": "^1.369.2"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "jest",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
   },
   "browserslist": {
     "production": [
@@ -37,5 +40,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "snyk": true
 }
