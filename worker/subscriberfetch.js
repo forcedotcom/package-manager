@@ -16,10 +16,10 @@ let adminJob;
 async function fetch(fetchAll, job) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
-		`SELECT o.org_id, o.name, o.type, p.sfid package_id
-		FROM package_org o
-		INNER JOIN package p on p.package_org_id = o.org_id
-		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+		`SELECT po.org_id, po.name, po.type, p.sfid package_id
+		FROM package_org po
+		INNER JOIN package p on p.package_org_id = po.org_id
+		WHERE po.active = true AND type = '${sfdc.OrgTypes.Package}'`;
 
 	if (fetchAll) {
 		// Invalidate all existing orgs when we are upserting all new findings

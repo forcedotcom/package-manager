@@ -148,7 +148,14 @@ app.get('/*', (req, res) => {
  */
 app.use(function(error, req, res, next) {
 	logger.error(error);
-	return res.status(500).json({message: error.message || error});
+	try {
+		return res.status(500).send(error.message || error);
+	} catch (e) {
+		// Ignore the darn ERR_HTTP_HEADERS_SENT error.
+		if (e.code !== 'ERR_HTTP_HEADERS_SENT') {
+			logger.error(e);
+		}
+	}
 });
 
 server.listen(app.get('port'), function () {

@@ -85,7 +85,12 @@ async function oauthCallback(req, res, next) {
         }
         switch (state.operation) {
             case "org":
-                await packageorgs.initOrg(conn, userInfo.organizationId, state.type);
+                const type = sfdc.OrgTypes[state.type];
+                // If unauthenticated, only allow the call to add an org of the given type if one is not already added.
+                // This is to support the case where an external admin user does not have access to this app, but still
+                // needs to provide a credential for the org to be connected.
+                const unauthenticated = !req.session.access_token;
+                await packageorgs.initOrg(conn, userInfo.organizationId, type, unauthenticated);
                 res.redirect(url);
                 break;
             default:
@@ -96,9 +101,9 @@ async function oauthCallback(req, res, next) {
                 res.redirect(url);
         }
     } catch (error) {
-        logger.error("Failed to authorize user", error);
+        const message = error.message || error;
         let errs = {
-            message: error.message,
+            message: message,
             severity: error.severity,
             code: error.code
         };

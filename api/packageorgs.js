@@ -82,7 +82,22 @@ async function privateRetrieveByOrgIds(orgIds) {
 	return recs;
 }
 
-async function initOrg(conn, org_id, type) {
+/**
+ * Create or update a connected org.
+ *
+ * @insertUniqueType if true, do not create or update an org if already found one of the same type.
+ */
+async function initOrg(conn, org_id, type, insertUniqueType) {
+	if (insertUniqueType) {
+		if (!type) {
+			throw `Cannot add unique org type without a valid type`;
+		}
+		const found = await db.retrieve('SELECT type FROM package_org WHERE type = $1', [type]);
+		if (found) {
+			return logger.error(`Org of type ${type} already found`);
+		}
+	}
+
 	let org = await refreshOrgConnection(conn, org_id);
 	if (org.status === Status.Invalid) {
 		return await updateOrgStatus(org_id, org.status);
@@ -113,7 +128,7 @@ async function initOrg(conn, org_id, type) {
             (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status, type, active)
            VALUES 
             ($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})
-           on conflict (org_id) do update set
+           ON CONFLICT (org_id) DO UPDATE SET
             name = excluded.name, division = excluded.division, namespace = excluded.namespace, instance_name = excluded.instance_name, 
             instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token,
             status = excluded.status, type = excluded.type`;
