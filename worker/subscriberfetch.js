@@ -19,7 +19,7 @@ async function fetch(fetchAll, job) {
 		`SELECT po.org_id, po.name, po.type, p.sfid package_id
 		FROM package_org po
 		INNER JOIN package p on p.package_org_id = po.org_id
-		WHERE po.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+		WHERE po.active = true`;
 
 	if (fetchAll) {
 		// Invalidate all existing orgs when we are upserting all new findings
@@ -102,7 +102,7 @@ async function fetchFromOrg(org, fetchAll) {
 		await opvapi.updateStatus(org.package_id, opvapi.LicenseStatus.NotFound);
 	}
 
-	adminJob.postDetail(`Storing ${recs.length} orgs`);
+	adminJob.postDetail(`Storing ${recs.length} subscribers`);
 	await upsert(recs, 2000);
 }
 
@@ -177,10 +177,16 @@ async function upsert(recs, batchSize) {
 }
 
 async function upsertBatch(recs) {
+	const orgSet = new Set();
 	let values = [];
 	let sql = "INSERT INTO org (org_id, name, instance, is_sandbox, type, status, modified_date, parent_org_id) VALUES";
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
+		if (orgSet.has(rec.org_id)) {
+			continue;
+		}
+		orgSet.add(rec.org_id);
+
 		if (i > 0) {
 			sql += ','
 		}
