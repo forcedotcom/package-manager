@@ -76,7 +76,7 @@ export default class extends React.Component {
 	render() {
 		const {selected, showSelected, orggroup, user} = this.state;
 		const actions = [];
-		if (orggroup.type === "Upgrade Group") {
+		if (orggroup.type !== "Blacklist Group") {
 			actions.push({handler: this.schedulingWindowHandler, label: "Upgrade Packages", group: "upgrade",
 				disabled: user.read_only || this.state.upgradeablePackageIds.length === 0,
 				detail: user.read_only ? Messages.READ_ONLY_USER : ""
@@ -127,7 +127,7 @@ export default class extends React.Component {
 				<LicenseCard title="Licenses" id="GroupLicenseCard" onFetch={this.fetchLicenses} refetchOn="licenses"/>
 			</div>
 		];
-		if (orggroup.type === "Upgrade Group") {
+		if (orggroup.type !== "Blacklist Group") {
 			tabs.push(
 				<div key="upgrades" label="Upgrades">
 					<UpgradeCard onFetch={this.fetchUpgrades} refetchOn="upgrades"/>

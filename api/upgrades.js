@@ -1000,3 +1000,4 @@ exports.changeUpgradeItemTotalJobCount = changeUpgradeItemTotalJobCount;
 exports.findItemsByIds = findItemsByIds;
 exports.findJobs = findJobs;
 exports.monitorUpgrades = monitorUpgrades;
+exports.UpgradeStatus = UpgradeStatus;

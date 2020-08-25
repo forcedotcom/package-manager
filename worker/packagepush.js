@@ -314,11 +314,12 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
     const reqs = Array.from(reqInfoMap.values());
 
     // Now, create all of our request items synchronously
-    await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
+    upgrade = await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
 
     // Lastly, create all of the jobs asynchronously
-    createJobsForPushRequests(upgrade, reqs).then(() => {
-    });
+    if (upgrade.status !== upgrades.UpgradeStatus.Failed) {
+        createJobsForPushRequests(upgrade, reqs).then(() => {});
+    }
 
     return upgrade;
 }
@@ -450,11 +451,12 @@ async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy,
     const reqs = Array.from(reqInfoMap.values());
 
     // Now, create all of our request items synchronously
-    await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
+    upgrade = await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
 
     // Lastly, create all of the jobs asynchronously
-    createJobsForPushRequests(upgrade, reqs).then(() => {
-    });
+    if (upgrade.status !== upgrades.UpgradeStatus.Failed) {
+        createJobsForPushRequests(upgrade, reqs).then(() => {});
+    }
 
     return upgrade;
 }
@@ -469,7 +471,7 @@ async function retryFailedUpgrade(failedId, createdBy, transid) {
     }
 
     const scheduledDate = new Date();
-    const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
 
     // Set transient transaction id given by the caller.
     upgrade.transid = transid;
@@ -516,10 +518,12 @@ async function retryFailedUpgrade(failedId, createdBy, transid) {
     const reqs = Array.from(reqInfoMap.values());
 
     // Now, create all of our request items synchronously
-    await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
+    upgrade = await createPushRequests(reqs, upgrade, scheduledDate, createdBy);
 
     // Lastly, create all of the jobs, also synchronously, because for retries we want to activate automatically
-    await createJobsForPushRequests(upgrade, reqs);
+    if (upgrade.status !== upgrades.UpgradeStatus.Failed) {
+        await createJobsForPushRequests(upgrade, reqs);
+    }
 
     return upgrade;
 }
