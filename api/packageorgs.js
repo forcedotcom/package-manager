@@ -280,7 +280,8 @@ async function requestUpdate(req, res, next) {
 		let type = req.body.packageorg.type;
 		let description = req.body.packageorg.description;
 		let orgs = await db.update(`UPDATE package_org SET description = $1, type = $2 WHERE org_id = $3`, [description, type, orgId]);
-		return res.json(orgs[0]);
+		await sfdc.invalidateOrgs([orgId]);
+		admin.emit(admin.Events.PACKAGE_ORGS);return res.json(orgs[0]);
 	} catch (err) {
 		next(err);
 	}

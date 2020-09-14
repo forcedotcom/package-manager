@@ -21,6 +21,7 @@ import LicenseCard from "../licenses/LicenseCard";
 import UpgradeCard from "../upgrades/UpgradeCard";
 import {DataTableFilterHelp} from "../components/DataTableFilter";
 import * as authService from "../services/AuthService";
+import {resolveUpgradeablePackages} from "../utils/upgrades";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -40,7 +41,6 @@ export default class extends React.Component {
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchUpgrades = this.fetchUpgrades.bind(this);
 		this.fetchLicenses = this.fetchLicenses.bind(this);
-		this.resolveUpgradeablePackages = this.resolveUpgradeablePackages.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 		this.schedulingWindowHandler = this.schedulingWindowHandler.bind(this);
 		this.cancelSchedulingHandler = this.cancelSchedulingHandler.bind(this);
@@ -172,7 +172,7 @@ export default class extends React.Component {
 	fetchVersions() {
 		return new Promise((resolve, reject) => {
 			packageVersionService.findByOrgGroupId(this.props.match.params.orgGroupId).then(versions => {
-				this.setState({isRefreshing: false, upgradeablePackageIds: this.resolveUpgradeablePackages(versions)});
+				this.setState({isRefreshing: false, upgradeablePackageIds: resolveUpgradeablePackages(versions)});
 				resolve(versions);
 			}).catch(reject);
 		});
@@ -184,15 +184,6 @@ export default class extends React.Component {
 
 	fetchLicenses() {
 		return licenseService.requestByGroup(this.props.match.params.orgGroupId);
-	}
-
-	resolveUpgradeablePackages(versions) {
-		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
-		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
-		packageVersionList.sort(function (a, b) {
-			return a.dependency_tier > b.dependency_tier ? 1 : -1;
-		});
-		return packageVersionList.map(v => v.package_id);
 	}
 
 	upgradeHandler(versions, startDate, description) {

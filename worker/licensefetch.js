@@ -42,6 +42,7 @@ async function load(result, conn) {
 			sfid: v.Id,
 			name: v.Name,
 			org_id: v.sfLma__Subscriber_Org_ID__c,
+			account: v.sfLma__Account__c,
 			instance: v.sfLma__Org_Instance__c,
 			type: v.sfLma__License_Type__c,
 			is_sandbox: v.sfLma__Subscriber_Org_Is_Sandbox__c,

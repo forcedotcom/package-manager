@@ -36,10 +36,10 @@ const DEFAULT_ORGS = [
 	// 	type: OrgTypes.SandboxBlacktab,
 	// 	instanceUrl: "https://sbt2.cs10.my.salesforce.com"
 	// },
-	{
-		type: OrgTypes.Accounts,
-		instanceUrl: "https://org62.my.salesforce.com"
-	},
+	// {
+	// 	type: OrgTypes.Accounts,
+	// 	instanceUrl: "https://org62.my.salesforce.com"
+	// },
 	{
 		type: OrgTypes.Licenses,
 		instanceUrl: "https://login.salesforce.com"

@@ -152,18 +152,18 @@ class AdminJob {
 		}
 		try {
 			activeJobs.set(this.type, this);
-			this.postMessage(`Starting job ${this.name}`);
+			this.postMessage(`Starting: ${this.name}`);
 			this.startTime = Date.now();
 			await this.runSteps(this.steps);
 			this.status = this.canceled ? "Cancelled" : this.errors.length > 0 ? "Failed" : "Complete";
-			this.postProgress(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.canceled ? this.stepIndex : this.stepCount);
-			logger.info(this.canceled ? "Admin Job Cancelled" : "Admin Job Complete", this.toLogMessage());
+			this.postProgress(this.canceled ? "Admin job cancelled" : "Admin job complete", this.canceled ? this.stepIndex : this.stepCount);
+			logger.info(this.canceled ? "Admin job cancelled" : "Admin job complete", this.toLogMessage());
 		} catch (e) {
 			this.status = "Failed";
-			this.postProgress("Admin Job Failed", this.stepCount, e);
+			this.postProgress("Admin job failed", this.stepCount, e);
 		} finally {
 			activeJobs.delete(this.type);
-			logger.info(`Job Update: job ${this.type} complete and removed from active duty.`, this.toLogMessage());
+			logger.info(`Job update: job ${this.type} complete and removed from active duty.`, this.toLogMessage());
 			latestJobs.set(this.type, this);
 			jobHistory.push(this);
 			if (jobHistory.length > MAX_HISTORY) {
@@ -199,11 +199,14 @@ class AdminJob {
 				this.postProgress(`Canceling job before ${step.name.toLowerCase()}`, this.stepIndex);
 				break;
 			}
-			this.postProgress(step.name, this.stepIndex);
+			if (!step.steps) {
+				// Only post progress for leaf steps
+				this.postProgress(step.name, this.stepIndex);
+			}
 			if (step.handler) {
 				try {
 					await step.handler(this);
-					this.postProgress(`Completed ${step.name.toLowerCase()}`, this.stepIndex + 1);
+					logger.info(`Completed ${step.name.toLowerCase()}`);
 				} catch (e) {
 					this.postProgress(`Failed ${step.name.toLowerCase()}`, this.stepIndex + 1, e);
 					if (step.fail) {
@@ -216,7 +219,7 @@ class AdminJob {
 			if (step.steps) {
 				try {
 					await this.runSteps(step.steps);
-					this.postProgress(`Completed ${step.name.toLowerCase()}`, this.stepIndex);
+					logger.info(`Completed ${step.name.toLowerCase()}`);
 				} catch (e) {
 					this.postProgress(`Failed ${step.name.toLowerCase()}`, this.stepIndex, e);
 					if (step.fail) {

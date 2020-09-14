@@ -86,7 +86,9 @@ async function fetchFromOrg(org, fetchAll) {
 	let conn = await sfdc.buildOrgConnection(org.org_id);
 	try {
 		res = await conn.queryWithRetry(`${SELECT_ALL} ${where}`);
-		adminJob.postDetail(`Found ${res.totalSize} orgs ${fetchAll ? '' : 'using last modified date'}`);
+		if (res.totalSize > 0) {
+			adminJob.postDetail(`Found ${res.totalSize} orgs ${fetchAll ? '' : 'using last modified date'}`);
+		}
 		invalidateAll = fetchAll;
 	} catch (e) {
 		return fail(org, e);
@@ -123,7 +125,9 @@ async function fetchFromOrgByOrgIds(org, orgIds, batchSize = 500) {
 			recs = recs.concat(await load(res, conn, storeModifiedDate, new Set(idBatch)));
 		}
 
-		adminJob.postDetail(`Found ${recs.length} orgs`);
+		if (recs.length > 0) {
+			adminJob.postDetail(`Found ${recs.length} orgs`);
+		}
 	} catch (e) {
 		return fail(org, e);
 	}

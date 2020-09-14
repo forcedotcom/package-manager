@@ -11,11 +11,11 @@ export default class extends React.Component {
 	// Lifecycle
 	render() {
 		return (
-			<div className="slds-form--stacked slds-grid slds-wrap slds-m-top">
+			<div className=" slds-form--stacked slds-grid slds-wrap slds-m-top">
 				<div className="slds-col--padded slds-size--1-of-1">
-					<div className="slds-grid slds-wrap slds-m-top--large">
+					<div className="slds-color__background_gray-1 slds-grid slds-wrap slds-p-bottom--small slds-m-top--small">
 
-						<div className="slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--medium">
+						<div className="slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-3 slds-m-top--small">
 							<dl className="page-header--rec-home__detail-item">
 								<dt>
 									<p className="slds-text-heading--label slds-truncate"

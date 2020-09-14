@@ -19,6 +19,7 @@ import {DataTableFilterHelp} from "../components/DataTableFilter";
 import OrgCard from "./OrgCard";
 import LicenseCard from "../licenses/LicenseCard";
 import * as authService from "../services/AuthService";
+import {resolveUpgradeablePackages} from "../utils/upgrades";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -123,7 +124,7 @@ export default class extends React.Component {
 	fetchVersions() {
 		return new Promise((resolve, reject) => {
 			packageVersionService.findByLicensedOrgId(this.props.match.params.orgId).then(versions => {
-				let upgradeablePackageIds = this.resolveUpgradeablePackages(versions);
+				let upgradeablePackageIds = resolveUpgradeablePackages(versions);
 				this.setState({isRefreshing: false, upgradeablePackageIds});
 				resolve(versions);
 			}).catch(reject);
@@ -199,17 +200,5 @@ export default class extends React.Component {
 
 	openGroupWindow() {
 		this.setState({addingToGroup: true});
-	}
-
-	// Utilities
-	resolveUpgradeablePackages(versions) {
-		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
-		const packageVersionList = Array.from(packageVersionMap.values()).filter(v =>
-			v.version_id !== v.latest_limited_version_id
-			&& (v.license_status === 'Active' || v.license_status === 'Trial'));
-		packageVersionList.sort(function (a, b) {
-			return a.dependency_tier > b.dependency_tier ? 1 : -1;
-		});
-		return packageVersionList.map(v => v.package_id);
 	}
 }

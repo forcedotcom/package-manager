@@ -3,6 +3,7 @@ const pvs = require('./packageversionfetch');
 const licenses = require('./licensefetch');
 const orgs = require('./orgfetch');
 const accounts = require('./accountfetch');
+const org62accounts = require('./org62fetch');
 const sfdc = require('../api/sfdcconn');
 const admin = require('../api/admin');
 
@@ -74,7 +75,13 @@ function fetchData(fetchAll) {
 					},
 					{
 						name: "Fetching accounts for orgs",
-						handler: (job) => accounts.fetch(sfdc.KnownOrgs[sfdc.OrgTypes.Accounts].orgId, fetchAll, job)
+						handler: (job) => {
+							const accountsOrg = sfdc.KnownOrgs[sfdc.OrgTypes.Accounts] || sfdc.KnownOrgs[sfdc.OrgTypes.Licenses];
+							// Special handling for internal orgs.
+							const accountsApi = (accountsOrg.instanceUrl === "https://org62.my.salesforce.com") ?
+								org62accounts : accounts;
+							return accountsApi.fetch(accountsOrg.orgId, fetchAll, job)
+						}
 					},
 					{
 						name: "Updating orgs based on license status",
