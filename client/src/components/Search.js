@@ -134,7 +134,7 @@ export default class extends React.Component {
 										</span>
 										<input id="global-search" ref={this.searchInput} type="text" autoComplete="off"
 											   className="slds-input slds-combobox__input slds-has-focus slds-combobox__input-value"
-											   placeholder="Find org by id or name.  Type '/' to focus." value={this.state.term}
+											   placeholder="Type / to find org" value={this.state.term}
 											   onChange={this.changeHandler}/>
 									</div>
 									<div className="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid">
