@@ -2,3 +2,6 @@
 
 alter table upgrade
   add if not exists comment text;
+
+alter table package
+  add if not exists status varchar(80);

@@ -131,6 +131,7 @@ create table if not exists package
   sfid            varchar(18) not null
     constraint package_sfid_pk primary key,
   name            varchar(255),
+  status          varchar(80),
   package_id      varchar(18),
   package_org_id  varchar(18),
   dependency_tier integer,

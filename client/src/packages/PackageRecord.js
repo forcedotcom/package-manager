@@ -41,6 +41,7 @@ export default class extends React.Component {
 					<HeaderField label="Packaging Org ID" value={pkg.package_org_id}/>
 					<HeaderField label="Package ID" value={pkg.package_id}/>
 					<HeaderField label="Tier" value={pkg.dependency_tier}/>
+					<HeaderField label="Active" value={pkg.status}/>
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<Tabs id="PackageView">

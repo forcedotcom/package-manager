@@ -2,7 +2,7 @@ const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
 
-const SELECT_ALL = `SELECT Id, Name, sflma__Developer_Org_ID__c, sfLma__Package_ID__c, DependencyTier__c, LastModifiedDate
+const SELECT_ALL = `SELECT Id, Name, Status__c, sflma__Developer_Org_ID__c, sfLma__Package_ID__c, DependencyTier__c, LastModifiedDate
                     FROM sflma__Package__c`;
 
 let adminJob;
@@ -25,9 +25,8 @@ async function fetch(lmaOrgId, fetchAll, job) {
 async function query(lmaOrgId, fromDate) {
 	let conn = await sfdc.buildOrgConnection(lmaOrgId);
 	let soql = SELECT_ALL;
-	soql += ` WHERE Status__c = 'Active'`;
 	if (fromDate) {
-		soql += ` AND LastModifiedDate > ${fromDate.toISOString()}`;
+		soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;
 	}
 	let res = await conn.query(soql);
 	return await load(res, conn);
@@ -43,9 +42,10 @@ async function load(result, conn) {
 		return {
 			sfid: v.Id, 
 			name: v.Name, 
+			status: v.Status__c,
 			package_org_id: v.sfLma__Developer_Org_ID__c,
-			package_id: v.sfLma__Package_ID__c, 
-			dependency_tier: v.DependencyTier__c, 
+			package_id: v.sfLma__Package_ID__c,
+			dependency_tier: v.DependencyTier__c,
 			modified_date: v.LastModifiedDate
 		};
 	});
@@ -71,17 +71,17 @@ async function upsert(recs, batchSize) {
 
 async function upsertBatch(recs) {
 	let values = [];
-	let sql = "INSERT INTO package (sfid, name, package_org_id, package_id, dependency_tier, modified_date) VALUES";
+	let sql = "INSERT INTO package (sfid, name, status, package_org_id, package_id, dependency_tier, modified_date) VALUES";
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
-		values.push(rec.sfid, rec.name, rec.package_org_id, rec.package_id, rec.dependency_tier, rec.modified_date);
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
+		values.push(rec.sfid, rec.name, rec.status, rec.package_org_id, rec.package_id, rec.dependency_tier, rec.modified_date);
 	}
 	sql += ` on conflict (sfid) do update set
-        name = excluded.name, package_org_id = excluded.package_org_id, package_id = excluded.package_id,
+        name = excluded.name, status = excluded.status, package_org_id = excluded.package_org_id, package_id = excluded.package_id,
         dependency_tier = excluded.dependency_tier, modified_date = excluded.modified_date`;
 	await db.insert(sql, values);
 }

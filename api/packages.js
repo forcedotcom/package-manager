@@ -1,6 +1,6 @@
 const db = require('../util/pghelper');
 
-const SELECT_ALL = `SELECT id, sfid, name, package_org_id, package_id, dependency_tier
+const SELECT_ALL = `SELECT id, sfid, name, status, package_org_id, package_id, dependency_tier
 	  				FROM package`;
 
 async function requestAll(req, res, next) {
