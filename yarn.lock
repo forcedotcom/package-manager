@@ -3070,15 +3070,6 @@ node-rsa@^0.4.2:
   dependencies:
     asn1 "0.2.3"
 
-node-soap@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/node-soap/-/node-soap-1.0.0.tgz#cb356354d8aac2e4509f7ef1ff4b75bc9ab2825c"
-  integrity sha1-yzVjVNiqwuRQn37x/0t1vJqyglw=
-  dependencies:
-    assert "^1.3.0"
-    q "^1.1.2"
-    underscore "^1.7.0"
-
 normalize-package-data@^2.3.2:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/normalize-package-data/-/normalize-package-data-2.5.0.tgz#e66db1838b200c1dfc233225d12cb36520e234a8"
