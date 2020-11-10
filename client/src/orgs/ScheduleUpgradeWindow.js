@@ -14,14 +14,14 @@ export default class extends React.Component {
 			startDate: moment().add(15, 'minutes'),
 			description: this.props.description || ""
 		};
-		
+
 		this.handleSelectNone = this.handleSelectNone.bind(this);
 		this.handleVersionChange = this.handleVersionChange.bind(this);
 		this.handleDateChange = this.handleDateChange.bind(this);
 		this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 	}
-	
+
 	// Lifecycle
 	componentDidMount() {
 		packageVersionService.requestAllValid(this.props.packageIds).then(validVersions => {
@@ -32,21 +32,27 @@ export default class extends React.Component {
 					p = {id: v.package_id, name: v.package_name, selectedVersions: [], versions: []};
 					packageMap.set(p.id, p);
 				}
-				if (p.selectedVersions.length === 0 && v.status === PackageVersionStatus.Verified) {
-					p.selectedVersions.push(v.version_id);
+				const found = p.versions.find(test => test.version_number === v.version_number);
+				// Only add this version number if we don't already have it.  We can get different versions with the
+				// same version number, for subsequent beta builds, but only ever want the latest. Versions are sorted
+				// by version + created date, so the first version found here wins.
+				if (!found) {
+					p.versions.push(v);
+					if (p.selectedVersions.length === 0 && v.status === PackageVersionStatus.Verified) {
+						p.selectedVersions.push(v.version_id);
+					}
 				}
-				p.versions.push(v);
 			});
 			this.setState({packageMap});
 		});
 	}
-	
+
 	render() {
 		const versionFields = this.state.packageMap ? this.props.packageIds.map(packageId =>
 			this.state.packageMap.has(packageId) ?
 				<VersionField key={packageId} package={this.state.packageMap.get(packageId)} onSelect={this.handleVersionChange}/> : ""
 		) : [];
-		
+
 		return (
 			<div>
 				<style dangerouslySetInnerHTML={{__html: `
@@ -94,9 +100,9 @@ export default class extends React.Component {
 								</div>
 								<div className="slds-form-element">
 									<label className="slds-text-heading_small">Package Upgrade Versions</label>
-									{versionFields.length > 1 ? 
-										<button style={{marginBottom: ".18em", height: "2em", lineHeight: "1rem", borderRadius: "10px"}} 
-											className="slds-button slds-text-title_caps slds-button--neutral 
+									{versionFields.length > 1 ?
+										<button style={{marginBottom: ".18em", height: "2em", lineHeight: "1rem", borderRadius: "10px"}}
+											className="slds-button slds-text-title_caps slds-button--neutral
 											slds-p-left--x-small slds-p-right--x-small slds-m-left--small" id={this.props.id}
 											   onClick={this.handleSelectNone}><svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
 											<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
@@ -127,14 +133,14 @@ export default class extends React.Component {
 			</div>
 		);
 	}
-	
+
 	// Handlers
 	handleSelectNone() {
 		const {packageMap} = this.state;
 		packageMap.forEach(p => p.selectedVersions = ["[[NONE]]"]);
 		this.setState({packageMap});
 	}
-	
+
 	handleVersionChange(packageId, selectedVersion, multiselect) {
 		const {packageMap} = this.state;
 		let p = packageMap.get(packageId);
@@ -145,14 +151,14 @@ export default class extends React.Component {
 			const noneIndex = p.selectedVersions.indexOf("[[NONE]]");
 			if (noneIndex !== -1)
 				p.selectedVersions.splice(noneIndex, 1);
-			
+
 			if (index === -1) {
 				p.selectedVersions.push(selectedVersion);
 			} else {
 				p.selectedVersions.splice(index, 1);
 			}
 		}
-		
+
 		this.setState({packageMap});
 	}
 
@@ -191,9 +197,9 @@ class VersionField extends React.Component {
 	render() {
 		const p = this.props.package;
 		const availableVersions = p.versions.concat([{version_number: "NONE", version_id: "[[NONE]]"}]);
-		let options = availableVersions.map(v => 
-			<VersionButton key={v.version_id} toggled={this.props.package.selectedVersions.indexOf(v.version_id) !== -1} 
-						   id={v.version_id} label={v.version_number}
+		let options = availableVersions.map(v =>
+			<VersionButton key={v.version_id} toggled={this.props.package.selectedVersions.indexOf(v.version_id) !== -1}
+						   id={v.version_id} label={v.version_number} title={`${v.name}, version ${v.version_number}. Created on ${moment(v.created_date).format("MMMM Do, h:mm a")}`}
 					handler={this.versionChangeHandler}/>);
 		return (
 			<div className="slds-form-element">
@@ -225,11 +231,12 @@ export class VersionButton extends React.Component {
 		<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/></svg>;
 
 	render() {
+		const isNone = this.props.id === "[[NONE]]";
 		return (
 			<button id={this.props.id} className={`slds-button slds-button_stateful ${this.props.toggled ? "slds-button_brand slds-is-selected-clicked" : "slds-button_neutral slds-not-selected"}`}
-					onClick={this.props.handler} title="Command-click to select multiple versions">
+					onClick={this.props.handler} title={isNone ? "Deselect all versions" : this.props.title}>
   				<span className="slds-text-not-selected">
-					{this.props.id === "[[NONE]]" ? this.NONE_ICON : this.UNSELECTED_ICON}
+					{isNone ? this.NONE_ICON : this.UNSELECTED_ICON}
 					{this.props.label}</span>
 				<span className="slds-text-selected">
 					{this.SELECTED_ICON}

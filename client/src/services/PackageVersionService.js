@@ -6,8 +6,8 @@ let url = "/api/packageversions";
 
 export let requestAll = (sort_field, sort_dir) => h.get(url, {sort_field, sort_dir});
 
-export let requestAllValid = (packageIds) => h.get(url, {packageIds, 
-	status: [PackageVersionStatus.Verified,PackageVersionStatus.PreRelease,PackageVersionStatus.Preview,PackageVersionStatus.Limited], sort_field: 'version_number', sort_dir: 'desc'});
+export let requestAllValid = (packageIds) => h.get(url, {packageIds,
+	status: [PackageVersionStatus.Verified,PackageVersionStatus.PreRelease,PackageVersionStatus.Preview,PackageVersionStatus.Limited], sort_field: 'version_sort', sort_dir: 'desc'});
 
 export let findByPackage = (packageIds, sort_field, sort_dir) => h.get(url, {
 	packageIds, sort_field: sort_field, sort_dir: sort_dir});

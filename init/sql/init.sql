@@ -145,10 +145,11 @@ create table if not exists package_version
     constraint package_version_sfid_pk primary key,
   name           varchar(255),
   version_number varchar(20),
-  version_sort   varchar(12),
+  version_sort   varchar(30),
   major_version  int,
   package_id     varchar(18),
   release_date   timestamp with time zone,
+  created_date   timestamp with time zone,
   modified_date  timestamp with time zone,
   status         varchar(20),
   version_id     varchar(18)
@@ -161,10 +162,10 @@ create table if not exists package_version_latest
     constraint package_version_package_id_pk primary key,
   version_id             varchar(18),
   version_number         varchar(20),
-  version_sort           varchar(12),
+  version_sort           varchar(30),
   limited_version_id     varchar(18),
   limited_version_number varchar(20),
-  limited_version_sort   varchar(12)
+  limited_version_sort   varchar(30)
 );
 
 create table if not exists license

@@ -4,7 +4,7 @@ const Status = require('../api/packageversions').Status;
 const logger = require('../util/logger').logger;
 
 const SELECT_ALL = `SELECT Id, Name, sfLma__Version_Number__c, sfLma__Package__c, sfLma__Release_Date__c, Status__c, 
-                    sfLma__Version_ID__c, LastModifiedDate FROM sfLma__Package_Version__c`;
+                    sfLma__Version_ID__c, CreatedDate, LastModifiedDate FROM sfLma__Package_Version__c`;
 
 let adminJob;
 
@@ -44,10 +44,11 @@ async function load(result, conn) {
 			sfid: v.Id,
 			name: v.Name,
 			version_number: v.sfLma__Version_Number__c,
-			version_sort: toVersionSort(v.sfLma__Version_Number__c),
+			version_sort: toVersionSort(v.sfLma__Version_Number__c, new Date(v.CreatedDate)),
 			major_version: v.sfLma__Version_Number__c ? v.sfLma__Version_Number__c.split(".")[0] : null,
 			package_id: v.sfLma__Package__c,
 			release_date: new Date(v.sfLma__Release_Date__c).toISOString(),
+			created_date: new Date(v.CreatedDate).toISOString(),
 			modified_date: new Date(v.LastModifiedDate).toISOString(),
 			status: v.Status__c,
 			version_id: v.sfLma__Version_ID__c
@@ -59,7 +60,7 @@ async function load(result, conn) {
 	return recs;
 }
 
-function toVersionSort(versionNumber) {
+function toVersionSort(versionNumber, createdDate) {
 	let segments = versionNumber.split(".");
 	while (segments.length < 3) {
 		segments.push("0");
@@ -71,6 +72,7 @@ function toVersionSort(versionNumber) {
 		}
 		return s;
 	});
+	paddedNumbers.push("_", createdDate.getTime());
 	return paddedNumbers.join("");
 }
 
@@ -90,20 +92,20 @@ async function upsert(recs, batchSize) {
 async function upsertBatch(recs) {
 	let values = [];
 	let sql = `INSERT INTO package_version (sfid, name, version_number, version_sort, major_version, package_id,
-               release_date, modified_date, status, version_id) VALUES `;
+               release_date, created_date, modified_date, status, version_id) VALUES `;
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
 		if (i > 0) {
 			sql += ','
 		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
+		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
 		values.push(rec.sfid, rec.name, rec.version_number, rec.version_sort, rec.major_version, rec.package_id,
-			rec.release_date, rec.modified_date, rec.status, rec.version_id);
+			rec.release_date, rec.created_date, rec.modified_date, rec.status, rec.version_id);
 	}
 	sql += ` on conflict (sfid) do update set
         name = excluded.name, version_number = excluded.version_number, version_sort = excluded.version_sort, major_version = excluded.major_version,
         package_id = excluded.package_id, release_date = excluded.release_date, modified_date = excluded.modified_date, 
-        status = excluded.status, version_id = excluded.version_id`;
+        created_date = excluded.created_date, status = excluded.status, version_id = excluded.version_id`;
 	await db.insert(sql, values);
 }
 
@@ -134,10 +136,10 @@ async function fetchLatest(job) {
 		pvl.version_number = l.version_number;
 		pvl.version_sort = l.version_sort;
 	});
-	
+
 	if (adminJob.canceled)
 		return;
-	
+
 	return upsertLatest(Array.from(latestByPackage.values()));
 }
 
@@ -156,9 +158,9 @@ async function upsertLatest(recs) {
 	let values = [];
 	let n = 0;
 	let params = recs.map(() => `($${++n},$${++n},$${++n},$${++n},$${++n},$${++n},$${++n})`);
-	recs.forEach(rec => 
+	recs.forEach(rec =>
 		values.push(rec.package_id, rec.version_id, rec.version_number, rec.version_sort, rec.limited_version_id, rec.limited_version_number, rec.limited_version_sort));
-	
+
 	let sql = `INSERT INTO package_version_latest (package_id, version_id, version_number, version_sort, limited_version_id, limited_version_number, limited_version_sort) 
 		VALUES ${params.join(",")}
 	 	ON CONFLICT (package_id) DO UPDATE SET
