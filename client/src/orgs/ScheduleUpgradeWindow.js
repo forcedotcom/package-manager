@@ -197,10 +197,11 @@ class VersionField extends React.Component {
 	render() {
 		const p = this.props.package;
 		const availableVersions = p.versions.concat([{version_number: "NONE", version_id: "[[NONE]]"}]);
-		let options = availableVersions.map(v =>
-			<VersionButton key={v.version_id} toggled={this.props.package.selectedVersions.indexOf(v.version_id) !== -1}
-						   id={v.version_id} label={v.version_number} title={`${v.name}, version ${v.version_number}. Created on ${moment(v.created_date).format("MMMM Do, h:mm a")}`}
-					handler={this.versionChangeHandler}/>);
+		let options = availableVersions.map(v => {
+			const versionTitle = `${v.name === v.version_number ? `Version ${v.name}` : `${v.name}, version ${v.version_number}`}. Created on ${moment(v.created_date).format("MMMM Do, h:mm a")}`;
+			return (<VersionButton key={v.version_id} toggled={this.props.package.selectedVersions.indexOf(v.version_id) !== -1}
+						   id={v.version_id} label={v.version_number} title={versionTitle} handler={this.versionChangeHandler}/>);
+		});
 		return (
 			<div className="slds-form-element">
 				<fieldset className="slds-form-element">
