@@ -397,7 +397,6 @@ function _last(parts) {
 		const unit = parts[i];
 		m.startOf(unit);
 		m.subtract(num, unit);
-		f.startOf(unit);
 		return {value: m.toISOString(), end: f.toISOString()};
 	} catch (e) {
 		console.log(e);
@@ -411,7 +410,6 @@ function _next(parts) {
 		let i = 1;
 		const num = parts.length === 2 ? 1 : parseInt(parts[i++], 10);
 		const unit = parts[i];
-		m.endOf(unit);
 		f.endOf(unit);
 		f.add(num, unit);
 		return {value: m.toISOString(), end: f.toISOString()};
