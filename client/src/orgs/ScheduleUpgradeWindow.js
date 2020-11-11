@@ -60,73 +60,89 @@ export default class extends React.Component {
 				`}} />
 				<div className="slds-modal slds-fade-in-open">
 					<div className="slds-modal__container" style={{maxWidth: "60em", width: "60%"}}>
-						<header className="slds-modal__header">
-							<h2 className="slds-text-heading--medium">Schedule Upgrade</h2>
-							<button className="slds-button slds-modal__close">
-								<svg aria-hidden="true"
-									 className="slds-button__icon slds-button__icon--inverse slds-button__icon--large">
-								</svg>
-								<span className="slds-assistive-text">Close</span>
-							</button>
-						</header>
-						<div className="slds-modal__content slds-p-around_medium">
-							<div className="slds-form slds-form_stacked slds-wrap slds-m-around--medium">
-								<div className="slds-form-element">
-									<label className="slds-text-heading_small slds-m-bottom--x-small">Details</label>
-								</div>
-								<div className="slds-form-element">
-									<label className="slds-form-element__label" htmlFor="text-input-id-1">Start
-										Date</label>
-									<DatePicker className="date_picker_wide slds-input slds-m-right--xx-small"
-												selected={this.state.startDate}
-												onChange={this.handleDateChange}
-												showTimeSelect
-												timeFormat="HH:mm"
-												timeIntervals={5}
-												dateFormat="LLL"
-												timeCaption="time"/>
-								</div>
-								<div
-									className={`slds-form-element ${this.state.missingDescription ? "slds-has-error" : ""}`}>
-									<label className="slds-form-element__label" htmlFor="name"><abbr
-										className="slds-required" title="required">*</abbr>Description</label>
-									<div className="slds-form-element__control">
+						<div style={{"box-shadow": "2px 2px 20px rgba(0, 0, 0, 0.16)"}}>
+							<header className="slds-modal__header">
+								<h2 className="slds-text-heading--medium">Schedule Upgrade</h2>
+								<button className="slds-button slds-modal__close">
+									<svg aria-hidden="true"
+										 className="slds-button__icon slds-button__icon--inverse slds-button__icon--large">
+									</svg>
+									<span className="slds-assistive-text">Close</span>
+								</button>
+							</header>
+							<div className="slds-modal__content slds-p-around_medium">
+								<div className="slds-form slds-form_stacked slds-wrap slds-m-around--medium">
+									<div className="slds-form-element">
+										<label
+											className="slds-text-heading_small slds-m-bottom--x-small">Details</label>
+									</div>
+									<div className="slds-form-element">
+										<label className="slds-form-element__label" htmlFor="text-input-id-1">Start
+											Date</label>
+										<DatePicker className="date_picker_wide slds-input slds-m-right--xx-small"
+													selected={this.state.startDate}
+													onChange={this.handleDateChange}
+													showTimeSelect
+													timeFormat="HH:mm"
+													timeIntervals={5}
+													dateFormat="LLL"
+													timeCaption="time"/>
+									</div>
+									<div
+										className={`slds-form-element ${this.state.missingDescription ? "slds-has-error" : ""}`}>
+										<label className="slds-form-element__label" htmlFor="name"><abbr
+											className="slds-required" title="required">*</abbr>Description</label>
+										<div className="slds-form-element__control">
 										<textarea className="slds-input" rows={2} id="description"
 												  value={this.state.description}
 												  onChange={this.handleDescriptionChange}/>
-									</div>
-									{this.state.missingDescription ?
-										<span className="slds-form-element__help" id="form-error-01">Description is required</span> : ""}
-								</div>
-								<div className="slds-form-element">
-									<label className="slds-text-heading_small">Package Upgrade Versions</label>
-									{versionFields.length > 1 ?
-										<button style={{marginBottom: ".18em", height: "2em", lineHeight: "1rem", borderRadius: "10px"}}
-											className="slds-button slds-text-title_caps slds-button--neutral
-											slds-p-left--x-small slds-p-right--x-small slds-m-left--small" id={this.props.id}
-											   onClick={this.handleSelectNone}><svg style={{marginBottom: ".18em"}} className="slds-button__icon_stateful slds-button__icon_left">
-											<use xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
-										</svg>Select None</button> : "" }
-								</div>
-								<div className="slds-form-element__label slds-m-bottom--small">Select which version to upgrade for each package.  <b>Command-click</b> to select multiple versions.</div>
-								{versionFields}
-							</div>
-						</div>
-
-						<footer className="slds-modal__footer">
-							<button className="slds-button slds-button--neutral" onClick={this.props.onCancel}>Cancel
-							</button>
-							<button className="slds-button slds-button--neutral slds-button--brand"
-									onClick={this.upgradeHandler}>
-								{this.state.isScheduling ?
-									<div style={{width: "3em"}}>&nbsp;
-										<div role="status" className="slds-spinner slds-spinner_x-small">
-											<div className="slds-spinner__dot-a"/>
-											<div className="slds-spinner__dot-b"/>
 										</div>
-									</div> : "Schedule"}
-							</button>
-						</footer>
+										{this.state.missingDescription ?
+											<span className="slds-form-element__help" id="form-error-01">Description is required</span> : ""}
+									</div>
+									<div className="slds-form-element">
+										<label className="slds-text-heading_small">Package Upgrade Versions</label>
+										{versionFields.length > 1 ?
+											<button style={{
+												marginBottom: ".18em",
+												height: "2em",
+												lineHeight: "1rem",
+												borderRadius: "10px"
+											}}
+													className="slds-button slds-text-title_caps slds-button--neutral
+											slds-p-left--x-small slds-p-right--x-small slds-m-left--small"
+													id={this.props.id}
+													onClick={this.handleSelectNone}>
+												<svg style={{marginBottom: ".18em"}}
+													 className="slds-button__icon_stateful slds-button__icon_left">
+													<use
+														xlinkHref="/assets/icons/utility-sprite/svg/symbols.svg#close"/>
+												</svg>
+												Select None</button> : ""}
+									</div>
+									<div className="slds-form-element__label slds-m-bottom--small">Select which version
+										to upgrade for each package. <b>Command-click</b> to select multiple versions.
+									</div>
+									{versionFields}
+								</div>
+							</div>
+
+							<footer className="slds-modal__footer">
+								<button className="slds-button slds-button--neutral"
+										onClick={this.props.onCancel}>Cancel
+								</button>
+								<button className="slds-button slds-button--neutral slds-button--brand"
+										onClick={this.upgradeHandler}>
+									{this.state.isScheduling ?
+										<div style={{width: "3em"}}>&nbsp;
+											<div role="status" className="slds-spinner slds-spinner_x-small">
+												<div className="slds-spinner__dot-a"/>
+												<div className="slds-spinner__dot-b"/>
+											</div>
+										</div> : "Schedule"}
+								</button>
+							</footer>
+						</div>
 					</div>
 				</div>
 				<div className="slds-modal-backdrop slds-modal-backdrop--open"/>
