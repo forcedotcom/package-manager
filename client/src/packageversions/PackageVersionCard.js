@@ -11,7 +11,7 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
-		
+
 		this.linkHandler = this.linkHandler.bind(this);
 		this.filterHandler = this.filterHandler.bind(this);
 		this.applySavedFilter = this.applySavedFilter.bind(this);
@@ -24,25 +24,31 @@ export default class extends React.Component {
 			{
 				Header: "Version Number", id: "version_sort", accessor: "version_number", sortable: true, clickable: true
 			},
+			{Header: "Version ID", accessor: "version_id", sortable: false},
+			{Header: "Status", accessor: "status", sortable: true},
+			{
+				Header: "Created Date",
+				id: "created_date",
+				accessor: d => moment(d.created_date).format("YYYY-MM-DD hh:mm a"),
+				sortable: true
+			},
 			{
 				Header: "Release Date",
 				id: "release_date",
-				accessor: d => moment(d.release_date).format("YYYY-MM-DD"),
-				sortable: false
-			},
-			{Header: "Version ID", accessor: "version_id", sortable: false},
-			{Header: "Status", accessor: "status", sortable: true}
+				accessor: d => moment(d.release_date).format("YYYY-MM-DD hh:mm a"),
+				sortable: true
+			}
 		];
 
 		const actions = [
 			<DataTableSavedFilters id="PackageVersionCard" key="PackageVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		];
-		
+
 		return (
 			<div className="slds-card">
 				<CardHeader title="Package Versions" icon={PACKAGE_VERSION_ICON} count={this.state.itemCount} actions={actions}/>
 				<section className="slds-card__body">
-					<DataTable id="PackageVersionCard" columns={columns} onFetch={this.props.onFetch} 
+					<DataTable id="PackageVersionCard" columns={columns} onFetch={this.props.onFetch}
 							   onFilter={this.filterHandler} filters={filterColumns} onClick={this.linkHandler} />
 				</section>
 				<footer className="slds-card__footer"/>

@@ -12,7 +12,7 @@ export default class extends React.Component {
 	constructor() {
 		super();
 		this.state = {};
-		
+
 		this.filterHandler = this.filterHandler.bind(this);
 		this.applySavedFilter = this.applySavedFilter.bind(this);
 		this.linkHandler = this.linkHandler.bind(this);
@@ -32,26 +32,28 @@ export default class extends React.Component {
 			{Header: "Account Information", columns: [
 				{Header: "Account Name", accessor: "account_name", clickable: true},
 				{Header: "License", accessor: "license_status"},
-				{Header: "Install Date", id: "install_date", accessor: d => d.install_date ? moment(d.install_date).format("YYYY-MM-DD") : null, sortable: false},
+				{Header: "Install Date", id: "install_date", accessor: d => d.install_date ? moment(d.install_date).format("YYYY-MM-DD hh:mm a") : null, sortable: true},
 			]},
 			{Header: "Version Information", columns: [
 				{Header: "Package", accessor: "package_name", clickable: true},
 				{Header: "Version", id: "version_sort", accessor: Utils.renderVersionNumber, sortable: true, clickable: true},
 				{Header: "Status", accessor: "status", sortable: true},
-				{Header: "Release Date", id: "release_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD"), sortable: false}]},
+				{Header: "Created Date", id: "created_date", accessor: d => moment(d.created_date).format("YYYY-MM-DD hh:mm a"), sortable: true},
+				{Header: "Release Date", id: "created_date", accessor: d => moment(d.release_date).format("YYYY-MM-DD hh:mm a"), sortable: true}
+				]},
 			];
 
 		const actions = [
 			<DataTableSavedFilters offset={2} id="GroupMemberVersionCard" key="GroupMemberVersionCard" filterColumns={filterColumns} onSelect={this.applySavedFilter}/>
 		].concat(this.props.actions);
 		actions.push({label: "Export", handler: this.exportHandler});
-		
+
 		return (
 			<article className="slds-card">
 				<CardHeader title="Installed Versions" icon={PACKAGE_VERSION_ICON} actions={actions} count={this.state.itemCount}/>
 				<div className="slds-card__body">
-					<DataTable id="GroupMemberVersionCard" keyField="org_id" columns={columns} 
-								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn} 
+					<DataTable id="GroupMemberVersionCard" keyField="org_id" columns={columns}
+								 onFetch={this.props.onFetch} refetchOn={this.props.refetchOn}
 								 onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
 							     selection={this.props.selected} showSelected={this.props.showSelected} onSelect={this.props.onSelect}/>
 				</div>

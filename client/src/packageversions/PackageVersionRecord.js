@@ -12,11 +12,11 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {packageVersion: {}};
-		
+
 		packageVersionService.requestById(props.match.params.versionId).then(packageVersion => {
 			this.setState({packageVersion})
 		}).catch(error => notifier.error(error.message, error.subject || "Failed Request", 10000, () => {window.history.back()}));
-		
+
 		this.fetchOrgs = this.fetchOrgs.bind(this);
 		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 	}
@@ -33,6 +33,8 @@ export default class extends React.Component {
 					<HeaderField label="Name" value={packageVersion.name}/>
 					<HeaderField label="ID" value={packageVersion.version_id}/>
 					<HeaderField label="Status" value={packageVersion.status}/>
+					<HeaderField label="Created" value={packageVersion.created_date} format="datetime"/>
+					<HeaderField label="Released" value={packageVersion.release_date} format="datetime"/>
 				</RecordHeader>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<OrgCard id="PackageVersionMembers" title="Customers" withLicenseData={true} onFetch={this.fetchOrgs} onFetchBlacklist={this.fetchBlacklist}/>
@@ -41,12 +43,12 @@ export default class extends React.Component {
 			</div>
 		);
 	}
-	
+
 	// Handlers
 	fetchOrgs() {
 		return orgService.requestByPackageVersion(this.props.match.params.versionId);
 	}
-	
+
 	fetchBlacklist() {
 		return orgService.requestByPackageVersion(this.props.match.params.versionId, true);
 	}
