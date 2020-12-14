@@ -9,6 +9,7 @@ const SESSION_TIMEOUT_HOURS = process.env.SESSION_TIMEOUT_HOURS || 2;
 
 const express = require('express'),
 	enforce = require('express-sslify'),
+        ipfilter = require('express-ipfilter').IpFilter,
 	path = require('path'),
 	bodyParser = require('body-parser'),
 	cookieSession = require('cookie-session'),
@@ -45,6 +46,21 @@ const session = cookieSession({
 
 if (process.env.FORCE_HTTPS === "true") {
 	app.use(enforce.HTTPS({trustProtoHeader: true}));
+}
+
+if (process.env.IP_WHITELIST) {
+        let clientIp = function(req, res) {
+                return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',').pop() : ""
+        }
+        let whitelist_ips = ['::1', '127.0.0.1'].concat(process.env.IP_WHITELIST.split(','))
+        app.use(
+                ipfilter(whitelist_ips, {
+                        detectIp: clientIp,
+                        forbidden: 'You are not authorized to access this page.',
+                        filter: whitelist_ips,
+                        mode: 'allow',
+                })
+        )
 }
 
 app.set('port', process.env.PORT || 5000);
