@@ -186,15 +186,6 @@ export default class extends React.Component {
 		return licenseService.requestByGroup(this.props.match.params.orgGroupId);
 	}
 
-	resolveUpgradeablePackages(versions) {
-		const packageVersionMap = new Map(versions.map(v => [v.package_id, v]));
-		const packageVersionList = Array.from(packageVersionMap.values()).filter(v => v.version_id !== v.latest_limited_version_id);
-		packageVersionList.sort(function (a, b) {
-			return a.dependency_tier > b.dependency_tier ? 1 : -1;
-		});
-		return packageVersionList.map(v => v.package_id);
-	}
-
 	upgradeHandler(versions, startDate, description, retryEnabled, retryCount) {
 		orgGroupService.requestUpgrade(this.state.orggroup.id, versions, startDate, description, this.state.transid, retryEnabled, retryCount).then((res) => {
 			if (res.message) {
