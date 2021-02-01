@@ -121,7 +121,7 @@ app.get('/api/upgrades', upgrades.requestAll);
 app.get('/api/upgrades/:id', upgrades.requestById);
 app.post('/api/upgrades/activate/:id', upgrades.requestActivateUpgrade);
 app.post('/api/upgrades/cancel/:id', upgrades.requestCancelUpgrade);
-app.post('/api/upgrades/retry/:id', upgrades.requestRetryFailedUpgrade);
+app.post('/api/upgrades/retry/:id', upgrades.requestRetryUpgradeIfFailed);
 app.post('/api/upgrades/refresh/:id', upgrades.requestRefreshUpgrade);
 app.post('/api/upgrades/purge', upgrades.requestPurge);
 app.post('/api/stats', stats.requestStats);

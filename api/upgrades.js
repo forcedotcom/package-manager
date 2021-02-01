@@ -645,10 +645,10 @@ async function requestActivateUpgrade(req, res, next) {
 	}
 }
 
-async function requestRetryFailedUpgrade(req, res, next) {
+async function requestRetryUpgradeIfFailed(req, res, next) {
 	let id = req.params.id;
 	try {
-		const upgrade = await push.retryFailedUpgrade(id, req.session.username);
+		const upgrade = await push.retryUpgradeIfFailed(id, req.session.username);
 		if (upgrade == null) {
 			return next("No failed jobs found to retry");
 		}
@@ -826,7 +826,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 async function autoRetryUpgrades(upgradeId) {
 	const userName = await db.query(`SELECT created_by FROM upgrade WHERE id = $1`, [upgradeId]);
     try {
-        const upgrade = await push.retryFailedUpgrade(upgradeId, userName);
+        const upgrade = await push.retryUpgradeIfFailed(upgradeId, userName);
 		if (upgrade == null) {
 			logger.info("No failed jobs found to retry");
 			return;
@@ -1045,7 +1045,7 @@ exports.createUpgradeItem = createUpgradeItem;
 exports.createJobs = createJobs;
 exports.requestActivateUpgrade = requestActivateUpgrade;
 exports.requestCancelUpgrade = requestCancelUpgrade;
-exports.requestRetryFailedUpgrade = requestRetryFailedUpgrade;
+exports.requestRetryUpgradeIfFailed = requestRetryUpgradeIfFailed;
 exports.requestPurge = requestPurge;
 exports.requestActivateUpgradeItem = requestActivateUpgradeItem;
 exports.requestCancelUpgradeItem = requestCancelUpgradeItem;

@@ -461,7 +461,7 @@ async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy,
     return upgrade;
 }
 
-async function retryFailedUpgrade(failedId, createdBy, transid) {
+async function retryUpgradeIfFailed(failedId, createdBy, transid) {
     const failedUpgrade = await upgrades.retrieveById(failedId);
     const failedJobs = await upgrades.findJobs(failedId, null, null, null, null, Status.Failed);
 
@@ -722,6 +722,6 @@ exports.updatePushRequests = updatePushRequests;
 exports.clearRequests = clearRequests;
 exports.upgradeOrgs = upgradeOrgs;
 exports.upgradeOrgGroup = upgradeOrgGroup;
-exports.retryFailedUpgrade = retryFailedUpgrade;
+exports.retryUpgradeIfFailed = retryUpgradeIfFailed;
 exports.isActiveStatus = isActiveStatus;
 exports.Status = Status;
