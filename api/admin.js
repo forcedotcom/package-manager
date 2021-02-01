@@ -133,9 +133,9 @@ class AdminJob {
 
 	async run() {
 		const f = await this.shouldRun();
-		if (!f) 
+		if (!f)
 			return; // Just don't do it
-		
+
 		if (activeJobs.has(this.type)) {
 			const activeJob = activeJobs.get(this.type);
 			if (activeJob.startTime + this.timeout < Date.now()) {
@@ -255,7 +255,7 @@ function connect(sock) {
 	});
 	socket.on(Events.REFRESH_GROUP_VERSIONS, async function (groupId) {
 		const job = fetch.fetchOrgGroupVersions(groupId);
-		await job.run();	
+		await job.run();
 	});
 	socket.on(Events.UPLOAD_ORGS, async function () {
 		await uploadOrgsToSumo();
@@ -277,19 +277,25 @@ function requestEmit(req, res, next) {
 	res.json({result: "ok"});
 }
 
-function requestSettings(req, res) {
-	res.json({
-		HEROKU_APP_NAME: process.env.HEROKU_APP_NAME || null
-	});
+async function requestSettings(req, res) {
+	return Promise.resolve(
+		res.json({
+			HEROKU_APP_NAME: process.env.HEROKU_APP_NAME || null
+		})
+	);
 }
 
-function requestJobs(req, res) {
-	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}});
+async function requestJobs(req, res) {
+	return Promise.resolve(
+		res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}})
+	);
 }
 
-function requestCancel(req, res) {
+async function requestCancel(req, res) {
 	cancelJobs(req.body.jobIds);
-	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}});
+	return Promise.resolve(
+		res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}})
+	);
 }
 
 function cancelJobs(data) {
@@ -326,7 +332,7 @@ function scheduleJobs() {
 		setInterval(() => {monitorOrgs(interval).then(() => {})}, interval);
 		logger.info(`Scheduled org monitor for every ${schedules.org_monitor_interval_seconds} seconds`)
 	}
-	
+
 	if (schedules.upgrade_monitor_interval_seconds != null && schedules.upgrade_monitor_interval_seconds !== -1) {
 		let interval = schedules.upgrade_monitor_interval_seconds * 1000;
 		setInterval(() => {monitorUpgrades(interval).then(() => {})}, interval);
