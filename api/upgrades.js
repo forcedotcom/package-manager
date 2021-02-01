@@ -171,7 +171,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         INNER JOIN org o on o.org_id = j.org_id
         LEFT JOIN account a ON a.account_id = o.account_id`;
 
-async function createUpgrade(retryEnabled, retryCount, scheduledDate, createdBy, description, blacklisted, orgGroupId, parentId) {
+async function createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId, parentId, retryEnabled, retryCount) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let recs = await db.insert('INSERT INTO upgrade (start_time,created_by,description,status,org_group_id,parent_id,retry_enabled,retry_count) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [isoTime, createdBy, description, UpgradeStatus.Ready, orgGroupId, parentId, retryEnabled, retryCount]);
 	if (blacklisted && blacklisted.length !== 0) {
@@ -592,7 +592,7 @@ async function findJobs(upgradeId, itemIds, orgIds, sortField, sortDir, status) 
 	if (status) {
 		values.push(status);
 		where += ` AND j.status = $${values.length}`;
-		
+
 	}
 	let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
 	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
@@ -652,7 +652,7 @@ async function requestRetryFailedUpgrade(req, res, next) {
 		if (upgrade == null) {
 			return next("No failed jobs found to retry");
 		}
-		
+
 		await activateUpgrade(upgrade.id, null); // Skip passing the username to skip the activation validation check
 		return res.json(upgrade);
 	} catch(e) {
@@ -665,7 +665,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	const upgrade = await retrieveById(id);
 	if (upgrade.status !== UpgradeStatus.Ready) {
 		throw `Cannot activate an upgrade (${id}) that is not in Ready state`;
-	} 
+	}
 	if (username && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
 		if (upgrade.created_by === null) {
 			throw `Cannot activate upgrade ${id} without knowing who created it`;
@@ -674,7 +674,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 			throw `Cannot activate upgrade ${id} by the same user ${username} who created it`;
 		}
 	}
-	
+
 	await activateAvailableUpgradeItems(id, username, job);
 	upgrade.status = UpgradeStatus.Active;
 	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [upgrade.status, id]);
@@ -690,7 +690,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 					logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id});
 					admin.emit(admin.Events.UPGRADE_ITEMS, [i]);
 				}
-			).catch(err => 
+			).catch(err =>
 				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: i.id, push_request_id: i.push_request_id})
 			);
 			return false;
@@ -712,7 +712,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 		admin.alert("Cannot activate upgrade", `None of the selected orgs are eligible for upgrades.`);
 		return items;
 	}
-	
+
 	// Build our buckets based on tiers
 	const buckets = [];
 	let bucket = {};
@@ -758,7 +758,7 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 	// Now we know our tier buckets with their collective status, so loop through them and activate any that are ready.
 	for (let b = 0; b < buckets.length; b++) {
 		const items = buckets[b].items;
-		
+
 		for (let i = 0; i < items.length; i++) {
 			const item = items[i];
 			let activate = false;
@@ -870,7 +870,7 @@ async function monitorActiveUpgrades(job) {
 	for (let i = 0; i < activeUpgrades.length; i++) {
 		const upgrade = activeUpgrades[i];
 		await activateAvailableUpgradeItems(upgrade.id, job);
-		
+
 		if (await areJobsCompleteForUpgrade(upgrade.id)) {
 			// An upgrade is complete only when all of its jobs are marked as complete
 			upgrade.status = UpgradeStatus.Done;
@@ -887,7 +887,7 @@ async function monitorActiveUpgradeItems(job) {
 	if (activeItems.length === 0) {
 		return; // Nothing to do
 	}
-	
+
 	await fetchRequests(activeItems);
 }
 

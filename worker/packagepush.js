@@ -288,7 +288,8 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
         };
     }
 
-    let upgrade = await upgrades.createUpgrade(retryEnabled, retryCount, scheduledDate, createdBy, description, blacklisted);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted,
+        undefined, undefined, retryEnabled, retryCount);
 
     // Collect the information we need up front to create our push requests
     const versions = await packageversions.findByVersionIds(versionIds);
@@ -397,7 +398,8 @@ async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy,
             message: "None of these orgs are allowed to be upgraded.  Check your blacklist and whitelist groups."
         };
     }
-    let upgrade = await upgrades.createUpgrade(retryEnabled, retryCount, scheduledDate, createdBy, description, blacklisted, orgGroupId);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId,
+        undefined, retryEnabled, retryCount);
     // Set transient transaction id given by the caller.
     upgrade.transid = transid;
 
@@ -469,7 +471,7 @@ async function retryFailedUpgrade(failedId, createdBy, transid) {
     }
 
     const scheduledDate = new Date();
-    const upgrade = await upgrades.createUpgrade(null, null, scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
+    const upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, `Retrying: ${failedUpgrade.description}`, null, failedUpgrade.org_group_id, failedUpgrade.id);
 
     // Set transient transaction id given by the caller.
     upgrade.transid = transid;
