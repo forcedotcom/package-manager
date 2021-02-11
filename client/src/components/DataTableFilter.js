@@ -44,7 +44,7 @@ const HelpText = () => (
 		<div style={{overflowY: "scroll", width: 600}} className="slds-grid slds-wrap">
 			<HelpSection title="Text expressions" items={[
 				{example: 'some text', description: "contains some text"},
-				{example: "'some text'", description: "contains some text with space"},
+				{example: '\'some text\'', description: "contains some text with space or other special characters"},
 				{example: '$some text', description: "starts with some text"},
 				{example: 'some text$', description: "ends with some text"},
 				{example: '"some text"', description: "equals some text exactly"}
@@ -62,7 +62,7 @@ const HelpText = () => (
 				{example: '!?', description: "contains nothing"},
 			]}/>
 			<HelpSection title="String-based comparisons" items={[
-				{example: '> 2018-08', description: "after August 2018"},
+				{example: '> \'2018-08\'', description: "after August 2018"},
 				{example: '<= 2', description: "less than or equal to 2"}
 			]}/>
 			<HelpSection title="Macro Replacements" items={[
