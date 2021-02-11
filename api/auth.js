@@ -31,11 +31,12 @@ function requestLogout(req, res, next) {
     }
 }
 
-function oauthLoginURL(req, res, next) {
+async function oauthLoginURL(req, res, next) {
     try {
-        const url = buildURL('api id web', {
+        const licenseOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
+        const url = await buildURL('api id web', {
             operation: "login",
-            loginUrl: AUTH_URL || sfdc.KnownOrgs[sfdc.OrgTypes.Licenses] ? sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].instanceUrl : null,
+            loginUrl: AUTH_URL || (licenseOrg ? licenseOrg.instanceUrl : null),
             returnTo: req.query.returnTo
         });
         res.json(url);
@@ -44,9 +45,9 @@ function oauthLoginURL(req, res, next) {
     }
 }
 
-function oauthOrgURL(req, res, next) {
+async function oauthOrgURL(req, res, next) {
     try {
-        const url = buildURL("api id web refresh_token", {
+        const url = await buildURL("api id web refresh_token", {
             operation: "org",
             type: req.query.type,
             loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN,
@@ -58,14 +59,14 @@ function oauthOrgURL(req, res, next) {
     }
 }
 
-function buildURL(scope, state) {
-    let conn = buildAuthConnection(undefined, undefined, state.loginUrl);
+async function buildURL(scope, state) {
+    let conn = await buildAuthConnection(undefined, undefined, state.loginUrl);
     return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
 }
 
 async function oauthCallback(req, res, next) {
     let state = JSON.parse(req.query.state);
-    let conn = buildAuthConnection(null, null, state.loginUrl);
+    let conn = await buildAuthConnection(null, null, state.loginUrl);
     try {
         if (req.query.error) {
             let errs = {
@@ -117,7 +118,7 @@ async function requestUser(req, res, next) {
     if (!req.session.access_token) {
         return; // Not logged in.
     }
-    const conn = buildAuthConnection(req.session.access_token);
+    const conn = await buildAuthConnection(req.session.access_token);
     try {
         let user = await conn.identity();
         // If user has a permission set granting edit rights on the Package Version object, we consider them admins
@@ -136,21 +137,24 @@ async function requestUser(req, res, next) {
     }
 }
 
-function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
-    return new jsforce.Connection({
-            oauth2: {
-                loginUrl: loginUrl,
-                clientId: CLIENT_ID,
-                clientSecret: CLIENT_SECRET,
-                redirectUri: CALLBACK_URL
-            },
-            version: sfdc.SFDC_API_VERSION,
-            instanceUrl: AUTH_URL || (sfdc.KnownOrgs[sfdc.OrgTypes.Licenses] ? sfdc.KnownOrgs[sfdc.OrgTypes.Licenses].instanceUrl : loginUrl),
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-            logLevel: process.env.LOG_LEVEL || "WARN"
-        }
-    );
+async function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
+    const licenseOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
+    const options = {
+        oauth2: {
+            loginUrl: loginUrl,
+            clientId: CLIENT_ID,
+            clientSecret: CLIENT_SECRET,
+            redirectUri: CALLBACK_URL
+        },
+        version: sfdc.SFDC_API_VERSION,
+        instanceUrl: AUTH_URL || (licenseOrg ? licenseOrg.instanceUrl : loginUrl),
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        logLevel: process.env.LOG_LEVEL || "WARN"
+    };
+    logger.debug(`Salesforce auth connection: ${JSON.stringify(options)}`);
+
+    return new jsforce.Connection(options);
 }
 
 exports.requestUser = requestUser;
