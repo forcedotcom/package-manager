@@ -315,7 +315,7 @@ function unwrap(filter, node, operator) {
 			delete node.sortVal;
 		}
 
-		node.filterValEnd = fieldVals.end;
+		node.filterValEnd = fieldVals.end ? fieldVals.end.toLowerCase() : fieldVals.end;
 	}
 
 	return node;
