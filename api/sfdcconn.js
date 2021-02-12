@@ -69,10 +69,12 @@ async function init() {
 		KnownOrgs[orgConfig.type] = orgConfig;
 	});
 
+	logger.debug(`Known orgs from named orgs :${JSON.stringify(KnownOrgs)}`);
 	// Add default orgs if not found
 	DEFAULT_ORGS.forEach(defaultOrg => {
 		if (!orgsConfig[defaultOrg.type]) {
 			// Clone the default
+			logger.debug(`Missing org type, adding default for type ${defaultOrg.type}`);
 			KnownOrgs[defaultOrg.type] = Object.assign({}, defaultOrg);
 		}
 	});
