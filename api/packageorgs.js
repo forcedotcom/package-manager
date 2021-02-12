@@ -10,13 +10,13 @@ const PACKAGE_ORG_IP_RANGES = process.env.PACKAGE_ORG_IP_RANGES;
 const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
 const PACKAGE_MANAGER_ADMIN_PROFILE = process.env.PACKAGE_MANAGER_ADMIN_PROFILE;
 
-const SELECT_ALL = 
+const SELECT_ALL =
 	`SELECT id, name, active, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
 	${ENABLE_ACCESS_TOKEN_UI ? ", access_token" : ""}
 	FROM package_org`;
 
 // Not to be used outside of the server.  No UI, no API.
-const SELECT_ALL_WITH_REFRESH_TOKEN = 
+const SELECT_ALL_WITH_REFRESH_TOKEN =
 	`SELECT id, name, active, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date, 
 		refresh_token, access_token
 	FROM package_org`;
@@ -26,7 +26,7 @@ async function requestAll(req, res, next) {
 		let recs = await retrieveAll(req.query.sort_field, req.query.sort_dir);
 
 		// Add missing orgs
-		Object.entries(sfdc.KnownOrgs).forEach(([key, val]) => {
+		Object.entries(await sfdc.getKnownOrgs()).forEach(([key, val]) => {
 			if (!recs.find(o => val.type === o.type)) {
 				let org = {status: Status.Missing, name: "Click to register missing org", type: val.type, instance_url: val.instanceUrl};
 				recs.push(org);
@@ -143,20 +143,20 @@ async function initOrg(conn, org_id, type, insertUniqueType) {
 
 async function refreshOrg(conn, org) {
 	let refreshed = await refreshOrgConnection(conn, org.org_id);
-	
+
 	if (refreshed.status === Status.Invalid) {
 		admin.emit(admin.Events.ALERT_INVALID_ORG, {subject: "Invalid connection", org,
 			message: `The connection to the org ${org.name} (${org.org_id}) is invalid.  Click to re-authenticate.`})
 		return await updateOrgStatus(org.org_id, Status.Invalid);
-	} 
-	
+	}
+
 	if (org.status === refreshed.status) {
 		return; // Nothing to do.
 	}
 
 	// Org status changed, so update our data to match.
 	org = refreshed;
-	
+
 	await crypt.encryptObjects([org], ["access_token", "refresh_token"]);
 	let sql = `INSERT INTO package_org 
             (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status)
@@ -181,7 +181,7 @@ async function applyLoginIPAccessControls(packageOrgId) {
 		fullName: PACKAGE_MANAGER_ADMIN_PROFILE,
 		loginIpRanges: PACKAGE_ORG_IP_RANGES ? JSON.parse(PACKAGE_ORG_IP_RANGES) : []
 	};
-	
+
 	let result = await conn.metadata.update('Profile', metadata);
 	return result.success;
 }
@@ -324,7 +324,7 @@ async function revokeByOrgIds(orgIds) {
 		} catch (e) {
 			// Connection is already invalid, just be sure our local record is updated.
 		}
-		
+
 		await db.update(
 			`UPDATE package_org SET status = $1, access_token = null, refresh_token = null 
 				WHERE org_id = $2`, [Status.Invalid, orgId]);

@@ -9,8 +9,8 @@ const Logger = require('heroku-logger').Logger;
 }*/
 const LOG = new Logger({});
 exports.logger = {
-	debug: LOG.debug,
-	info: LOG.info,
-	warn: LOG.warn,
+	debug: (msg) => LOG.debug(msg),
+	info: (msg) => LOG.info(msg),
+	warn: (msg) => LOG.warn(msg),
 	error: (e, data) => LOG.error(e.message || e, {stack: e.stack || null, ...data})
 };

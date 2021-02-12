@@ -46,6 +46,19 @@ const DEFAULT_ORGS = [
 	}
 ];
 
+async function getKnownOrg(orgType) {
+	const knownOrgs = await getKnownOrgs();
+	return knownOrgs[orgType];
+}
+
+async function getKnownOrgs() {
+	if (typeof KnownOrgs[OrgTypes.Licenses] == "undefined") {
+		await init();
+	}
+
+	return KnownOrgs;
+}
+
 async function init() {
 	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : [];
 	logger.info(`Initializing named orgs from ${process.env.NAMED_ORGS ? process.env.NAMED_ORGS : 'nothing'}`);
@@ -196,7 +209,8 @@ exports.normalizeInstanceName = normalizeInstanceName;
 exports.init = init;
 exports.initOrg = initOrg;
 exports.invalidateOrgs = invalidateOrgs;
-exports.KnownOrgs = KnownOrgs;
+exports.getKnownOrg = getKnownOrg;
+exports.getKnownOrgs = getKnownOrgs;
 exports.OrgTypes = OrgTypes;
 exports.AccountIDs = AccountIDs;
 exports.SFDC_API_VERSION = SFDC_API_VERSION;
