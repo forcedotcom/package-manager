@@ -52,6 +52,7 @@ async function getKnownOrg(orgType) {
 }
 
 async function getKnownOrgs() {
+	logger.debug(`Known Orgs:\n${JSON.stringify(KnownOrgs)}`);
 	if (typeof KnownOrgs[OrgTypes.Licenses] == "undefined") {
 		await init();
 	}
