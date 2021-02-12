@@ -20,7 +20,7 @@
     "helmet": "^3.13.0",
     "heroku-logger": "^0.3.1",
     "jsep": "^0.3.4",
-    "jsforce": "^1.8.4",
+    "jsforce": "1.10.0",
     "moment": "^2.22.1",
     "moment-timezone": "^0.5.26",
     "node-rsa": "^0.4.2",
