@@ -139,6 +139,8 @@ async function requestUser(req, res, next) {
 
 async function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
     const licenseOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
+    logger.debug(`Salesforce licenses org: ${JSON.stringify(licenseOrg)}`);
+
     const options = {
         oauth2: {
             loginUrl: loginUrl,
