@@ -4,7 +4,7 @@
   "description": "Package Manager",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --inspect server.js",
     "debug": "node --inspect server.js",
     "heroku-postbuild": "cd client && yarn --production=false && yarn build",
     "test": "jest"
