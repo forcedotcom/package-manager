@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "debug": "node --inspect server.js",
-    "heroku-postbuild": "cd client && yarn --production=false && yarn build",
+    "build": "cd client && yarn --production=false && yarn build",
     "test": "jest"
   },
   "repository": "git@github.com:SFDC/brick-manager.git",
