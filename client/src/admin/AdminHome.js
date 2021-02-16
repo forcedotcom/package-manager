@@ -24,7 +24,7 @@ export default class extends React.Component {
 			settings: {},
 			isMini: window.innerWidth < 1000
 		};
-		
+
 		this.onJobs = this.onJobs.bind(this);
 		this.onHistory = this.onHistory.bind(this);
 		this.onQueue = this.onQueue.bind(this);
@@ -123,7 +123,7 @@ export default class extends React.Component {
 				let job = history.latest[i];
 				let spent = moment(job.modifiedDate).diff(job.startTime) / 1000;
 				latestHistoryCards.push(
-					<AdminCard key={`${job.id}-history-${i}`} title={job.name}>
+					<AdminCard key={`${job.id}-history-${i}`} title={job.name} status={job.status}>
 						<div className="slds-m-top--medium slds-m-bottom--medium">
 							<ProgressBar message={spent <= 100 ?
 								`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
@@ -142,7 +142,7 @@ export default class extends React.Component {
 					job history</div>
 			);
 		}
-		
+
 		let historyCards = [];
 		if (history.all.length > 0) {
 			for (let i = history.all.length - 1; i >= 0; i--) {
@@ -151,8 +151,8 @@ export default class extends React.Component {
 				historyCards.push(
 					<TimelineEntry key={`${job.id}-history-${i}`} subject={job.name} interval={job.interval}
 								   error={job.errors.length > 0} timestamp={spent <= 100 ?
-								   	`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
-								   	`${moment(job.modifiedDate).format("lll")} (took ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
+								   	`${moment(job.modifiedDate).format("lll")} (${job.status} after ${Math.ceil(moment.duration(spent, 's').asSeconds())} secs)` :
+								   	`${moment(job.modifiedDate).format("lll")} (${job.status} after ${Math.ceil(moment.duration(spent, 's').asMinutes())} mins)`
 								   }>
 						{job.errors.length > 0 ?
 							<Section title="Errors"><Errors startTime={job.startTime} lines={job.errors}/></Section> : ""}
