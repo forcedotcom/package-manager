@@ -116,3 +116,13 @@ CLIENT_PORT=3000
 # By default the Licenses org instanceUrl is used.  If for some reason you need to override that, use this.
 #AUTH_URL=https://steelbrick.my.salesforce.com
 ```
+
+# How to remotely debug the app in Heroku
+```
+heroku ps:exec -a package-manager-staging
+```
+Once you get a command prompt, hit ctrl-C or type 'exit' to exit.
+```
+heroku ps:forward 9229 -a package-manager-staging
+```
+You should now be able to start the debugging session in your editor and have it connect to your running app within a few seconds. All the normal debugging features, including breakpoints, call stacks, variable inspection etc should work.
