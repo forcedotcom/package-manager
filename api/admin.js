@@ -133,9 +133,9 @@ class AdminJob {
 
 	async run() {
 		const f = await this.shouldRun();
-		if (!f) 
+		if (!f)
 			return; // Just don't do it
-		
+
 		if (activeJobs.has(this.type)) {
 			const activeJob = activeJobs.get(this.type);
 			if (activeJob.startTime + this.timeout < Date.now()) {
@@ -202,13 +202,14 @@ class AdminJob {
 			if (!step.steps) {
 				// Only post progress for leaf steps
 				this.postProgress(step.name, this.stepIndex);
+				this.stepIndex = this.stepIndex + 1;
 			}
 			if (step.handler) {
 				try {
 					await step.handler(this);
 					logger.info(`Completed ${step.name.toLowerCase()}`);
 				} catch (e) {
-					this.postProgress(`Failed ${step.name.toLowerCase()}`, this.stepIndex + 1, e);
+					this.postProgress(`Failed ${step.name.toLowerCase()}`, this.stepIndex, e);
 					if (step.fail) {
 						step.fail(e, this);
 					} else {
@@ -255,7 +256,7 @@ function connect(sock) {
 	});
 	socket.on(Events.REFRESH_GROUP_VERSIONS, async function (groupId) {
 		const job = fetch.fetchOrgGroupVersions(groupId);
-		await job.run();	
+		await job.run();
 	});
 	socket.on(Events.UPLOAD_ORGS, async function () {
 		await uploadOrgsToSumo();
@@ -326,7 +327,7 @@ function scheduleJobs() {
 		setInterval(() => {monitorOrgs(interval).then(() => {})}, interval);
 		logger.info(`Scheduled org monitor for every ${schedules.org_monitor_interval_seconds} seconds`)
 	}
-	
+
 	if (schedules.upgrade_monitor_interval_seconds != null && schedules.upgrade_monitor_interval_seconds !== -1) {
 		let interval = schedules.upgrade_monitor_interval_seconds * 1000;
 		setInterval(() => {monitorUpgrades(interval).then(() => {})}, interval);
