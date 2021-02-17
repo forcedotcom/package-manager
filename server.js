@@ -35,7 +35,11 @@ const socketIo = require('socket.io');
 // Setup express and socket.io
 const app = express();
 app.use(helmet({
-	contentSecurityPolicy: false,
+	contentSecurityPolicy: {
+		directives: {
+			scriptSrc: ["'self'", "'unsafe-inline'"]
+		}
+	}
 }));
 
 const server = http.Server(app);
