@@ -26,6 +26,8 @@ export default class extends React.Component {
 		let columns = [
 			{Header: "Number", accessor: "id", minWidth: 60, sortable: true, clickable: true},
 			{Header: "Description", accessor: "description", minWidth: 300, clickable: true},
+			{Header: "Job Count", accessor: "total_job_count", sortable: true},
+			{Header: "Status", accessor: "item_status", sortable: true},
 			{
 				Header: "Scheduled Start Time",
 				maxWidth: 200,
@@ -36,7 +38,8 @@ export default class extends React.Component {
 			},
 			{Header: "When", id: "when", accessor: d => moment(d.start_time).fromNow(), clickable: true, sortable: false},
 			{Header: "Created By", accessor: "created_by", sortable: true},
-			{Header: "Status", accessor: "item_status", sortable: true}
+			{Header: "Activated By", accessor: "activated_by", sortable: true},
+			{Header: "Activated On", id: "activated_date", accessor: d => moment(d.activated_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true}
 		];
 
 		const actions = [

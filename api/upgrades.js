@@ -53,6 +53,7 @@ const ITEM_STATUS_SOQL = `
 
 const SELECT_ALL = `
     SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id,
+        			u.activated_by, u.activated_date,
     CAST (SUM(i.total_job_count) AS INTEGER) total_job_count,
     ${ITEM_STATUS_SOQL}    
     FROM upgrade u
@@ -61,7 +62,8 @@ const SELECT_ALL = `
 const GROUP_BY_ALL = `GROUP BY u.id, u.start_time, u.created_by, u.description`;
 
 const SELECT_ONE = `
-    SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id, u.comment,
+    SELECT u.id, u.status, u.start_time, u.created_by, u.description, u.org_group_id, u.parent_id, 
+    			u.activated_by, u.activated_date, u.comment,
     CAST (SUM(i.total_job_count) AS INTEGER) total_job_count,
 	${ITEM_STATUS_SOQL}
     FROM upgrade u
@@ -671,7 +673,9 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	
 	await activateAvailableUpgradeItems(id, username, job);
 	upgrade.status = UpgradeStatus.Active;
-	await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [upgrade.status, id]);
+	upgrade.activated_by = username;
+	upgrade.activated_date = new Date().toISOString();
+	await db.update(`UPDATE upgrade SET status = $2, activated_by = $3, activated_date = $4 WHERE id = $1`, [id, upgrade.status, upgrade.activated_by, upgrade.activated_date]);
 	admin.emit(admin.Events.UPGRADE, upgrade);
 }
 

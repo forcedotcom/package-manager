@@ -87,7 +87,9 @@ create table if not exists upgrade
   parent_id    varchar(18),
   comment      text,
   org_group_id varchar(18),
-  created_by   varchar(255)
+  created_by   varchar(255),
+  activated_by   varchar(255),
+  activated_date  timestamp with time zone
 );
 
 create table if not exists upgrade_blacklist (

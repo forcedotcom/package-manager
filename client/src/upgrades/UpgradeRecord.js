@@ -96,6 +96,8 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={`${upgrade.status} - ${upgrade.item_status}`} detail={upgrade.comment}/>
 					<HeaderField label="Jobs" value={upgrade.total_job_count}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
+					<HeaderField label="Activated By" value={upgrade.activated_by}/>
+					<HeaderField label="Activated On" value={`${moment(upgrade.activated_date).format('lll')}`}/>
 				</RecordHeader>
 				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled}
 							 progressError={progress.percentageError}/>

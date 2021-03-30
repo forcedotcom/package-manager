@@ -1,7 +1,9 @@
 -- Add any data model changes, data fixes or new indices here.  Can be removed once all deployments are upgraded.
 
 alter table upgrade
-  add if not exists comment text;
+  add if not exists comment text,
+  add if not exists activated_by varchar(255),
+  add if not exists activated_date  timestamp with time zone;
 
 alter table package
   add if not exists status varchar(80);
