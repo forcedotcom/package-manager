@@ -38,8 +38,9 @@ export default class extends React.Component {
 			},
 			{Header: "When", id: "when", accessor: d => moment(d.start_time).fromNow(), clickable: true, sortable: false},
 			{Header: "Created By", accessor: "created_by", sortable: true},
-			{Header: "Activated By", accessor: "activated_by", sortable: true},
-			{Header: "Activated On", id: "activated_date", accessor: d => moment(d.activated_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true}
+			{Header: "Activated By", id: "activated_by", accessor: d => d.activated_by || 'Pending', sortable: true},
+			{Header: "Activated On", id: "activated_date", accessor: d => d.activated_date ?
+					moment(d.activated_date).format("YYYY-MM-DD HH:mm:ss A") : 'Pending', sortable: true}
 		];
 
 		const actions = [
