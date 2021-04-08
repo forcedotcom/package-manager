@@ -1,5 +1,5 @@
 import React from 'react';
-
+import {CSVDownload} from 'react-csv';
 
 import {HomeHeader} from '../components/PageHeader';
 import UpgradeList from "./UpgradeList";
@@ -27,6 +27,7 @@ export default class extends React.Component {
 		this.purgeHandler = this.purgeHandler.bind(this);
 		this.openAnalysisWindow = this.openAnalysisWindow.bind(this);
 		this.closeAnalysisWindow = this.closeAnalysisWindow.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 	}
 
 	// Lifecycle
@@ -42,10 +43,11 @@ export default class extends React.Component {
 				disabled: user.read_only || selected.size === 0,
 				detail: user.read_only ? Messages.READ_ONLY_USER : "",
 				handler: this.purgeHandler},
-      {label: "Analyze", group: "selectable",  
-        spinning: this.state.addingToGroup, 
-        disabled: selected.size === 0, 
-        handler: this.openAnalysisWindow}
+      		{label: "Analyze", group: "selectable",
+				spinning: this.state.addingToGroup,
+				disabled: selected.size === 0,
+				handler: this.openAnalysisWindow},
+			{label: "Export", handler: this.exportHandler}
 		];
 
 		return (
@@ -58,6 +60,7 @@ export default class extends React.Component {
 					<AnalysisWindow title="Upgrade Analysis" stats={this.state.stats}
 					onClose={this.closeAnalysisWindow}/> : ""
 				}
+				{this.state.isExporting ? <CSVDownload data={this.state.filtered} separator={"\t"} target="_blank" /> : ""}
 			</div>
 		);
 	}
@@ -80,7 +83,7 @@ export default class extends React.Component {
 	}
 
 	filterHandler(filtered, filterColumns, itemCount) {
-		this.setState({itemCount, filterColumns});
+		this.setState({filtered, itemCount, filterColumns});
 	}
 	
 	applySavedFilter(filterColumns) {
@@ -119,7 +122,7 @@ export default class extends React.Component {
 		this.setState({showStats: null});
 	}
 
-    groupStatsByPackage(stats){
+    groupStatsByPackage(stats) {
 		let items = [];
 		for (const stat of stats) {
 			const data = {};
@@ -134,5 +137,10 @@ export default class extends React.Component {
 			}
 		}
 		return items;
+	}
+
+	exportHandler() {
+		this.setState({isExporting: true});
+		setTimeout(function() {this.setState({isExporting: false})}.bind(this), 1000);
 	}
 }

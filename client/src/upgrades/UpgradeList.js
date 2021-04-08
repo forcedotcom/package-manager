@@ -18,6 +18,8 @@ export default class extends React.Component {
 		let columns = [
 			{Header: "Number", accessor: "id", minWidth: 60, sortable: true, clickable: true},
 			{Header: "Description", accessor: "description", minWidth: 300, clickable: true},
+			{Header: "Job Count", accessor: "total_job_count", sortable: true},
+			{Header: "Status", accessor: "item_status", sortable: true},
 			{
 				Header: "Scheduled Start Time",
 				maxWidth: 200,
@@ -26,10 +28,11 @@ export default class extends React.Component {
 				sortable: true,
 				clickable: true
 			},
-			{Header: "Job Count", accessor: "total_job_count", sortable: true},
 			{Header: "When", id: "when", accessor: d => moment(d.start_time).fromNow(), clickable: true, sortable: false},
 			{Header: "Created By", accessor: "created_by", sortable: true},
-			{Header: "Status", accessor: "item_status", sortable: true}
+			{Header: "Activated By", id: "activated_by", accessor: d => d.activated_by || 'Pending', sortable: true},
+			{Header: "Activated On", id: "activated_date", accessor: d => d.activated_date ?
+					moment(d.activated_date).format("YYYY-MM-DD HH:mm:ss A") : 'Pending', sortable: true}
 		];
 		return (
 			<div className="slds-color__background_gray-1">
