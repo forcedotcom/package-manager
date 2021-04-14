@@ -16,7 +16,7 @@ let adminJob;
 async function fetch(fetchAll, job) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
-		`SELECT po.org_id, po.name, po.type, p.sfid package_id
+		`SELECT po.org_id, po.name, po.type, p.sfid package_id, p.package_id metadata_package_id
 		FROM package_org po
 		INNER JOIN package p on p.package_org_id = po.org_id
 		WHERE po.active = true`;
@@ -36,7 +36,7 @@ async function fetch(fetchAll, job) {
 async function fetchByOrgGroupId(groupId, job) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
-		`SELECT o.org_id, o.name, o.type, p.sfid package_id
+		`SELECT o.org_id, o.name, o.type, p.sfid package_id, p.package_id metadata_package_id
 		FROM package_org o
 		INNER JOIN package p on p.package_org_id = o.org_id
 		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
@@ -70,7 +70,7 @@ async function fetchByOrgIds(orgIds, job) {
 
 async function fetchFromOrg(org, fetchAll) {
 	let invalidateAll = false;
-	let whereParts = [];
+	let whereParts = [`MetadataPackageId = '${org.metadata_package_id}'`];
 	if (!fetchAll) {
 		let latest = await db.query(
 			`SELECT MAX(modified_date) FROM org_package_version WHERE package_id = $1`, [org.package_id]);
