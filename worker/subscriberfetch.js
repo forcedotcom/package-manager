@@ -16,7 +16,7 @@ let adminJob;
 async function fetch(fetchAll, job) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
-		`SELECT po.org_id, po.name, po.type, p.sfid package_id
+		`SELECT po.org_id, po.name, po.type, p.sfid package_id, p.package_id metadata_package_id, p.name package_name
 		FROM package_org po
 		INNER JOIN package p on p.package_org_id = po.org_id
 		WHERE po.active = true`;
@@ -33,13 +33,53 @@ async function fetch(fetchAll, job) {
 	}
 }
 
+async function fetchFromOrg(packageorg, fetchAll) {
+	let invalidateAll = false;
+	let whereParts = [`MetadataPackageId = '${packageorg.metadata_package_id}'`];
+	if (!fetchAll) {
+		let latest = await db.query(
+			`SELECT MAX(modified_date) FROM org_package_version WHERE package_id = $1`, [packageorg.package_id]);
+		if (latest[0].max) {
+			whereParts.push(`SystemModstamp > ${latest[0].max.toISOString()}`);
+		}
+	}
+
+	adminJob.postMessage(`Fetching subscribers of ${packageorg.package_name} from org ${packageorg.name}`);
+
+	const where = whereParts.length > 0 ? `WHERE ${whereParts.join(" AND ")}` : "";
+	let res;
+	let conn = await sfdc.buildOrgConnection(packageorg.org_id);
+	try {
+		res = await conn.queryWithRetry(`${SELECT_ALL} ${where}`);
+		if (res.totalSize > 0) {
+			adminJob.postDetail(`Found ${res.totalSize} orgs ${fetchAll ? '' : 'using last modified date'}`);
+		}
+		invalidateAll = fetchAll;
+	} catch (e) {
+		return fail(packageorg, e);
+	}
+
+	let recs = await load(res, conn);
+
+	if (recs.length === 0)
+		return;
+
+	if (invalidateAll) {
+		// Invalidate all existing org package versions when we are upserting all new findings
+		await opvapi.updateStatus(packageorg.package_id, opvapi.LicenseStatus.NotFound);
+	}
+
+	adminJob.postDetail(`Storing ${recs.length} subscribers`);
+	await upsert(recs, 2000);
+}
+
 async function fetchByOrgGroupId(groupId, job) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
-		`SELECT o.org_id, o.name, o.type, p.sfid package_id
-		FROM package_org o
-		INNER JOIN package p on p.package_org_id = o.org_id
-		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+		`SELECT po.org_id, po.name, po.type, p.sfid package_id, p.package_id metadata_package_id, p.name package_name
+		FROM package_org po
+		INNER JOIN package p on p.package_org_id = po.org_id
+		WHERE po.active = true AND type = '${sfdc.OrgTypes.Package}'`;
 
 	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
 	for (let i = 0; i < packageOrgs.length; i++) {
@@ -57,10 +97,10 @@ async function fetchByOrgGroupId(groupId, job) {
 async function fetchByOrgIds(orgIds, job) {
 	adminJob = job;
 	const SELECT_PACKAGE_ORGS =
-		`SELECT o.org_id, o.name, o.type, p.sfid package_id
-		FROM package_org o
-		INNER JOIN package p on p.package_org_id = o.org_id
-		WHERE o.active = true AND type = '${sfdc.OrgTypes.Package}'`;
+		`SELECT po.org_id, po.name, po.type, p.sfid package_id, p.package_id metadata_package_id, p.name package_name
+		FROM package_org po
+		INNER JOIN package p on p.package_org_id = po.org_id
+		WHERE po.active = true AND type = '${sfdc.OrgTypes.Package}'`;
 
 	const packageOrgs = await db.query(SELECT_PACKAGE_ORGS);
 	for (let i = 0; i < packageOrgs.length; i++) {
@@ -68,55 +108,16 @@ async function fetchByOrgIds(orgIds, job) {
 	}
 }
 
-async function fetchFromOrg(org, fetchAll) {
-	let invalidateAll = false;
-	let whereParts = [];
-	if (!fetchAll) {
-		let latest = await db.query(
-			`SELECT MAX(modified_date) FROM org_package_version WHERE package_id = $1`, [org.package_id]);
-		if (latest[0].max) {
-			whereParts.push(`SystemModstamp > ${latest[0].max.toISOString()}`);
-		}
-	}
-
-	adminJob.postMessage(`Querying orgs from ${org.name}`);
-
-	const where = whereParts.length > 0 ? `WHERE ${whereParts.join(" AND ")}` : "";
-	let res;
-	let conn = await sfdc.buildOrgConnection(org.org_id);
-	try {
-		res = await conn.queryWithRetry(`${SELECT_ALL} ${where}`);
-		if (res.totalSize > 0) {
-			adminJob.postDetail(`Found ${res.totalSize} orgs ${fetchAll ? '' : 'using last modified date'}`);
-		}
-		invalidateAll = fetchAll;
-	} catch (e) {
-		return fail(org, e);
-	}
-
-	let recs = await load(res, conn);
-
-	if (recs.length === 0)
-		return;
-
-	if (invalidateAll) {
-		// Invalidate all existing org package versions when we are upserting all new findings
-		await opvapi.updateStatus(org.package_id, opvapi.LicenseStatus.NotFound);
-	}
-
-	adminJob.postDetail(`Storing ${recs.length} subscribers`);
-	await upsert(recs, 2000);
-}
-
-async function fetchFromOrgByOrgIds(org, orgIds, batchSize = 500) {
-	adminJob.postMessage(`Querying orgs from ${org.name}`);
-	let conn = await sfdc.buildOrgConnection(org.org_id);
+async function fetchFromOrgByOrgIds(packageorg, orgIds, batchSize = 500) {
+	adminJob.postMessage(`Fetching subscribers of ${packageorg.package_name} from org ${packageorg.name}`);
+	let conn = await sfdc.buildOrgConnection(packageorg.org_id);
 	let recs = [];
 	const count = orgIds.length;
 	try {
 		for (let start = 0; start < count && !adminJob.canceled;) {
 			const idBatch = orgIds.slice(start, start += batchSize);
-			const where = `WHERE OrgKey IN ('${idBatch.join("','")}')`;
+			const where = `WHERE OrgKey IN ('${idBatch.join("','")}') 
+				 		   AND MetadataPackageId = '${packageorg.metadata_package_id}'`;
 			let res = await conn.queryWithRetry(`${SELECT_ALL_WITHOUT_MODSTAMP} ${where}`);
 
 			// If we are querying orgs by id, we have to null out the modified date to make sure we do not screw up
@@ -129,7 +130,7 @@ async function fetchFromOrgByOrgIds(org, orgIds, batchSize = 500) {
 			adminJob.postDetail(`Found ${recs.length} orgs`);
 		}
 	} catch (e) {
-		return fail(org, e);
+		return fail(packageorg, e);
 	}
 
 	if (recs.length === 0)
