@@ -17,11 +17,15 @@ Anyone with access to your LMO gets read-only access to the upgrade tool. For fu
 * Assign yourself and any other users you desire to that perm set. 
 
 #### Required Objects and Fields
-##### sfLma__Package__c.DependencyTier__c
+##### Package -> Dependency Tier (sfLma__Package__c.DependencyTier__c)
+Object: Package (fLma__Package__c)
+Name: Dependency Tier (DependencyTier__c)
 Type: Integer
 Description: Identifies simple dependency tree.  Packages in Tier 1 are upgraded before Tier 2.  Tier 2 before Tier 3, and so on.
 
-##### sfLma__Package__c.Status__c
+##### Package -> Status (fLma__Package__c.Status__c)
+Object: Package (fLma__Package__c)
+Name: Status (Status__c)
 Type: Picklist
 Description: If Inactive, the package is skipped altogether and not loaded into the package manager tool.
 Values:
@@ -29,6 +33,8 @@ Values:
 * "Inactive"
 
 ##### sfLma__Package_Version__c.Status__c
+Object: Package Version (fLma__Package_Version__c)
+Name: Status (Status__c)
 Type: Picklist
 Values:
 * "Verified" - The version is GA
@@ -64,13 +70,17 @@ supplies them.
 CLIENT_ID=your connected app client id
 CLIENT_SECRET=your connected app secret key
 
+# Provide the instance url of the org against which you wish to authenticate and authorize users.
+# If you have trouble authenticating to your LMA org from the app, try setting this.
+#AUTH_URL=https://ourlma.my.salesforce.com
+
 # You can define multiple databases for dev and test purposes, and switch between them here.
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres
 
 # Blacklisting orgs by default looks simply at the id of the org being blacklisted.  If however you 
 # instead want to look at the account id of the org being blacklisted and blacklist all other orgs 
 # associated with that account, set this to true.
-EXPAND_BLACKLIST=true
+EXPAND_BLACKLIST=false
 
 # It is highly recommended to enable IP Access Restrictions on all of your orgs, as a general rule.  This 
 # option just makes it a bit easier by automatically updating the IP ranges for you, if a profile with 
@@ -111,10 +121,6 @@ CLIENT_PORT=3000
 # Unless you have a very creative deployment strategy, the two should match.
 #CLIENT_URL=https://pm.steelbrick.com
 #API_URL=https://pm.steelbrick.com
-
-# Provide the instance url of the org against which you wish to authenticate and authorize users.
-# By default the Licenses org instanceUrl is used.  If for some reason you need to override that, use this.
-#AUTH_URL=https://steelbrick.my.salesforce.com
 ```
 
 # How to remotely debug the app in Heroku
