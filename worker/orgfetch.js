@@ -2,6 +2,9 @@ const db = require('../util/pghelper');
 const opvapi = require('../api/orgpackageversions');
 const orgsapi = require('../api/orgs');
 const request = require('request');
+const { logger } = require('../util/logger');
+
+const INTERNAL_ORGS = ['GS0', 'CS46', 'CS49'];
 
 let adminJob;
 
@@ -43,10 +46,24 @@ async function updateOrgLocation(job) {
 		const orgs_from_api = JSON.parse(response.body);
 
 		orgs_from_db.forEach(async (org_from_db) => {
-			let org_from_api = orgs_from_api.find(org => {
-				return org.key == org_from_db.key
-			});
+			let org_from_api;
+			if (INTERNAL_ORGS.includes(org_from_db.key)) {
+				org_from_api = {
+					location: 'Internal',
+					environment: 'Production',
+					status: 'ok',
+					releaseNumber: ''
+				}
+			} else {
+				org_from_api = orgs_from_api.find(org => {
+					return org.key == org_from_db.key
+				});
+			}
+
 			if (org_from_api) {
+				if (org_from_api.environment) {
+					org_from_api.environment = org_from_api.environment.charAt(0).toUpperCase() + org_from_api.environment.slice(1)
+				}
 				if ( org_from_api.location != org_from_db.org_location || org_from_api.environment != org_from_db.org_env 
 					|| org_from_api.releaseNumber != org_from_db.org_release || org_from_api.status != org_from_db.org_status) {
 					
