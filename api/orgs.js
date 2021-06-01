@@ -21,6 +21,8 @@ const QUERY_DICTIONARY = new Map([
 	["edition", "o.edition"],
 	["instance", "o.instance"],
 	["type", "o.type"],
+	["location", "o.org_location"],
+	["env", "o.org_env"],
 	["account_id", "o.account_id"],
 	["features", "o.features"],
 	["account_name", "a.account_name"],
@@ -32,7 +34,7 @@ const QUERY_DICTIONARY = new Map([
 ]);
 
 const SELECT_ALL = `
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, 
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, o.org_location, o.org_env,
     a.account_name, o.modified_date,
     STRING_AGG(g.name, ', ') as groups
     FROM org o
@@ -45,7 +47,7 @@ const GROUP_BY = `
     a.account_name, o.modified_date`;
 
 const SELECT_WITH_LICENCE = ` 
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, o.org_location, o.org_env,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups,
     pv.version_number, pv.version_sort,

@@ -1,6 +1,7 @@
 const db = require('../util/pghelper');
 const opvapi = require('../api/orgpackageversions');
 const orgsapi = require('../api/orgs');
+const request = require('request');
 
 let adminJob;
 
@@ -31,6 +32,41 @@ async function updateChildrenFromParents(job) {
 	}
 }
 
+async function updateOrgLocation(job) {
+	adminJob = job;
+
+	try {
+		let query = ` SELECT DISTINCT ON (instance) instance AS key, org_location, org_env, org_release, org_status FROM org `;
+		let orgs_from_db = await db.query(query);
+
+		let response = await promisifiedRequest('https://api.status.salesforce.com/v1/instances');
+		const orgs_from_api = JSON.parse(response.body);
+
+		orgs_from_db.forEach(async (org_from_db) => {
+			let org_from_api = orgs_from_api.find(org => {
+				return org.key == org_from_db.key
+			});
+			if (org_from_api) {
+				if ( org_from_api.location != org_from_db.org_location || org_from_api.environment != org_from_db.org_env 
+					|| org_from_api.releaseNumber != org_from_db.org_release || org_from_api.status != org_from_db.org_status) {
+					
+					let sql = ` UPDATE org SET org_location = '${org_from_api.location}', org_env = '${org_from_api.environment}', `
+					    	+ ` org_release = '${org_from_api.releaseNumber}', org_status = '${org_from_api.status}' `
+							+ ` WHERE instance = '${org_from_api.key}' `;
+					let res = await db.update(sql);
+					if (res.length > 0) {
+						adminJob.postDetail(`Updated ${res.length} orgs from ${org_from_api.key} instance`);
+					}
+
+				}
+			}
+		})
+	} catch (e) {
+		console.error(e);
+	}
+	
+}
+
 async function updateOrgStatus(job) {
 	adminJob = job;
 
@@ -52,6 +88,20 @@ async function updateOrgStatus(job) {
 			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`);
 }
 
+const promisifiedRequest = function(options) {
+	return new Promise((resolve,reject) => {
+		request(options, (error, response, body) => {
+		if (response) {
+			return resolve(response);
+		}
+		if (error) {
+			return reject(error);
+		}
+		});
+	});
+};
+
 exports.updateOrgsFromAccounts = updateOrgsFromAccounts;
 exports.updateChildrenFromParents = updateChildrenFromParents;
 exports.updateOrgStatus = updateOrgStatus;
+exports.updateOrgLocation = updateOrgLocation;

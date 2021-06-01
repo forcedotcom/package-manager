@@ -15,3 +15,9 @@ alter table package_version
 alter table package_version_latest
     alter column version_sort type varchar(30),
     alter column limited_version_sort type varchar(30);
+
+alter table org
+    add if not exists org_location varchar(30),
+    add if not exists org_env varchar(30),
+    add if not exists org_release varchar(30),
+    add if not exists org_status varchar(30);

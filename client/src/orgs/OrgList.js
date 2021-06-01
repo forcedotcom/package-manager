@@ -24,8 +24,9 @@ export default class extends React.Component {
 			{Header: "Name", accessor: "name", sortable: true, clickable: true},
 			{Header: "Account", accessor: "account_name", sortable: true, clickable: true},
 			{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true},
+			{Header: "Environment", accessor: "org_env", maxWidth: 90, sortable: true},
+			{Header: "Location", accessor: "org_location", maxWidth: 70, sortable: true},
 			{Header: "Edition", accessor: "edition", sortable: true},
-			{Header: "Type", accessor: "type", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true},
 			{Header: "Status", accessor: "status", sortable: true},
 			{Header: "Last Modified", id: "modified_date", accessor: d => moment(d.modified_date).format("YYYY-MM-DD HH:mm:ss A"), sortable: true}

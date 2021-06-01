@@ -96,6 +96,10 @@ function fetchData(fetchAll) {
 					{
 						name: "Updating sandbox orgs from parents",
 						handler: (job) => orgs.updateChildrenFromParents(job)
+					},
+					{
+						name: "Updating orgs location",
+						handler: (job) => orgs.updateOrgLocation(job)
 					}
 				]
 			}
