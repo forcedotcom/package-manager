@@ -50,7 +50,7 @@ async function updateOrgLocation(job) {
 			if (INTERNAL_ORGS.includes(instance_from_db.key)) {
 				instance_from_api = {
 					location: 'Internal',
-					environment: 'Production',
+					environment: instance_from_db.key.startsWith('CS') ? 'Sandbox' : 'Production',
 					status: 'ok',
 					releaseNumber: ''
 				}
