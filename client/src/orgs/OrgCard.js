@@ -53,6 +53,7 @@ export default class extends React.Component {
 			{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true},
 			{Header: "Environment", accessor: "org_env", maxWidth: 90, sortable: true},
 			{Header: "Location", accessor: "org_location", maxWidth: 70, sortable: true},
+			{Header: "Release", accessor: "org_release", maxWidth: 70, sortable: true},
 			{Header: "Edition", accessor: "edition", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true}
 		);

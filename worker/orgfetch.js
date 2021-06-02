@@ -40,46 +40,48 @@ async function updateOrgLocation(job) {
 
 	try {
 		let query = ` SELECT DISTINCT ON (instance) instance AS key, org_location, org_env, org_release, org_status FROM org `;
-		let orgs_from_db = await db.query(query);
+		let instances_from_db = await db.query(query);
 
 		let response = await promisifiedRequest('https://api.status.salesforce.com/v1/instances');
-		const orgs_from_api = JSON.parse(response.body);
+		const instances_from_api = JSON.parse(response.body);
 
-		orgs_from_db.forEach(async (org_from_db) => {
-			let org_from_api;
-			if (INTERNAL_ORGS.includes(org_from_db.key)) {
-				org_from_api = {
+		instances_from_db.forEach(async (instance_from_db) => {
+			let instance_from_api;
+			if (INTERNAL_ORGS.includes(instance_from_db.key)) {
+				instance_from_api = {
 					location: 'Internal',
 					environment: 'Production',
 					status: 'ok',
 					releaseNumber: ''
 				}
 			} else {
-				org_from_api = orgs_from_api.find(org => {
-					return org.key == org_from_db.key
+				instance_from_api = instances_from_api.find(org => {
+					return org.key == instance_from_db.key
 				});
 			}
 
-			if (org_from_api) {
-				if (org_from_api.environment) {
-					org_from_api.environment = org_from_api.environment.charAt(0).toUpperCase() + org_from_api.environment.slice(1)
+			if (instance_from_api) {
+				if (instance_from_api.environment) {
+					instance_from_api.environment = instance_from_api.environment.charAt(0).toUpperCase() + instance_from_api.environment.slice(1)
 				}
-				if ( org_from_api.location != org_from_db.org_location || org_from_api.environment != org_from_db.org_env 
-					|| org_from_api.releaseNumber != org_from_db.org_release || org_from_api.status != org_from_db.org_status) {
+				if ( instance_from_api.location != instance_from_db.org_location || instance_from_api.environment != instance_from_db.org_env 
+					|| instance_from_api.releaseNumber != instance_from_db.org_release || instance_from_api.status != instance_from_db.org_status) {
 					
-					let sql = ` UPDATE org SET org_location = '${org_from_api.location}', org_env = '${org_from_api.environment}', `
-					    	+ ` org_release = '${org_from_api.releaseNumber}', org_status = '${org_from_api.status}' `
-							+ ` WHERE instance = '${org_from_api.key}' `;
+					let sql = ` UPDATE org SET org_location = '${instance_from_api.location}', org_env = '${instance_from_api.environment}', `
+					    	+ ` org_release = '${instance_from_api.releaseNumber}', org_status = '${instance_from_api.status}' `
+							+ ` WHERE instance = '${instance_from_db.key}' `;
 					let res = await db.update(sql);
 					if (res.length > 0) {
-						adminJob.postDetail(`Updated ${res.length} orgs from ${org_from_api.key} instance`);
+						adminJob.postDetail(`Updated ${res.length} orgs from ${instance_from_api.key} instance`);
 					}
 
 				}
+			} else {
+				logger.error(`Instance ${instance_from_db.key} not found in api.status.salesforce.com`)
 			}
 		})
 	} catch (e) {
-		console.error(e);
+		logger.error(e);
 	}
 	
 }

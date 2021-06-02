@@ -72,32 +72,6 @@ function fetchData(fetchAll) {
 				name: "Fetch orgs",
 				steps: [
 					{
-						name: "Fetching package subscribers",
-						handler: (job) => subs.fetch(fetchAll, job)
-					},
-					{
-						name: "Fetching accounts for orgs",
-						handler: async  (job) => {
-							const accountsOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Accounts) || await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
-							// Special handling for internal orgs.
-							const accountsApi = (accountsOrg.instanceUrl === "https://org62.my.salesforce.com") ?
-								org62accounts : accounts;
-							return accountsApi.fetch(accountsOrg.orgId, fetchAll, job)
-						}
-					},
-					{
-						name: "Updating orgs based on license status",
-						handler: (job) => orgs.updateOrgStatus(job)
-					},
-					{
-						name: "Updating orgs from accounts",
-						handler: (job) => orgs.updateOrgsFromAccounts(job)
-					},
-					{
-						name: "Updating sandbox orgs from parents",
-						handler: (job) => orgs.updateChildrenFromParents(job)
-					},
-					{
 						name: "Updating orgs location",
 						handler: (job) => orgs.updateOrgLocation(job)
 					}
