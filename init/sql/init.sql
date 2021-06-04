@@ -198,6 +198,20 @@ create table if not exists filter
   query      text
 );
 
+create table if not exists instance
+(
+  id            serial       not null,
+  key           varchar(30)   not null,
+  location      varchar(30)  not null,
+  environment   varchar(30)  not null,
+  release       varchar(30),
+  status        varchar(12),
+  modified_date timestamp with time zone
+);
+
+create unique index if not exists instance_key_uindex
+  on public.instance (key);
+
 -- Indices
 create index if not exists org_parent_index
   on org (parent_org_id);

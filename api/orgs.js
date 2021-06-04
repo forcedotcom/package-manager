@@ -21,9 +21,9 @@ const QUERY_DICTIONARY = new Map([
 	["edition", "o.edition"],
 	["instance", "o.instance"],
 	["type", "o.type"],
-	["location", "o.org_location"],
-	["env", "o.org_env"],
-	["release", "o.org_release"],
+	["location", "i.location"],
+	["env", "i.environment"],
+	["release", "i.release"],
 	["account_id", "o.account_id"],
 	["features", "o.features"],
 	["account_name", "a.account_name"],
@@ -35,25 +35,27 @@ const QUERY_DICTIONARY = new Map([
 ]);
 
 const SELECT_ALL = `
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, o.org_location, o.org_env, o.org_release,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, i.location, i.environment, i.release,
     a.account_name, o.modified_date,
     STRING_AGG(g.name, ', ') as groups
     FROM org o
+    LEFT JOIN instance i on i.key = o.instance
     LEFT JOIN account a on a.account_id = o.account_id
     LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
     LEFT JOIN org_group AS g ON g.id = m.org_group_id`;
 
 const GROUP_BY = `
-    GROUP BY o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, 
+    GROUP BY o.id, o.org_id, o.name, o.status, o.type, o.instance, o.is_sandbox, o.account_id, i.location, i.environment, i.release,
     a.account_name, o.modified_date`;
 
 const SELECT_WITH_LICENCE = ` 
-    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, o.org_location, o.org_env, o.org_release,
+    SELECT o.id, o.org_id, o.name, o.status, o.type, o.edition, o.instance, o.account_id, o.features, i.location, i.environment, i.release,
     a.account_name,
     STRING_AGG(g.name, ', ') as groups,
     pv.version_number, pv.version_sort,
     opv.license_status
     FROM org o
+    LEFT JOIN instance i on i.key = o.instance
     LEFT JOIN account a on a.account_id = o.account_id
     LEFT JOIN org_group_member AS m ON o.org_id = m.org_id
     LEFT JOIN org_group AS g ON g.id = m.org_group_id

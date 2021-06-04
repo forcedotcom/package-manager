@@ -1,10 +1,6 @@
 const db = require('../util/pghelper');
 const opvapi = require('../api/orgpackageversions');
 const orgsapi = require('../api/orgs');
-const request = require('request');
-const { logger } = require('../util/logger');
-
-const INTERNAL_ORGS = ['GS0', 'CS46', 'CS49'];
 
 let adminJob;
 
@@ -35,57 +31,6 @@ async function updateChildrenFromParents(job) {
 	}
 }
 
-async function updateOrgLocation(job) {
-	adminJob = job;
-
-	try {
-		let query = ` SELECT DISTINCT ON (instance) instance AS key, org_location, org_env, org_release, org_status FROM org `;
-		let instances_from_db = await db.query(query);
-
-		let response = await promisifiedRequest('https://api.status.salesforce.com/v1/instances');
-		const instances_from_api = JSON.parse(response.body);
-
-		instances_from_db.forEach(async (instance_from_db) => {
-			let instance_from_api;
-			if (INTERNAL_ORGS.includes(instance_from_db.key)) {
-				instance_from_api = {
-					location: 'Internal',
-					environment: instance_from_db.key.startsWith('CS') ? 'Sandbox' : 'Production',
-					status: 'ok',
-					releaseNumber: ''
-				}
-			} else {
-				instance_from_api = instances_from_api.find(org => {
-					return org.key == instance_from_db.key
-				});
-			}
-
-			if (instance_from_api) {
-				if (instance_from_api.environment) {
-					instance_from_api.environment = instance_from_api.environment.charAt(0).toUpperCase() + instance_from_api.environment.slice(1)
-				}
-				if ( instance_from_api.location != instance_from_db.org_location || instance_from_api.environment != instance_from_db.org_env 
-					|| instance_from_api.releaseNumber != instance_from_db.org_release || instance_from_api.status != instance_from_db.org_status) {
-					
-					let sql = ` UPDATE org SET org_location = '${instance_from_api.location}', org_env = '${instance_from_api.environment}', `
-					    	+ ` org_release = '${instance_from_api.releaseNumber}', org_status = '${instance_from_api.status}' `
-							+ ` WHERE instance = '${instance_from_db.key}' `;
-					let res = await db.update(sql);
-					if (res.length > 0) {
-						adminJob.postDetail(`Updated ${res.length} orgs from ${instance_from_api.key} instance`);
-					}
-
-				}
-			} else {
-				logger.error(`Instance ${instance_from_db.key} not found in api.status.salesforce.com`)
-			}
-		})
-	} catch (e) {
-		logger.error(e);
-	}
-	
-}
-
 async function updateOrgStatus(job) {
 	adminJob = job;
 
@@ -107,20 +52,6 @@ async function updateOrgStatus(job) {
 			GROUP BY o.org_id HAVING COUNT(opv.id) > 0)`);
 }
 
-const promisifiedRequest = function(options) {
-	return new Promise((resolve,reject) => {
-		request(options, (error, response, body) => {
-		if (response) {
-			return resolve(response);
-		}
-		if (error) {
-			return reject(error);
-		}
-		});
-	});
-};
-
 exports.updateOrgsFromAccounts = updateOrgsFromAccounts;
 exports.updateChildrenFromParents = updateChildrenFromParents;
 exports.updateOrgStatus = updateOrgStatus;
-exports.updateOrgLocation = updateOrgLocation;

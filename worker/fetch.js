@@ -3,6 +3,7 @@ const pvs = require('./packageversionfetch');
 const licenses = require('./licensefetch');
 const orgs = require('./orgfetch');
 const accounts = require('./accountfetch');
+const instances = require('./instancefetch');
 const org62accounts = require('./org62fetch');
 const sfdc = require('../api/sfdcconn');
 const admin = require('../api/admin');
@@ -99,7 +100,7 @@ function fetchData(fetchAll) {
 					},
 					{
 						name: "Updating orgs location",
-						handler: (job) => orgs.updateOrgLocation(job)
+						handler: (job) => instances.updateOrgLocation(job)
 					}
 				]
 			}
