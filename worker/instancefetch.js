@@ -1,6 +1,8 @@
 const db = require('../util/pghelper');
-const request = require('request');
+const bent = require('bent');
 const { logger } = require('../util/logger');
+
+const getJSON = bent('json');
 
 let adminJob;
 
@@ -14,9 +16,9 @@ const updateInstances = async (job) => {
 		// Compute the differences
 		const instances_to_upsert = instancesFromApi.filter(instance => {
 			if(mapInstancesFromDb[instance.key]) {
-				instance_from_db = mapInstancesFromDb[instance.key];
-				if (instance_from_db.location != instance.location || instance_from_db.environment != instance.environment
-					|| instance_from_db.release != instance.release|| instance_from_db.status != instance.status) {
+				const instance_from_db = mapInstancesFromDb[instance.key];
+				if (instance_from_db.location !== instance.location || instance_from_db.environment !== instance.environment
+					|| instance_from_db.release !== instance.release|| instance_from_db.status !== instance.status) {
 					return instance
 				   }
 			} else {
@@ -32,8 +34,7 @@ const updateInstances = async (job) => {
 }
 
 const getInstancesFromApi = async () => {
-	let response = await promisifiedRequest('https://api.status.salesforce.com/v1/instances');
-	const instancesFromApi = JSON.parse(response.body);
+	const instancesFromApi = await getJSON('https://api.status.salesforce.com/v1/instances');
 
 	// Add internal instances
 	instancesFromApi.push(
@@ -52,30 +53,17 @@ const getInstancesFromApi = async () => {
 }
 
 const getInstancesFromDB = async () => {
-	let query = ` SELECT key, location, environment, release, status FROM instance `;
+	const query = ` SELECT key, location, environment, release, status FROM instance `;
 	const instancesFromDb = await db.query(query)
-	
+
 	return instancesFromDb.reduce((map, obj) => {
 		map[obj.key] = obj;
 		return map;
 	}, {});
 }
 
-const promisifiedRequest = (options) => {
-	return new Promise((resolve,reject) => {
-		request(options, (error, response, body) => {
-		if (response) {
-			return resolve(response);
-		}
-		if (error) {
-			return reject(error);
-		}
-		});
-	});
-};
-
 const upsert = async (recs, batchSize) => {
-	let count = recs.length;
+	const count = recs.length;
 	if (count === 0) {
 		return; // nothing to see here
 	}
@@ -88,25 +76,20 @@ const upsert = async (recs, batchSize) => {
 }
 
 const upsertBatch = async (recs) => {
-	let values = [];
-	let sql = `INSERT INTO instance (key, location, environment, release, status) VALUES `;
+	const params = [];
+	const values = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		if (i > 0) {
-			sql += ','
-		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++})`;
+		params.push(`$${n++},$${n++},$${n++},$${n++},$${n++}`);
 		values.push(rec.key, rec.location, rec.environment, rec.release, rec.status);
 	}
-	sql += ` on conflict (key) do update set location = excluded.location, environment = excluded.environment, 
-			 release = excluded.release, status = excluded.status, modified_date = NOW()`;
+	const sql = `INSERT INTO instance (key, location, environment, release, status) VALUES (${params.join('),(')})
+	  			on conflict (key) do update set location = excluded.location, environment = excluded.environment, 
+			 	release = excluded.release, status = excluded.status, modified_date = NOW()`;
 	
 	try {
-		logger.warn('before update');
 		await db.insert(sql, values);
-		logger.warn('after update');
 	} catch (e) {
-		logger.warn('error update');
 		logger.error(e);
 	}
 }

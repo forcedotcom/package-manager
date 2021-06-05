@@ -99,8 +99,8 @@ function fetchData(fetchAll) {
 						handler: (job) => orgs.updateChildrenFromParents(job)
 					},
 					{
-						name: "Updating orgs location",
-						handler: (job) => instances.updateOrgLocation(job)
+						name: "Fetching instances",
+						handler: (job) => instances.updateInstances(job)
 					}
 				]
 			}
