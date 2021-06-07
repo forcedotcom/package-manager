@@ -3,6 +3,7 @@ const pvs = require('./packageversionfetch');
 const licenses = require('./licensefetch');
 const orgs = require('./orgfetch');
 const accounts = require('./accountfetch');
+const instances = require('./instancefetch');
 const org62accounts = require('./org62fetch');
 const sfdc = require('../api/sfdcconn');
 const admin = require('../api/admin');
@@ -96,6 +97,10 @@ function fetchData(fetchAll) {
 					{
 						name: "Updating sandbox orgs from parents",
 						handler: (job) => orgs.updateChildrenFromParents(job)
+					},
+					{
+						name: "Fetching instances",
+						handler: (job) => instances.updateInstances(job)
 					}
 				]
 			}

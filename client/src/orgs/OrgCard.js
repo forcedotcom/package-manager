@@ -51,8 +51,10 @@ export default class extends React.Component {
 		}
 		columns.push(
 			{Header: "Instance", accessor: "instance", maxWidth: 70, sortable: true},
+			{Header: "Environment", accessor: "environment", maxWidth: 90, sortable: true},
+			{Header: "Location", accessor: "location", maxWidth: 70, sortable: true},
+			{Header: "Release", accessor: "release", maxWidth: 70, sortable: true},
 			{Header: "Edition", accessor: "edition", sortable: true},
-			{Header: "Type", accessor: "type", sortable: true},
 			{Header: "Groups", accessor: "groups", sortable: true}
 		);
 
