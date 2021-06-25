@@ -111,8 +111,8 @@ class App extends Component {
 									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>{isCompact ? "" : "Connected Orgs"}</Link>
 							</li>
 							<li className="slds-list__item" title="Reports">
-								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={REPORT_ICON.name}
-																					   category={REPORT_ICON.category}/>{isCompact ? "" : "Reports"}</Link>
+								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={LICENSE_ICON.name}
+																					   category={LICENSE_ICON.category}/>{isCompact ? "" : "Reports"}</Link>
 							</li>
 							<li className="slds-list__item" title="Administration">
 								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name}
