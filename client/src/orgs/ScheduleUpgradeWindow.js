@@ -11,6 +11,7 @@ export default class extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			gusReference: this.props.gusReference || "",
 			startDate: moment().add(15, 'minutes'),
 			description: this.props.description || ""
 		};
@@ -19,6 +20,7 @@ export default class extends React.Component {
 		this.handleVersionChange = this.handleVersionChange.bind(this);
 		this.handleDateChange = this.handleDateChange.bind(this);
 		this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
+		this.handleGusReferenceChange = this.handleGusReferenceChange.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 	}
 
@@ -71,35 +73,63 @@ export default class extends React.Component {
 								</button>
 							</header>
 							<div className="slds-modal__content slds-p-around_medium">
-								<div className="slds-form slds-form_stacked slds-wrap slds-m-around--medium">
-									<div className="slds-form-element">
-										<label
-											className="slds-text-heading_small slds-m-bottom--x-small">Details</label>
-									</div>
-									<div className="slds-form-element">
-										<label className="slds-form-element__label" htmlFor="text-input-id-1">Start
-											Date</label>
-										<DatePicker className="date_picker_wide slds-input slds-m-right--xx-small"
-													selected={this.state.startDate}
-													onChange={this.handleDateChange}
-													showTimeSelect
-													timeFormat="HH:mm"
-													timeIntervals={5}
-													dateFormat="LLL"
-													timeCaption="time"/>
-									</div>
-									<div
-										className={`slds-form-element ${this.state.missingDescription ? "slds-has-error" : ""}`}>
-										<label className="slds-form-element__label" htmlFor="name"><abbr
-											className="slds-required" title="required">*</abbr>Description</label>
-										<div className="slds-form-element__control">
-										<textarea className="slds-input" rows={2} id="description"
-												  value={this.state.description}
-												  onChange={this.handleDescriptionChange}/>
+								<div className="slds-form-element">
+									<label
+										className="slds-text-heading_small slds-m-bottom--x-small">Details</label>
+								</div>
+								<div class="slds-form" role="list">
+									<div class="slds-form__row">
+										<div class="slds-form__item" role="listitem">
+											<div class="slds-form-element slds-form-element_horizontal slds-is-editing">
+												<label class="slds-form-element__label" for="start-date">Start Date</label>
+												<div class="slds-form-element__control">
+													<DatePicker className="date_picker_wide slds-input slds-m-right--xx-small"
+															id="start-date"
+															selected={this.state.startDate}
+															onChange={this.handleDateChange}
+															showTimeSelect
+															timeFormat="HH:mm"
+															timeIntervals={5}
+															dateFormat="LLL"
+															timeCaption="time"/>
+												</div>
+											</div>
 										</div>
-										{this.state.missingDescription ?
-											<span className="slds-form-element__help" id="form-error-01">Description is required</span> : ""}
+										<div class="slds-form__item" role="listitem">
+											<div className={`slds-form-element slds-form-element_horizontal slds-is-editing ${this.state.missingGusRef ? "slds-has-error" : ""}`}>
+												<label class="slds-form-element__label" for="gus-reference"><abbr
+													className="slds-required" title="required">*</abbr>GUS Ref.</label>
+												<div class="slds-form-element__control">
+													<input type="text" id="gus-reference" class="slds-input" 
+														value={this.state.gusReference}
+														onChange={this.handleGusReferenceChange}/>
+												</div>
+												{this.state.missingGusRef ?
+													<span className="slds-form-element__help" id="form-error-reference">GUS Reference is required</span> : ""}
+											</div>
+										</div>
 									</div>
+									<div class="slds-form__row">
+										<div class="slds-form__item" role="listitem">
+										
+										<div className={`slds-form-element slds-form-element_horizontal slds-is-editing slds-form-element_1-col ${this.state.missingDescription ? "slds-has-error" : ""}`}>
+											<label class="slds-form-element__label" for="description"><abbr
+												className="slds-required" title="required">*</abbr>Description</label>
+											<div class="slds-form-element__control">
+												<textarea className="slds-input" rows={2} id="description"
+													value={this.state.description}
+													onChange={this.handleDescriptionChange}/>
+											</div>
+											{this.state.missingDescription ?
+												<span className="slds-form-element__help" id="form-error-description">Description is required</span> : ""}
+										</div>
+										</div>
+									</div>
+								</div>
+
+
+
+								<div className="slds-form slds-form_stacked slds-wrap slds-m-around--medium">
 									<div className="slds-form-element">
 										<label className="slds-text-heading_small">Package Upgrade Versions</label>
 										{versionFields.length > 1 ?
@@ -186,6 +216,10 @@ export default class extends React.Component {
 		this.setState({description: event.target.value});
 	}
 
+	handleGusReferenceChange(event) {
+		this.setState({gusReference: event.target.value});
+	}
+
 	upgradeHandler() {
 		let valid = true;
 		if (this.state.description === null || this.state.description === "") {
@@ -195,13 +229,20 @@ export default class extends React.Component {
 			this.setState({missingDescription: false});
 		}
 
+		if (this.state.gusReference === null || this.state.gusReference === "") {
+			this.setState({missingGusRef: true});
+			valid = false;
+		} else {
+			this.setState({missingGusRef: false});
+		}
+
 		if (!valid)
 			return;
 
 		this.setState({isScheduling: true});
 		let versions = [];
 		this.state.packageMap.forEach(p => versions = versions.concat(p.selectedVersions));
-		this.props.onUpgrade(versions.filter(versionId => !versionId.startsWith("[[NONE]]")), this.state.startDate, this.state.description);
+		this.props.onUpgrade(versions.filter(versionId => !versionId.startsWith("[[NONE]]")), this.state.startDate, this.state.gusReference, this.state.description);
 	}
 }
 

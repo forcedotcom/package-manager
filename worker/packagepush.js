@@ -252,7 +252,7 @@ async function updatePushRequests(items, status, currentUser) {
     }
 }
 
-async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, description, transid) {
+async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, gusReference, description, transid) {
     const whitelist = await orggroups.loadWhitelist();
     if (whitelist.size > 0) {
         orgIds = orgIds.filter(orgId => {
@@ -287,7 +287,7 @@ async function upgradeOrgs(orgIds, versionIds, scheduledDate, createdBy, descrip
         };
     }
 
-    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, gusReference, description, blacklisted);
 
     // Collect the information we need up front to create our push requests
     const versions = await packageversions.findByVersionIds(versionIds);
@@ -348,7 +348,7 @@ async function createJobsForPushRequests(upgrade, reqs) {
     }
 }
 
-async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy, description, transid) {
+async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy, gusReference, description, transid) {
     const versions = await packageversions.findByVersionIds(versionIds);
 
     const upgradeVersionsByPackage = new Map();
@@ -398,7 +398,7 @@ async function upgradeOrgGroup(orgGroupId, versionIds, scheduledDate, createdBy,
         };
     }
 
-    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId);
+    let upgrade = await upgrades.createUpgrade(scheduledDate, createdBy, gusReference, description, blacklisted, orgGroupId);
 
     // Set transient transaction id given by the caller.
     upgrade.transid = transid;

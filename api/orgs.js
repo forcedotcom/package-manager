@@ -149,7 +149,7 @@ function requestById(req, res, next) {
 }
 
 function requestUpgrade(req, res, next) {
-	push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
+	push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.gus_reference, req.body.description, req.body.transid)
 		.then((upgrade) => {
 			admin.emit(admin.Events.UPGRADE, upgrade);
 		})
