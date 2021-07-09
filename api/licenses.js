@@ -19,7 +19,9 @@ const QUERY_DICTIONARY = new Map([
 	["version_number", "pv.version_number"],
 	["version_sort", "pv.version_sort"],
 	["version_id", "pv.version_id"],
-	["package_name", "p.name"]
+	["package_name", "p.name"],
+	["lma_org_name", "po.name"],
+	["lma_org_id", "po.org_id"]
 ]);
 
 const SELECT_ALL = `SELECT 
@@ -29,12 +31,14 @@ const SELECT_ALL = `SELECT
     o.instance, o.account_id,
     a.account_name,
     pv.package_id, pv.name as version_name, pv.version_number, pv.version_sort, pv.version_id,
-    p.name as package_name
+    p.name as package_name,
+    po.org_id as lma_org_id, po.name as lma_org_name
     FROM license l
     LEFT JOIN org as o on o.org_id = l.org_id
     LEFT JOIN account as a on a.account_id = o.account_id
     INNER JOIN package_version as pv on l.version_id = pv.version_id
-    INNER JOIN package as p on pv.package_id = p.sfid`;
+    INNER JOIN package as p on pv.package_id = p.sfid
+    INNER JOIN package_org as po on p.package_org_id = po.org_id`;
 
 const SELECT_ALL_IN_GROUP = SELECT_ALL +
 	` INNER JOIN org_group_member gm ON gm.org_id = o.org_id`;

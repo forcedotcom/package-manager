@@ -176,6 +176,7 @@ create table if not exists license
   sfid               varchar(18) not null
     constraint license_sfid_pk primary key,
   org_id             varchar(18),
+  license_org_id     varchar(18),
   name               varchar(255),
   instance           varchar(6),
   is_sandbox         boolean,

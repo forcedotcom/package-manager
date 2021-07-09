@@ -12,7 +12,7 @@ async function fetch(lmaOrgId, fetchAll, job) {
 	adminJob = job;
 	let fromDate = null;
 	if (!fetchAll) {
-		let latest = await db.query(`select max(modified_date) max from license`);
+		let latest = await db.query(`select max(modified_date) max from license where license_org_id = $1`, [lmaOrgId]);
 		if (latest.length > 0) {
 			fromDate = latest[0].max;
 		}
@@ -28,20 +28,21 @@ async function query(lmaOrgId, fromDate) {
 		soql += ` WHERE LastModifiedDate > ${fromDate.toISOString()}`;
 	}
 	let res = await conn.query(soql);
-	return await load(res, conn);
+	return await load(res, conn, lmaOrgId);
 }
 
-async function fetchMore(nextRecordsUrl, conn, recs) {
+async function fetchMore(nextRecordsUrl, conn, recs, lmaOrgId) {
 	let result = await conn.requestGet(nextRecordsUrl);
-	return recs.concat(await load(result, conn));
+	return recs.concat(await load(result, conn, lmaOrgId));
 }
 
-async function load(result, conn) {
+async function load(result, conn, lmaOrgId) {
 	let recs = result.records.map(v => {
 		return {
 			sfid: v.Id,
 			name: v.Name,
 			org_id: v.sfLma__Subscriber_Org_ID__c,
+			license_org_id: lmaOrgId,
 			account: v.sfLma__Account__c,
 			instance: v.sfLma__Org_Instance__c,
 			type: v.sfLma__License_Type__c,
@@ -56,7 +57,7 @@ async function load(result, conn) {
 		};
 	});
 	if (!result.done && !adminJob.canceled) {
-		return fetchMore(result.nextRecordsUrl, conn, recs);
+		return fetchMore(result.nextRecordsUrl, conn, recs, lmaOrgId);
 	}
 	return recs;
 }
@@ -77,23 +78,22 @@ async function upsert(recs, batchSize) {
 }
 
 async function upsertBatch(recs) {
-	let values = [];
-	let sql = `INSERT INTO license (sfid, name, org_id, instance, type, is_sandbox, status, install_date, modified_date,
-            expiration, used_license_count, package_id, version_id) VALUES`;
+	let values = [], params = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		if (i > 0) {
-			sql += ','
-		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
-		values.push(rec.sfid, rec.name, rec.org_id, rec.instance, rec.type, rec.is_sandbox, rec.status, rec.install_date,
+		params.push(`$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++}`);
+		values.push(rec.sfid, rec.name, rec.org_id, rec.license_org_id, rec.instance, rec.type, rec.is_sandbox, rec.status, rec.install_date,
 			rec.modified_date, rec.expiration, rec.used_license_count, rec.package_id, rec.version_id);
 	}
-	sql += ` on conflict (sfid) do update set
-        name = excluded.name, org_id = excluded.org_id, instance = excluded.instance, type = excluded.type, 
-        is_sandbox = excluded.is_sandbox, status = excluded.status, install_date = excluded.install_date,
-        modified_date = excluded.modified_date, expiration = excluded.expiration, used_license_count = excluded.used_license_count,
-        package_id = excluded.package_id, version_id = excluded.version_id`;
+	const sql =
+		`INSERT INTO license (sfid, name, org_id, license_org_id, instance, type, is_sandbox, status, install_date, modified_date,
+            expiration, used_license_count, package_id, version_id) 
+		VALUES (${params.join("),(")})
+		ON CONFLICT (sfid) DO UPDATE SET
+			name = excluded.name, org_id = excluded.org_id, license_org_id = excluded.license_org_id, instance = excluded.instance, type = excluded.type, 
+			is_sandbox = excluded.is_sandbox, status = excluded.status, install_date = excluded.install_date,
+			modified_date = excluded.modified_date, expiration = excluded.expiration, used_license_count = excluded.used_license_count,
+			package_id = excluded.package_id, version_id = excluded.version_id`;
 	await db.insert(sql, values);
 }
 
@@ -132,4 +132,3 @@ async function markInvalid() {
 }
 
 exports.fetch = fetch;
-exports.markInvalid = markInvalid;
