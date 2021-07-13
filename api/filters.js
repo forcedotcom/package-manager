@@ -1,5 +1,6 @@
 const jsep = require('jsep');
 const db = require('../util/pghelper');
+const auth = require("./auth");
 
 const logger = require('../util/logger').logger;
 
@@ -38,6 +39,7 @@ async function requestFilters(req, res, next) {
 
 async function requestSaveFilter(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
 		let filter = req.body;
 		filter.query = JSON.stringify(filter.query);
 		let recs = (filter.id == null || filter.id === -1)  ?
@@ -55,7 +57,8 @@ async function requestSaveFilter(req, res, next) {
 
 async function requestDeleteFilter(req, res, next) {
 	let id = req.params.id;
-	try { 
+	try {
+		auth.checkReadOnly(req.session.user);
 		await db.delete(`DELETE FROM filter WHERE id = $1`, [id]);
 		return res.json({result: "OK"});
 	} catch (e) {

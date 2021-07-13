@@ -10,6 +10,7 @@ const packageorgs = require("./packageorgs");
 const upgrades = require("./upgrades");
 const sfdc = require("./sfdcconn");
 const db = require("../util/pghelper");
+const auth = require("./auth");
 
 const MAX_HISTORY = 200;
 
@@ -273,24 +274,33 @@ function alert(key, subject, message) {
 	emit(Events.ALERT, {subject, message});
 }
 
-function requestEmit(req, res, next) {
+async function requestEmit(req, res, next) {
 	emit(req.params.key);
 	res.json({result: "ok"});
 }
 
-function requestSettings(req, res) {
+async function requestSettings(req, res, next) {
 	res.json({
 		HEROKU_APP_NAME: process.env.HEROKU_APP_NAME || null
 	});
 }
 
-function requestJobs(req, res) {
+async function requestJobs(req, res) {
 	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}});
 }
 
-function requestCancel(req, res) {
-	cancelJobs(req.body.jobIds);
-	res.json({jobs: Array.from(activeJobs.values()), queue: jobQueue, history: {latest: Array.from(latestJobs.values()), all: jobHistory}});
+async function requestCancel(req, res, next) {
+	try {
+		auth.checkReadOnly(req.session.user);
+		cancelJobs(req.body.jobIds);
+		res.json({
+			jobs: Array.from(activeJobs.values()),
+			queue: jobQueue,
+			history: {latest: Array.from(latestJobs.values()), all: jobHistory}
+		});
+	} catch (e) {
+		next(e);
+	}
 }
 
 function cancelJobs(data) {

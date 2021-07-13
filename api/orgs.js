@@ -6,6 +6,7 @@ const logger = require('../util/logger').logger;
 const sfdc = require('../api/sfdcconn');
 const orggroups = require('../api/orggroups');
 const admin = require('../api/admin');
+const auth = require("./auth");
 
 const Status = {
 	NotFound: 'Not Found', 
@@ -136,7 +137,7 @@ async function findAll(packageId, versionId, relatedOrgId, blacklistUpgradeId, o
 	}
 }
 
-function requestById(req, res, next) {
+async function requestById(req, res, next) {
 	let id = req.params.id;
 	let where = " WHERE o.org_id = $1";
 	db.query(SELECT_ALL + where + GROUP_BY, [id])
@@ -148,25 +149,35 @@ function requestById(req, res, next) {
 		.catch(next);
 }
 
-function requestUpgrade(req, res, next) {
-	push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
-		.then((upgrade) => {
-			admin.emit(admin.Events.UPGRADE, upgrade);
-		})
-		.catch(e => {
-			logger.error("Failed to upgrade org", {org_id: req.params.id, error: e.message || e});
-			next(e);
-		});
-	
-	return res.json({result: "OK"});
+async function requestUpgrade(req, res, next) {
+	try {
+		auth.checkReadOnly(req.session.user);
+		push.upgradeOrgs([req.params.id], req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
+			.then((upgrade) => {
+				admin.emit(admin.Events.UPGRADE, upgrade);
+			})
+			.catch(e => {
+				logger.error("Failed to upgrade org", {org_id: req.params.id, error: e.message || e});
+				next(e);
+			});
+
+		res.json({result: "OK"});
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function requestAdd(req, res, next) {
-	addOrgsByIds(req.body.orgIds).then(() =>{
-		admin.emit(admin.Events.ORGS, req.body.transid);
-	}).catch(next);
-	
-	res.json({result: "OK"});
+	try {
+		auth.checkReadOnly(req.session.user);
+		addOrgsByIds(req.body.orgIds).then(() => {
+			admin.emit(admin.Events.ORGS, req.body.transid);
+		}).catch(next);
+
+		res.json({result: "OK"});
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function addOrgsByIds(orgIds) {

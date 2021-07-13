@@ -155,8 +155,17 @@ async function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LO
     return new jsforce.Connection(options);
 }
 
+function checkReadOnly(user) {
+    if(user && user.read_only === false) {
+        return; // pass
+    }
+
+    throw new Error("403: Forbidden");
+}
+
 exports.requestUser = requestUser;
 exports.requestLogout = requestLogout;
 exports.oauthLoginURL = oauthLoginURL;
 exports.oauthOrgURL = oauthOrgURL;
 exports.oauthCallback = oauthCallback;
+exports.checkReadOnly = checkReadOnly;

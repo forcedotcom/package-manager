@@ -91,7 +91,7 @@ async function findAll(sortField, sortDir, status, packageIds, packageOrgIds, li
 	return db.query(select + where + orderBy, values);
 }
 
-function requestById(req, res, next) {
+async function requestById(req, res, next) {
 	const id = req.params.id;
 	findByVersionIds([id])
 		.then(recs => recs.length === 0 ? next(new Error(`Cannot find any record with id ${id}`)) : res.json(recs[0]))

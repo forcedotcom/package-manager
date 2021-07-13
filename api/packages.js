@@ -29,7 +29,7 @@ async function findAll(orgId, sortField, sortDir) {
 	return await db.query(SELECT_ALL + where + sort, values);
 }
 
-function requestById(req, res, next) {
+async function requestById(req, res, next) {
 	let id = req.params.id;
 	let where = " WHERE " + ((typeof id === "string") ? "sfid = $1" : "id = $1");
 

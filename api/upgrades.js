@@ -5,6 +5,7 @@ const logger = require('../util/logger').logger;
 const strings = require('../util/strings');
 const sfdc = require('./sfdcconn');
 const orgpackageversions = require('./orgpackageversions');
+const auth = require("./auth");
 
 const State = {
 	Ready: "Ready",
@@ -594,10 +595,14 @@ async function findJobs(upgradeId, itemIds, orgIds, sortField, sortDir, status) 
 	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
 }
 
-function requestById(req, res, next) {
-	let id = req.params.id;
-	retrieveById(id).then(rec => res.json(rec))
-		.catch(next);
+async function requestById(req, res, next) {
+	try {
+		let id = req.params.id;
+		const rec = await retrieveById(id);
+		res.json(rec);
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function retrieveById(id) {
@@ -608,13 +613,14 @@ async function retrieveById(id) {
 	return recs[0];
 }
 
-function requestItemById(req, res, next) {
-	let id = req.params.id;
-	retrieveItemById(id)
-		.then(async item => {
-			res.json(item)
-		})
-		.catch(next);
+async function requestItemById(req, res, next) {
+	try {
+		let id = req.params.id;
+		const item = await retrieveItemById(id);
+		res.json(item);
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function retrieveItemById(id) {
@@ -623,17 +629,26 @@ async function retrieveItemById(id) {
 	return recs[0];
 }
 
-function requestJobById(req, res, next) {
-	let id = req.params.id;
-	let where = " WHERE j.id = $1";
-	db.query(SELECT_ALL_JOBS + where, [id])
-	.then(recs => recs.length === 0 ? next(new Error(`Cannot find any record with id ${id}`)) : res.json(recs[0]))
-	.catch(next);
+async function requestJobById(req, res, next) {
+	try {
+		let id = req.params.id;
+		let where = " WHERE j.id = $1";
+		const recs = await db.query(SELECT_ALL_JOBS + where, [id]);
+		if (recs.length === 0) {
+			next(new Error(`Cannot find any record with id ${id}`));
+		} else {
+			res.json(recs[0]);
+		}
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function requestActivateUpgrade(req, res, next) {
 	let id = req.params.id;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		await activateUpgrade(id, req.session.username);
 		return res.send({result: 'ok'});
 	} catch (e) {
@@ -644,6 +659,8 @@ async function requestActivateUpgrade(req, res, next) {
 async function requestRetryFailedUpgrade(req, res, next) {
 	let id = req.params.id;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const upgrade = await push.retryFailedUpgrade(id, req.session.username);
 		if (upgrade == null) {
 			return next("No failed jobs found to retry");
@@ -878,6 +895,8 @@ async function requestCancelUpgrade(req, res, next) {
 	const id = req.params.id;
 	const comment = req.body.comment;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let items = await findItemsByUpgrade(id);
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		await changeUpgradeJobStatus(items, push.Status.Canceled, push.Status.Pending, push.Status.Created);
@@ -893,6 +912,8 @@ async function requestCancelUpgrade(req, res, next) {
 
 async function requestPurge(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let ids = req.body.upgradeIds;
 		let n = 1;
 		let params = ids.map(() => `$${n++}`);
@@ -909,6 +930,8 @@ async function requestPurge(req, res, next) {
 async function requestActivateUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const item = (await findItemsByIds([id]))[0];
 		if (item.eligible_job_count === 0) {
 			changeUpgradeItemStatus([item], push.Status.Ineligible).then(() => {
@@ -933,6 +956,8 @@ async function requestActivateUpgradeItem(req, res, next) {
 async function requestCancelUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let item = (await findItemsByIds([id]))[0];
 		await push.updatePushRequests([item], push.Status.Canceled, req.session.username);
 		await changeUpgradeJobStatus([item], push.Status.Canceled, push.Status.Pending);
@@ -948,6 +973,8 @@ async function requestCancelUpgradeItem(req, res, next) {
 async function requestRefreshUpgrade(req, res, next) {
 	const id = req.params.id;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const items = await findItemsByUpgrade(id);
 		fetchRequests(items).then(() => {}).catch(next);
 
@@ -963,6 +990,8 @@ async function requestRefreshUpgrade(req, res, next) {
 async function requestRefreshUpgradeItem(req, res, next) {
 	const id = req.params.id;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const items = await findItemsByIds([id]).catch(next);
 		fetchRequests(items).then(() => {}).catch(next);
 

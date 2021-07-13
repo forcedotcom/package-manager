@@ -92,8 +92,8 @@ app.post('/api/admin/jobs/cancel', admin.requestCancel);
 app.get('/api/search', search.requestByTerm);
 
 app.get('/api/orgs', orgs.requestAll);
-app.put('/api/orgs', orgs.requestAdd);
 app.get('/api/orgs/:id', orgs.requestById);
+app.put('/api/orgs', orgs.requestAdd);
 app.post('/api/orgs/:id/upgrade', orgs.requestUpgrade);
 
 app.get('/api/orggroups', orggroups.requestAll);

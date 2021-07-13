@@ -43,7 +43,7 @@ const SELECT_ALL = `SELECT
 const SELECT_ALL_IN_GROUP = SELECT_ALL +
 	` INNER JOIN org_group_member gm ON gm.org_id = o.org_id`;
 
-function requestAll(req, res, next) {
+async function requestAll(req, res, next) {
 	let orgId = req.query.org_id;
 	let groupId = req.query.group_id;
 
@@ -85,7 +85,7 @@ async function findAll(orgId, groupId, status, orderByField, orderByDir, filters
 	return db.query(select + where + sort, values);
 }
 
-function requestById(req, res, next) {
+async function requestById(req, res, next) {
 	let id = req.params.id;
 	let where = " WHERE l.sfid = $1";
 	db.query(SELECT_ALL + where, [id])

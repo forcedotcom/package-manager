@@ -3,6 +3,7 @@ const orgs = require('./orgs');
 const admin = require('./admin');
 const sfdc = require('./sfdcconn');
 const push = require('../worker/packagepush');
+const auth = require("./auth");
 const logger = require('../util/logger').logger;
 
 const DEFAULT_BLACKLIST = process.env.DENIED_ORGS;
@@ -80,6 +81,8 @@ async function requestMembers(req, res, next) {
 
 async function requestAddMembers(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const orggroup = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
 		return res.json(orggroup);
 	} catch (e) {
@@ -89,6 +92,8 @@ async function requestAddMembers(req, res, next) {
 
 async function requestRemoveMembers(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const groupId = req.params.id;
 		await deleteOrgMembers(groupId, req.body.orgIds);
 		admin.emit(admin.Events.GROUP_MEMBERS, groupId);
@@ -100,6 +105,8 @@ async function requestRemoveMembers(req, res, next) {
 
 async function requestCreate(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const og = req.body;
 		let i = 0;
 		const rows = await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++i}, $${++i}, $${++i}, NOW())`, [og.name, og.type || GroupType.UpgradeGroup, og.description || '']);
@@ -113,6 +120,8 @@ async function requestCreate(req, res, next) {
 
 async function requestUpdate(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		const og = req.body;
 		const groupId = og.id;
 		let i = 0;
@@ -127,6 +136,8 @@ async function requestUpdate(req, res, next) {
 
 async function requestDelete(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let ids = req.body.orggroupIds;
 		let n = 1;
 		let params = ids.map(() => `$${n++}`);
@@ -139,17 +150,23 @@ async function requestDelete(req, res, next) {
 	}
 }
 
-function requestUpgrade(req, res, next) {
-	push.upgradeOrgGroup(req.params.id, req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
-		.then((upgrade) => {
-			admin.emit(admin.Events.UPGRADE, upgrade);
-		})
-		.catch((e) => {
-			logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e});
-			next(e);
-		});
-	
-	return res.json({result: "OK"});
+async function requestUpgrade(req, res, next) {
+	try {
+		auth.checkReadOnly(req.session.user);
+
+		push.upgradeOrgGroup(req.params.id, req.body.versions, req.body.scheduled_date, req.session.username, req.body.description, req.body.transid)
+			.then((upgrade) => {
+				admin.emit(admin.Events.UPGRADE, upgrade);
+			})
+			.catch((e) => {
+				logger.error("Failed to upgrade org group", {org_group_id: req.params.id, error: e.message || e});
+				next(e);
+			});
+
+		res.json({result: "OK"});
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function insertOrgMembers(groupId, groupName, orgIds) {

@@ -2,6 +2,7 @@ const db = require('../util/pghelper');
 const crypt = require('../util/crypt');
 const sfdc = require('./sfdcconn');
 const admin = require('./admin');
+const auth = require("./auth");
 const logger = require('../util/logger').logger;
 
 const Status = {Connected: "Connected", Unprotected: "Unprotected", Invalid: "Invalid", Missing: "Missing"};
@@ -233,6 +234,8 @@ async function requestActivation(req, res, next) {
 	let orgIds = req.body.orgIds;
 	let flag = req.body.flag;
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let params = orgIds.map((o,i) => `$${i+2}`);
 		let values = [flag];
 		values.push(...orgIds);
@@ -251,6 +254,8 @@ async function requestActivation(req, res, next) {
 
 async function requestDelete(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let orgIds = req.body.orgIds;
 		await revokeByOrgIds(orgIds);
 
@@ -266,6 +271,8 @@ async function requestDelete(req, res, next) {
 
 async function requestUpdate(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let orgId = req.body.packageorg.org_id;
 		let type = req.body.packageorg.type;
 		let description = req.body.packageorg.description;
@@ -277,11 +284,15 @@ async function requestUpdate(req, res, next) {
 }
 
 async function requestRefresh(req, res, next) {
-	refreshByOrgIds(req.body.orgIds).then(() => {
+	try {
+		auth.checkReadOnly(req.session.user);
+
+		await refreshByOrgIds(req.body.orgIds);
 		admin.emit(admin.Events.PACKAGE_ORGS);
-	})
-	.catch(next);
-	return res.json({result: "OK"});
+		res.json({result: "OK"});
+	} catch (e) {
+		next(e);
+	}
 }
 
 async function refreshByOrgIds(orgIds) {
@@ -295,6 +306,8 @@ async function refreshByOrgIds(orgIds) {
 
 async function requestRevoke(req, res, next) {
 	try {
+		auth.checkReadOnly(req.session.user);
+
 		let orgIds = req.body.orgIds;
 		await revokeByOrgIds(orgIds);
 		admin.emit(admin.Events.PACKAGE_ORGS);
