@@ -109,54 +109,38 @@ async function upsert(recs, batchSize) {
 }
 
 async function upsertBatch(recs) {
-	let values = [];
-	let sql = `INSERT INTO package_version (sfid, name, license_org_id, version_number, version_sort, major_version, package_id,
-               release_date, created_date, modified_date, status, version_id) VALUES `;
+	let values = [], params = [];
 	for (let i = 0, n = 1; i < recs.length; i++) {
 		let rec = recs[i];
-		if (i > 0) {
-			sql += ','
-		}
-		sql += `($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})`;
+		params.push(`$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++}`);
 		values.push(rec.sfid, rec.name, rec.license_org_id, rec.version_number, rec.version_sort, rec.major_version, rec.package_id,
 			rec.release_date, rec.created_date, rec.modified_date, rec.status, rec.version_id);
 	}
-	sql += ` on conflict (sfid) do update set
-        name = excluded.name, license_org_id = excluded.license_org_id, version_number = excluded.version_number, 
-        version_sort = excluded.version_sort, major_version = excluded.major_version, package_id = excluded.package_id, 
-        release_date = excluded.release_date, modified_date = excluded.modified_date, 
-        created_date = excluded.created_date, status = excluded.status, version_id = excluded.version_id`;
+	const sql =
+		`INSERT INTO package_version (sfid, name, license_org_id, version_number, version_sort, major_version, 
+			 package_id, release_date, created_date, modified_date, status, version_id) 
+		 VALUES (${params.join("),(")})
+		 ON CONFLICT (sfid) DO UPDATE SET
+			 name = excluded.name, license_org_id = excluded.license_org_id, version_number = excluded.version_number, 
+			 version_sort = excluded.version_sort, major_version = excluded.major_version, package_id = excluded.package_id, 
+			 release_date = excluded.release_date, modified_date = excluded.modified_date, 
+			 created_date = excluded.created_date, status = excluded.status, version_id = excluded.version_id`;
 	await db.insert(sql, values);
 }
 
 async function fetchLatest(job) {
 	adminJob = job;
 
-	const licenseOrgs = await packageorgs.retrieveByType([sfdc.OrgTypes.Licenses]);
-	for (let i = 0; i < licenseOrgs.length; i++) {
-		const lmaOrgId = licenseOrgs[i].org_id;
-		try {
-			await fetchLatestFromOrg(lmaOrgId);
-		} catch (e) {
-			if (e.name === "invalid_grant") {
-				packageorgs.updateOrgStatus(lmaOrgId, packageorgs.Status.Invalid)
-					.then(() => {});
-			}
-		}
-	}
-}
-
-async function fetchLatestFromOrg(lmaOrgId) {
-	let latest = await queryLatest(lmaOrgId);
+	let latest = await queryLatest();
 	const latestByPackage = new Map(
 		latest.map(l => [l.package_id, {
 			package_id: l.package_id,
 			limited_version_id: l.version_id,
 			limited_version_number: l.version_number,
 			limited_version_sort: l.version_sort
-	}]));
+		}]));
 
-	let latestLimited = await queryLatest(lmaOrgId, [Status.PreRelease, Status.Verified, Status.Limited, Status.Preview]);
+	let latestLimited = await queryLatest([Status.PreRelease, Status.Verified, Status.Limited, Status.Preview]);
 	latestLimited.forEach(l => {
 		const pvl = latestByPackage.get(l.package_id);
 		pvl.limited_version_id = l.version_id;
@@ -164,7 +148,7 @@ async function fetchLatestFromOrg(lmaOrgId) {
 		pvl.limited_version_sort = l.version_sort;
 	});
 
-	let latestValid = await queryLatest(lmaOrgId, [Status.PreRelease, Status.Verified]);
+	let latestValid = await queryLatest([Status.PreRelease, Status.Verified]);
 	latestValid.forEach(l => {
 		const pvl = latestByPackage.get(l.package_id);
 		pvl.version_id = l.version_id;
@@ -178,16 +162,16 @@ async function fetchLatestFromOrg(lmaOrgId) {
 	return upsertLatest(Array.from(latestByPackage.values()));
 }
 
-async function queryLatest(lmaOrgId, status) {
-	let where = [`license_org_id = $1`];
+async function queryLatest(status) {
+	let where = '';
 	if (status) {
-		let params = status.map((s,i) => '$' + (i+2));
-		where.push(`status IN (${params.join(",")})`);
+		let params = status.map((s,i) => '$' + (i+1));
+		where = `WHERE status IN (${params.join(",")})`;
 	}
 
-	let sql = `SELECT v.package_id, v.version_id, v.version_number, v.version_sort FROM
+	let sql = `SELECT v.package_id, v.license_org_id, v.version_id, v.version_number, v.version_sort FROM
         (SELECT package_id, MAX(version_sort) version_sort FROM package_version
-         WHERE ${where.join('AND')} 
+         ${where} 
          GROUP BY package_id) x
         INNER JOIN package_version v ON v.package_id = x.package_id AND v.version_sort = x.version_sort`;
 	return db.query(sql, status);
@@ -195,8 +179,8 @@ async function queryLatest(lmaOrgId, status) {
 
 async function upsertLatest(recs) {
 	let values = [], params = [];
+	let n = 0;
 	recs.forEach(rec => {
-		let n = 0;
 		params.push(`$${++n},$${++n},$${++n},$${++n},$${++n},$${++n},$${++n}`);
 		values.push(rec.package_id, rec.version_id, rec.version_number, rec.version_sort, rec.limited_version_id, rec.limited_version_number, rec.limited_version_sort);
 	});
