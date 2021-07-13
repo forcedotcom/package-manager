@@ -85,7 +85,7 @@ async function fetchBatch(conn, orgs, useBulkAPI) {
 	})
 	.on("end", async () => {
 		if (count > 0) {
-			adminJob.postDetail(`Found ${count} account records in batch`);
+			adminJob.postDetail(`Found ${count} org62 account records in batch`);
 			await upsert(accounts, 2000);
 
 			// Mark this batch of orgs with the accounts we found.

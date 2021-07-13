@@ -19,15 +19,16 @@ create table if not exists package_org
 
 create table if not exists account
 (
-  id            serial      not null,
-  org_id        varchar(18),
-  instance      varchar(6),
-  edition       varchar(100),
-  account_id    varchar(18) not null
-    constraint account_account_id_pk primary key,
-  account_name  varchar(256),
-  status        varchar(40),
-  modified_date timestamp with time zone
+    id             serial      not null,
+    org_id         varchar(18),
+    license_org_id varchar(18),
+    instance       varchar(6),
+    edition        varchar(100),
+    account_id     varchar(18) not null
+        constraint account_account_id_pk primary key,
+    account_name   varchar(256),
+    status         varchar(40),
+    modified_date  timestamp with time zone
 );
 
 create table if not exists org
@@ -129,32 +130,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS
 -- LMA data
 create table if not exists package
 (
-  id              serial      not null,
-  sfid            varchar(18) not null
-    constraint package_sfid_pk primary key,
-  name            varchar(255),
-  status          varchar(80),
-  package_id      varchar(18),
-  package_org_id  varchar(18),
-  dependency_tier integer,
-  modified_date   timestamp with time zone
+    id              serial      not null,
+    sfid            varchar(18) not null
+        constraint package_sfid_pk primary key,
+    license_org_id  varchar(18),
+    name            varchar(255),
+    status          varchar(80),
+    package_id      varchar(18),
+    package_org_id  varchar(18),
+    dependency_tier integer,
+    modified_date   timestamp with time zone
 );
 
 create table if not exists package_version
 (
-  id             serial      not null,
-  sfid           varchar(18) not null
-    constraint package_version_sfid_pk primary key,
-  name           varchar(255),
-  version_number varchar(20),
-  version_sort   varchar(30),
-  major_version  int,
-  package_id     varchar(18),
-  release_date   timestamp with time zone,
-  created_date   timestamp with time zone,
-  modified_date  timestamp with time zone,
-  status         varchar(20),
-  version_id     varchar(18)
+    id             serial      not null,
+    sfid           varchar(18) not null
+        constraint package_version_sfid_pk primary key,
+    license_org_id varchar(18),
+    name           varchar(255),
+    version_number varchar(20),
+    version_sort   varchar(30),
+    major_version  int,
+    package_id     varchar(18),
+    release_date   timestamp with time zone,
+    created_date   timestamp with time zone,
+    modified_date  timestamp with time zone,
+    status         varchar(20),
+    version_id     varchar(18)
 );
 
 create table if not exists package_version_latest

@@ -7,7 +7,40 @@ alter table license
 create index if not exists license_org_id_index
     on license (org_id, license_org_id);
 
-update license l
+update license
+set license_org_id = po.org_id
+from package_org po
+where license_org_id IS NULL AND po.type = 'Licenses';
+
+alter table account
+    add if not exists license_org_id varchar(18);
+
+create index if not exists account_license_org_id_index
+    on account (license_org_id);
+
+update account
+set license_org_id = po.org_id
+from package_org po
+where license_org_id IS NULL AND po.type = 'Licenses';
+
+alter table package
+    add if not exists license_org_id varchar(18);
+
+create index if not exists package_license_org_id_index
+    on package (license_org_id);
+
+update package
+set license_org_id = po.org_id
+from package_org po
+where license_org_id IS NULL AND po.type = 'Licenses';
+
+alter table package_version
+    add if not exists license_org_id varchar(18);
+
+create index if not exists package_version_license_org_id_index
+    on package_version (license_org_id);
+
+update package_version
 set license_org_id = po.org_id
 from package_org po
 where license_org_id IS NULL AND po.type = 'Licenses';

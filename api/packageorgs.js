@@ -24,18 +24,6 @@ const SELECT_ALL_WITH_REFRESH_TOKEN =
 async function requestAll(req, res, next) {
 	try {
 		let recs = await retrieveAll(req.query.sort_field, req.query.sort_dir);
-
-		// Add missing orgs
-		Object.entries(await sfdc.getKnownOrgs()).forEach(([key, val]) => {
-			if (!recs.find(o => val.type === o.type)) {
-				let org = {status: Status.Missing, name: "Click to register missing org", type: val.type, instance_url: val.instanceUrl};
-				recs.push(org);
-				admin.emit(admin.Events.ALERT_INVALID_ORG, {subject: `Missing ${org.type} org`, org,
-					message: `Missing connection for the ${org.type} org.  Click to add one now.`})
-
-			}
-		});
-
 		return res.send(JSON.stringify(recs));
 	} catch (err) {
 		next(err);
@@ -45,6 +33,14 @@ async function requestAll(req, res, next) {
 async function retrieveAll(sortField, sortDir) {
 	let sort = ` ORDER BY ${sortField || "name"} ${sortDir || "asc"}`;
 	return await db.query(SELECT_ALL + sort, []);
+}
+
+async function retrieveByType(types) {
+	const params = [];
+	for (let i = 0; i < types.length; i++) {
+		params.push(`$${i+1}`);
+	}
+	return await db.query(`${SELECT_ALL} WHERE type in (${params.join(",")})`, types);
 }
 
 async function requestById(req, res, next) {
@@ -124,21 +120,16 @@ async function initOrg(conn, org_id, type, insertUniqueType) {
 		type = sfdc.OrgTypes.Package;
 	}
 	let n = 1;
+	const params = `$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++}`;
 	let sql = `INSERT INTO package_org 
             (org_id, name, division, namespace, instance_name, instance_url, refresh_token, access_token, status, type, active)
-           VALUES 
-            ($${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++},$${n++})
+           VALUES (${params})
            ON CONFLICT (org_id) DO UPDATE SET
             name = excluded.name, division = excluded.division, namespace = excluded.namespace, instance_name = excluded.instance_name, 
             instance_url = excluded.instance_url, refresh_token = excluded.refresh_token, access_token = excluded.access_token,
             status = excluded.status, type = excluded.type`;
-	let recs = await db.insert(sql,
+	return await db.insert(sql,
 		[org_id, org.name, org.division, org.namespace, org.instance_name, org.instance_url, org.refresh_token, org.access_token, org.status, type, true]);
-
-	// Keep our known org info up to date
-	sfdc.initOrg(type, org_id, org.instance_url);
-
-	return recs;
 }
 
 async function refreshOrg(conn, org) {
@@ -266,7 +257,6 @@ async function requestDelete(req, res, next) {
 		let n = 1;
 		let params = orgIds.map(() => `$${n++}`);
 		await db.delete(`DELETE FROM package_org WHERE org_id IN (${params.join(",")})`, orgIds);
-		await sfdc.invalidateOrgs(orgIds);
 		admin.emit(admin.Events.PACKAGE_ORGS);
 		return res.send({result: 'OK'});
 	} catch (err) {
@@ -280,7 +270,6 @@ async function requestUpdate(req, res, next) {
 		let type = req.body.packageorg.type;
 		let description = req.body.packageorg.description;
 		let orgs = await db.update(`UPDATE package_org SET description = $1, type = $2 WHERE org_id = $3`, [description, type, orgId]);
-		await sfdc.invalidateOrgs([orgId]);
 		admin.emit(admin.Events.PACKAGE_ORGS);return res.json(orgs[0]);
 	} catch (err) {
 		next(err);
@@ -361,6 +350,7 @@ exports.requestRevoke = requestRevoke;
 exports.requestDelete = requestDelete;
 exports.requestActivation = requestActivation;
 exports.retrieveAll = retrieveAll;
+exports.retrieveByType = retrieveByType;
 exports.retrieveByOrgIds = privateRetrieveByOrgIds;
 exports.initOrg = initOrg;
 exports.updateOrgStatus = updateOrgStatus;

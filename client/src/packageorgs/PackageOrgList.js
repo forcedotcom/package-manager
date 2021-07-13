@@ -19,8 +19,6 @@ export default class extends React.Component {
 			{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, clickable: true},
 			{Header: "Type", accessor: "type"},
 			{Header: "Instance URL", minWidth: 200, accessor: "instance_url"},
-			{Header: "Package Namespace", accessor: "namespace"},
-			{Header: "Instance Name", accessor: "instance_name"},
 			{
 				Header: "Connection Status",
 				minWidth: 100,

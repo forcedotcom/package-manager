@@ -4,13 +4,9 @@ const licenses = require('./licensefetch');
 const orgs = require('./orgfetch');
 const accounts = require('./accountfetch');
 const instances = require('./instancefetch');
-const org62accounts = require('./org62fetch');
-const sfdc = require('../api/sfdcconn');
 const admin = require('../api/admin');
 
 const subs = require('./subscriberfetch');
-
-const packageorgs = require('../api/packageorgs');
 
 /**
  * a. lma => licenses.  is for fun.
@@ -34,40 +30,27 @@ function fetchData(fetchAll) {
 					{
 						name: "Fetching licenses",
 						handler: async (job) => {
-							return licenses.fetch((await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses)).orgId, fetchAll, job);
+							return licenses.fetch(fetchAll, job);
 						}
 					},
-				],
-				fail: async (e) => {
-					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus((await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses)).orgId, packageorgs.Status.Invalid)
-							.then(() => {
-						});
-					}
-				}
+				]
 			},
 			{
 				name: "Populating package data",
 				steps: [
 					{
 						name: "Fetching packages",
-						handler: async (job) => ps.fetch((await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses)).orgId, fetchAll, job)
+						handler: async (job) => ps.fetch(fetchAll, job)
 					},
 					{
 						name: "Fetching package versions",
-						handler: async (job) => pvs.fetch((await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses)).orgId, fetchAll, job)
+						handler: async (job) => pvs.fetch(fetchAll, job)
 					},
 					{
 						name: "Fetching latest package versions",
 						handler: (job) => pvs.fetchLatest(job)
 					}
-				],
-				fail: async (e) => {
-					if (e.name === "invalid_grant") {
-						packageorgs.updateOrgStatus((await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses)).orgId, packageorgs.Status.Invalid)
-							.then(() => {});
-					}
-				}
+				]
 			},
 			{
 				name: "Fetch orgs",
@@ -79,11 +62,7 @@ function fetchData(fetchAll) {
 					{
 						name: "Fetching accounts for orgs",
 						handler: async  (job) => {
-							const accountsOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Accounts) || await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
-							// Special handling for internal orgs.
-							const accountsApi = (accountsOrg.instanceUrl === "https://org62.my.salesforce.com") ?
-								org62accounts : accounts;
-							return accountsApi.fetch(accountsOrg.orgId, fetchAll, job)
+							return accounts.fetch(fetchAll, job)
 						}
 					},
 					{

@@ -10,15 +10,13 @@ const OrgTypes = {
 	Package: "Package"
 };
 
-const KnownOrgs = {};
-
 const AccountIDs = {
     Internal: '000000000000000',
     Invalid: '000000000000001'
 };
 
 const PORT = process.env.PORT || 5000;
-const SFDC_API_VERSION = "50.0";
+const SFDC_API_VERSION = "52.0";
 
 const CALLBACK_URL = (process.env.LOCAL_URL || 'http://localhost:' + PORT) + '/oauth2/callback';
 
@@ -26,85 +24,6 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 const TRACE_FUNCTIONS = ["query", "sobject", "retrieve", "insert", "update", "upsert"];
-
-const DEFAULT_ORGS = [
-	// {
-	// 	type: OrgTypes.ProductionBlacktab,
-	// 	instanceUrl: "https://bt1.my.salesforce.com"
-	// },
-	// {
-	// 	type: OrgTypes.SandboxBlacktab,
-	// 	instanceUrl: "https://sbt2.cs10.my.salesforce.com"
-	// },
-	// {
-	// 	type: OrgTypes.Accounts,
-	// 	instanceUrl: "https://org62.my.salesforce.com"
-	// },
-	{
-		type: OrgTypes.Licenses,
-		instanceUrl: "https://login.salesforce.com"
-	}
-];
-
-async function getKnownOrg(orgType) {
-	const knownOrgs = await getKnownOrgs();
-	return knownOrgs[orgType];
-}
-
-async function getKnownOrgs() {
-	logger.debug(`Known Orgs:\n${JSON.stringify(KnownOrgs)}`);
-	if (typeof KnownOrgs[OrgTypes.Licenses] == "undefined") {
-		await init();
-	}
-
-	return KnownOrgs;
-}
-
-async function init() {
-	let orgsConfig = process.env.NAMED_ORGS ? JSON.parse(process.env.NAMED_ORGS) : [];
-	logger.info(`Initializing named orgs from ${process.env.NAMED_ORGS ? process.env.NAMED_ORGS : 'nothing'}`);
-
-	// Start with configured orgs
-	orgsConfig.forEach(orgConfig => {
-		KnownOrgs[orgConfig.type] = orgConfig;
-	});
-
-	logger.debug(`Known orgs from named orgs :${JSON.stringify(KnownOrgs)}`);
-	// Add default orgs if not found
-	DEFAULT_ORGS.forEach(defaultOrg => {
-		if (!KnownOrgs[defaultOrg.type]) {
-			// Clone the default
-			logger.debug(`Missing org type, adding default for type ${defaultOrg.type}`);
-			KnownOrgs[defaultOrg.type] = Object.assign({}, defaultOrg);
-		}
-	});
-
-	// Overlay the package orgs last, overriding anything prior
-	let orgs = await packageorgs.retrieveAll();
-	orgs.forEach(org => initOrg(org.type, org.org_id, org.instance_url));
-}
-
-function initOrg(type, orgId, instanceUrl) {
-	if (type == null || type === OrgTypes.Package)
-		return; // Nothing to do here.
-
-	Object.entries(OrgTypes).forEach(([key, value]) => {
-		if (value === type) {
-			KnownOrgs[type] = {type, orgId, instanceUrl};
-			logger.info(`Updating named org type ${type} from registered org ${orgId}, ${instanceUrl}`);
-		}
-	});
-}
-
-async function invalidateOrgs(orgIds) {
-	Object.entries(KnownOrgs).forEach(([key, orgConfig]) => {
-		if (orgIds.find(id => id === orgConfig.orgId)) {
-			delete KnownOrgs[key];
-		}
-	});
-
-	await init();
-}
 
 function buildConnection(accessToken, refreshToken, instanceUrl, apiVersion = SFDC_API_VERSION) {
 	const target = new jsforce.Connection({
@@ -209,11 +128,6 @@ exports.buildOrgConnection = buildOrgConnection;
 exports.expandId = expandId;
 exports.normalizeId = normalizeId;
 exports.normalizeInstanceName = normalizeInstanceName;
-exports.init = init;
-exports.initOrg = initOrg;
-exports.invalidateOrgs = invalidateOrgs;
-exports.getKnownOrg = getKnownOrg;
-exports.getKnownOrgs = getKnownOrgs;
 exports.OrgTypes = OrgTypes;
 exports.AccountIDs = AccountIDs;
 exports.SFDC_API_VERSION = SFDC_API_VERSION;

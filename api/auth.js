@@ -33,10 +33,8 @@ function requestLogout(req, res, next) {
 
 async function oauthLoginURL(req, res, next) {
     try {
-        const licenseOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
         const url = await buildURL('api id web', {
             operation: "login",
-            loginUrl: AUTH_URL || (licenseOrg ? licenseOrg.instanceUrl : null),
             returnTo: req.query.returnTo
         });
         res.json(url);
@@ -60,13 +58,14 @@ async function oauthOrgURL(req, res, next) {
 }
 
 async function buildURL(scope, state) {
-    let conn = await buildAuthConnection(undefined, undefined, state.loginUrl);
+    const conn = await buildAuthConnection(undefined, undefined, state.loginUrl);
     return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
 }
 
 async function oauthCallback(req, res, next) {
-    let state = JSON.parse(req.query.state);
-    let conn = await buildAuthConnection(null, null, state.loginUrl);
+    const state = JSON.parse(req.query.state);
+    const loginUrl = state.loginUrl || req.headers['referer'];
+    const conn = await buildAuthConnection(null, null, loginUrl);
     try {
         if (req.query.error) {
             let errs = {
@@ -98,6 +97,8 @@ async function oauthCallback(req, res, next) {
                 const user = await conn.identity();
                 req.session.username = user.username;
                 req.session.display_name = user.display_name;
+                req.session.auth_org_id = user.organization_id;
+                req.session.auth_org_url = loginUrl;
                 req.session.access_token = conn.accessToken;
                 res.redirect(url);
         }
@@ -118,7 +119,7 @@ async function requestUser(req, res, next) {
     if (!req.session.access_token) {
         return; // Not logged in.
     }
-    const conn = await buildAuthConnection(req.session.access_token);
+    const conn = await buildAuthConnection(req.session.access_token, null, req.session.auth_org_url);
     try {
         let user = await conn.identity();
         // If user has a permission set granting edit rights on the Package Version object, we consider them admins
@@ -126,7 +127,7 @@ async function requestUser(req, res, next) {
                     IN (SELECT PermissionSetId FROM PermissionSetAssignment WHERE AssigneeId = '${user.user_id}') AND
                     PermissionsEdit = true AND SobjectType = 'sfLma__Package_Version__c'`);
         user.read_only = perms.totalSize === 0;
-
+        user.auth_org_id = req.session.auth_org_id;
         // Store additional settings on user session object that the UI may need
         user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
         user.enable_sumo = !!process.env.SUMO_URL;
@@ -138,9 +139,6 @@ async function requestUser(req, res, next) {
 }
 
 async function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
-    const licenseOrg = await sfdc.getKnownOrg(sfdc.OrgTypes.Licenses);
-    logger.debug(`Salesforce licenses org: ${JSON.stringify(licenseOrg)}`);
-
     const options = {
         oauth2: {
             loginUrl: loginUrl,
@@ -149,7 +147,7 @@ async function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LO
             redirectUri: CALLBACK_URL
         },
         version: sfdc.SFDC_API_VERSION,
-        instanceUrl: AUTH_URL || (licenseOrg ? licenseOrg.instanceUrl : loginUrl),
+        instanceUrl: AUTH_URL || loginUrl,
         accessToken: accessToken,
         refreshToken: refreshToken,
         logLevel: process.env.LOG_LEVEL || "WARN"

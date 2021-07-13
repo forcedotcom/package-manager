@@ -1,6 +1,7 @@
 const sfdc = require('../api/sfdcconn');
 const db = require('../util/pghelper');
 const logger = require('../util/logger').logger;
+const packageorgs = require('../api/packageorgs');
 
 const SELECT_ALL = `SELECT Id, LastModifiedDate, Name, sfLma__Subscriber_Org_ID__c, sfLma__Org_Instance__c, sfLma__License_Type__c, 
     sfLma__Subscriber_Org_Is_Sandbox__c, sfLma__Status__c, sfLma__Install_Date__c, sfLma__Expiration__c, 
@@ -8,8 +9,24 @@ const SELECT_ALL = `SELECT Id, LastModifiedDate, Name, sfLma__Subscriber_Org_ID_
 
 let adminJob;
 
-async function fetch(lmaOrgId, fetchAll, job) {
+async function fetch(fetchAll, job) {
 	adminJob = job;
+	const licenseOrgs = await packageorgs.retrieveByType([sfdc.OrgTypes.Licenses]);
+
+	for (let i = 0; i < licenseOrgs.length; i++) {
+		const lmaOrgId = licenseOrgs[i].org_id;
+		try {
+			await fetchFromOrg(lmaOrgId, fetchAll);
+		} catch (e) {
+			if (e.name === "invalid_grant") {
+				packageorgs.updateOrgStatus(lmaOrgId, packageorgs.Status.Invalid)
+					.then(() => {});
+			}
+		}
+	}
+}
+
+async function fetchFromOrg(lmaOrgId, fetchAll) {
 	let fromDate = null;
 	if (!fetchAll) {
 		let latest = await db.query(`select max(modified_date) max from license where license_org_id = $1`, [lmaOrgId]);
@@ -59,18 +76,19 @@ async function load(result, conn, lmaOrgId) {
 	if (!result.done && !adminJob.canceled) {
 		return fetchMore(result.nextRecordsUrl, conn, recs, lmaOrgId);
 	}
+
+	const orgUrl = conn.instanceUrl;
+	if (recs.length === 0) {
+		logger.info(`No new licenses found in ${orgUrl}`);
+		adminJob.postDetail(`No new licenses found in ${orgUrl}`);
+	} else {
+		adminJob.postDetail(`Loaded ${recs.length} license records from ${orgUrl}`);
+	}
 	return recs;
 }
 
 async function upsert(recs, batchSize) {
-	let count = recs.length;
-	if (count === 0) {
-		logger.info("No new licenses found in LMA");
-		adminJob.postDetail(`No new licenses found in LMA`);
-		return; // nothing to see here
-	}
-
-	adminJob.postDetail(`Storing ${count} license records from LMA`);
+	const count = recs.length;
 	for (let start = 0; start < count && !adminJob.canceled;) {
 		logger.info(`Batch upserting license records`, {batch: Math.min(start + batchSize, count), count: count});
 		await upsertBatch(recs.slice(start, start += batchSize));

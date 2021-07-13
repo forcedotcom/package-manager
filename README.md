@@ -97,8 +97,6 @@ JOB_SCHEDULES={"org_monitor_interval_seconds": 240, "fetch_interval_minutes": 5,
 # want to explicitly the instance url for one or more of them, like with your LMA org, you may do so 
 # here.  This is very much optional.
 
-NAMED_ORGS=[{"type": "Licenses","orgId": "00D300000008V7fEAE","name": "SB 62","instanceUrl":"https://steelbrick.my.salesforce.com"}]
-
 LOG_LEVEL=DEBUG
 DEBUG_SQL_VALUES=true
 

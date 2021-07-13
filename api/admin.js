@@ -313,9 +313,6 @@ async function startup() {
 	// Ensure our database is alive and initialized
 	await sqlinit.init();
 
-	// Ensure our sfdx connections and orgs are ready
-	await sfdc.init();
-
 	// Kick off our scheduled jobs
 	scheduleJobs();
 }
