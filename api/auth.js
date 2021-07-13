@@ -95,10 +95,19 @@ async function oauthCallback(req, res, next) {
                 break;
             default:
                 const user = await conn.identity();
+                // If user has a permission set granting edit rights on the Package Version object, we consider them admins
+                const perms = await conn.query(`SELECT Id FROM ObjectPermissions WHERE ParentId
+                    IN (SELECT PermissionSetId FROM PermissionSetAssignment WHERE AssigneeId = '${user.user_id}') AND
+                    PermissionsEdit = true AND SobjectType = 'sfLma__Package_Version__c'`);
+                user.read_only = perms.totalSize === 0;
+
+                // Store additional settings on user session object that the UI may need
+                user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
+                user.enable_sumo = !!process.env.SUMO_URL;
+                req.session.user = user;
+
                 req.session.username = user.username;
                 req.session.display_name = user.display_name;
-                req.session.auth_org_id = user.organization_id;
-                req.session.auth_org_url = loginUrl;
                 req.session.access_token = conn.accessToken;
                 res.redirect(url);
         }
@@ -119,19 +128,8 @@ async function requestUser(req, res, next) {
     if (!req.session.access_token) {
         return; // Not logged in.
     }
-    const conn = await buildAuthConnection(req.session.access_token, null, req.session.auth_org_url);
     try {
-        let user = await conn.identity();
-        // If user has a permission set granting edit rights on the Package Version object, we consider them admins
-        const perms = await conn.query(`SELECT Id FROM ObjectPermissions WHERE ParentId
-                    IN (SELECT PermissionSetId FROM PermissionSetAssignment WHERE AssigneeId = '${user.user_id}') AND
-                    PermissionsEdit = true AND SobjectType = 'sfLma__Package_Version__c'`);
-        user.read_only = perms.totalSize === 0;
-        user.auth_org_id = req.session.auth_org_id;
-        // Store additional settings on user session object that the UI may need
-        user.enforce_activation_policy = process.env.ENFORCE_ACTIVATION_POLICY;
-        user.enable_sumo = !!process.env.SUMO_URL;
-        res.json(user);
+        res.json(req.session.user);
     } catch (e) {
         logger.error("Failed to identify current user", e);
         next(e);
