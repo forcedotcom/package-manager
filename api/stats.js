@@ -22,4 +22,20 @@ async function requestStats(req, res, next) {
     }
 }
 
+async function requestAll(req, res, next) {
+    try {
+        let ids = req.body.upgradeIds;
+        let n = 1;
+        let params = ids.map(() => `$${n++}`);
+        const WHERE = `WHERE upgrade_job.upgrade_id IN (${params.join(",")})` ;
+        const stats = await db.query(SELECT_UPGRADE_STATUS + WHERE + GROUP_BY_PKG_NAME_STATUS, ids);
+        return res.json(stats);
+    } catch (e) {
+        next(e);
+    }
+
+	return {'gus_reference' : 'W-123456', 'date': '2021-06-25', 'failed': 17, 'ineligible': 1, 'succeeded': 375}
+}
+
 exports.requestStats = requestStats;
+exports.requestAll = requestAll;

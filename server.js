@@ -130,7 +130,9 @@ app.post('/api/upgrades/cancel/:id', upgrades.requestCancelUpgrade);
 app.post('/api/upgrades/retry/:id', upgrades.requestRetryFailedUpgrade);
 app.post('/api/upgrades/refresh/:id', upgrades.requestRefreshUpgrade);
 app.post('/api/upgrades/purge', upgrades.requestPurge);
+
 app.post('/api/stats', stats.requestStats);
+app.get('/api/stats', stats.requestAll);
 
 app.get('/api/upgradeitems', upgrades.requestItems);
 app.get('/api/upgradeitems/:id', upgrades.requestItemById);

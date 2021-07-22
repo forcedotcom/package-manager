@@ -26,6 +26,8 @@ import UpgradeRecord from './upgrades/UpgradeRecord';
 
 import AuthResponse from "./auth/AuthResponse";
 import PackageVersionRecord from "./packageversions/PackageVersionRecord";
+import StatsHome from "./stats/StatsHome";
+
 import AdminHome from "./admin/AdminHome";
 import UpgradeItemRecord from "./upgrades/UpgradeItemRecord";
 
@@ -40,6 +42,7 @@ import {
 	ADMIN_ICON,
 	AUTH_ICON,
 	LICENSE_ICON,
+	REPORT_ICON,
 	ORG_GROUP_ICON,
 	ORG_ICON,
 	PACKAGE_ICON,
@@ -110,9 +113,9 @@ class App extends Component {
 								<Link style={{whiteSpace: "nowrap"}} to="/packageorgs"><Icon
 									name={PACKAGE_ORG_ICON.name} category={PACKAGE_ORG_ICON.category}/>{isCompact ? "" : "Connected Orgs"}</Link>
 							</li>
-							<li className="slds-list__item" title="Reports">
-								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={LICENSE_ICON.name}
-																					   category={LICENSE_ICON.category}/>{isCompact ? "" : "Reports"}</Link>
+							<li className="slds-list__item" title="Stats">
+								<Link style={{whiteSpace: "nowrap"}} to="/stats"><Icon name={REPORT_ICON.name}
+																					   category={REPORT_ICON.category}/>{isCompact ? "" : "Reports"}</Link>
 							</li>
 							<li className="slds-list__item" title="Administration">
 								<Link style={{whiteSpace: "nowrap"}} to="/admin"><Icon name={ADMIN_ICON.name}
@@ -158,6 +161,8 @@ class App extends Component {
 
 					<Route path="/packageorgs" component={PackageOrgHome}/>
 					<Route path="/packageorg/:packageorgId" component={PackageOrgRecord}/>
+
+					<Route path="/stats" component={StatsHome} />
 					<Route path="/admin" component={AdminHome}/>
 
 					<Route path="/login" component={Login}/>

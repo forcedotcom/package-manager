@@ -8,7 +8,7 @@ export const PACKAGE_ORG_ICON = {name: "process", category: "standard"};
 export const PACKAGE_ICON = {name: "thanks", category: "standard"};
 export const PACKAGE_VERSION_ICON = {name: "custom72", category: "custom"};
 export const ADMIN_ICON = {name: "calibration", category: "standard"};
-export const REPORT_ICON = {name: "calibration", category: "standard"};
+export const REPORT_ICON = {name: "dashboard", category: "standard"};
 export const AUTH_ICON = {name: "portal", category: "standard"};
 
 export const Messages = {
