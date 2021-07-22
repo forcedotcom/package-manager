@@ -718,8 +718,8 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	upgrade.status = UpgradeStatus.Active;
 	upgrade.activated_by = username;
 	upgrade.activated_date = new Date().toISOString();
-	await db.update(`UPDATE upgrade SET status = $2, activated_by = $3, activated_date = $4 WHERE id = $1`, [id, upgrade.status, upgrade.activated_by, upgrade.activated_date]);
 	await activateAvailableUpgradeItems(upgrade, username, job);
+	await db.update(`UPDATE upgrade SET status = $2, activated_by = $3, activated_date = $4 WHERE id = $1`, [id, upgrade.status, upgrade.activated_by, upgrade.activated_date]);
 	admin.emit(admin.Events.UPGRADE, upgrade);
 }
 
