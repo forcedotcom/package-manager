@@ -77,6 +77,9 @@ export default class extends React.Component {
 					<HeaderField label="Status" value={item.status}
 								 className={item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={item.created_by}/>
+					<HeaderField label="Activated By" value={item.activated_by || ''}/>
+					<HeaderField label="Activated On" value={`${item.activated_date ?
+						moment(item.activated_date).format('lll') : ''}`}/>
 				</RecordHeader>
 				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled} 
 							 progressError={progress.percentageError}/>

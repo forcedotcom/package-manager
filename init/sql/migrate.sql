@@ -50,6 +50,15 @@ alter table upgrade
   add if not exists activated_by varchar(255),
   add if not exists activated_date  timestamp with time zone;
 
+alter table upgrade_item
+    add if not exists activated_by varchar(255),
+    add if not exists activated_date  timestamp with time zone;
+
+update upgrade_item
+    set activated_by = u.activated_by, activated_date = u.activated_date
+    from upgrade u
+    where upgrade_id = u.id and u.activated_by is not null;
+
 alter table package
   add if not exists status varchar(80);
 

@@ -72,7 +72,8 @@ const SELECT_ONE = `
     WHERE u.id = $1
     GROUP by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count,
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, 
+       					i.created_by, i.total_job_count, i.activated_by, i.activated_date,
         u.description,
         pv.version_number, pv.version_id, pv.version_sort,
         p.name package_name, p.sfid package_id, p.dependency_tier,
@@ -112,7 +113,8 @@ const GROUP_BY_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.packag
 
 const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} WHERE i.upgrade_id = $1 ${GROUP_BY_ITEMS}`;
 
-const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count,
+const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, 
+       					i.created_by, i.total_job_count, i.activated_by, i.activated_date,
         u.description,
         pv.version_number, pv.version_id,
         p.name package_name, p.dependency_tier,
@@ -145,7 +147,8 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
         INNER JOIN package p on p.sfid = pv.package_id
 		left join upgrade_job j on j.item_id = i.id`;
 
-const SELECT_ITEMS_WITH_JOBS = `SELECT distinct i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, i.created_by, i.total_job_count
+const SELECT_ITEMS_WITH_JOBS = `SELECT distinct i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, 
+                	i.created_by, i.total_job_count, i.activated_by, i.activated_date
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id`;
 
@@ -198,7 +201,7 @@ async function failUpgrade(upgrade, error) {
 	logger.error("Failed to schedule upgrade", {message: error.message || error});
 	upgrade.message = error.message || error;
 	upgrade.status = UpgradeStatus.Failed;
-	await db.update(`UPDATE upgrade set status = $1 WHERE id = $2`, [upgrade.status, upgrade.id]);
+	await db.update(`UPDATE upgrade set status = $2 WHERE id = $1`, [upgrade.id, upgrade.status]);
 	return upgrade;
 }
 
@@ -213,7 +216,7 @@ async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, 
 
 async function changeUpgradeItemTotalJobCount(itemId, count) {
 	try {
-		await db.update(`UPDATE upgrade_item SET total_job_count = $1 WHERE id = $2`, [count, itemId]);
+		await db.update(`UPDATE upgrade_item SET total_job_count = $2 WHERE id = $1`, [itemId, count]);
 		admin.emit(admin.Events.UPGRADE_ITEMS, [itemId]);
 	} catch (error) {
 		logger.error("Failed to update upgrade item", {itemId, count, error: error.message || error});
@@ -255,6 +258,23 @@ async function changeUpgradeItemStatus(items, status) {
 	}
 
 	await db.update(`UPDATE upgrade_item SET status = $1 WHERE id IN (${params.join(",")})`, values);
+}
+
+async function activateUpgradeItems(items, activatedBy, activatedDate) {
+	const status = push.Status.Pending;
+	const values = [status, activatedBy, activatedDate];
+	const params = [];
+	for (let i = 0, p = values.length+1; i < items.length; i++) {
+		items[i].status = status;
+		items[i].activated_by = activatedBy;
+		items[i].activated_date = activatedDate;
+		values.push(items[i].id);
+		params.push(`$${p++}`);
+	}
+
+	await db.update(
+		`UPDATE upgrade_item SET status = $1, activated_by = $2, activated_date = $3 
+				WHERE id IN (${params.join(",")})`, values);
 }
 
 async function updateUpgradeItemsFromPushRequests(items, pushReqs) {
@@ -629,6 +649,13 @@ async function retrieveItemById(id) {
 	return recs[0];
 }
 
+async function retrieveItemsByStatus(statuses) {
+	let i = 0;
+	const params = statuses.map(() => `$${++i}`);
+	return await db.query(
+		`${SELECT_ALL_ITEMS} WHERE i.status IN (${params.join(",")}) ${GROUP_BY_ITEMS}`, statuses);
+}
+
 async function requestJobById(req, res, next) {
 	try {
 		let id = req.params.id;
@@ -688,16 +715,16 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 		}
 	}
 	
-	await activateAvailableUpgradeItems(id, username, job);
 	upgrade.status = UpgradeStatus.Active;
 	upgrade.activated_by = username;
 	upgrade.activated_date = new Date().toISOString();
 	await db.update(`UPDATE upgrade SET status = $2, activated_by = $3, activated_date = $4 WHERE id = $1`, [id, upgrade.status, upgrade.activated_by, upgrade.activated_date]);
+	await activateAvailableUpgradeItems(upgrade, username, job);
 	admin.emit(admin.Events.UPGRADE, upgrade);
 }
 
-async function activateAvailableUpgradeItems(id, username, job = {postMessage: msg => logger.info(msg)}) {
-	let items = await findItemsByUpgrade(id, ["dependency_tier", "package_id", "version_sort"], "asc");
+async function activateAvailableUpgradeItems(upgrade, username, job = {postMessage: msg => logger.info(msg)}) {
+	let items = await findItemsByUpgrade(upgrade.id, ["dependency_tier", "package_id", "version_sort"], "asc");
 	let incomplete = [];
 	items = items.filter(i => {
 		if (i.eligible_job_count === 0) {
@@ -787,10 +814,14 @@ async function activateAvailableUpgradeItems(id, username, job = {postMessage: m
 			if (activate && item.status === push.Status.Created) {
 				// Ready to activate!
 				try {
-					await push.updatePushRequests([item], push.Status.Pending, username);
+					upgrade.activated_by = username;
+					upgrade.activated_date = new Date().toISOString();
+
+					await push.updatePushRequests([item], push.Status.Pending, upgrade.activated_by);
 					await changeUpgradeJobStatus([item], push.Status.Pending);
-					await changeUpgradeItemStatus([item], push.Status.Pending);
-					admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+					await activateUpgradeItems([item], upgrade.activated_by, upgrade.activated_date);
+
+					admin.emit(admin.Events.UPGRADE, upgrade);
 					admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 					job.postMessage(`Activated item ${item.id} for ${item.package_name} ${item.version_number}`);
 				} catch (e) {
@@ -835,12 +866,12 @@ async function monitorActiveUpgrades(job) {
 	const activeUpgrades = await retrieveActiveUpgrades();
 	for (let i = 0; i < activeUpgrades.length; i++) {
 		const upgrade = activeUpgrades[i];
-		await activateAvailableUpgradeItems(upgrade.id, job);
+		await activateAvailableUpgradeItems(upgrade, job);
 		
 		if (await areJobsCompleteForUpgrade(upgrade.id)) {
 			// An upgrade is complete only when all of its jobs are marked as complete
 			upgrade.status = UpgradeStatus.Done;
-			await db.update(`UPDATE upgrade SET status = $1 WHERE id = $2`, [upgrade.status, upgrade.id]);
+			await db.update(`UPDATE upgrade SET status = $2 WHERE id = $1`, [upgrade.id, upgrade.status]);
 			admin.emit(admin.Events.UPGRADE, upgrade);
 		}
 	}
@@ -901,7 +932,7 @@ async function requestCancelUpgrade(req, res, next) {
 		await push.updatePushRequests(items, push.Status.Canceled, req.session.username);
 		await changeUpgradeJobStatus(items, push.Status.Canceled, push.Status.Pending, push.Status.Created);
 		await changeUpgradeItemStatus(items, push.Status.Canceled);
-		await db.update(`UPDATE upgrade SET status = $1, comment = $2 WHERE id = $3`, [UpgradeStatus.Canceled, comment, id]);
+		await db.update(`UPDATE upgrade SET status = $2, comment = $3 WHERE id = $1`, [id, UpgradeStatus.Canceled, comment]);
 		admin.emit(admin.Events.UPGRADE, await retrieveById(id));
 		admin.emit(admin.Events.UPGRADE_ITEMS, items);
 		res.json(items);
@@ -942,16 +973,39 @@ async function requestActivateUpgradeItem(req, res, next) {
 				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: item.id, push_request_id: item.push_request_id}));
 			return res.json({});
 		}
-		await push.updatePushRequests([item], push.Status.Pending, req.session.username);
+
+		const activatedBy = req.session.username;
+		const activatedDate = new Date().toISOString();
+
+		await push.updatePushRequests([item], push.Status.Pending, activatedBy);
 		await changeUpgradeJobStatus([item], push.Status.Pending);
-		await changeUpgradeItemStatus([item], push.Status.Pending);
-		admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+		await activateUpgradeItems([item], activatedBy, activatedDate);
+
+		const upgrade = await retrieveById(item.upgrade_id);
+		await activateIfNecessary(upgrade, activatedBy, activatedDate);
+		admin.emit(admin.Events.UPGRADE, upgrade);
 		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 		res.json(item);
 	} catch (e) {
 		next(e);
 	}
 }
+
+async function activateIfNecessary(upgrade, activatedBy, activatedDate) {
+	if (upgrade.activated_by != null) {
+		return; // Already activated
+	}
+
+	const inactiveItems = await retrieveItemsByStatus([push.Status.Created]);
+	if (inactiveItems.length === 0) {
+		// Nothing left to activate, so we should be activated.
+		upgrade.status = UpgradeStatus.Active;
+		upgrade.activated_by = activatedBy;
+		upgrade.activated_date = activatedDate;
+		await db.update(`UPDATE upgrade SET status = $2, activated_by = $3, activated_date = $4 WHERE id = $1`, [upgrade.id, upgrade.status, upgrade.activated_by, upgrade.activated_date]);
+	}
+}
+
 
 async function requestCancelUpgradeItem(req, res, next) {
 	const id = req.params.id;
