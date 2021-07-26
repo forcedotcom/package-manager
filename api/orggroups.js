@@ -11,7 +11,8 @@ const EXPAND_BLACKLIST = process.env.EXPAND_BLACKLIST === "true";
 const DEFAULT_WHITELIST = process.env.ALLOWED_ORGS;
 const EXPAND_WHITELIST = process.env.EXPAND_WHITELIST === "true";
 
-const SELECT_ALL = "SELECT id, name, type, description, created_date FROM org_group";
+const SELECT_ALL = `SELECT org_group.id as id, org_group.name, org_group.type, org_group.description, org_group.created_date
+					FROM org_group`;
 
 const QUERY_DICTIONARY = {get: s => s};
 
@@ -43,6 +44,12 @@ async function requestAll(req, res, next) {
 		values.push(req.query.type);
 		whereParts.push(`type = $${values.length}`)
 	}
+
+	if (req.query.orgId) {
+		values.push(req.query.orgId);
+		whereParts.push(`id != $${values.length}`)
+	}
+
 	const filters = req.query.filters ? JSON.parse(req.query.filters) : null;
 	if (filters && filters.length > 0) {
 		whereParts.push(...filter.parseSQLExpressions(QUERY_DICTIONARY, filters));
@@ -70,6 +77,19 @@ async function requestById(req, res, next) {
 	}
 }
 
+async function requestByOrg(req, res, next) {
+	const select =
+		`${SELECT_ALL} 
+			INNER JOIN org_group_member ogm on org_group.id = ogm.org_group_id
+			WHERE ogm.org_id = $1`;
+	try {
+		let rows = await db.query(select, [req.params.orgId]);
+		return res.json(rows);
+	} catch (e) {
+		next(e);
+	}
+}
+
 async function requestMembers(req, res, next) {
 	try {
 		let recs = await orgs.findByGroup(req.params.id);
@@ -83,7 +103,10 @@ async function requestAddMembers(req, res, next) {
 	try {
 		auth.checkReadOnly(req.session.user);
 
-		const orggroup = await insertOrgMembers(req.params.id, req.body.name, req.body.orgIds);
+		const groupId = req.params.id;
+		const orggroup = await insertOrgMembers(groupId, req.body.name, req.body.orgIds);
+		admin.emit(admin.Events.GROUP_MEMBERS, groupId);
+		admin.emit(admin.Events.GROUP_VERSIONS, groupId);
 		return res.json(orggroup);
 	} catch (e) {
 		next(e);
@@ -95,9 +118,22 @@ async function requestRemoveMembers(req, res, next) {
 		auth.checkReadOnly(req.session.user);
 
 		const groupId = req.params.id;
-		await deleteOrgMembers(groupId, req.body.orgIds);
+		await deleteMembersByOrgIds(groupId, req.body.orgIds);
 		admin.emit(admin.Events.GROUP_MEMBERS, groupId);
 		admin.emit(admin.Events.GROUP_VERSIONS, groupId);
+	} catch (e) {
+		next(e);
+	}
+}
+
+async function requestRemoveMembersByGroupIds(req, res, next) {
+	try {
+		auth.checkReadOnly(req.session.user);
+
+		const orgId = req.params.orgId;
+		await deleteMembersByGroupIds(orgId, req.body.orgGroupIds);
+		admin.emit(admin.Events.GROUP_MEMBERS, req.body.orgGroupIds);
+		admin.emit(admin.Events.GROUP_VERSIONS, req.body.orgGroupIds);
 	} catch (e) {
 		next(e);
 	}
@@ -210,13 +246,23 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	return orggroup;
 }
 
-async function deleteOrgMembers(groupId, orgIds) {
+async function deleteMembersByOrgIds(groupId, orgIds) {
 	let n = 2;
 	let params = orgIds.map(() => `$${n++}`);
 	let values = [groupId].concat(orgIds);
 	let sql = `DELETE FROM org_group_member WHERE org_group_id = $1 AND org_id IN (${params.join(",")})`;
 	let res = await db.delete(sql, values);
 	logger.info("Removed orgs from group", {group_id: groupId, org_ids: orgIds.join(',')});
+	return res;
+}
+
+async function deleteMembersByGroupIds(orgId, orgGroupIds) {
+	let n = 2;
+	let params = orgGroupIds.map(() => `$${n++}`);
+	let values = [orgId].concat(orgGroupIds);
+	let sql = `DELETE FROM org_group_member WHERE org_id = $1 AND org_group_id IN (${params.join(",")})`;
+	let res = await db.delete(sql, values);
+	logger.info("Removed groups from org", {org_id: orgId, org_group_ids: orgGroupIds.join(',')});
 	return res;
 }
 
@@ -279,8 +325,10 @@ async function isOrgOfType(orgId, type, defaultsJSON, expandByAccount) {
 exports.requestAll = requestAll;
 exports.requestById = requestById;
 exports.requestMembers = requestMembers;
+exports.requestByOrg = requestByOrg;
 exports.requestAddMembers = requestAddMembers;
 exports.requestRemoveMembers = requestRemoveMembers;
+exports.requestRemoveMembersByGroupIds = requestRemoveMembersByGroupIds;
 exports.requestCreate = requestCreate;
 exports.requestUpdate = requestUpdate;
 exports.requestDelete = requestDelete;

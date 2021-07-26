@@ -97,14 +97,16 @@ app.put('/api/orgs', orgs.requestAdd);
 app.post('/api/orgs/:id/upgrade', orgs.requestUpgrade);
 
 app.get('/api/orggroups', orggroups.requestAll);
+app.post('/api/orggroups', orggroups.requestCreate);
+app.put('/api/orggroups', orggroups.requestUpdate);
+app.post('/api/orggroups/delete', orggroups.requestDelete);
 app.get('/api/orggroups/:id', orggroups.requestById);
 app.get('/api/orggroups/:id/members', orggroups.requestMembers);
 app.post('/api/orggroups/:id/members', orggroups.requestAddMembers);
 app.post('/api/orggroups/:id/members/remove', orggroups.requestRemoveMembers);
-app.post('/api/orggroups', orggroups.requestCreate);
 app.post('/api/orggroups/:id/upgrade', orggroups.requestUpgrade);
-app.put('/api/orggroups', orggroups.requestUpdate);
-app.post('/api/orggroups/delete', orggroups.requestDelete);
+app.get('/api/orggroups/members/:orgId', orggroups.requestByOrg);
+app.post('/api/orggroups/members/:orgId/remove', orggroups.requestRemoveMembersByGroupIds);
 
 app.get('/api/licenses', licenses.requestAll);
 app.get('/api/licenses/:id', licenses.requestById);

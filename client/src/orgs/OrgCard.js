@@ -37,7 +37,7 @@ export default class extends React.Component {
 	
 	// Lifecycle
 	render() {
-		const {selected, filterColumns, user} = this.state;
+		const {selected, showSelected, filterColumns, user} = this.state;
 		
 		const columns = [
 			{Header: "Org ID", accessor: "org_id", minWidth: 120, maxWidth: 160, sortable: true, clickable: true},
@@ -60,8 +60,8 @@ export default class extends React.Component {
 
 		const actions = [
 			<DataTableSavedFilters id={this.props.id} offset={2} key={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,
-			{label: `${selected.size} Selected`, toggled: this.state.showSelected, group: "special", handler: this.handleShowSelected, disabled: selected.size === 0,
-				detail: this.state.showSelected ? "Click to show all records" : "Click to show only records you have selected"},
+			{label: `${selected.size} Selected`, toggled: showSelected, group: "special", handler: this.handleShowSelected, disabled: selected.size === 0,
+				detail: showSelected ? "Click to show all records" : "Click to show only records you have selected"},
 			{label: `Blacklisted`, hidden: !this.props.onFetchBlacklist, toggled: this.state.showBlacklisted, group: "special", handler: this.handleShowBlacklisted,
 				detail: this.state.showBlacklisted ? "Click to clear blacklist filter" : "Click to filter by blacklists"},
 			{label: "Add To Group", handler: this.openGroupWindow,
@@ -86,7 +86,7 @@ export default class extends React.Component {
 					 	onFetch={this.state.showBlacklisted ? this.props.onFetchBlacklist : this.props.onFetch}
 						fetchName={this.state.showBlacklisted ? "blacklist" : "data"}
 					  	columns={columns} onClick={this.linkHandler} onFilter={this.filterHandler} filters={filterColumns}
-						showSelected={this.props.showSelected} selection={selected}
+						showSelected={showSelected} selection={selected}
 						onSelect={this.selectionHandler}/>
 				</div>
 				<footer className="slds-card__footer"/>

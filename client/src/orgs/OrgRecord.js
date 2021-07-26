@@ -20,6 +20,7 @@ import OrgCard from "./OrgCard";
 import LicenseCard from "../licenses/LicenseCard";
 import * as authService from "../services/AuthService";
 import {resolveUpgradeablePackages} from "../utils/upgrades";
+import OrgGroupCard from "./OrgGroupCard";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -34,6 +35,7 @@ export default class extends React.Component {
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
 		this.fetchRelatedOrgs = this.fetchRelatedOrgs.bind(this);
+		this.fetchOrgGroups = this.fetchOrgGroups.bind(this);
 		this.fetchLicenses = this.fetchLicenses.bind(this);
 		this.upgradeHandler = this.upgradeHandler.bind(this);
 		this.upgradeUpdated = this.upgradeUpdated.bind(this);
@@ -41,6 +43,7 @@ export default class extends React.Component {
 		this.closeSchedulerWindow = this.closeSchedulerWindow.bind(this);
 		this.openSchedulerWindow = this.openSchedulerWindow.bind(this);
 		this.addToGroupHandler = this.addToGroupHandler.bind(this);
+		this.removeOrgGroupsHandler = this.removeOrgGroupsHandler.bind(this);
 		this.openGroupWindow = this.openGroupWindow.bind(this);
 		this.closeGroupWindow = this.closeGroupWindow.bind(this);
 	}
@@ -91,11 +94,10 @@ export default class extends React.Component {
 					<HeaderField label="Type" value={org.type}/>
 					<HeaderField label="Status" value={org.status}/>
 					<HeaderField label="Features" value={org.features}/>
-					<HeaderField label="Groups" value={org.groups}/>
 				</RecordHeader>
 
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
-					<Tabs id="UpgradeRecord">
+					<Tabs id="OrgRecord">
 						<div label="Versions">
 							<InstalledVersionCard onFetch={this.fetchVersions} refetchOn="org-versions" refetchFor={org.org_id}/>
 						</div>
@@ -107,6 +109,10 @@ export default class extends React.Component {
 						</div>
 						<div label="Related Orgs">
 							<OrgCard id="RelatedOrgCard" title="Orgs" withLicenseData={false} onFetch={this.fetchRelatedOrgs} refetchOn="orgs"/>
+						</div>
+						<div label="Groups">
+							<OrgGroupCard id="OrgGroupCard" title="Groups" onFetch={this.fetchOrgGroups} refetchOn="group-members"
+								onRemove={this.removeOrgGroupsHandler}/>
 						</div>
 					</Tabs>
 					<DataTableFilterHelp/>
@@ -141,6 +147,10 @@ export default class extends React.Component {
 
 	fetchRelatedOrgs() {
 		return orgService.requestByRelatedOrg(this.props.match.params.orgId);
+	}
+
+	fetchOrgGroups() {
+		return orgGroupService.requestByOrg(this.props.match.params.orgId);
 	}
 
 	fetchLicenses() {
@@ -192,6 +202,15 @@ export default class extends React.Component {
 				() => nav.toPath("orggroup", orggroup.id));
 			orgService.requestById(this.state.org.org_id).then(org => this.setState({org}));
 		});
+	}
+
+	removeOrgGroupsHandler(selected) {
+		if (window.confirm(`Are you sure you want to remove ${selected.length} group(s)?`)) {
+			orgGroupService.requestRemoveMembersByOrg(this.state.org.org_id, selected).then(() => {})
+				.catch(e => notifier.error(e.message, "Removal Failed"));
+			return true;
+		}
+		return false;
 	}
 
 	closeGroupWindow() {

@@ -5,14 +5,17 @@ let url = "/api/orggroups";
 export let requestAll = () => h.get(url);
 
 export let requestByTextSearch = (text, excludeId) => h.get(url, {text, excludeId});
-export let requestById = id => h.get(url + "/" + id);
+export let requestById = id => h.get(`${url}/${id}`);
+export let requestByOrg = orgId => h.get(`${url}/members/${orgId}`);
+export let requestRemoveMembersByOrg = (orgId, orgGroupIds) => h.post(`${url}/members/${orgId}/remove`, {orgGroupIds});
 
-export let requestMembers = id => h.get(url + "/" + id + "/members");
-export let requestAddMembers = (id, name, orgIds) => h.post(url + "/" + id + "/members", {orgIds, name});
-export let requestRemoveMembers = (id, orgIds) => h.post(url + "/" + id + "/members/remove", {orgIds});
+export let requestMembers = id => h.get(`${url}/${id}/members`);
+export let requestAddMembers = (id, name, orgIds) => h.post(`${url}/${id}/members`, {orgIds, name});
+export let requestRemoveMembers = (id, orgIds) => h.post(`${url}/${id}/members/remove`, {orgIds});
 
 export let requestUpdate = orggroup => h.put(url, orggroup);
 export let requestCreate = orggroup => h.post(url, orggroup);
-export let requestDelete = orggroupIds => h.post(url + "/delete", {orggroupIds});
+export let requestDelete = orggroupIds => h.post(`${url}/delete`, {orggroupIds});
 
-export let requestUpgrade = (id, versions, scheduled_date, description, transid) => h.post(url + "/" + id + "/upgrade", {versions, scheduled_date, description, transid});
+export let requestUpgrade = (id, versions, scheduled_date, description, transid) => h.post(`${url}/${id}/upgrade`,
+        {versions, scheduled_date, description, transid});
