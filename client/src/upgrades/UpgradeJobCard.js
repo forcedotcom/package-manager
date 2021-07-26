@@ -79,7 +79,10 @@ export default class extends React.Component {
 			columns.push({
 				Header: "Org Information", columns: [
 					{Header: "Org ID", accessor: "org_id", clickable: true, minWidth: 120, maxWidth: 160, filterable: true},
-					{Header: "Instance", accessor: "instance", clickable: true, filterable: true, maxWidth: 70},
+					{Header: "Instance", accessor: "instance", filterable: true, maxWidth: 70},
+					{Header: "Environment", accessor: "environment", maxWidth: 90, filterable: true, sortable: true},
+					{Header: "Location", accessor: "location", maxWidth: 70, filterable: true, sortable: true},
+					{Header: "Release", accessor: "release", maxWidth: 70, filterable: true, sortable: true},
 					{
 						Header: "Account",
 						accessor: "account_name",
