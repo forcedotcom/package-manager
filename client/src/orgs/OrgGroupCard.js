@@ -7,6 +7,7 @@ import DataTable from "../components/DataTable";
 import DataTableSavedFilters from "../components/DataTableSavedFilters";
 import * as nav from "../services/nav";
 import * as authService from "../services/AuthService";
+import moment from "moment";
 
 export default class extends React.Component {
 	constructor(props) {
@@ -30,7 +31,9 @@ export default class extends React.Component {
 		const {selected, showSelected, filterColumns, user} = this.state;
 		
 		const columns = [
-			{Header: "Name", accessor: "name", sortable: true, clickable: true}];
+			{Header: "Name", accessor: "name", sortable: true, clickable: true},
+			{Header: "Description", accessor: "description", sortable: true, clickable: true},
+			{Header: "Created", id: "created_date", accessor: d => d.created_date ? moment(d.created_date).format("lll") : "", sortable: true}];
 
 		const actions = [
 			<DataTableSavedFilters id={this.props.id} offset={2} key={this.props.id} filterColumns={filterColumns} onSelect={this.applySavedFilter}/>,

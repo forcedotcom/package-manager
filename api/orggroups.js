@@ -210,7 +210,7 @@ async function insertOrgMembers(groupId, groupName, orgIds) {
 	if (groupId === "-1" && groupName && groupName !== "") {
 		// First, create our new group.
 		let n = 0;
-		orggroup = (await db.insert(`INSERT INTO org_group (name, type, description) VALUES ($${++n},$${++n},$${++n})`, [groupName, GroupType.UpgradeGroup, '']))[0];
+		orggroup = (await db.insert(`INSERT INTO org_group (name, type, description, created_date) VALUES ($${++n},$${++n},$${++n},NOW())`, [groupName, GroupType.UpgradeGroup, '']))[0];
 	} else {
 		orggroup = (await db.query(SELECT_ALL + " WHERE id = $1", [groupId]))[0];
 	}
