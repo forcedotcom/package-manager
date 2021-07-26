@@ -29,7 +29,7 @@ export default class extends React.Component {
 			{Header: "Job Count", accessor: "total_job_count", sortable: true},
 			{Header: "Status", accessor: "item_status", sortable: true},
 			{
-				Header: "Scheduled Start Time",
+				Header: "Scheduled Start",
 				maxWidth: 200,
 				id: "start_time",
 				accessor: d => moment(d.start_time).format("YYYY-MM-DD HH:mm:ss A"),

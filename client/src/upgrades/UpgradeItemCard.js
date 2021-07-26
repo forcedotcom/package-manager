@@ -33,7 +33,7 @@ export default class extends React.Component {
 		}
 		columns.push(
 			{
-				Header: "Scheduled Start Time",
+				Header: "Scheduled Start",
 				id: "scheduled_start_time",
 				accessor: d => moment(d.start_time).format("lll"),
 				sortable: true,
@@ -43,17 +43,24 @@ export default class extends React.Component {
 			{Header: "Package Version", id: "version_sort", accessor: "version_number", sortable: true, clickable: true},
 			{Header: "Orgs", accessor: "job_count", sortable: true},
 			{
-				Header: "Start Time",
+				Header: "Start",
 				id: "start_time",
-				accessor: d => d.start_time ? moment(d.start_time).format("lll") : "",
+				accessor: d => d.start_time ? moment(d.start_time).format("h:mm:ss A") : "",
 				sortable: true,
 				clickable: true
 			},
 			{
-				Header: "End Time",
+				Header: "End",
 				id: "end_time",
-				accessor: d => d.end_time ? moment(d.end_time).format("lll") : "",
+				accessor: d => d.end_time ? moment(d.end_time).format("h:mm:ss A") : "",
 				sortable: true,
+				clickable: true
+			},
+			{
+				Header: "Duration",
+				id: "duration",
+				accessor: d => d.duration > 0 ? moment.duration(d.duration, 'seconds').asSeconds() + " seconds" : "",
+				sortable: false,
 				clickable: true
 			},
 			{

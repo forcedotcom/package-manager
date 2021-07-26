@@ -1,3 +1,4 @@
+const moment = require('moment');
 const db = require('../util/pghelper');
 const push = require('../worker/packagepush');
 const admin = require('./admin');
@@ -293,13 +294,13 @@ async function updateUpgradeItemsFromPushRequests(items, pushReqs) {
 		const item = itemsByRequestId.get(sfdc.normalizeId(pushReq.Id));
 
 		// Check if our local status matches the remote status. If so, we can skip.
-		if (pushReq.Status === item.status && pushReq.EndTime === item.end_time)
+		if (pushReq.Status === item.status && moment(pushReq.EndTime).isSame(item.end_time))
 			continue;
 
 		// New status, so update our local copy.
 		item.status = pushReq.Status;
-		item.start_time = pushReq.StartTime;
-		item.end_time = pushReq.EndTime;
+		item.start_time = moment(pushReq.StartTime).toDate();
+		item.end_time = moment(pushReq.EndTime).toDate();
 		item.duration = pushReq.DurationSeconds;
 		updated.push(item);
 	}
@@ -356,15 +357,15 @@ async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs) {
 		const upgradeJob = upgradeJobsById.get(sfdc.normalizeId(pushJob.Id));
 
 		// Check if our local status matches the remote status. If so, we can skip.
-		if (pushJob.Status === upgradeJob.status && pushJob.EndTime === upgradeJob.end_time)
+		if (pushJob.Status === upgradeJob.status && moment(pushJob.EndTime).isSame(upgradeJob.end_time))
 			continue;
 
 		// New status, so update our local copy.
 		updated.push(upgradeJob);
 
 		// Update time fields from push job
-		upgradeJob.start_time = pushJob.StartTime;
-		upgradeJob.end_time = pushJob.EndTime;
+		upgradeJob.start_time = moment(pushJob.StartTime).toDate();
+		upgradeJob.end_time = moment(pushJob.EndTime).toDate();
 		upgradeJob.duration = pushJob.DurationSeconds;
 
 		if (pushJob.Status === push.Status.Failed) {
@@ -445,7 +446,7 @@ async function updateUpgradeItemStatus(updated) {
 	let values = [];
 	updated.forEach(u => {
 		params.push(`($${++n}::INTEGER,$${++n},$${++n}::TIMESTAMP,$${++n}::TIMESTAMP,$${++n}::INTEGER)`);
-		values.push(u.id, u.status);
+		values.push(u.id, u.status, u.start_time, u.end_time, u.duration);
 	});
 	let sql = `UPDATE upgrade_item as t 
 			SET status = u.status, start_time = u.start_time, end_time = u.end_time, duration = u.duration

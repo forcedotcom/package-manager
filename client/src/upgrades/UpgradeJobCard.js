@@ -27,29 +27,28 @@ export default class extends React.Component {
 	render() {
 		const {filterColumns} = this.state;
 
-		const upgradeInfoColumns = [];
-		upgradeInfoColumns.push({
-			Header: "Start",
-			id: "start_time",
-			accessor: d => d.start_time ? moment.utc(d.start_time).format("HH:mm:ss A") : "",
-			sortable: true,
-			clickable: true
-		});
-		upgradeInfoColumns.push({
-			Header: "End",
-			id: "end_time",
-			accessor: d => d.end_time ? moment.utc(d.end_time).format("HH:mm:ss A") : "",
-			sortable: true,
-			clickable: true
-		});
-		upgradeInfoColumns.push({
-			Header: "Duration (Seconds)",
-			id: "duration",
-			accessor: d => d.duration > 0 ? moment.duration(d.duration, 'seconds').asSeconds() : "",
-			sortable: false,
-			clickable: true
-		});
-		upgradeInfoColumns.push(
+		const upgradeInfoColumns = [
+			{
+				Header: "Start",
+				id: "start_time",
+				accessor: d => d.start_time ? moment(d.start_time).format("h:mm:ss A") : "",
+				sortable: true,
+				clickable: true
+			},
+			{
+				Header: "End",
+				id: "end_time",
+				accessor: d => d.end_time ? moment(d.end_time).format("h:mm:ss A") : "",
+				sortable: true,
+				clickable: true
+			},
+			{
+				Header: "Duration",
+				id: "duration",
+				accessor: d => d.duration > 0 ? moment.duration(d.duration, 'seconds').asSeconds() + " seconds": "",
+				sortable: false,
+				clickable: true
+			},
 			{
 				Header: "Status", accessor: "status", maxWidth: 90, sortable: true, filterable: true,
 				Cell: row => (
@@ -74,7 +73,7 @@ export default class extends React.Component {
 					</div>
 				)
 			}
-		);
+		];
 		const columns = [];
 		if (this.state.id !== "OrgJobCard") {
 			columns.push({
