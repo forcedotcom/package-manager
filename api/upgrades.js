@@ -299,8 +299,8 @@ async function updateUpgradeItemsFromPushRequests(items, pushReqs) {
 
 		// New status, so update our local copy.
 		item.status = pushReq.Status;
-		item.start_time = moment(pushReq.StartTime).toDate();
-		item.end_time = moment(pushReq.EndTime).toDate();
+		item.start_time = pushReq.StartTime ? moment(pushReq.StartTime).toDate() : null;
+		item.end_time = pushReq.EndTime ? moment(pushReq.EndTime).toDate() : null;
 		item.duration = pushReq.DurationSeconds;
 		updated.push(item);
 	}
@@ -364,8 +364,8 @@ async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs) {
 		updated.push(upgradeJob);
 
 		// Update time fields from push job
-		upgradeJob.start_time = moment(pushJob.StartTime).toDate();
-		upgradeJob.end_time = moment(pushJob.EndTime).toDate();
+		upgradeJob.start_time = pushJob.StartTime ? moment(pushJob.StartTime).toDate() : null;
+		upgradeJob.end_time = pushJob.EndTime ? moment(pushJob.EndTime).toDate() : null;
 		upgradeJob.duration = pushJob.DurationSeconds;
 
 		if (pushJob.Status === push.Status.Failed) {
