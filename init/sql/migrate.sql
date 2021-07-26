@@ -57,7 +57,8 @@ alter table upgrade_item
 update upgrade_item
     set activated_by = u.activated_by, activated_date = u.activated_date
     from upgrade u
-    where upgrade_id = u.id and u.activated_by is not null;
+    where upgrade_item.activated_by is null
+        and upgrade_id = u.id and u.activated_by is not null;
 
 alter table package
   add if not exists status varchar(80);
