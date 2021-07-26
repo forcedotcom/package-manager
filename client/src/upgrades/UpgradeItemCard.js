@@ -59,7 +59,7 @@ export default class extends React.Component {
 			{
 				Header: "Duration",
 				id: "duration",
-				accessor: d => d.duration > 0 ? moment.duration(d.duration, 'seconds').asSeconds() + " seconds" : "",
+				accessor: d => d.duration > 0 ? moment.duration(d.duration, 'seconds').humanize() : "",
 				sortable: false,
 				clickable: true
 			},
