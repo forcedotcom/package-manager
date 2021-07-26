@@ -107,22 +107,29 @@ create table if not exists upgrade_item (
   package_org_id  varchar(18),
   version_id      varchar(18),
   status          varchar(40),
-  start_time      timestamp with time zone,
+  scheduled_start_time      timestamp with time zone,
   created_by      varchar(255),
-  activated_by   varchar(255),
-  activated_date  timestamp with time zone
+  activated_by    varchar(255),
+  activated_date  timestamp with time zone,
+  start_time      timestamp with time zone,
+  end_time        timestamp with time zone,
+  duration        integer
 );
 
 create table if not exists upgrade_job (
-  id                  serial primary key,
-  upgrade_id          integer,
-  item_id             integer,
-  push_request_id     varchar(18),
-  job_id              varchar(18),
-  org_id              varchar(18),
-  original_version_id varchar(18),
-  status              varchar(40),
-  message             text
+  id                    serial primary key,
+  upgrade_id            integer,
+  item_id               integer,
+  push_request_id       varchar(18),
+  job_id                varchar(18),
+  org_id                varchar(18),
+  original_version_id   varchar(18),
+  status                varchar(40),
+  message               text,
+  start_time            timestamp with time zone,
+  end_time              timestamp with time zone,
+  duration              integer
+
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS

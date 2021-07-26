@@ -72,8 +72,9 @@ const SELECT_ONE = `
     WHERE u.id = $1
     GROUP by u.id, u.start_time, u.created_by, u.description`;
 
-const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, 
+const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.scheduled_start_time, i.status, 
        					i.created_by, i.total_job_count, i.activated_by, i.activated_date,
+       					i.start_time, i.end_time, i.duration,
         u.description,
         pv.version_number, pv.version_id, pv.version_sort,
         p.name package_name, p.sfid package_id, p.dependency_tier,
@@ -106,15 +107,16 @@ const SELECT_ALL_ITEMS = `SELECT i.id, i.upgrade_id, i.push_request_id, i.packag
         inner join package p on p.sfid = pv.package_id
         left join upgrade_job j on j.item_id = i.id`;
 
-const GROUP_BY_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status,
+const GROUP_BY_ITEMS = `GROUP BY i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.scheduled_start_time, i.status,
         u.description,
         pv.version_number, pv.version_id, pv.version_sort,
         p.name, p.sfid`;
 
 const SELECT_ALL_ITEMS_BY_UPGRADE = `${SELECT_ALL_ITEMS} WHERE i.upgrade_id = $1 ${GROUP_BY_ITEMS}`;
 
-const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, 
+const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.scheduled_start_time, i.status, 
        					i.created_by, i.total_job_count, i.activated_by, i.activated_date,
+       					i.start_time, i.end_time, i.duration,
         u.description,
         pv.version_number, pv.version_id,
         p.name package_name, p.dependency_tier,
@@ -147,20 +149,21 @@ const SELECT_ONE_ITEM = `SELECT i.id, i.upgrade_id, i.push_request_id, i.package
         INNER JOIN package p on p.sfid = pv.package_id
 		left join upgrade_job j on j.item_id = i.id`;
 
-const SELECT_ITEMS_WITH_JOBS = `SELECT distinct i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.start_time, i.status, 
-                	i.created_by, i.total_job_count, i.activated_by, i.activated_date
+const SELECT_ITEMS_WITH_JOBS = `SELECT distinct i.id, i.upgrade_id, i.push_request_id, i.package_org_id, i.scheduled_start_time, i.status, 
+                	i.created_by, i.total_job_count, i.activated_by, i.activated_date,
+                	i.start_time, i.end_time, i.duration
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id`;
 
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, o.instance, j.status,
-        i.start_time, i.created_by,
+        i.scheduled_start_time, i.created_by,
         pv.version_number, pv.version_id, pv.version_sort,
         opv.install_date,
         pvc.version_number current_version_number, pvc.version_id current_version_id, pvc.version_sort current_version_sort,
         pvo.version_number original_version_number, pvo.version_id original_version_id, pvo.version_sort original_version_sort,
         p.name package_name, p.sfid package_id, p.package_org_id, p.dependency_tier,
         a.account_name,
-        j.message
+        j.message, j.start_time, j.end_time, j.duration
         FROM upgrade_job j
         INNER JOIN upgrade_item i on i.push_request_id = j.push_request_id
         INNER JOIN package_version pv on pv.version_id = i.version_id
@@ -208,7 +211,7 @@ async function failUpgrade(upgrade, error) {
 async function createUpgradeItem(upgradeId, requestId, packageOrgId, versionId, scheduledDate, status, createdBy, expectedJobCount) {
 	let isoTime = scheduledDate ? scheduledDate.toISOString ? scheduledDate.toISOString() : scheduledDate : null;
 	let recs = await db.insert('INSERT INTO upgrade_item' +
-		' (upgrade_id, push_request_id, package_org_id, version_id, start_time, status, created_by, total_job_count)' +
+		' (upgrade_id, push_request_id, package_org_id, version_id, scheduled_start_time, status, created_by, total_job_count)' +
 		' VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
 		[upgradeId, requestId, packageOrgId, versionId, isoTime, status, createdBy, expectedJobCount]);
 	return recs[0];
@@ -290,11 +293,14 @@ async function updateUpgradeItemsFromPushRequests(items, pushReqs) {
 		const item = itemsByRequestId.get(sfdc.normalizeId(pushReq.Id));
 
 		// Check if our local status matches the remote status. If so, we can skip.
-		if (pushReq.Status === item.status)
+		if (pushReq.Status === item.status && pushReq.EndTime === item.end_time)
 			continue;
 
 		// New status, so update our local copy.
 		item.status = pushReq.Status;
+		item.start_time = pushReq.StartTime;
+		item.end_time = pushReq.EndTime;
+		item.duration = pushReq.DurationSeconds;
 		updated.push(item);
 	}
 
@@ -330,6 +336,9 @@ async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs) {
 				org_id: pushJob.SubscriberOrganizationKey,
 				job_id: sfdc.normalizeId(pushJob.Id),
 				status: pushJob.Status,
+				start_time: pushJob.StartTime,
+				end_time: pushJob.EndTime,
+				duration: pushJob.DurationSeconds,
 				message: null,
 				original_version_id: null // Could add another query against orgs, but org data could be wrong anyway
 			});
@@ -347,11 +356,16 @@ async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs) {
 		const upgradeJob = upgradeJobsById.get(sfdc.normalizeId(pushJob.Id));
 
 		// Check if our local status matches the remote status. If so, we can skip.
-		if (pushJob.Status === upgradeJob.status)
+		if (pushJob.Status === upgradeJob.status && pushJob.EndTime === upgradeJob.end_time)
 			continue;
 
 		// New status, so update our local copy.
 		updated.push(upgradeJob);
+
+		// Update time fields from push job
+		upgradeJob.start_time = pushJob.StartTime;
+		upgradeJob.end_time = pushJob.EndTime;
+		upgradeJob.duration = pushJob.DurationSeconds;
 
 		if (pushJob.Status === push.Status.Failed) {
 			// Special handling for errored later.  Don't set the status in updateJob object yet.
@@ -430,12 +444,12 @@ async function updateUpgradeItemStatus(updated) {
 	let params = [];
 	let values = [];
 	updated.forEach(u => {
-		params.push(`($${++n}::INTEGER,$${++n})`);
+		params.push(`($${++n}::INTEGER,$${++n},$${++n}::TIMESTAMP,$${++n}::TIMESTAMP,$${++n}::INTEGER)`);
 		values.push(u.id, u.status);
 	});
 	let sql = `UPDATE upgrade_item as t 
-			SET status = u.status
-			FROM ( VALUES ${params.join(",")} ) as u(id, status)
+			SET status = u.status, start_time = u.start_time, end_time = u.end_time, duration = u.duration
+			FROM ( VALUES ${params.join(",")} ) as u(id, status, start_time, end_time, duration)
 			WHERE u.id = t.id`;
 	await db.update(sql, values);
 }
@@ -445,12 +459,13 @@ async function updateUpgradeJobsStatus(jobs) {
 	let params = [];
 	let values = [];
 	jobs.forEach(j => {
-		params.push(`($${++n}::INTEGER,$${++n},$${++n})`);
-		values.push(j.id, j.status, j.message);
+		params.push(`($${++n}::INTEGER,$${++n},$${++n},$${++n}::TIMESTAMP,$${++n}::TIMESTAMP,$${++n}::INTEGER)`);
+		values.push(j.id, j.status, j.message, j.start_time, j.end_time, j.duration);
 	});
 	let sql = `UPDATE upgrade_job as t 
-			SET status = j.status, message = j.message
-			FROM ( VALUES ${params.join(",")} ) as j(id, status, message)
+			SET status = j.status, message = j.message,
+				start_time = j.start_time, end_time = j.end_time, duration = j.duration
+			FROM ( VALUES ${params.join(",")} ) as j(id, status, message, start_time, end_time, duration)
 			WHERE j.id = t.id`;
 	await db.update(sql, values);
 }
@@ -879,7 +894,7 @@ async function monitorActiveUpgrades(job) {
 
 async function monitorActiveUpgradeItems(job) {
 	let i = 0;
-	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($${++i},$${++i}) AND i.start_time <= NOW() ${GROUP_BY_ITEMS}`,
+	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($${++i},$${++i}) AND i.scheduled_start_time <= NOW() ${GROUP_BY_ITEMS}`,
 		[push.Status.Pending, push.Status.InProgress]);
 	if (activeItems.length === 0) {
 		return; // Nothing to do
@@ -893,7 +908,7 @@ async function monitorActiveUpgradeJobs(job) {
 	const activeItems = await db.query(
 		`${SELECT_ITEMS_WITH_JOBS} WHERE 
 		(j.status IN ($${++i},$${++i}) OR j.status = $${++i} AND i.status = $${++i}) 
-			AND i.start_time <= NOW()`,
+			AND i.scheduled_start_time <= NOW()`,
 		[push.Status.Pending, push.Status.InProgress, push.Status.Created, push.Status.Canceled]);
 	if (activeItems.length === 0)
 		return; // Nothing to do

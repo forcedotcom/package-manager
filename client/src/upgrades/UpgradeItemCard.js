@@ -34,7 +34,7 @@ export default class extends React.Component {
 		columns.push(
 			{
 				Header: "Scheduled Start Time",
-				id: "start_time",
+				id: "scheduled_start_time",
 				accessor: d => moment(d.start_time).format("lll"),
 				sortable: true,
 				clickable: true
@@ -42,6 +42,20 @@ export default class extends React.Component {
 			{Header: "Package Name", accessor: "package_name", sortable: true, clickable: true},
 			{Header: "Package Version", id: "version_sort", accessor: "version_number", sortable: true, clickable: true},
 			{Header: "Orgs", accessor: "job_count", sortable: true},
+			{
+				Header: "Start Time",
+				id: "start_time",
+				accessor: d => d.start_time ? moment(d.start_time).format("lll") : "",
+				sortable: true,
+				clickable: true
+			},
+			{
+				Header: "End Time",
+				id: "end_time",
+				accessor: d => d.end_time ? moment(d.end_time).format("lll") : "",
+				sortable: true,
+				clickable: true
+			},
 			{
 				Header: "Status", accessor: "status", sortable: true,
 				Cell: row => <ProgressCell status={row.value} progress={getProgressFromUpgradeItem(row.original)} />

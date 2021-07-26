@@ -73,13 +73,15 @@ export default class extends React.Component {
 			<div>
 				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={item.description}
 							  actions={actions} parent={{label: "Upgrade", location: `/upgrade/${item.upgrade_id}`}}>
-					<HeaderField label="Scheduled Start Time" value={`${moment(item.start_time).format('lll')} (${moment(item.start_time).fromNow()})`}/>
+					<HeaderField label="Scheduled Start Time" value={`${moment(item.scheduled_start_time).format('lll')} (${moment(item.scheduled_start_time).fromNow()})`}/>
 					<HeaderField label="Status" value={item.status}
 								 className={item.status === "Done" ? "" : "slds-text-color_success"}/>
 					<HeaderField label="Created By" value={item.created_by}/>
 					<HeaderField label="Activated By" value={item.activated_by || ''}/>
 					<HeaderField label="Activated On" value={`${item.activated_date ?
 						moment(item.activated_date).format('lll') : ''}`}/>
+					<HeaderField label="Start Time" value={`${item.start_time ? moment(item.start_time).format('lll') : ''}`}/>
+					<HeaderField label="End Time" value={`${item.end_time ? moment(item.end_time).format('lll') : ''}`}/>
 				</RecordHeader>
 				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled} 
 							 progressError={progress.percentageError}/>
@@ -114,7 +116,7 @@ export default class extends React.Component {
 	}
 
 	handleActivation() {
-		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.start_time).format("lll")}?`)) {
+		if (window.confirm(`Are you sure you want to activate this request for ${moment(this.state.item.scheduled_start_time).format("lll")}?`)) {
 			this.setState({isActivating: true});
 			upgradeItemService.activate(this.state.item.id).then(item => this.fetchItemJobs(item))
 			.catch(e => {

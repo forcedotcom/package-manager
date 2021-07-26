@@ -559,7 +559,7 @@ async function findRequestsByIds(packageOrgId, requestIds, results) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
     let params = requestIds.map(v => `'${v}'`);
-    let soql = `SELECT Id,PackageVersionId,Status,ScheduledStartTime 
+    let soql = `SELECT Id,PackageVersionId,Status,ScheduledStartTime,StartTime,EndTime,DurationSeconds 
         FROM PackagePushRequest 
         WHERE Id IN (${params.join(",")})`;
 
@@ -586,7 +586,8 @@ async function findRequestsByIds(packageOrgId, requestIds, results) {
 async function findJobsByStatus(packageOrgId, requestIds, status) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
-    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
+    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey,
+                       DurationSeconds,StartTime,EndTime
         FROM PackagePushJob
         WHERE PackagePushRequestId IN (${status.map(v => `'${v}'`).join(",")})
         AND Status IN (${status.map(v => `'${v}'`).join(",")})`;
@@ -618,7 +619,8 @@ async function findJobsByStatus(packageOrgId, requestIds, status) {
 
 async function findJobsByRequestIds(packageOrgId, requestId, results) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
-    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
+    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey,
+                       DurationSeconds,StartTime,EndTime
         FROM PackagePushJob
         WHERE PackagePushRequestId = '${requestId}'
         ORDER BY Id`;
@@ -652,7 +654,8 @@ async function findJobsByIds(packageOrgId, jobIds) {
     let conn = await sfdc.buildOrgConnection(packageOrgId);
 
     let params = jobIds.map(v => `'${v}'`);
-    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey 
+    let soql = `SELECT Id,PackagePushRequestId,Status,SubscriberOrganizationKey,
+                       DurationSeconds,StartTime,EndTime
         FROM PackagePushJob
         WHERE Id IN (${params.join(",")})
         ORDER BY Id`;
