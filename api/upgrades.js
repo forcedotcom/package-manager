@@ -158,6 +158,7 @@ const SELECT_ITEMS_WITH_JOBS = `SELECT distinct i.id, i.upgrade_id, i.push_reque
 
 const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id, j.org_id, o.instance, j.status,
         i.scheduled_start_time, i.created_by,
+        instance.key, instance.location, instance.environment, instance.release,
         pv.version_number, pv.version_id, pv.version_sort,
         opv.install_date,
         pvc.version_number current_version_number, pvc.version_id current_version_id, pvc.version_sort current_version_sort,
@@ -173,6 +174,7 @@ const SELECT_ALL_JOBS = `SELECT j.id, j.upgrade_id, j.push_request_id, j.job_id,
         LEFT JOIN package_version pvo on pvo.version_id = j.original_version_id
         INNER JOIN package p on p.sfid = pv.package_id
         INNER JOIN org o on o.org_id = j.org_id
+		LEFT JOIN instance on instance.key = o.instance
         LEFT JOIN account a ON a.account_id = o.account_id`;
 
 async function createUpgrade(scheduledDate, createdBy, description, blacklisted, orgGroupId, parentId) {
