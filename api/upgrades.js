@@ -875,17 +875,21 @@ function monitorUpgrades() {
 	return job;
 }
 
-async function retrieveActiveUpgrades() {
+async function retrieveUnfinishedUpgrades() {
 	let i = 0;
-	return db.query(`${SELECT_ALL} WHERE u.status IN ($${++i}) AND u.start_time <= NOW() ${GROUP_BY_ALL}`, [UpgradeStatus.Active]);
+	return db.query(`${SELECT_ALL} WHERE u.status IN ($${++i},$${++i}) AND u.start_time <= NOW() ${GROUP_BY_ALL}`, [UpgradeStatus.Ready, UpgradeStatus.Active]);
 }
 
 async function monitorActiveUpgrades(job) {
-	const activeUpgrades = await retrieveActiveUpgrades();
-	for (let i = 0; i < activeUpgrades.length; i++) {
-		const upgrade = activeUpgrades[i];
-		await activateAvailableUpgradeItems(upgrade, job);
-		
+	const unfinishedUpgrades = await retrieveUnfinishedUpgrades();
+	for (let i = 0; i < unfinishedUpgrades.length; i++) {
+		const upgrade = unfinishedUpgrades[i];
+		if (upgrade.status === UpgradeStatus.Active) {
+			// Only Active upgrades get their items activated
+			await activateAvailableUpgradeItems(upgrade, job);
+		}
+
+		// All upgrades get tested for whether they are complete.
 		if (await areJobsCompleteForUpgrade(upgrade.id)) {
 			// An upgrade is complete only when all of its jobs are marked as complete
 			upgrade.status = UpgradeStatus.Done;
@@ -925,10 +929,10 @@ async function areAnyUpgradesUnfinished() {
 	const activeJobs = await db.query(`SELECT j.id FROM upgrade_job j 
 										INNER JOIN upgrade u on u.id = j.upgrade_id
 										INNER JOIN upgrade_item i on i.id = j.item_id
-										WHERE u.start_time <= NOW() AND (u.status = $1 
-											OR i.status IN ($2,$3,$4) OR j.status IN ($2,$3,$4)
+										WHERE u.start_time <= NOW() AND (u.status IN ($1, $2) 
+											OR i.status IN ($3,$4,$5) OR j.status IN ($3,$4,$5)
 										) LIMIT 1`,
-		[UpgradeStatus.Active, push.Status.Created, push.Status.Pending, push.Status.InProgress], true);
+		[UpgradeStatus.Ready, UpgradeStatus.Active, push.Status.Created, push.Status.Pending, push.Status.InProgress], true);
 	return activeJobs.length === 1;
 }
 
@@ -1024,6 +1028,26 @@ async function activateIfNecessary(upgrade, activatedBy, activatedDate) {
 	}
 }
 
+async function cancelIfNecessary(upgrade) {
+	if (upgrade.status === push.Status.Canceled) {
+		return; // Already canceled
+	}
+
+	const activeJobs = await db.query(`SELECT j.id FROM upgrade_job j 
+										INNER JOIN upgrade_item i on i.id = j.item_id
+										WHERE i.upgrade_id = $1 
+										AND (i.status IN ($2,$3,$4) OR j.status IN ($2,$3,$4))
+										LIMIT 1`,
+		[upgrade.id, push.Status.Created, push.Status.Pending, push.Status.InProgress], true);
+
+	if (activeJobs.length === 0) {
+		// Nothing else is able to run, so cancel the upgrade record itself
+		upgrade.status = UpgradeStatus.Canceled;
+		await db.update(`UPDATE upgrade SET status = $2 WHERE id = $1`,
+			[upgrade.id, upgrade.status]);
+	}
+}
+
 
 async function requestCancelUpgradeItem(req, res, next) {
 	const id = req.params.id;
@@ -1032,9 +1056,11 @@ async function requestCancelUpgradeItem(req, res, next) {
 
 		let item = (await findItemsByIds([id]))[0];
 		await push.updatePushRequests([item], push.Status.Canceled, req.session.username);
-		await changeUpgradeJobStatus([item], push.Status.Canceled, push.Status.Pending);
+		await changeUpgradeJobStatus([item], push.Status.Canceled, push.Status.Created, push.Status.Pending);
 		await changeUpgradeItemStatus([item], push.Status.Canceled);
-		admin.emit(admin.Events.UPGRADE, await retrieveById(item.upgrade_id));
+		const upgrade = await retrieveById(item.upgrade_id);
+		await cancelIfNecessary(upgrade);
+		admin.emit(admin.Events.UPGRADE, upgrade);
 		admin.emit(admin.Events.UPGRADE_ITEMS, [item]);
 		res.json(item);
 	} catch (e) {
