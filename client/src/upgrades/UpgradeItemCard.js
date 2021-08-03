@@ -35,7 +35,7 @@ export default class extends React.Component {
 			{
 				Header: "Scheduled Start",
 				id: "scheduled_start_time",
-				accessor: d => moment(d.start_time).format("lll"),
+				accessor: d => moment(d.scheduled_start_time).format("lll"),
 				sortable: true,
 				clickable: true
 			},
@@ -95,7 +95,10 @@ export default class extends React.Component {
 	linkHandler(e, column, rowInfo) {
 		switch (column.id) {
 			case "description":
+			case "scheduled_start_time":
 			case "start_time":
+			case "end_time":
+			case "duration":
 				return nav.toPath("upgradeitem", rowInfo.original.id);
 			case "package_name":
 				return nav.toPath("package", rowInfo.original.package_id);

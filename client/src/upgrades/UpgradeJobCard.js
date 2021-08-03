@@ -33,21 +33,21 @@ export default class extends React.Component {
 				id: "start_time",
 				accessor: d => d.start_time ? moment(d.start_time).format("h:mm:ss A") : "",
 				sortable: true,
-				clickable: true
+				clickable: false
 			},
 			{
 				Header: "End",
 				id: "end_time",
 				accessor: d => d.end_time ? moment(d.end_time).format("h:mm:ss A") : "",
 				sortable: true,
-				clickable: true
+				clickable: false
 			},
 			{
 				Header: "Duration",
 				id: "duration",
 				accessor: d => d.duration > 0 ? moment.duration(d.duration, 'seconds').asSeconds() + " seconds": "",
-				sortable: false,
-				clickable: true
+				sortable: true,
+				clickable: false
 			},
 			{
 				Header: "Status", accessor: "status", maxWidth: 90, sortable: true, filterable: true,
@@ -164,8 +164,6 @@ export default class extends React.Component {
 			case "instance":
 			case "account_name":
 				return nav.toPath("org", rowInfo.original.org_id);
-			case "start_time":
-				return nav.toPath("upgrade", rowInfo.original.upgrade_id);
 			case "package_name":
 				return nav.toPath("package", rowInfo.original.package_id);
 			case "original_version_sort":
