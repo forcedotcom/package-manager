@@ -98,7 +98,18 @@ async function insertOrgPackageVersions(opvs) {
 	return db.insert(sql, values);
 }
 
-async function updateOrgPackageVersions(opvs) {
+async function updateOrgPackageVersions(opvs, batchSize = 2000) {
+	const count = opvs.length;
+	for (let start = 0; start < count;) {
+		try {
+			await updateOrgPackageVersionsBatch(opvs.slice(start, start += batchSize));
+		} catch (e) {
+			logger.error(e);
+		}
+	}
+}
+
+async function updateOrgPackageVersionsBatch(opvs) {
 	let n = 0;
 	let params = [];
 	let values = [];

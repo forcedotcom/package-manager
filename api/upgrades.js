@@ -457,7 +457,18 @@ async function updateUpgradeItemStatus(updated) {
 	await db.update(sql, values);
 }
 
-async function updateUpgradeJobsStatus(jobs) {
+async function updateUpgradeJobsStatus(jobs, batchSize = 2000) {
+	const count = jobs.length;
+	for (let start = 0; start < count;) {
+		try {
+			await updateUpgradeJobsStatusBatch(jobs.slice(start, start += batchSize));
+		} catch (e) {
+			logger.error(e);
+		}
+	}
+}
+
+async function updateUpgradeJobsStatusBatch(jobs) {
 	let n = 0;
 	let params = [];
 	let values = [];
