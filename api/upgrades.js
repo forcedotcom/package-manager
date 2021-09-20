@@ -896,8 +896,11 @@ async function monitorActiveUpgrades(job) {
 	for (let i = 0; i < unfinishedUpgrades.length; i++) {
 		const upgrade = unfinishedUpgrades[i];
 		if (upgrade.status === UpgradeStatus.Active) {
-			// Only Active upgrades get their items activated
-			await activateAvailableUpgradeItems(upgrade, job);
+			// Only Active upgrades get their items activated.
+			// Note: Use null username here to be consistent, rather than
+			// the username of the one to activate the parent upgrade.  Null means the monitor activated it.
+			// A real user means manual intervention.
+			await activateAvailableUpgradeItems(upgrade, null, job);
 		}
 
 		// All upgrades get tested for whether they are complete.
