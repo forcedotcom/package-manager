@@ -26,6 +26,7 @@ const Events = {
 	JOB_HISTORY: "job-history",
 	FETCH: "fetch",
 	FETCH_ALL: "fetch-all",
+	FETCH_UPGRADES: "fetch-upgrades",
 	CANCEL_JOBS: "cancel-jobs",
 	UPLOAD_ORGS: "upload-orgs",
 	GROUP: "group",
@@ -248,6 +249,9 @@ function connect(sock) {
 	socket.on(Events.FETCH_ALL, function () {
 		fetchData(true).then(() => {});
 	});
+	socket.on(Events.FETCH_UPGRADES, function () {
+		monitorUpgrades(-1, true).then(() => {});
+	});
 	socket.on(Events.CANCEL_JOBS, function (jobIds) {
 		cancelJobs(jobIds);
 	});
@@ -371,8 +375,8 @@ async function monitorOrgs(interval) {
 	await job.run();
 }
 
-async function monitorUpgrades(interval) {
-	const job = upgrades.monitorUpgrades();
+async function monitorUpgrades(interval, force) {
+	const job = upgrades.monitorUpgrades(force);
 	job.interval = interval;
 	await job.run();
 }

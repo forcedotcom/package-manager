@@ -30,6 +30,7 @@ export default class extends React.Component {
 		this.onQueue = this.onQueue.bind(this);
 		this.cancellationHandler = this.cancellationHandler.bind(this);
 		this.fetchHandler = this.fetchHandler.bind(this);
+		this.fetchUpgradeHandler = this.fetchUpgradeHandler.bind(this);
 		this.fetchAllHandler = this.fetchAllHandler.bind(this);
 		this.uploadOrgsHandler = this.uploadOrgsHandler.bind(this);
 		this.goToHerokuHandler = this.goToHerokuHandler.bind(this);
@@ -175,7 +176,11 @@ export default class extends React.Component {
             {label: "Fetch All Data",
 				disabled: user.read_only,
 				detail: user.read_only ? Messages.READ_ONLY_USER : "",
-				group: "data", handler: this.fetchAllHandler}
+				group: "data", handler: this.fetchAllHandler},
+			{label: "Fetch Upgrades",
+				disabled: user.read_only,
+				detail: user.read_only ? Messages.READ_ONLY_USER : "",
+				group: "data", handler: this.fetchUpgradeHandler},
         ];
 
 
@@ -278,6 +283,10 @@ export default class extends React.Component {
 
 	fetchAllHandler() {
 		notifier.emit("fetch-all", {});
+	}
+
+	fetchUpgradeHandler() {
+		notifier.emit("fetch-upgrades", {});
 	}
 
 	uploadOrgsHandler() {

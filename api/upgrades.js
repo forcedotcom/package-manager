@@ -8,6 +8,8 @@ const sfdc = require('./sfdcconn');
 const orgpackageversions = require('./orgpackageversions');
 const auth = require("./auth");
 
+const UPGRADE_JOB_TIMEOUT_HOURS = process.env.UPGRADE_JOB_TIMEOUT_HOURS || undefined;
+
 const State = {
 	Ready: "Ready",
 	Blocked: "Blocked",
@@ -353,13 +355,28 @@ async function updateUpgradeJobsFromPushJobs(upgradeJobs, pushJobs) {
 		created.forEach(j => upgradeJobsById.set(j.job_id, j));
 	}
 
+	const now = moment();
+
 	// Now loop through all push jobs and update status as needed.
 	for (let u = 0; u < pushJobs.length; u++) {
 		const pushJob = pushJobs[u];
 		const upgradeJob = upgradeJobsById.get(sfdc.normalizeId(pushJob.Id));
 
+		if (UPGRADE_JOB_TIMEOUT_HOURS) {
+			// If UPGRADE_JOB_TIMEOUT_HOURS is set, consider any unfinished job with a start date older than
+			// UPGRADE_JOB_TIMEOUT_HOURS ago to be failed.
+			if (pushJob.Status === 'Created' || pushJob.Status === 'Pending' || pushJob.Status === 'InProgress') {
+				const durationSinceStart = moment.duration(now.diff(pushJob.StartTime));
+				if (durationSinceStart.asHours() > UPGRADE_JOB_TIMEOUT_HOURS) {
+					logger.warn(`Upgrade job ${upgradeJob.id} timed out after ${durationSinceStart.humanize()}`);
+					upgradeJob.status = push.Status.Failed;
+				}
+			}
+		}
+
 		// Check if our local status matches the remote status. If so, we can skip.
-		if (pushJob.Status === upgradeJob.status && moment(pushJob.EndTime).isSame(upgradeJob.end_time))
+		if (pushJob.Status === upgradeJob.status &&
+			(pushJob.EndTime == null || moment(pushJob.EndTime).isSame(upgradeJob.end_time)))
 			continue;
 
 		// New status, so update our local copy.
@@ -638,7 +655,7 @@ async function findJobs(upgradeId, itemIds, orgIds, sortField, sortDir, status) 
 	if (status) {
 		values.push(status);
 		where += ` AND j.status = $${values.length}`;
-		
+
 	}
 	let orderBy = ` ORDER BY  ${sortField || "org_id"} ${sortDir || "asc"}`;
 	return await db.query(SELECT_ALL_JOBS + where + orderBy, values)
@@ -721,7 +738,7 @@ async function requestRetryFailedUpgrade(req, res, next) {
 		if (upgrade == null) {
 			return next("No failed jobs found to retry");
 		}
-		
+
 		await activateUpgrade(upgrade.id, null); // Skip passing the username to skip the activation validation check
 		return res.json(upgrade);
 	} catch(e) {
@@ -734,7 +751,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 	const upgrade = await retrieveById(id);
 	if (upgrade.status !== UpgradeStatus.Ready) {
 		throw `Cannot activate an upgrade (${id}) that is not in Ready state`;
-	} 
+	}
 	if (username && process.env.ENFORCE_ACTIVATION_POLICY !== "false") {
 		if (upgrade.created_by === null) {
 			throw `Cannot activate upgrade ${id} without knowing who created it`;
@@ -743,7 +760,7 @@ async function activateUpgrade(id, username, job = {postMessage: msg => logger.i
 			throw `Cannot activate upgrade ${id} by the same user ${username} who created it`;
 		}
 	}
-	
+
 	upgrade.status = UpgradeStatus.Active;
 	upgrade.activated_by = username;
 	upgrade.activated_date = new Date().toISOString();
@@ -761,7 +778,7 @@ async function activateAvailableUpgradeItems(upgrade, username, job = {postMessa
 					logger.warn("Cannot activate an upgrade item with no eligible jobs", {id: i.id, push_request_id: i.push_request_id});
 					admin.emit(admin.Events.UPGRADE_ITEMS, [i]);
 				}
-			).catch(err => 
+			).catch(err =>
 				logger.error("Failed to mark item as ineligible", {error: err.message || err, id: i.id, push_request_id: i.push_request_id})
 			);
 			return false;
@@ -783,7 +800,7 @@ async function activateAvailableUpgradeItems(upgrade, username, job = {postMessa
 		admin.alert("Cannot activate upgrade", `None of the selected orgs are eligible for upgrades.`);
 		return items;
 	}
-	
+
 	// Build our buckets based on tiers
 	const buckets = [];
 	let bucket = {};
@@ -824,7 +841,7 @@ async function activateAvailableUpgradeItems(upgrade, username, job = {postMessa
 	// Now we know our tier buckets with their collective status, so loop through them and activate any that are ready.
 	for (let b = 0; b < buckets.length; b++) {
 		const items = buckets[b].items;
-		
+
 		for (let i = 0; i < items.length; i++) {
 			const item = items[i];
 			let activate = false;
@@ -863,7 +880,7 @@ async function activateAvailableUpgradeItems(upgrade, username, job = {postMessa
 	return items;
 }
 
-function monitorUpgrades() {
+function monitorUpgrades(force) {
 	const job = new admin.AdminJob(
 		admin.JobTypes.UPGRADE, "Run and monitor active upgrades",
 		[
@@ -882,7 +899,7 @@ function monitorUpgrades() {
 		]);
 	job.singleton = true; // Don't queue us up
 	job.timeout = 5 * 60 * 1000; // Lower, 5 minute timeout.
-	job.shouldRun = async () => await areAnyUpgradesUnfinished();
+	job.shouldRun = async () => await areAnyUpgradesUnfinished(force);
 	return job;
 }
 
@@ -893,6 +910,8 @@ async function retrieveUnfinishedUpgrades() {
 
 async function monitorActiveUpgrades(job) {
 	const unfinishedUpgrades = await retrieveUnfinishedUpgrades();
+	const pl = strings.pluralizeIt(unfinishedUpgrades.length, "unfinished upgrade");
+	job.postDetail(`${pl.num} ${pl.str} found`);
 	for (let i = 0; i < unfinishedUpgrades.length; i++) {
 		const upgrade = unfinishedUpgrades[i];
 		if (upgrade.status === UpgradeStatus.Active) {
@@ -917,10 +936,12 @@ async function monitorActiveUpgradeItems(job) {
 	let i = 0;
 	const activeItems = await db.query(`${SELECT_ALL_ITEMS} WHERE i.status IN ($${++i},$${++i}) AND i.scheduled_start_time <= NOW() ${GROUP_BY_ITEMS}`,
 		[push.Status.Pending, push.Status.InProgress]);
+	const pl = strings.pluralizeIt(activeItems.length, "unfinished upgrade item");
+	job.postDetail(`${pl.num} ${pl.str} found`);
 	if (activeItems.length === 0) {
 		return; // Nothing to do
 	}
-	
+
 	await fetchRequests(activeItems);
 }
 
@@ -931,6 +952,9 @@ async function monitorActiveUpgradeJobs(job) {
 		(j.status IN ($${++i},$${++i}) OR j.status = $${++i} AND i.status = $${++i}) 
 			AND i.scheduled_start_time <= NOW()`,
 		[push.Status.Pending, push.Status.InProgress, push.Status.Created, push.Status.Canceled]);
+	let pl = strings.pluralizeIt(activeItems.length, "upgrade item");
+	job.postDetail(`${pl.num} ${pl.str} with unfinished jobs found`);
+
 	if (activeItems.length === 0)
 		return; // Nothing to do
 
@@ -939,7 +963,7 @@ async function monitorActiveUpgradeJobs(job) {
 }
 
 
-async function areAnyUpgradesUnfinished() {
+async function areAnyUpgradesUnfinished(force) {
 	const activeJobs = await db.query(`SELECT j.id FROM upgrade_job j 
 										INNER JOIN upgrade u on u.id = j.upgrade_id
 										INNER JOIN upgrade_item i on i.id = j.item_id
@@ -947,7 +971,7 @@ async function areAnyUpgradesUnfinished() {
 											OR i.status IN ($3,$4,$5) OR j.status IN ($3,$4,$5)
 										) LIMIT 1`,
 		[UpgradeStatus.Ready, UpgradeStatus.Active, push.Status.Created, push.Status.Pending, push.Status.InProgress], true);
-	return activeJobs.length === 1;
+	return activeJobs.length === 1 || force;
 }
 
 async function areJobsCompleteForUpgrade(upgradeId) {
