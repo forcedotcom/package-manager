@@ -70,12 +70,9 @@ supplies them.
 CLIENT_ID=your connected app client id
 CLIENT_SECRET=your connected app secret key
 
-# The app will automatically restrict users to those in one of your Connected Orgs of type Licenses. To restrict 
-# authorization to a specific org (regardless of whether it is registered as a connected org) use AUTH_ORG_ID.
-#AUTH_ORG_ID=<00D...>
-
-# Provide the instance url of the org against which you wish to authenticate and authorize users.
-# If you have trouble authenticating to your LMA org from the app, try setting this.
+# Provide the specific instance url of the org against which you wish to authenticate and authorize users.
+# Package Manager will otherwise choose the first connected org you have added of type Licenses.  If no licenses type
+# orgs have been registered yet in the app, any org may be used (which is clearly not secure).  
 #AUTH_URL=https://ourlma.my.salesforce.com
 
 # You can define multiple databases for dev and test purposes, and switch between them here.
