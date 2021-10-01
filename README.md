@@ -70,6 +70,10 @@ supplies them.
 CLIENT_ID=your connected app client id
 CLIENT_SECRET=your connected app secret key
 
+# The app will automatically restrict users to those in one of your Connected Orgs of type Licenses. To restrict 
+# authorization to a specific org (regardless of whether it is registered as a connected org) use AUTH_ORG_ID.
+#AUTH_ORG_ID=<00D...>
+
 # Provide the instance url of the org against which you wish to authenticate and authorize users.
 # If you have trouble authenticating to your LMA org from the app, try setting this.
 #AUTH_URL=https://ourlma.my.salesforce.com

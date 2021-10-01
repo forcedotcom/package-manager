@@ -5,6 +5,7 @@ const qs = require('query-string');
 const sfdc = require('./sfdcconn');
 const packageorgs = require('./packageorgs');
 const {sanitizeIt} = require("../util/strings");
+const {OrgTypes} = require("./sfdcconn");
 const logger = require('../util/logger').logger;
 
 // Configurable parameters
@@ -18,6 +19,7 @@ const API_URL = process.env.API_URL || `${LOCAL_URL}:${PORT}`;
 const CLIENT_URL = process.env.CLIENT_URL || `${LOCAL_URL}:${CLIENT_PORT}`;
 const CALLBACK_URL = process.env.CALLBACK_URL || `${API_URL}/oauth2/callback`;
 const AUTH_URL = process.env.AUTH_URL;
+const AUTH_ORG_ID = process.env.AUTH_ORG_ID;
 
 // Constants
 const PROD_LOGIN = "https://login.salesforce.com";
@@ -62,22 +64,49 @@ async function buildURL(scope, state) {
     return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
 }
 
+function handleAuthError(res, code, description) {
+    let errs = {
+        message: description,
+        severity: "Error",
+        code: code
+    };
+
+    res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
+}
+
+/**
+ * Allow this user IF either AUTH_ORG_ID is set and the given user's organizationId matches it, OR
+ * that organizationId is listed as a Licenses org (which handles authorization).
+ *
+ * For initial setup convenience, if AUTH_ORG_ID is not set, and no other Licenses connected orgs are registered, the user is
+ * allowed.
+ *
+ * This is imperfect.  Ideally the connected app should govern this, but as of this writing it does
+ * not seem to work as it should.  If a user logs in via the connected app's org, the org's authorization policies
+ * are enforced (e.g. only users in a such and such permission set are allowed).  However, if the user logs into any
+ * other salesforce org, the connected app allows them.  This is a stop-gap to block that unrestricted access.
+ */
+async function verifyUser(userInfo) {
+    if (AUTH_ORG_ID) {
+       return AUTH_ORG_ID === userInfo.organizationId;
+    }
+
+    const orgs = await packageorgs.retrieveByType([OrgTypes.Licenses]);
+    return orgs.length === 0 || orgs.find(o => o.org_id === userInfo.organizationId);
+}
+
 async function oauthCallback(req, res, next) {
     const state = JSON.parse(req.query.state);
     const loginUrl = state.loginUrl || req.headers['referer'];
     const conn = await buildAuthConnection(null, null, loginUrl);
     try {
         if (req.query.error) {
-            let errs = {
-                message: req.query.error_description,
-                severity: "Error",
-                code: req.query.error
-            };
-
-            res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
-            return;
+            return handleAuthError(res, req.query.error, req.query.error_description);
         }
         let userInfo = await conn.authorize(req.query.code);
+        if (!await verifyUser(userInfo)) {
+            return handleAuthError(res, 403, 'User is not allowed to access this application.');
+        }
         let url = CLIENT_URL;
         let returnTo = sanitizeIt(state.returnTo);
         if (returnTo) {
