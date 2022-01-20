@@ -14,7 +14,6 @@ export default class extends React.Component {
 		super(props);
 		this.state = {};
 		
-		this.revealAccessToken = this.revealAccessToken.bind(this);
 		this.fetchVersions = this.fetchVersions.bind(this);
 		this.fetchUpgradeItems = this.fetchUpgradeItems.bind(this);
 	}
@@ -30,7 +29,7 @@ export default class extends React.Component {
 								<dl className="page-header--rec-home__detail-item">
 									<dt>
 										<p className="slds-text-heading--label slds-truncate"
-										   title="Instance URL">Status</p>
+										   title="Org status">Status</p>
 									</dt>
 									<dd>
 										<p className="slds-text-body--regular slds-truncate"
@@ -53,18 +52,6 @@ export default class extends React.Component {
 							<div className="slds-col--padded slds-size--1-of-2 slds-m-top--medium">
 								<dl className="page-header--rec-home__detail-item">
 									<dt>
-										<p className="slds-text-heading--label slds-truncate"
-										   title="Instance URL">Namespace</p>
-									</dt>
-									<dd>
-										<p className="slds-text-body--regular slds-truncate"
-										   title="">{this.props.packageorg.namespace}</p>
-									</dd>
-								</dl>
-							</div>
-							<div className="slds-col--padded slds-size--1-of-2 slds-m-top--medium">
-								<dl className="page-header--rec-home__detail-item">
-									<dt>
 										<p className="slds-text-heading--label slds-truncate" title="Instance URL">Instance
 											URL</p>
 									</dt>
@@ -74,21 +61,20 @@ export default class extends React.Component {
 									</dd>
 								</dl>
 							</div>
-
-							{this.props.packageorg.access_token ?
-							<div className="slds-col--padded slds-size--1-of-1 slds-m-top--medium">
+							{this.props.packageorg.namespace ?
+							<div className="slds-col--padded slds-size--1-of-2 slds-m-top--medium">
 								<dl className="page-header--rec-home__detail-item">
 									<dt>
-										<p className="slds-text-heading--label slds-truncate" title="Username">Access
-											Token</p>
+										<p className="slds-text-heading--label slds-truncate"
+										   title="Org package namespace, if any">Namespace</p>
 									</dt>
 									<dd>
-										<p><input className="slds-input" type="text" readOnly={true}
-												  value="Double-click to reveal" onDoubleClick={this.revealAccessToken}/>
-										</p>
+										<p className="slds-text-body--regular slds-truncate"
+										   title="">{this.props.packageorg.namespace}</p>
 									</dd>
 								</dl>
-							</div> : "" }
+							</div>
+								: ""}
 						</div>
 					</div>
 				</div>
@@ -110,15 +96,6 @@ export default class extends React.Component {
 	}
 	
 	// Handlers
-	revealAccessToken(event) {
-		if (event.target.value === this.props.packageorg.access_token) {
-			event.target.value = 'Double-click to reveal';
-		} else {
-			event.target.value = this.props.packageorg.access_token;
-			event.target.select();
-		}
-	}
-
 	fetchVersions() {
 		return packageVersionService.findByPackageOrgId(this.props.packageorg.org_id);
 	}

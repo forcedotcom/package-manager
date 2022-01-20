@@ -20,6 +20,7 @@ export default class extends React.Component {
 		
 		this.fetchData = this.fetchData.bind(this);
 		this.connectHandler = this.connectHandler.bind(this);
+		this.exportHandler = this.exportHandler.bind(this);
 		this.activationHandler = this.activationHandler.bind(this);
 		this.deleteHandler = this.deleteHandler.bind(this);
 		this.refreshHandler = this.refreshHandler.bind(this);
@@ -49,6 +50,9 @@ export default class extends React.Component {
 			{label: "Connect", group: "actions",
 				handler: this.connectHandler, disabled: user.read_only || packageorg.status === "Connected",
 				detail: user.read_only ? Messages.READ_ONLY_USER : "Click to login and connect this org"},
+			{label: "Export", group: "actions",
+				handler: this.exportHandler, disabled: user.read_only || packageorg.status !== "Connected",
+				detail: user.read_only ? Messages.READ_ONLY_USER : "Click to export org details"},
 			{label: "Refresh", handler: this.refreshHandler, group: "actions",
 				disabled: user.read_only || packageorg.status !== "Connected",
 				detail: user.read_only ? Messages.READ_ONLY_USER : "",
@@ -90,8 +94,14 @@ export default class extends React.Component {
 	}
 
 	connectHandler() {
-		authService.oauthOrgURL(this.state.packageorg.instanceUrl, this.state.packageorg.type, `/packageorg/${this.state.packageorg.org_id}`).then(url => {
+		authService.oauthOrgURL(this.state.packageorg.instance_url, this.state.packageorg.type, `/packageorg/${this.state.packageorg.org_id}`).then(url => {
 			window.location.href = url;
+		});
+	}
+
+	exportHandler() {
+		authService.exportOrgURL(this.state.packageorg.instance_url, this.state.packageorg.type, `/packageorg/${this.state.packageorg.org_id}`).then(url => {
+			window.open(url, "export", "left=100,top=100,width=540,height=600");
 		});
 	}
 

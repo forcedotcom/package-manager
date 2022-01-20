@@ -8,12 +8,10 @@ const logger = require('../util/logger').logger;
 const Status = {Connected: "Connected", Unprotected: "Unprotected", Invalid: "Invalid", Missing: "Missing"};
 
 const PACKAGE_ORG_IP_RANGES = process.env.PACKAGE_ORG_IP_RANGES;
-const ENABLE_ACCESS_TOKEN_UI = process.env.ENABLE_ACCESS_TOKEN_UI === "true";
 const PACKAGE_MANAGER_ADMIN_PROFILE = process.env.PACKAGE_MANAGER_ADMIN_PROFILE;
 
 const SELECT_ALL =
 	`SELECT id, name, active, description, division, namespace, org_id, instance_name, instance_url, type, status, refreshed_date 
-	${ENABLE_ACCESS_TOKEN_UI ? ", access_token" : ""}
 	FROM package_org`;
 
 // Not to be used outside of the server.  No UI, no API.
@@ -52,13 +50,6 @@ async function requestById(req, res, next) {
 		if (recs.length === 0) {
 			return next(new Error(`Cannot find any record with id ${id}`));
 		}
-		if (ENABLE_ACCESS_TOKEN_UI) {
-			try {
-				await crypt.decryptObjects(recs, ["access_token"]);
-			} catch (e) {
-				admin.emit(admin.Events.ALERT, {subject: "Failed to decrypt tokens", message: `This connected org's access token could not be read due to an error: ${e.message || e}`});
-			}
-		}
 		return res.json(recs[0]);
 	} catch (err) {
 		next(err);
@@ -66,9 +57,9 @@ async function requestById(req, res, next) {
 }
 
 /**
- * Not to be used outside of the server.  No UI, no API.
+ * Returns sensitive data. Not to be used lightly outside of the server.
  */
-async function privateRetrieveByOrgIds(orgIds) {
+async function secureRetrieveByOrgIds(orgIds) {
 	let where = ` WHERE org_id IN (${orgIds.map((o,i) => `$${i+1}`).join(",")})`;
 	let recs = await db.query(SELECT_ALL_WITH_REFRESH_TOKEN + where, orgIds);
 	try {
@@ -199,7 +190,7 @@ async function refreshOrgConnection(conn, org_id) {
 		};
 	} catch (error) {
 		if (error.name === "invalid_grant") {
-			return {org_id: org_id, status: Status.Invalid};
+			return {org_id, status: Status.Invalid};
 		}
 
 		// No access to the Organization object.  Not ideal, but our token was still refreshed.
@@ -296,7 +287,7 @@ async function requestRefresh(req, res, next) {
 }
 
 async function refreshByOrgIds(orgIds) {
-	let orgs = await privateRetrieveByOrgIds(orgIds);
+	let orgs = await secureRetrieveByOrgIds(orgIds);
 	for (let i = 0; i < orgs.length; i++) {
 		let org = orgs[i];
 		let conn = await sfdc.buildOrgConnection(org.org_id);
@@ -364,7 +355,7 @@ exports.requestDelete = requestDelete;
 exports.requestActivation = requestActivation;
 exports.retrieveAll = retrieveAll;
 exports.retrieveByType = retrieveByType;
-exports.retrieveByOrgIds = privateRetrieveByOrgIds;
+exports.secureRetrieveByOrgIds = secureRetrieveByOrgIds;
 exports.initOrg = initOrg;
 exports.updateOrgStatus = updateOrgStatus;
 exports.updateAccessToken = updateAccessToken;

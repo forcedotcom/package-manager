@@ -5,7 +5,6 @@ const qs = require('query-string');
 const sfdc = require('./sfdcconn');
 const packageorgs = require('./packageorgs');
 const {sanitizeIt} = require("../util/strings");
-const {OrgTypes} = require("./sfdcconn");
 const logger = require('../util/logger').logger;
 
 // Configurable parameters
@@ -36,7 +35,7 @@ async function oauthLoginURL(req, res, next) {
     try {
         let loginUrl = AUTH_URL;
         if (!loginUrl) {
-            const orgs = await packageorgs.retrieveByType([OrgTypes.Licenses]);
+            const orgs = await packageorgs.retrieveByType([sfdc.OrgTypes.Licenses]);
             loginUrl = orgs.length > 0 ? orgs[0].instance_url : null;
             if (orgs.length > 1) {
                 logger.warn(`No AUTH_URL was set, and more than one Connected Org with type Licenses found. Defaulting to ${orgs[0].org_id} at ${loginUrl}`)
@@ -67,6 +66,20 @@ async function oauthOrgURL(req, res, next) {
     }
 }
 
+async function exportOrgURL(req, res, next) {
+    try {
+        const url = await buildURL("api id web refresh_token", {
+            operation: "export",
+            type: req.query.type,
+            loginUrl: req.query.instanceUrl ? req.query.instanceUrl : PROD_LOGIN,
+            returnTo: req.query.returnTo
+        });
+        res.json(url);
+    } catch (e) {
+        next(e);
+    }
+}
+
 async function buildURL(scope, state) {
     const conn = await buildAuthConnection(undefined, undefined, state.loginUrl);
     return conn.oauth2.getAuthorizationUrl({scope: scope, prompt: 'login', state: JSON.stringify(state)});
@@ -86,6 +99,19 @@ async function oauthCallback(req, res, next) {
     const state = req.query.state ? JSON.parse(req.query.state) : {};
     const loginUrl = state.loginUrl || req.headers['referer'];
     const conn = await buildAuthConnection(null, null, loginUrl);
+
+    const handleError = (error) => {
+        const message = error.message || error;
+        let errs = {
+            message: message,
+            severity: error.severity,
+            code: error.code
+        };
+
+        res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
+        next(error);
+    }
+
     try {
         if (req.query.error) {
             return handleAuthError(res, req.query.error, req.query.error_description);
@@ -96,15 +122,32 @@ async function oauthCallback(req, res, next) {
         if (returnTo) {
             url += returnTo;
         }
+        const unauthenticated = !req.session.access_token;
         switch (state.operation) {
             case "org":
+                if (unauthenticated) {
+                    return handleError(Error("Not authenticated"));
+                }
                 const type = sfdc.OrgTypes[state.type];
-                // If unauthenticated, only allow the call to add an org of the given type if one is not already added.
-                // This is to support the case where an external admin user does not have access to this app, but still
-                // needs to provide a credential for the org to be connected.
-                const unauthenticated = !req.session.access_token;
-                await packageorgs.initOrg(conn, userInfo.organizationId, type, unauthenticated);
+                await packageorgs.initOrg(conn, userInfo.organizationId, type);
                 res.redirect(url);
+                break;
+            case "export":
+                if (unauthenticated) {
+                    return handleError(Error("Not authenticated"));
+                }
+                const orgs = await packageorgs.secureRetrieveByOrgIds([userInfo.organizationId]);
+                if (orgs.length === 0) {
+                    return handleError(Error("Org not found"));
+                }
+                const org = orgs[0];
+
+                res.attachment("org.json");
+                res.set({
+                    'Content-Type': 'application/json',
+                    'Location': `${CLIENT_URL}/packageorg/${org.id}`
+                });
+                res.send(JSON.stringify(org));
                 break;
             default:
                 const user = await conn.identity();
@@ -124,16 +167,8 @@ async function oauthCallback(req, res, next) {
                 req.session.access_token = conn.accessToken;
                 res.redirect(url);
         }
-    } catch (error) {
-        const message = error.message || error;
-        let errs = {
-            message: message,
-            severity: error.severity,
-            code: error.code
-        };
-
-        res.redirect(`${CLIENT_URL}/authresponse?${qs.stringify(errs)}`);
-        next(error);
+    } catch (e) {
+        handleError(e);
     }
 }
 
@@ -180,5 +215,6 @@ exports.requestUser = requestUser;
 exports.requestLogout = requestLogout;
 exports.oauthLoginURL = oauthLoginURL;
 exports.oauthOrgURL = oauthOrgURL;
+exports.exportOrgUrl = exportOrgURL;
 exports.oauthCallback = oauthCallback;
 exports.checkReadOnly = checkReadOnly;

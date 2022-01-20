@@ -57,7 +57,7 @@ function buildConnection(accessToken, refreshToken, instanceUrl, apiVersion = SF
 }
 
 async function buildOrgConnection(packageOrgId, apiVersion) {
-	let orgs = await packageorgs.retrieveByOrgIds([packageOrgId]);
+	let orgs = await packageorgs.secureRetrieveByOrgIds([packageOrgId]);
 	if (orgs.length === 0) {
 		throw `No such package org with id ${packageOrgId}`;
 	}
