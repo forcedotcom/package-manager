@@ -19,7 +19,8 @@ const SUMO_TZ = process.env.SUMO_TZ || "America/Los_Angeles";
 
 const Events = {
 	ALERT: "alert",
-	ALERT_INVALID_ORG: "alert-invalid-org",
+	ALERT_INVALID_ORG: "ALERT_INVALID_ORG",
+	ALERT_PREAUTH_ORG: "ALERT_PREAUTH_ORG",
 	FAIL: "fail",
 	JOBS: "jobs",
 	JOB_QUEUE: "job-queue",

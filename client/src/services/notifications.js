@@ -12,8 +12,10 @@ const socket = io(apiUrl);
 // Global admin events
 socket.on("fail", e => error(e.message, e.subject));
 socket.on("alert", e => info(e.message, e.subject));
-socket.on("alert-invalid-org", e => error(e.message, e.subject, 15000,
+socket.on("ALERT_INVALID_ORG", e => error(e.message, e.subject, 15000,
 	() => authService.oauthOrgURL(e.org.instance_url, e.org.type).then(url => window.location.href = url)));
+socket.on("ALERT_PREAUTH_ORG", e => info(e.message, e.subject, 25000,
+	() => authService.preauthOrg(e.inf.org_id).then(url => window.location.href = url)));
 
 export let warning = (message, subject, timeout, onClick) => {NotificationManager.warning(message, subject, timeout, onClick)};
 export let info = (message, subject, timeout, onClick) => {NotificationManager.info(message, subject, timeout, onClick)};

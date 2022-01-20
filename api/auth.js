@@ -211,6 +211,34 @@ function checkReadOnly(user) {
     throw new Error("403: Forbidden");
 }
 
+async function preauthOrg(req, res, next) {
+    const infMap = new Map();
+    if (process.env.SFDX_PREAUTHORIZED_ORGS) {
+        const infs = JSON.parse(process.env.SFDX_PREAUTHORIZED_ORGS);
+        for (const inf of infs) {
+            infMap.set(inf.org_id, inf);
+        }
+    }
+
+    try {
+        const orgId = req.query.org_id;
+        const inf = infMap.get(orgId);
+        if (inf) {
+            const type = sfdc.OrgTypes[inf.type];
+            const loginUrl = inf.instance_url;
+            const accessToken = inf.access_token;
+            const refreshToken = inf.refresh_token;
+            const conn = await buildAuthConnection(accessToken, refreshToken, loginUrl);
+            await packageorgs.initOrg(conn, orgId, type);
+        } else {
+            next(Error(`No preauth org info found for ${orgId}`));
+        }
+        res.json("/packageorgs");
+    } catch (e) {
+        next(e);
+    }
+}
+
 exports.requestUser = requestUser;
 exports.requestLogout = requestLogout;
 exports.oauthLoginURL = oauthLoginURL;
@@ -218,3 +246,4 @@ exports.oauthOrgURL = oauthOrgURL;
 exports.exportOrgUrl = exportOrgURL;
 exports.oauthCallback = oauthCallback;
 exports.checkReadOnly = checkReadOnly;
+exports.preauthOrg = preauthOrg;

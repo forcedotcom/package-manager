@@ -8,6 +8,8 @@ export let oauthOrgURL = (instanceUrl, type, returnTo) => h.get(url + "/orgurl",
 
 export let exportOrgURL = (instanceUrl, type, returnTo) => h.get(url + "/exportorgurl", {instanceUrl, type, returnTo});
 
+export let preauthOrg = (org_id) => h.get(url + "/preauthorg", {org_id});
+
 export let requestLogout = () => h.get(url + "/logout");
 
 export let requestUser = () => h.get(url + "/user").then(user => {

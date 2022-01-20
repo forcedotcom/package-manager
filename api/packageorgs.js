@@ -23,6 +23,19 @@ const SELECT_ALL_WITH_REFRESH_TOKEN =
 async function requestAll(req, res, next) {
 	try {
 		let recs = await retrieveAll(req.query.sort_field, req.query.sort_dir);
+		if (process.env.SFDX_PREAUTHORIZED_ORGS) {
+			const orgMap = new Map();
+			recs.map(rec => orgMap.set(rec.org_id, rec));
+			const infs = JSON.parse(process.env.SFDX_PREAUTHORIZED_ORGS);
+			for (const inf of infs) {
+				const org = orgMap.get(inf.org_id);
+				if (!org || org.status === Status.Invalid || org.status === Status.Missing) {
+					admin.emit(admin.Events.ALERT_PREAUTH_ORG, {subject: "Pre-authenticated Org Found", inf,
+						message: `A pre-authenticated org with id ${inf.org_id} and url ${inf.instance_url} was detected. \nClick here to add.`})
+				}
+			}
+		}
+
 		return res.send(JSON.stringify(recs));
 	} catch (err) {
 		next(err);
@@ -129,7 +142,7 @@ async function refreshOrg(conn, org) {
 
 	if (refreshed.status === Status.Invalid) {
 		admin.emit(admin.Events.ALERT_INVALID_ORG, {subject: "Invalid connection", org,
-			message: `The connection to the org ${org.name} (${org.org_id}) is invalid.  Click to re-authenticate.`})
+			message: `The connection to the org ${org.name} (${org.org_id}) is invalid.  Click here to re-authenticate.`})
 		return await updateOrgStatus(org.org_id, Status.Invalid);
 	}
 
