@@ -76,11 +76,13 @@ app.use(function (req, res, next) {
 });
 
 app.get('/oauth2/user', auth.requestUser);
+app.get('/oauth2/settings', auth.requestSettings);
 app.get('/oauth2/logout', auth.requestLogout);
 app.get('/oauth2/loginurl', auth.oauthLoginURL);
 app.get('/oauth2/orgurl', auth.oauthOrgURL);
 app.get('/oauth2/exportorgurl', auth.exportOrgUrl);
 app.get('/oauth2/preauthorg', auth.preauthOrg);
+app.get('/oauth2/adminaccess', auth.requestAdminAccess);
 app.get('/oauth2/callback', auth.oauthCallback);
 
 app.get('/api/filters', filters.requestFilters);

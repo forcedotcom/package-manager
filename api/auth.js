@@ -184,6 +184,18 @@ async function requestUser(req, res, next) {
     }
 }
 
+async function requestSettings(req, res, next) {
+    try {
+        const settings = {
+            has_admin_access_key: !!process.env.ADMIN_ACCESS_KEY
+        };
+        res.json(settings);
+    } catch (e) {
+        logger.error("Failed to retrieve login settings", e);
+        next(e);
+    }
+}
+
 async function buildAuthConnection(accessToken, refreshToken, loginUrl = PROD_LOGIN) {
     const options = {
         oauth2: {
@@ -239,7 +251,30 @@ async function preauthOrg(req, res, next) {
     }
 }
 
+async function requestAdminAccess(req, res, next) {
+    try {
+        const key = req.query.key;
+        if (process.env.ADMIN_ACCESS_KEY === key) {
+            req.session.access_token = key;
+            req.session.user = {
+                read_only: false,
+                username: "admin",
+                display_name: "Admin"
+            };
+            // req.session.username = "Admin";
+            // req.session.display_name = "Admin";
+
+            res.json(req.query.returnTo || "/");
+        } else {
+            next(Error(`Invalid admin access key`));
+        }
+    } catch (e) {
+        next(e);
+    }
+}
+
 exports.requestUser = requestUser;
+exports.requestSettings = requestSettings;
 exports.requestLogout = requestLogout;
 exports.oauthLoginURL = oauthLoginURL;
 exports.oauthOrgURL = oauthOrgURL;
@@ -247,3 +282,4 @@ exports.exportOrgUrl = exportOrgURL;
 exports.oauthCallback = oauthCallback;
 exports.checkReadOnly = checkReadOnly;
 exports.preauthOrg = preauthOrg;
+exports.requestAdminAccess = requestAdminAccess;

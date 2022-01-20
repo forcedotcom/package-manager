@@ -88,8 +88,8 @@ EXPAND_BLACKLIST=false
 # the given name is found. Provide a profile name here to enable the feature, and create and assign the 
 # profile (should be a clone of System Administrator) on each org. The tool will NOT create or assign 
 # the profile for you, it will only define the login IP ranges.
-PACKAGE_MANAGER_ADMIN_PROFILE=SteelBrick Package Manager Admin
-PACKAGE_ORG_IP_RANGES=[{"description": "SFDC Network", "startAddress": "204.14.232.0", "endAddress": "204.14.239.255"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.148.180", "endAddress": "35.165.148.180"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.168.63", "endAddress": "35.165.168.63"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.214.66", "endAddress": "35.165.214.66"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.214.102", "endAddress": "35.165.214.102"}, {"description": "SFDC Phoenix (PRD)", "startAddress": "136.146.0.0", "endAddress": "136.147.255.255"}]
+#PACKAGE_MANAGER_ADMIN_PROFILE=SteelBrick Package Manager Admin
+#PACKAGE_ORG_IP_RANGES=[{"description": "SFDC Network", "startAddress": "204.14.232.0", "endAddress": "204.14.239.255"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.148.180", "endAddress": "35.165.148.180"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.168.63", "endAddress": "35.165.168.63"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.214.66", "endAddress": "35.165.214.66"}, {"description": "SteelBrick Heroku NA", "startAddress": "35.165.214.102", "endAddress": "35.165.214.102"}, {"description": "SFDC Phoenix (PRD)", "startAddress": "136.146.0.0", "endAddress": "136.147.255.255"}]
 
 # The app runs various background jobs to keep everything monitored and data synced.  Use the following
 # to determine the job intervals.
@@ -99,7 +99,7 @@ JOB_SCHEDULES={"org_monitor_interval_seconds": 240, "fetch_interval_minutes": 5,
 # here.  This is very much optional.
 
 LOG_LEVEL=DEBUG
-DEBUG_SQL_VALUES=true
+#DEBUG_SQL_VALUES=true
 
 # WARNING: use with caution, for testing and development purposes only.
 ENFORCE_ACTIVATION_POLICY=true
@@ -107,7 +107,7 @@ ENFORCE_AUTH=true
 
 # Built-in whitelisting, very useful for local development where you only want to be able to affect
 # a limited number of internal orgs.
-ALLOWED_ORGS=["00D...","00D..."]
+#ALLOWED_ORGS=["00D...","00D..."]
 
 # Whether to force usage of HTTPS.  Good for production, not so good for local development
 FORCE_HTTPS=true
@@ -115,11 +115,21 @@ FORCE_HTTPS=true
 # In Dev mode, we run the UI on 3000 and proxy to the backend API (on 5000)
 CLIENT_PORT=3000
 
-# Required for production, not generally needed for local development (just leave them unset).
+# Required for production, but not generally needed for local development (just leave them unset).
 # CLIENT_URL is the front-end application url. API_URL is the backend API service url.  
 # Unless you have a very creative deployment strategy, the two should match.
 #CLIENT_URL=https://pm.steelbrick.com
 #API_URL=https://pm.steelbrick.com
+
+# If an org must be authorized by someone with access to the app containuer but without direct access to the app itself,
+# register it here.  A heroku admin, for example, would set this in the app's config vars. Note this assumes all admins are
+# allowed to read this sensitive config var, containing all-powerful access and refresh tokens.  Use with care.
+ #SFDX_PREAUTHORIZED_ORGS=[{"type":OrgType,"name":String,"org_id":String,"instance_url":String,"refresh_token":String,"access_token":String}]
+ 
+ # For temporary admin access for an external user, use the ADMIN_ACCESS_KEY config var.  This should _not_ be left permanently,
+ # as it is obviously insecure.  This is useful for granting temporary access to someone outside of your organization.
+ # Once set, the login screen will give you the option to enter this key for full admin access to the application..
+ # ADMIN_ACCESS_KEY=donotleavemeherealone
 ```
 
 # How to remotely debug the app in Heroku

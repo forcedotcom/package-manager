@@ -4,13 +4,18 @@ let url = "/oauth2";
 
 export let oauthLoginURL = (returnTo) => h.get(url + "/loginurl", {returnTo});
 
+
 export let oauthOrgURL = (instanceUrl, type, returnTo) => h.get(url + "/orgurl", {instanceUrl, type, returnTo});
 
 export let exportOrgURL = (instanceUrl, type, returnTo) => h.get(url + "/exportorgurl", {instanceUrl, type, returnTo});
 
+export let requestAdminAccess = (key, returnTo) => h.get(url + "/adminaccess", {key, returnTo});
+
 export let preauthOrg = (org_id) => h.get(url + "/preauthorg", {org_id});
 
 export let requestLogout = () => h.get(url + "/logout");
+
+export let requestSettings = () => h.get(url + "/settings");
 
 export let requestUser = () => h.get(url + "/user").then(user => {
     sessionStorage.setItem("user", JSON.stringify(user));
