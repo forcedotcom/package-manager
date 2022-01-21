@@ -12,6 +12,10 @@ async function fetch(fetchAll, job) {
 	adminJob = job;
 
 	const licenseOrgs = await packageorgs.retrieveByType([sfdc.OrgTypes.Licenses]);
+	if (licenseOrgs.length === 0) {
+		adminJob.postMessage(`Note: no connected org of type Licenses were found.  No package data will be fetched without at least one Licenses org connected.`);
+		return;
+	}
 
 	for (let i = 0; i < licenseOrgs.length; i++) {
 		const lmaOrgId = licenseOrgs[i].org_id;
