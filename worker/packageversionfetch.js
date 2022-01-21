@@ -159,6 +159,10 @@ async function fetchLatest(job) {
 	if (adminJob.canceled)
 		return;
 
+	if (latestByPackage.size === 0)
+		// nothing to do.
+		return;
+
 	return upsertLatest(Array.from(latestByPackage.values()));
 }
 
