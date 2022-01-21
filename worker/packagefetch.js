@@ -13,7 +13,7 @@ async function fetch(fetchAll, job) {
 
 	const licenseOrgs = await packageorgs.retrieveByType([sfdc.OrgTypes.Licenses]);
 	if (licenseOrgs.length === 0) {
-		adminJob.postMessage(`Note: no connected org of type Licenses were found.  No package data will be fetched without at least one Licenses org connected.`);
+		adminJob.postDetail("No packages found", {message: "No connected org of type Licenses were found.  Go to Connected Orgs and add or edit at least one org of type Licenses."});
 		return;
 	}
 
