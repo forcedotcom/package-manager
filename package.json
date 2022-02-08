@@ -9,7 +9,7 @@
     "build": "cd client && yarn --production=false && yarn build",
     "test": "jest"
   },
-  "repository": "git@github.com:SFDC/brick-manager.git",
+  "repository": "git@github.com:forcedotcom/package-manager.git",
   "dependencies": {
     "bent": "^7.3.12",
     "body-parser": "^1.19.0",
