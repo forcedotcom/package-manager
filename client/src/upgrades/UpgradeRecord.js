@@ -28,7 +28,7 @@ export default class extends React.Component {
 			progress: getProgress([]),
 			showCancelWindow: false
 		};
-		
+
 		this.fetchBlacklist = this.fetchBlacklist.bind(this);
 		this.fetchItems = this.fetchItems.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
@@ -55,17 +55,16 @@ export default class extends React.Component {
 		notifier.remove('upgrade', this.upgradeUpdated);
 		notifier.remove('upgrade-jobs', this.refreshJobsCompleteHandler);
 	}
-	
+
 	render() {
 		const {upgrade, progress, user} = this.state;
 		let userCanActivate = user.enforce_activation_policy === "false" || (upgrade.created_by != null && upgrade.created_by !== user.username);
-		
+
 		const actions = [
 			{
 				label: "Activate", handler: this.activationHandler,
 				disabled: !userCanActivate || user.read_only || progress.active > 0 || progress.done,
-				detail: !userCanActivate ? Messages.SAME_USER_ACTIVATE :
-					user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE,
+				detail: user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE,
 				spinning: this.state.isActivating
 			},
 			{
@@ -97,7 +96,7 @@ export default class extends React.Component {
 					<HeaderField label="Jobs" value={upgrade.total_job_count}/>
 					<HeaderField label="Created By" value={upgrade.created_by}/>
 					<HeaderField label="Activated By" value={upgrade.activated_by || ''}/>
-					<HeaderField label="Activated On" value={`${upgrade.activated_date ? 
+					<HeaderField label="Activated On" value={`${upgrade.activated_date ?
 						moment(upgrade.activated_date).format('lll') : ''}`}/>
 				</RecordHeader>
 				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled}
@@ -120,7 +119,7 @@ export default class extends React.Component {
 			</div>
 		);
 	}
-	
+
 	// Handlers
 	fetchBlacklist() {
 		return orgService.requestByUpgradeBlacklist(this.props.match.params.upgradeId);

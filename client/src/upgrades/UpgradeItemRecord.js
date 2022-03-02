@@ -19,7 +19,7 @@ export default class extends React.Component {
 			item: {},
 			progress: getProgress([])
 		};
-		
+
 		this.upgradeItemsUpdated = this.upgradeItemsUpdated.bind(this);
 		this.fetchJobs = this.fetchJobs.bind(this);
 		this.fetchItemJobs = this.fetchItemJobs.bind(this);
@@ -42,7 +42,7 @@ export default class extends React.Component {
 		notifier.remove('upgrade-items', this.upgradeItemsUpdated);
 		notifier.remove('upgrade-jobs', this.refreshJobsCompleteHandler);
 	}
-	
+
 	render() {
 		const {item, progress, user} = this.state;
 		let userCanActivate = user.enforce_activation_policy === "false" || (item.created_by != null && item.created_by !== user.username);
@@ -51,8 +51,7 @@ export default class extends React.Component {
 			{
 				label: "Activate Request", handler: this.handleActivation,
 				disabled: user.read_only || !userCanActivate || item.status !== Status.Created,
-				detail: !userCanActivate ? Messages.SAME_USER_ACTIVATE :
-					user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE_ITEMS,
+				detail: user.read_only ? Messages.READ_ONLY_USER : Messages.ACTIVATE_UPGRADE_ITEMS,
 				spinning: this.state.isActivating
 			},
 			{
@@ -68,7 +67,7 @@ export default class extends React.Component {
 				spinning: this.state.isRefreshing
 			}
 		];
-		
+
 		return (
 			<div>
 				<RecordHeader type="Upgrade Request" icon={UPGRADE_ITEM_ICON} title={item.description}
@@ -83,7 +82,7 @@ export default class extends React.Component {
 					<HeaderField label="Start Time" value={`${item.start_time ? moment(item.start_time).format('lll') : ''}`}/>
 					<HeaderField label="End Time" value={`${item.end_time ? moment(item.end_time).format('lll') : ''}`}/>
 				</RecordHeader>
-				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled} 
+				<ProgressBar progressSuccess={progress.percentageSuccess} progressWarning={progress.percentageCanceled}
 							 progressError={progress.percentageError}/>
 				<div className="slds-card slds-p-around--xxx-small slds-m-around--medium">
 					<UpgradeJobCard onFetch={this.fetchJobs} refetchOn="upgrade-jobs"/>
@@ -91,7 +90,7 @@ export default class extends React.Component {
 			</div>
 		);
 	}
-	
+
 	// Handlers
 	fetchJobs() {
 		return new Promise((resolve, reject) => {
