@@ -12,7 +12,7 @@ const updateInstances = async (job) => {
 	try {
 		const instancesFromApi = await getInstancesFromApi();
 		const mapInstancesFromDb = await getInstancesFromDB();
-		
+
 		// Compute the differences
 		const instances_to_upsert = instancesFromApi.filter(instance => {
 			if(mapInstancesFromDb[instance.key]) {
@@ -27,7 +27,7 @@ const updateInstances = async (job) => {
 		});
 
 		upsert(instances_to_upsert, 1000);
-		
+
 	} catch (e) {
 		logger.error(e);
 	}
@@ -39,12 +39,21 @@ const getInstancesFromApi = async () => {
 	// Add internal instances
 	instancesFromApi.push(
 		{key: 'GS0', location: 'Internal', environment: 'Production'},
+		{key: 'USA5', location: 'Internal', environment: 'Production'},
+		{key: 'USA12', location: 'Internal', environment: 'Production'},
+		{key: 'USA4S', location: 'Internal', environment: 'Sandbox'},
+		{key: 'USA10S', location: 'Internal', environment: 'Sandbox'},
+		{key: 'USA14S', location: 'Internal', environment: 'Sandbox'},
+		{key: 'USA16S', location: 'Internal', environment: 'Sandbox'},
+		{key: 'USA6S', location: 'Internal', environment: 'Sandbox'},
+		{key: 'USA18S', location: 'Internal', environment: 'Sandbox'},
+		{key: 'USA24S', location: 'Internal', environment: 'Sandbox'},
 		{key: 'CS46', location: 'Internal', environment: 'Sandbox'},
 		{key: 'CS49', location: 'Internal', environment: 'Sandbox'},
 	)
 
-	return instancesFromApi.map(instance => ({ 
-		key: instance.key, 
+	return instancesFromApi.map(instance => ({
+		key: instance.key,
 		location: instance.location,
 		environment: instance.environment.charAt(0).toUpperCase() + instance.environment.slice(1),
 		release: instance.releaseNumber,
@@ -84,9 +93,9 @@ const upsertBatch = async (recs) => {
 		values.push(rec.key, rec.location, rec.environment, rec.release, rec.status);
 	}
 	const sql = `INSERT INTO instance (key, location, environment, release, status) VALUES (${params.join('),(')})
-	  			on conflict (key) do update set location = excluded.location, environment = excluded.environment, 
+	  			on conflict (key) do update set location = excluded.location, environment = excluded.environment,
 			 	release = excluded.release, status = excluded.status, modified_date = NOW()`;
-	
+
 	try {
 		await db.insert(sql, values);
 	} catch (e) {
