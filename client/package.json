@@ -7,7 +7,7 @@
     "js-flock": "^3.14.0",
     "jsep": "^0.3.5",
     "lodash.debounce": "^4.0.8",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "react": "^17.0.1",
     "react-csv": "^2.0.3",
     "react-datepicker": "^1.4.8",
