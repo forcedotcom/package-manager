@@ -37,7 +37,7 @@ create table if not exists org
   org_id        varchar(18) not null
     constraint org_org_id_pk primary key,
   name          varchar(255),
-  instance      varchar(6),
+  instance      varchar(20),
   modified_date timestamp with time zone,
   account_id    varchar(18),
   parent_org_id varchar(18),

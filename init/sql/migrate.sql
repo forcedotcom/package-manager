@@ -86,3 +86,6 @@ alter table package_version
 alter table package_version_latest
     alter column version_sort type varchar(30),
     alter column limited_version_sort type varchar(30);
+
+alter table org
+    alter column instance type varchar(20);
