@@ -33,7 +33,7 @@ export default class extends React.Component {
 		};
 
 		const WELCOMONING = [
-			"This site is protected by a cute padlock icon.", LOCK_ICON,
+			"Site protected by padlock icon.", LOCK_ICON,
 			"How many roads must a man walk down?", ROADS_ICON,
 			"Welcome to the jungle.", JUNGLE_ICON,
 			"Get that corn outta my face!", NACHO_ICON,

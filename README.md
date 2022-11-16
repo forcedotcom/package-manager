@@ -3,11 +3,15 @@
 For onboarding automation, see https://github.com/forcedotcom/package-manager-onboarding
 
 ## Data Sources
-### Accounts data (for internal ISVs)
-Org62 supplies account names.  Normal ISVs have account data provisioned in their LMO.  Internal ISVs seem not to.  Thus they need to query Org62 to retrieve account names based on production org ids.  The tool then associates those account names and ids with the production orgs and their child sandbox orgs. The Org62 user used must be able to query accounts data and have Heroku private space IP addresses exempted.
+### Accounts org (optional, if your accounts data is in a different org from your LMA)
+Normally, account data is provisioned in the LMO.  If for any reason it is maintained in a different org, register it as a connected org of type Accounts.
 
-### LMA Org
+### Licenses org
 Your LMA org supplies you packages, package version details and license data.
+
+### Package org
+For second-generation packages (2GP), you must register the org with your DevHub.  (Note: if your LMA and DevHub are on the same org, you need only register your LMA org as your Licenses org.)
+For first-generation packages, you must register each of your packaging orgs, one per package.
 
 #### Permission sets
 Anyone with access to your LMO gets read-only access to the upgrade tool. For full access to connect orgs, create groups or perform upgrades, you must create a new permission set in the LMO:
@@ -118,8 +122,8 @@ CLIENT_PORT=3000
 # Required for production, but not generally needed for local development (just leave them unset).
 # CLIENT_URL is the front-end application url. API_URL is the backend API service url.  
 # Unless you have a very creative deployment strategy, the two should match.
-#CLIENT_URL=https://pm.steelbrick.com
-#API_URL=https://pm.steelbrick.com
+#CLIENT_URL=https://myapp.herokuapp.com
+#API_URL=https://myapp.herokuapp.com
 
 # If an org must be authorized by someone with access to the app containuer but without direct access to the app itself,
 # register it here.  A heroku admin, for example, would set this in the app's config vars. Note this assumes all admins are

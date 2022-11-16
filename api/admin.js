@@ -333,7 +333,7 @@ async function startup() {
 }
 
 function scheduleJobs() {
-	const schedules = JSON.parse(process.env.JOB_SCHEDULES || {});
+	const schedules = process.env.JOB_SCHEDULES && JSON.parse(process.env.JOB_SCHEDULES) || {};
 	if (schedules.org_monitor_interval_seconds != null && schedules.org_monitor_interval_seconds !== -1) {
 		let interval = schedules.org_monitor_interval_seconds * 1000;
 		setInterval(() => {monitorOrgs(interval).then(() => {})}, interval);

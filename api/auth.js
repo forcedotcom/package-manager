@@ -33,6 +33,10 @@ function requestLogout(req, res, next) {
 
 async function oauthLoginURL(req, res, next) {
     try {
+        if (AUTH_URL && AUTH_URL.indexOf('.my.salesforce.com') < 0) {
+            return next(Error(`AUTH_URL must use your login domain url, of the form https://[your domain].my.salesforce.com`));
+        }
+
         let loginUrl = AUTH_URL;
         if (!loginUrl) {
             const orgs = await packageorgs.retrieveByType([sfdc.OrgTypes.Licenses]);
