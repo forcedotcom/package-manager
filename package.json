@@ -2,6 +2,9 @@
   "name": "package-manager",
   "version": "1.0.0",
   "description": "Package Manager",
+  "engines": {
+    "node": "16.x"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
