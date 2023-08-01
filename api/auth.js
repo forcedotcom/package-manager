@@ -18,6 +18,7 @@ const API_URL = process.env.API_URL || `${LOCAL_URL}:${PORT}`;
 const CLIENT_URL = process.env.CLIENT_URL || `${LOCAL_URL}:${CLIENT_PORT}`;
 const CALLBACK_URL = process.env.CALLBACK_URL || `${API_URL}/oauth2/callback`;
 const AUTH_URL = process.env.AUTH_URL;
+const AUTH_ORG_ID = process.env.AUTH_ORG_ID;
 
 // Constants
 const PROD_LOGIN = "https://login.salesforce.com";
@@ -121,6 +122,18 @@ async function oauthCallback(req, res, next) {
             return handleAuthError(res, req.query.error, req.query.error_description);
         }
         let userInfo = await conn.authorize(req.query.code);
+        let authOrgId = userInfo.organizationId;
+        if (authOrgId?.length == 18) {
+            authOrgId = authOrgId.slice(0, -3);
+        }
+
+        if (authOrgId !== AUTH_ORG_ID) {
+            throw ({
+                message: "User is not allowed to access this application.",
+                severity: "Error",
+                code: 401
+            });
+        }
         let url = CLIENT_URL;
         let returnTo = sanitizeIt(state.returnTo);
         if (returnTo) {
